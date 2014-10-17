@@ -1,6 +1,6 @@
 #!/bin/bash
 
-modules=`./show_modules.bash | tee doc/modules.lst`
+modules=`./show_modules | tee doc/modules.lst`
 echo "Found the following modules:"
 echo $modules
 cd doc
