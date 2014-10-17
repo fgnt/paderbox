@@ -1,8 +1,13 @@
 #!/bin/bash
 
-modules=`./show_modules | tee doc/modules.lst`
+modules=`./show_modules | tee modules.lst`
 echo "Found the following modules:"
-echo $modules
+for module in `cat modules.lst`; do
+	desc=`ssh git@ntgit.upb.de desc python/toolbox/${module}`
+	echo "$module - *${desc}*" | tee -a doc/modules.lst
+done
+rm modules.lst
+
 cd doc
 rm index.rst
 
@@ -33,6 +38,7 @@ tail -n $TAIL_LINES index_tmp.rst >> index.rst
 
 rm index_tmp.rst
 rm docs.lst
+rm modules.lst
 
 make html
 
