@@ -1,5 +1,5 @@
 #!/bin/bash
-
+mkdir -p nt
 cd nt
 git submodule add git@ntgit.upb.de:python/toolbox/$1
 cd ..
