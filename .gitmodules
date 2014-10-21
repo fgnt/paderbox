@@ -1,6 +1,0 @@
-[submodule "nt/autoencoder"]
-	path = nt/autoencoder
-	url = git@ntgit.upb.de:python/toolbox/autoencoder
-[submodule "nt/template"]
-	path = nt/template
-	url = git@ntgit.upb.de:python/toolbox/template
