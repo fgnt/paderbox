@@ -1,6 +1,6 @@
 #!/bin/bash
 mkdir -p nt
-git submodule add git@ntgit.upb.de:python/toolbox/$1 nt/
+git submodule add git@ntgit.upb.de:python/toolbox/$1 nt/$1
 git submodule init
 git submodule update
 ./make_doc
