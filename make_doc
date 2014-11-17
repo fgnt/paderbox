@@ -16,9 +16,18 @@ tail -n $TAIL_LINES _templates/template.rst >> index_tmp.rst
 echo '.. toctree::' >> docs.lst
 #echo '   :maxdepth: 2' >> docs.lst
 for doc in `ls ../nt`; do
-	cp ../nt/${doc}/index.rst tmp.rst
-	echo "   ${doc}_tmp" >> docs.lst
-	sed "s/automodule:: /automodule:: ${doc}./g" tmp.rst > ${doc}_tmp.rst
+	if [ $doc != "__init__.py" ]
+	then
+		cp ../nt/${doc}/index.rst tmp.rst
+		echo "   ${doc}_tmp" >> docs.lst
+		if grep -q $doc conf.py
+			then
+			 echo "${doc} already included"
+			else
+		     echo "sys.path.append(os.path.abspath('../nt/${doc}'))" >> conf.py
+		fi
+		sed "s/automodule:: /automodule:: ${doc}./g" tmp.rst > ${doc}_tmp.rst
+	fi
 done
 rm tmp.rst
 
