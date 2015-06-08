@@ -1,1 +1,7 @@
 _build
+data
+logs
+doc
+model.json
+mnist.pkl*
+.ipynb*
