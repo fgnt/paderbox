@@ -1,5 +1,0 @@
-#!/bin/bash
-for module in $(ssh git@ntgit.upb.de 2>&1 | grep python/toolbox | cut -d"/" -f3 | grep -v "^$"); do
-	echo -n ${module}
-	echo " - *$(ssh git@ntgit.upb.de desc python/toolbox/${module})*"
-done
