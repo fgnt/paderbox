@@ -23,6 +23,7 @@ var/
 .installed.cfg
 *.egg
 MANIFEST
+.idea
 
 # Installer logs
 pip-log.txt

@@ -1,0 +1,2 @@
+def stft():
+    raise NotImplementedError
