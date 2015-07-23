@@ -1,6 +1,8 @@
 import numpy as np
 import scipy
 
+from scipy import signal
+
 import pylab as plt
 import seaborn as sns
 sns.set_palette("deep", desat=.6)
@@ -20,6 +22,49 @@ from numpy.fft import rfft, irfft
 #    for n, i in enumerate(range(0, len(x) - frame_size, frame_shift)):
 #        x[i:i + frame_size] += np.real(irfft(X[n]))
 #    return x
+
+def stft(signal, size=1024, shift=256, window=signal.blackman, fading=True):
+    """
+    Calculates the short time Fourier transformation of a single channel time
+    signal. It is able to add additional zeros for fade-in and fade out and
+    should yield an STFT signal which allows perfect reconstruction.
+
+    Up to now, only a single channel time signal is possible.
+
+    :param signal: Single channel time signal.
+    :param size: Scalar FFT-size.
+    :param shift: Scalar FFT-shift. Typically shift is a fraction of size.
+    :param window: Window function handle.
+    :param fading: Pads the signal with zeros for better reconstruction.
+    :return: Single channel complex STFT signal
+        with dimensions frames times size/2+1.
+    """
+    assert(len(signal.shape) == 1)
+
+    # Pad with zeros to have enough samples for the window function to fade.
+    if fading is True:
+        signal = np.pad(signal, size-shift, mode='constant')
+
+    # Pad with trailing zeros, to have an integral number of frames.
+    frames = _samples_to_stft_frames(len(signal), size, shift)
+    samples = _stft_frames_to_samples(frames, size, shift)
+    signal = np.pad(signal, (0, samples - len(signal)), mode='constant')
+
+    # The range object contains the sample index of the beginning of each frame.
+    range_object = range(0, len(signal) - size + shift, shift)
+
+    window = window(size)
+
+    return np.array([rfft(window*signal[i:i+size]) for i in range_object])
+
+
+def _samples_to_stft_frames(samples, size, shift):
+    return np.ceil((samples - size + shift) / shift)
+
+
+def _stft_frames_to_samples(frames, size, shift):
+    return frames * shift + size - shift
+
 
 def stft_basj(x, fftsize=1024, overlap=4):
     hop = fftsize // overlap
