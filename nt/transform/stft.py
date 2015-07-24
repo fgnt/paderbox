@@ -130,7 +130,7 @@ def _biorthogonal_window_vec(analysis_window, shift):
 
 
 def istft(stft_signal, size=1024, shift=256,
-          window=signal.blackman, fading=True):
+          window=signal.blackman, fading=True, window_length=None):
     """
     Calculated the inverse short time Fourier transform to exactly reconstruct
     the time signal.
@@ -141,12 +141,21 @@ def istft(stft_signal, size=1024, shift=256,
     :param shift: Scalar FFT-shift. Typically shift is a fraction of size.
     :param window: Window function handle.
     :param fading: Removes the additional padding, if done during STFT.
+    :param window_length: Sometimes one desires to use a shorter window than
+        the fft size. In that case, the window is padded with zeros.
+        The default is to use the fft-size as a window size.
     :return: Single channel complex STFT signal
     :return: Single channel time signal.
     """
     assert stft_signal.shape[1] == 1024 // 2 + 1
 
-    window = _biorthogonal_window_for(window(size), shift)
+    if window_length is None:
+        window = window(size)
+    else:
+        window = window(window_length)
+        window = np.pad(window, (0, size-window_length), mode='constant')
+
+    window = _biorthogonal_window_for(window, shift)
 
     # Why? Line created by Hai, Lukas does not know, why it exists.
     window = window * size
