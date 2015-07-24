@@ -54,40 +54,80 @@ def _stft_frames_to_samples(frames, size, shift):
     return frames * shift + size - shift
 
 
-def _biorthogonal_window(analysis_window, shift):
-    fft_size = len(analysis_window);
-    assert(np.mod(fft_size, shift) == 0);
-    number_of_shifts = len(analysis_window) / shift;
+def _biorthogonal_window_for(analysis_window, shift):
+    """
+    This version of the synthesis calculation is as close as possible to the
+    Matlab impelementation in terms of variable names.
 
-    sum_of_squares = np.zeros(shift);
+    The results are equal.
+    """
+    fft_size = len(analysis_window)
+    assert(np.mod(fft_size, shift) == 0);
+    number_of_shifts = len(analysis_window) // shift
+
+    sum_of_squares = np.zeros(shift)
     for synthesis_index in range(0, shift):
-        for sample_index in range(0, int(round(number_of_shifts))+1):
-            analysis_index = synthesis_index + sample_index * shift;
+        for sample_index in range(0, number_of_shifts+1):
+            analysis_index = synthesis_index + sample_index * shift
+
             if analysis_index + 1 < fft_size:
-                sum_of_squares[synthesis_index] += analysis_window[analysis_index] ** 2;
+                sum_of_squares[synthesis_index] += analysis_window[analysis_index] ** 2
 
     sum_of_squares = np.kron(np.ones(number_of_shifts), sum_of_squares)
-    synthesis_window = analysis_window / sum_of_squares / fft_size;
+    synthesis_window = analysis_window / sum_of_squares / fft_size
     return synthesis_window
 
 
-def stft_basj(x, fftsize=1024, overlap=4):
-    hop = fftsize // overlap
-    w = scipy.hanning(fftsize + 1)[:-1]      # better reconstruction with this trick +1)[:-1]
-    return np.array([np.fft.rfft(w*x[i:i+fftsize]) for i in range(0, len(x)-fftsize, hop)])
+def _biorthogonal_window_vec(analysis_window, shift):
+    """
+    This is a vectorized implementation of the window calculation. It is much
+    slower than the variant using for loops.
+    """
+    fft_size = len(analysis_window)
+    assert(np.mod(fft_size, shift) == 0)
+    number_of_shifts = len(analysis_window) // shift
+
+    sum_of_squares = np.zeros(shift)
+    for synthesis_index in range(0, shift):
+        sample_index = np.arange(0, number_of_shifts+1)
+        analysis_index = synthesis_index + sample_index * shift
+        analysis_index = analysis_index[analysis_index + 1 < fft_size]
+        sum_of_squares[synthesis_index] = np.sum(analysis_window[analysis_index] ** 2)
+    sum_of_squares = np.kron(np.ones(number_of_shifts), sum_of_squares)
+    synthesis_window = analysis_window / sum_of_squares / fft_size
+    return synthesis_window
 
 
-def istft_basj(X, overlap=4):
-    fftsize=(X.shape[1]-1)*2
-    hop = fftsize // overlap
-    w = scipy.hanning(fftsize+1)[:-1]
-    x = scipy.zeros(X.shape[0]*hop)
-    wsum = scipy.zeros(X.shape[0]*hop)
-    for n,i in enumerate(range(0, len(x)-fftsize, hop)):
-        x[i:i+fftsize] += scipy.real(np.fft.irfft(X[n])) * w   # overlap-add
-        wsum[i:i+fftsize] += w ** 2.
-    pos = wsum != 0
-    x[pos] /= wsum[pos]
+def istft(X, size=1024, shift=256, window=signal.blackman, fading=True):
+    """
+    Calculated the inverse short time Fourier transform to exactly reconstruct
+    the time signal.
+
+    :param X: Single channel complex STFT signal
+        with dimensions frames times size/2+1.
+    :param size: Scalar FFT-size.
+    :param shift: Scalar FFT-shift. Typically shift is a fraction of size.
+    :param window: Window function handle.
+    :param fading: Removes the additional padding, if done during STFT.
+    :return: Single channel complex STFT signal
+    :return: Single channel time signal.
+    """
+    assert(X.shape[1] == 1024 // 2 + 1)
+
+    window = _biorthogonal_window_for(window(size), shift)
+
+    # Why? Line created by Hai, Lukas does not know, why it exists.
+    window = window * size
+
+    x = scipy.zeros(X.shape[0] * shift + size - shift)
+
+    for n, i in enumerate(range(0, len(x) - size + shift, shift)):
+        x[i:i + size] += window * np.real(irfft(X[n]))
+
+    # Compensate fade-in and fade-out
+    if fading:
+        x = x[size-shift:len(x)-(size-shift)]
+
     return x
 
 
