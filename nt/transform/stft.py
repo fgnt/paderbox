@@ -98,23 +98,36 @@ def _biorthogonal_window_vec(analysis_window, shift):
     return synthesis_window
 
 
-def stft_basj(x, fftsize=1024, overlap=4):
-    hop = fftsize // overlap
-    w = scipy.hanning(fftsize + 1)[:-1]      # better reconstruction with this trick +1)[:-1]
-    return np.array([np.fft.rfft(w*x[i:i+fftsize]) for i in range(0, len(x)-fftsize, hop)])
+def istft(X, size=1024, shift=256, window=signal.blackman, fading=True):
+    """
+    Calculated the inverse short time Fourier transform to exactly reconstruct
+    the time signal.
 
+    :param X: Single channel complex STFT signal
+        with dimensions frames times size/2+1.
+    :param size: Scalar FFT-size.
+    :param shift: Scalar FFT-shift. Typically shift is a fraction of size.
+    :param window: Window function handle.
+    :param fading: Removes the additional padding, if done during STFT.
+    :return: Single channel complex STFT signal
+    :return: Single channel time signal.
+    """
+    assert(X.shape[1] == 1024 // 2 + 1)
 
-def istft_basj(X, overlap=4):
-    fftsize=(X.shape[1]-1)*2
-    hop = fftsize // overlap
-    w = scipy.hanning(fftsize+1)[:-1]
-    x = scipy.zeros(X.shape[0]*hop)
-    wsum = scipy.zeros(X.shape[0]*hop)
-    for n,i in enumerate(range(0, len(x)-fftsize, hop)):
-        x[i:i+fftsize] += scipy.real(np.fft.irfft(X[n])) * w   # overlap-add
-        wsum[i:i+fftsize] += w ** 2.
-    pos = wsum != 0
-    x[pos] /= wsum[pos]
+    window = _biorthogonal_window_for(window(size), shift)
+
+    # Why? Line created by Hai, Lukas does not know, why it exists.
+    window = window * size
+
+    x = scipy.zeros(X.shape[0] * shift + size - shift)
+
+    for n, i in enumerate(range(0, len(x) - size + shift, shift)):
+        x[i:i + size] += window * np.real(irfft(X[n]))
+
+    # Compensate fade-in and fade-out
+    if fading:
+        x = x[size-shift:len(x)-(size-shift)]
+
     return x
 
 
