@@ -14,6 +14,10 @@ class Timer(object):
     """
     def __init__(self, verbose=False):
         self.verbose = verbose
+        self.secs = 0
+        self.msecs = 0
+        self.start = 0
+        self.end = 0
 
     def __enter__(self):
         self.start = time.time()
