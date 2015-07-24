@@ -223,3 +223,17 @@ def plot_stft(stft_signal, limits=None):
     :return: None
     """
     plot_spectrogram(stft_to_spectrogram(stft_signal), limits)
+
+
+def spectrogram_to_energy_per_frame(spectrogram):
+    """
+    The energy per frame is sometimes used as an additional feature to the MFCC
+    features. Here, it is caluclated from the power spectrum.
+
+    :param spectrogram: Real valued power spectrum.
+    :return: Real valued energy per frame.
+    """
+    energy = np.sum(spectrogram, 1)
+
+    # If energy is zero, we get problems with log
+    energy = np.where(energy == 0, np.finfo(float).eps, energy)
