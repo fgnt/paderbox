@@ -63,6 +63,13 @@ def _samples_to_stft_frames(samples, size, shift):
 
 
 def _stft_frames_to_samples(frames, size, shift):
+    """
+    Calculates samples in time domain from STFT frames
+    :param frames: Number of STFT frames.
+    :param size: FFT size.
+    :param shift: Hop in samples.
+    :return: Number of samples in time domain.
+    """
     return frames * shift + size - shift
 
 
@@ -136,14 +143,14 @@ def istft(stft_signal, size=1024, shift=256,
 
     time_signal = scipy.zeros(stft_signal.shape[0] * shift + size - shift)
 
-    for n, i in enumerate(range(0, len(time_signal) - size + shift, shift)):
-        x[i:i + size] += window * np.real(irfft(stft_signal[n]))
+    for j, i in enumerate(range(0, len(time_signal) - size + shift, shift)):
+        time_signal[i:i + size] += window * np.real(irfft(stft_signal[j]))
 
     # Compensate fade-in and fade-out
     if fading:
-        x = x[size-shift:len(x)-(size-shift)]
+        time_signal = time_signal[size-shift:len(time_signal)-(size-shift)]
 
-    return x
+    return time_signal
 
 
 def stft_to_spectrogram(stft_signal):
@@ -160,6 +167,13 @@ def stft_to_spectrogram(stft_signal):
 
 
 def plot_spectrogram(spectrogram, limits=None):
+    """
+    Plots a spectrogram from a spectrogram (power) as input.
+
+    :param spectrogram: Real valued power spectrum.
+    :param limits: Color limits for clipping purposes.
+    :return: None
+    """
     if limits is None:
         limits = (np.min(spectrogram), np.max(spectrogram))
 
@@ -174,4 +188,12 @@ def plot_spectrogram(spectrogram, limits=None):
 
 
 def plot_stft(stft_signal, limits=None):
+    """
+    Plots a spectrogram from an stft signal as input. This is a wrapper of the
+    plot function for spectrograms.
+
+    :param stft_signal: Complex valued stft signal.
+    :param limits: Color limits for clipping purposes.
+    :return: None
+    """
     plot_spectrogram(stft_to_spectrogram(stft_signal), limits)
