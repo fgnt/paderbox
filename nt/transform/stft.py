@@ -71,7 +71,8 @@ def _biorthogonal_window_for(analysis_window, shift):
             analysis_index = synthesis_index + sample_index * shift
 
             if analysis_index + 1 < fft_size:
-                sum_of_squares[synthesis_index] += analysis_window[analysis_index] ** 2
+                sum_of_squares[synthesis_index] \
+                    += analysis_window[analysis_index] ** 2
 
     sum_of_squares = np.kron(np.ones(number_of_shifts), sum_of_squares)
     synthesis_window = analysis_window / sum_of_squares / fft_size
@@ -92,7 +93,8 @@ def _biorthogonal_window_vec(analysis_window, shift):
         sample_index = np.arange(0, number_of_shifts+1)
         analysis_index = synthesis_index + sample_index * shift
         analysis_index = analysis_index[analysis_index + 1 < fft_size]
-        sum_of_squares[synthesis_index] = np.sum(analysis_window[analysis_index] ** 2)
+        sum_of_squares[synthesis_index] \
+            = np.sum(analysis_window[analysis_index] ** 2)
     sum_of_squares = np.kron(np.ones(number_of_shifts), sum_of_squares)
     synthesis_window = analysis_window / sum_of_squares / fft_size
     return synthesis_window
@@ -133,9 +135,11 @@ def istft(X, size=1024, shift=256, window=signal.blackman, fading=True):
 
 def stft_to_spectrogram(stft_signal):
     """
-    Calculates the power spectrum (spectrogram) of an stft signal. The output is guaranteed to be real.
+    Calculates the power spectrum (spectrogram) of an stft signal.
+    The output is guaranteed to be real.
 
-    :param stft: Complex STFT signal with dimensions #time_frames times #frequency_bins.
+    :param stft: Complex STFT signal with dimensions
+        #time_frames times #frequency_bins.
     :return: Real spectrogram with same dimensions as input.
     """
     spectrogram = np.abs(stft_signal * np.conjugate(stft_signal))
