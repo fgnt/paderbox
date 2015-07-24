@@ -1,3 +1,6 @@
+"""
+This file contains the STFT function and related helper functions.
+"""
 import numpy as np
 import scipy
 
@@ -6,12 +9,13 @@ from scipy import signal
 import pylab as plt
 import seaborn as sns
 sns.set_palette("deep", desat=.6)
-cmap = sns.diverging_palette(220, 20, n=7, as_cmap=True)
+COLORMAP = sns.diverging_palette(220, 20, n=7, as_cmap=True)
 
 from numpy.fft import rfft, irfft
 
 
-def stft(signal, size=1024, shift=256, window=signal.blackman, fading=True):
+def stft(time_signal, size=1024, shift=256,
+         window=signal.blackman, fading=True):
     """
     Calculates the short time Fourier transformation of a single channel time
     signal. It is able to add additional zeros for fade-in and fade out and
@@ -19,7 +23,7 @@ def stft(signal, size=1024, shift=256, window=signal.blackman, fading=True):
 
     Up to now, only a single channel time signal is possible.
 
-    :param signal: Single channel time signal.
+    :param time_signal: Single channel time signal.
     :param size: Scalar FFT-size.
     :param shift: Scalar FFT-shift. Typically shift is a fraction of size.
     :param window: Window function handle.
@@ -27,26 +31,34 @@ def stft(signal, size=1024, shift=256, window=signal.blackman, fading=True):
     :return: Single channel complex STFT signal
         with dimensions frames times size/2+1.
     """
-    assert(len(signal.shape) == 1)
+    assert len(time_signal.shape) == 1
 
     # Pad with zeros to have enough samples for the window function to fade.
     if fading is True:
-        signal = np.pad(signal, size-shift, mode='constant')
+        time_signal = np.pad(time_signal, size-shift, mode='constant')
 
     # Pad with trailing zeros, to have an integral number of frames.
-    frames = _samples_to_stft_frames(len(signal), size, shift)
+    frames = _samples_to_stft_frames(len(time_signal), size, shift)
     samples = _stft_frames_to_samples(frames, size, shift)
-    signal = np.pad(signal, (0, samples - len(signal)), mode='constant')
+    time_signal = np.pad(time_signal,
+                         (0, samples - len(time_signal)), mode='constant')
 
     # The range object contains the sample index of the beginning of each frame.
-    range_object = range(0, len(signal) - size + shift, shift)
+    range_object = range(0, len(time_signal) - size + shift, shift)
 
     window = window(size)
 
-    return np.array([rfft(window*signal[i:i+size]) for i in range_object])
+    return np.array([rfft(window*time_signal[i:i+size]) for i in range_object])
 
 
 def _samples_to_stft_frames(samples, size, shift):
+    """
+    Calculates STFT frames from samples in time domain.
+    :param samples: Number of samples in time domain.
+    :param size: FFT size.
+    :param shift: Hop in samples.
+    :return: Number of STFT frames.
+    """
     return np.ceil((samples - size + shift) / shift)
 
 
@@ -62,7 +74,7 @@ def _biorthogonal_window_for(analysis_window, shift):
     The results are equal.
     """
     fft_size = len(analysis_window)
-    assert(np.mod(fft_size, shift) == 0);
+    assert np.mod(fft_size, shift) == 0
     number_of_shifts = len(analysis_window) // shift
 
     sum_of_squares = np.zeros(shift)
@@ -85,7 +97,7 @@ def _biorthogonal_window_vec(analysis_window, shift):
     slower than the variant using for loops.
     """
     fft_size = len(analysis_window)
-    assert(np.mod(fft_size, shift) == 0)
+    assert np.mod(fft_size, shift) == 0
     number_of_shifts = len(analysis_window) // shift
 
     sum_of_squares = np.zeros(shift)
@@ -100,12 +112,13 @@ def _biorthogonal_window_vec(analysis_window, shift):
     return synthesis_window
 
 
-def istft(X, size=1024, shift=256, window=signal.blackman, fading=True):
+def istft(stft_signal, size=1024, shift=256,
+          window=signal.blackman, fading=True):
     """
     Calculated the inverse short time Fourier transform to exactly reconstruct
     the time signal.
 
-    :param X: Single channel complex STFT signal
+    :param stft_signal: Single channel complex STFT signal
         with dimensions frames times size/2+1.
     :param size: Scalar FFT-size.
     :param shift: Scalar FFT-shift. Typically shift is a fraction of size.
@@ -114,17 +127,17 @@ def istft(X, size=1024, shift=256, window=signal.blackman, fading=True):
     :return: Single channel complex STFT signal
     :return: Single channel time signal.
     """
-    assert(X.shape[1] == 1024 // 2 + 1)
+    assert stft_signal.shape[1] == 1024 // 2 + 1
 
     window = _biorthogonal_window_for(window(size), shift)
 
     # Why? Line created by Hai, Lukas does not know, why it exists.
     window = window * size
 
-    x = scipy.zeros(X.shape[0] * shift + size - shift)
+    time_signal = scipy.zeros(stft_signal.shape[0] * shift + size - shift)
 
-    for n, i in enumerate(range(0, len(x) - size + shift, shift)):
-        x[i:i + size] += window * np.real(irfft(X[n]))
+    for n, i in enumerate(range(0, len(time_signal) - size + shift, shift)):
+        x[i:i + size] += window * np.real(irfft(stft_signal[n]))
 
     # Compensate fade-in and fade-out
     if fading:
@@ -151,7 +164,7 @@ def plot_spectrogram(spectrogram, limits=None):
         limits = (np.min(spectrogram), np.max(spectrogram))
 
     plt.imshow(np.clip(np.log10(spectrogram).T, limits[0], limits[1]),
-               interpolation='none', origin='lower', cmap=cmap)
+               interpolation='none', origin='lower', cmap=COLORMAP)
     plt.grid(False)
     plt.xlabel('Time frame')
     plt.ylabel('Frequency bin')
