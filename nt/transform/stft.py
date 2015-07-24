@@ -15,7 +15,7 @@ from numpy.fft import rfft, irfft
 
 
 def stft(time_signal, size=1024, shift=256,
-         window=signal.blackman, fading=True):
+         window=signal.blackman, fading=True, window_length=None):
     """
     Calculates the short time Fourier transformation of a single channel time
     signal. It is able to add additional zeros for fade-in and fade out and
@@ -28,6 +28,9 @@ def stft(time_signal, size=1024, shift=256,
     :param shift: Scalar FFT-shift. Typically shift is a fraction of size.
     :param window: Window function handle.
     :param fading: Pads the signal with zeros for better reconstruction.
+    :param window_length: Sometimes one desires to use a shorter window than
+        the fft size. In that case, the window is padded with zeros.
+        The default is to use the fft-size as a window size.
     :return: Single channel complex STFT signal
         with dimensions frames times size/2+1.
     """
@@ -46,7 +49,11 @@ def stft(time_signal, size=1024, shift=256,
     # The range object contains the sample index of the beginning of each frame.
     range_object = range(0, len(time_signal) - size + shift, shift)
 
-    window = window(size)
+    if window_length is None:
+        window = window(size)
+    else:
+        window = window(window_length)
+        window = np.pad(window, (0, size-window_length), mode='constant')
 
     return np.array([rfft(window*time_signal[i:i+size]) for i in range_object])
 
@@ -79,6 +86,11 @@ def _biorthogonal_window_for(analysis_window, shift):
     Matlab impelementation in terms of variable names.
 
     The results are equal.
+
+    The implementation follows equation A.92 in
+    Krueger, A. Modellbasierte Merkmalsverbesserung zur robusten automatischen
+    Spracherkennung in Gegenwart von Nachhall und Hintergrundstoerungen
+    Paderborn, Universitaet Paderborn, Diss., 2011, 2011
     """
     fft_size = len(analysis_window)
     assert np.mod(fft_size, shift) == 0
@@ -102,6 +114,11 @@ def _biorthogonal_window_vec(analysis_window, shift):
     """
     This is a vectorized implementation of the window calculation. It is much
     slower than the variant using for loops.
+
+    The implementation follows equation A.92 in
+    Krueger, A. Modellbasierte Merkmalsverbesserung zur robusten automatischen
+    Spracherkennung in Gegenwart von Nachhall und Hintergrundstoerungen
+    Paderborn, Universitaet Paderborn, Diss., 2011, 2011
     """
     fft_size = len(analysis_window)
     assert np.mod(fft_size, shift) == 0
@@ -120,7 +137,7 @@ def _biorthogonal_window_vec(analysis_window, shift):
 
 
 def istft(stft_signal, size=1024, shift=256,
-          window=signal.blackman, fading=True):
+          window=signal.blackman, fading=True, window_length=None):
     """
     Calculated the inverse short time Fourier transform to exactly reconstruct
     the time signal.
@@ -131,12 +148,21 @@ def istft(stft_signal, size=1024, shift=256,
     :param shift: Scalar FFT-shift. Typically shift is a fraction of size.
     :param window: Window function handle.
     :param fading: Removes the additional padding, if done during STFT.
+    :param window_length: Sometimes one desires to use a shorter window than
+        the fft size. In that case, the window is padded with zeros.
+        The default is to use the fft-size as a window size.
     :return: Single channel complex STFT signal
     :return: Single channel time signal.
     """
     assert stft_signal.shape[1] == 1024 // 2 + 1
 
-    window = _biorthogonal_window_for(window(size), shift)
+    if window_length is None:
+        window = window(size)
+    else:
+        window = window(window_length)
+        window = np.pad(window, (0, size-window_length), mode='constant')
+
+    window = _biorthogonal_window_for(window, shift)
 
     # Why? Line created by Hai, Lukas does not know, why it exists.
     window = window * size
@@ -197,3 +223,17 @@ def plot_stft(stft_signal, limits=None):
     :return: None
     """
     plot_spectrogram(stft_to_spectrogram(stft_signal), limits)
+
+
+def spectrogram_to_energy_per_frame(spectrogram):
+    """
+    The energy per frame is sometimes used as an additional feature to the MFCC
+    features. Here, it is caluclated from the power spectrum.
+
+    :param spectrogram: Real valued power spectrum.
+    :return: Real valued energy per frame.
+    """
+    energy = np.sum(spectrogram, 1)
+
+    # If energy is zero, we get problems with log
+    energy = np.where(energy == 0, np.finfo(float).eps, energy)
