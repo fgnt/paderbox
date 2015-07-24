@@ -54,20 +54,47 @@ def _stft_frames_to_samples(frames, size, shift):
     return frames * shift + size - shift
 
 
-def _biorthogonal_window(analysis_window, shift):
-    fft_size = len(analysis_window);
-    assert(np.mod(fft_size, shift) == 0);
-    number_of_shifts = len(analysis_window) / shift;
+def _biorthogonal_window_for(analysis_window, shift):
+    """
+    This version of the synthesis calculation is as close as possible to the
+    Matlab impelementation in terms of variable names.
 
-    sum_of_squares = np.zeros(shift);
+    The results are equal.
+    """
+    fft_size = len(analysis_window)
+    assert(np.mod(fft_size, shift) == 0);
+    number_of_shifts = len(analysis_window) // shift
+
+    sum_of_squares = np.zeros(shift)
     for synthesis_index in range(0, shift):
-        for sample_index in range(0, int(round(number_of_shifts))+1):
-            analysis_index = synthesis_index + sample_index * shift;
+        for sample_index in range(0, number_of_shifts+1):
+            analysis_index = synthesis_index + sample_index * shift
+
             if analysis_index + 1 < fft_size:
-                sum_of_squares[synthesis_index] += analysis_window[analysis_index] ** 2;
+                sum_of_squares[synthesis_index] += analysis_window[analysis_index] ** 2
 
     sum_of_squares = np.kron(np.ones(number_of_shifts), sum_of_squares)
-    synthesis_window = analysis_window / sum_of_squares / fft_size;
+    synthesis_window = analysis_window / sum_of_squares / fft_size
+    return synthesis_window
+
+
+def _biorthogonal_window_vec(analysis_window, shift):
+    """
+    This is a vectorized implementation of the window calculation. It is much
+    slower than the variant using for loops.
+    """
+    fft_size = len(analysis_window)
+    assert(np.mod(fft_size, shift) == 0)
+    number_of_shifts = len(analysis_window) // shift
+
+    sum_of_squares = np.zeros(shift)
+    for synthesis_index in range(0, shift):
+        sample_index = np.arange(0, number_of_shifts+1)
+        analysis_index = synthesis_index + sample_index * shift
+        analysis_index = analysis_index[analysis_index + 1 < fft_size]
+        sum_of_squares[synthesis_index] = np.sum(analysis_window[analysis_index] ** 2)
+    sum_of_squares = np.kron(np.ones(number_of_shifts), sum_of_squares)
+    synthesis_window = analysis_window / sum_of_squares / fft_size
     return synthesis_window
 
 
