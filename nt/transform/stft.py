@@ -79,6 +79,11 @@ def _biorthogonal_window_for(analysis_window, shift):
     Matlab impelementation in terms of variable names.
 
     The results are equal.
+
+    The implementation follows equation A.92 in
+    Krueger, A. Modellbasierte Merkmalsverbesserung zur robusten automatischen
+    Spracherkennung in Gegenwart von Nachhall und Hintergrundstoerungen
+    Paderborn, Universitaet Paderborn, Diss., 2011, 2011
     """
     fft_size = len(analysis_window)
     assert np.mod(fft_size, shift) == 0
@@ -102,6 +107,11 @@ def _biorthogonal_window_vec(analysis_window, shift):
     """
     This is a vectorized implementation of the window calculation. It is much
     slower than the variant using for loops.
+
+    The implementation follows equation A.92 in
+    Krueger, A. Modellbasierte Merkmalsverbesserung zur robusten automatischen
+    Spracherkennung in Gegenwart von Nachhall und Hintergrundstoerungen
+    Paderborn, Universitaet Paderborn, Diss., 2011, 2011
     """
     fft_size = len(analysis_window)
     assert np.mod(fft_size, shift) == 0
