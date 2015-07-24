@@ -1,50 +1,59 @@
+"""
+Provides fbank features and the fbank filterbank.
+"""
+
 import numpy
 import nt.transform.filter as filter
 import nt.transform.stft as stft
 import scipy.signal
 
-def fbank(signal, samplerate=16000, winlen=400, winstep=160,
-          nfilt=26, nfft=512, lowfreq=0, highfreq=None, preemph=0.97,
-          winfunc=scipy.signal.hamming):
-    """Compute Mel-filterbank energy features from an audio signal.
+def fbank(signal, sample_rate=16000, window_length=400, stft_shift=160,
+          number_of_filters=26, stft_size=512, lowest_frequency=0,
+          highest_frequency=None, preemphasis=0.97,
+          window=scipy.signal.hamming):
+    """
+    Compute Mel-filterbank energy features from an audio signal.
+
+    Source: https://github.com/jameslyons/python_speech_features
+    Tutorial: http://www.practicalcryptography.com/miscellaneous/machine-learning/guide-mel-frequency-cepstral-coefficients-mfccs/ # noqa
 
     :param signal: the audio signal from which to compute features.
         Should be an N*1 array
-    :param samplerate: the samplerate of the signal we are working with.
-    :param winlen: the length of the analysis window in seconds.
-        Default is 0.025s (25 milliseconds)
-    :param winstep: the step between successive windows in seconds.
+    :param sample_rate: the samplerate of the signal we are working with.
+    :param window_length: the length of the analysis window in samples.
+        Default is 400 (25 milliseconds @ 16kHz)
+    :param stft_shift: the step between successive windows in seconds.
         Default is 0.01s (10 milliseconds)
-    :param nfilt: the number of filters in the filterbank, default 26.
-    :param nfft: the FFT size. Default is 512.
-    :param lowfreq: lowest band edge of mel filters. In Hz, default is 0.
-    :param highfreq: highest band edge of mel filters.
+    :param number_of_filters: the number of filters in the filterbank,
+        default 26.
+    :param stft_size: the FFT size. Default is 512.
+    :param lowest_frequency: lowest band edge of mel filters.
+        In Hz, default is 0.
+    :param highest_frequency: highest band edge of mel filters.
         In Hz, default is samplerate/2
-    :param preemph: apply preemphasis filter with preemph as coefficient.
+    :param preemphasis: apply preemphasis filter with preemph as coefficient.
         0 is no filter. Default is 0.97.
-    :returns: 2 values. The first is a numpy array of size (NUMFRAMES by nfilt)
-        containing features. Each row holds 1 feature vector. The
-        second return value is the energy in each frame
-        (total energy, unwindowed)
+    :returns: Mel filterbank features.
     """
-    highfreq= highfreq or samplerate/2
+    highest_frequency = highest_frequency or sample_rate/2
     signal = filter.offcomp(signal)
-    signal = filter.preemphasis(signal, preemph)
+    signal = filter.preemphasis(signal, preemphasis)
 
-    stft_signal = stft.stft(signal, size=nfft, shift=winstep,
-                      window=winfunc, window_length=winlen)
+    stft_signal = stft.stft(signal, size=stft_size, shift=stft_shift,
+                      window=window, window_length=window_length)
 
     spectrogram = stft.stft_to_spectrogram(stft_signal)
 
-    fb = get_filterbanks(nfilt,nfft,samplerate,lowfreq,highfreq)
+    filterbanks = get_filterbanks(number_of_filters, stft_size, sample_rate,
+                                  lowest_frequency, highest_frequency)
 
     # compute the filterbank energies
-    feat = numpy.dot(spectrogram, fb.T)
+    feature = numpy.dot(spectrogram, filterbanks.T)
 
     # if feat is zero, we get problems with log
-    feat = numpy.where(feat == 0, numpy.finfo(float).eps, feat)
+    feature = numpy.where(feature == 0, numpy.finfo(float).eps, feature)
 
-    return feat
+    return feature
 
 
 def get_filterbanks(number_of_filters=20, nfft=1024, samplerate=16000,
