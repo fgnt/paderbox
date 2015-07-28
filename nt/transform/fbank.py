@@ -3,8 +3,7 @@ Provides fbank features and the fbank filterbank.
 """
 
 import numpy
-from nt.transform import filter
-from nt.transform import mod_stft
+import nt.transform as transform
 import scipy.signal
 
 def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
@@ -39,10 +38,10 @@ def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
     time_signal = filter.offcomp(time_signal)
     time_signal = filter.preemphasis(time_signal, preemphasis)
 
-    stft_signal = mod_stft.stft(time_signal, size=stft_size, shift=stft_shift,
+    stft_signal = transform.stft(time_signal, size=stft_size, shift=stft_shift,
                       window=window, window_length=window_length, fading=False)
 
-    spectrogram = mod_stft.stft_to_spectrogram(stft_signal)/stft_size
+    spectrogram = transform.stft_to_spectrogram(stft_signal)/stft_size
 
     filterbanks = get_filterbanks(number_of_filters, stft_size, sample_rate,
                                   lowest_frequency, highest_frequency)
