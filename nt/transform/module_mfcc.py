@@ -1,5 +1,5 @@
 import numpy
-import nt.transform.fbank as fbank
+from nt.transform.module_fbank import fbank
 import scipy.signal
 from scipy.fftpack import dct
 
@@ -38,7 +38,7 @@ def mfcc(time_signal, sample_rate=16000,
     :returns: A numpy array of size (NUMFRAMES by numcep) containing features.
         Each row holds 1 feature vector.
     """
-    feat = fbank.fbank(time_signal, sample_rate, window_length, stft_shift,
+    feat = fbank(time_signal, sample_rate, window_length, stft_shift,
                        number_of_filters, stft_size, lowest_frequency,
                        highest_frequency, preemphasis, window)
     feat = numpy.log(feat)
