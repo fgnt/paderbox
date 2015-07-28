@@ -13,7 +13,7 @@ class IdentityFetcher(DataFetcher):
     def __len__(self):
         return self.len
 
-    def get_data_for_idxs(self, idxs):
+    def get_data_for_indices(self, idxs):
         return numpy.asarray(list(idxs))
 
 
