@@ -4,7 +4,7 @@ Provides ssc features.
 
 import numpy
 import nt.transform.filter as filter
-import nt.transform.stft as stft
+import nt.transform.mod_stft as stft
 import nt.transform.fbank as fbank
 import scipy.signal
 
