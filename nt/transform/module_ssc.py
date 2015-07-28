@@ -44,7 +44,7 @@ def ssc(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
     stft_signal = stft(time_signal, size=stft_size, shift=stft_shift,
                             window=window, window_length=window_length)
 
-    spectrogram = stft.stft_to_spectrogram(stft_signal)
+    spectrogram = stft_to_spectrogram(stft_signal)
 
     # if things are all zeros we get problems
     pspec = numpy.where(spectrogram == 0, numpy.finfo(float).eps, spectrogram)

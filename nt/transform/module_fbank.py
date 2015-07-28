@@ -5,11 +5,13 @@ Provides fbank features and the fbank filterbank.
 import numpy
 from nt.transform.module_stft import stft
 from nt.transform.module_stft import stft_to_spectrogram
+from nt.transform.module_filter import offcomp
+from nt.transform.module_filter import preemphasis
 import scipy.signal
 
 def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
           number_of_filters=26, stft_size=512, lowest_frequency=0,
-          highest_frequency=None, preemphasis=0.97,
+          highest_frequency=None, preemphasis_factor=0.97,
           window=scipy.signal.hamming):
     """
     Compute Mel-filterbank energy features from an audio signal.
@@ -36,8 +38,8 @@ def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
     :returns: Mel filterbank features.
     """
     highest_frequency = highest_frequency or sample_rate/2
-    time_signal = filter.offcomp(time_signal)
-    time_signal = filter.preemphasis(time_signal, preemphasis)
+    time_signal = offcomp(time_signal)
+    time_signal = preemphasis(time_signal, preemphasis_factor)
 
     stft_signal = stft(time_signal, size=stft_size, shift=stft_shift,
                       window=window, window_length=window_length, fading=False)

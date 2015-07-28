@@ -7,7 +7,7 @@ def mfcc(time_signal, sample_rate=16000,
          window_length=400, stft_shift=160, numcep=13,
          number_of_filters=26, stft_size=512,
          lowest_frequency=0, highest_frequency=None,
-         preemphasis=0.97, ceplifter=22,
+         preemphasis_factor=0.97, ceplifter=22,
          window=scipy.signal.hamming):
     """
     Compute MFCC features from an audio signal.
@@ -40,7 +40,7 @@ def mfcc(time_signal, sample_rate=16000,
     """
     feat = fbank(time_signal, sample_rate, window_length, stft_shift,
                        number_of_filters, stft_size, lowest_frequency,
-                       highest_frequency, preemphasis, window)
+                       highest_frequency, preemphasis_factor, window)
     feat = numpy.log(feat)
     feat = dct(feat, type=2, axis=1, norm='ortho')[:, :numcep]
     feat = _lifter(feat, ceplifter)
