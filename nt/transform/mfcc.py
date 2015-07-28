@@ -3,8 +3,8 @@ import nt.transform.fbank as fbank
 import scipy.signal
 from scipy.fftpack import dct
 
-def mfcc(time_signal, samplerate=16000,
-         window_length=400, winstep=160, numcep=13,
+def mfcc(time_signal, sample_rate=16000,
+         window_length=400, stft_shift=160, numcep=13,
          number_of_filters=26, stft_size=512,
          lowest_frequency=0, highest_frequency=None,
          preemphasis=0.97, ceplifter=22,
@@ -16,10 +16,10 @@ def mfcc(time_signal, samplerate=16000,
 
     :param time_signal: the audio signal from which to compute features.
         Should be an N*1 array
-    :param samplerate: the samplerate of the signal we are working with.
+    :param sample_rate: the samplerate of the signal we are working with.
     :param window_length: the length of the analysis window in seconds.
         Default is 0.025s (25 milliseconds)
-    :param winstep: the step between successive windows in seconds.
+    :param stft_shift: the step between successive windows in seconds.
         Default is 0.01s (10 milliseconds)
     :param numcep: the number of cepstrum to return, default 13
     :param number_of_filters: the number of filters in the filterbank,
@@ -38,7 +38,7 @@ def mfcc(time_signal, samplerate=16000,
     :returns: A numpy array of size (NUMFRAMES by numcep) containing features.
         Each row holds 1 feature vector.
     """
-    feat = fbank.fbank(time_signal, samplerate, window_length, winstep,
+    feat = fbank.fbank(time_signal, sample_rate, window_length, stft_shift,
                        number_of_filters, stft_size, lowest_frequency,
                        highest_frequency, preemphasis, window)
     feat = numpy.log(feat)
