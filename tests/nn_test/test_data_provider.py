@@ -1,5 +1,5 @@
 from nt.nn.data_provider import DataProvider
-from nt.nn.data_fetchers.template import DataFetcher
+from nt.nn.data_fetchers.data_fetcher import DataFetcher
 import numpy
 import numpy.testing
 import unittest
