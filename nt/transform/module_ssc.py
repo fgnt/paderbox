@@ -3,9 +3,11 @@ Provides ssc features.
 """
 
 import numpy
-import nt.transform.filter as filter
-import nt.transform.stft as stft
-import nt.transform.fbank as fbank
+from nt.transform.module_filter import offcomp
+from nt.transform.module_filter import preemphasis
+from nt.transform.module_stft import stft
+from nt.transform.module_stft import stft_to_spectrogram
+from nt.transform.module_fbank import get_filterbanks
 import scipy.signal
 
 def ssc(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
@@ -36,18 +38,18 @@ def ssc(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
     """
     highest_frequency = highest_frequency or sample_rate / 2
 
-    time_signal = filter.offcomp(time_signal)
-    time_signal = filter.preemphasis(time_signal, preemphasis)
+    time_signal = offcomp(time_signal)
+    time_signal = preemphasis(time_signal, preemphasis)
 
-    stft_signal = stft.stft(time_signal, size=stft_size, shift=stft_shift,
+    stft_signal = stft(time_signal, size=stft_size, shift=stft_shift,
                             window=window, window_length=window_length)
 
-    spectrogram = stft.stft_to_spectrogram(stft_signal)
+    spectrogram = stft_to_spectrogram(stft_signal)
 
     # if things are all zeros we get problems
     pspec = numpy.where(spectrogram == 0, numpy.finfo(float).eps, spectrogram)
 
-    fb = fbank.get_filterbanks(number_of_filters, stft_size, sample_rate,
+    fb = get_filterbanks(number_of_filters, stft_size, sample_rate,
                                lowest_frequency, highest_frequency)
 
     # compute the filterbank energies

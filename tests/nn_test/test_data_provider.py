@@ -1,5 +1,5 @@
 from nt.nn.data_provider import DataProvider
-from nt.nn.data_fetchers.template import DataFetcher
+from nt.nn.data_fetchers.data_fetcher import DataFetcher
 import numpy
 import numpy.testing
 import unittest
@@ -13,7 +13,7 @@ class IdentityFetcher(DataFetcher):
     def __len__(self):
         return self.len
 
-    def get_data_for_idxs(self, idxs):
+    def get_data_for_indices(self, idxs):
         return numpy.asarray(list(idxs))
 
 
