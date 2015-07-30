@@ -10,6 +10,7 @@ from nt.transform.module_stft import istft
 from nt.transform.module_stft import _biorthogonal_window_for
 from nt.transform.module_stft import _biorthogonal_window_vec
 
+
 class TestSTFTMethods(unittest.TestCase):
     def test_samples_to_stft_frames(self):
         size = 1024
