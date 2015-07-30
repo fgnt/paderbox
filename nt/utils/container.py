@@ -15,3 +15,6 @@ class Container:
 
     def __setattr__(self, key, value):
         self.__dict__[key] = value
+
+    def as_dict(self):
+        return self.__dict__
