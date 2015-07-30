@@ -82,3 +82,6 @@ class TrainerTest(unittest.TestCase):
         self.assertTrue(self.trainer.training_thread.is_alive())
         self.trainer.stop_training()
         self.assertTrue(not self.trainer.training_thread.is_alive())
+
+    def test_test_mode(self):
+        self.trainer.test_run()
