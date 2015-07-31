@@ -31,3 +31,10 @@ class ArrayDataFetcherTest(unittest.TestCase):
     def test_reset(self):
         self.test_iteration()
         self.test_iteration()
+
+    def test_data(self):
+        self.dp.__iter__()
+        batch = self.dp.__next__()
+        for data in batch.values():
+            if isinstance(data, numpy.ndarray):
+                self.assertTrue(data.flags.c_contiguous)

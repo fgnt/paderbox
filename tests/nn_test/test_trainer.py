@@ -85,3 +85,16 @@ class TrainerTest(unittest.TestCase):
 
     def test_test_mode(self):
         self.trainer.test_run()
+        self.trainer.use_gpu = True
+        self.trainer.test_run()
+        self.trainer.test_run()
+
+    def test_modes(self):
+        status = self.trainer.get_status()
+        self.assertEqual(status.current_mode, 'Idle')
+        self.trainer.start_training()
+        status = self.trainer.get_status()
+        self.assertTrue(status.current_mode == 'Train' or 'Cross-validation')
+        self.trainer.stop_training()
+        status = self.trainer.get_status()
+        self.assertEqual(status.current_mode, 'Stopped')
