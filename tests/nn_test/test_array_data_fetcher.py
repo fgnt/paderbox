@@ -38,3 +38,7 @@ class ArrayDataFetcherTest(unittest.TestCase):
         for data in batch.values():
             if isinstance(data, numpy.ndarray):
                 self.assertTrue(data.flags.c_contiguous)
+
+    def test_get_shape(self):
+        s = self.fetcher_1.get_data_shape()
+        self.assertEqual(s, (1, 5))
