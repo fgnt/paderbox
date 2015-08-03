@@ -88,7 +88,7 @@ def get_available_channels(data):
     :return: A list of available channels
     """
 
-    utt = data.keys().__next__()
+    utt = list(data.keys())[0]
     channels = list()
     for src in data[utt]:
         if type(data[utt][src]) is dict:
