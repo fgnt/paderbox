@@ -33,7 +33,7 @@ class TestSTFTMethods(unittest.TestCase):
         X = stft(x)
         np.testing.assert_almost_equal(x, istft(X, 1024, 256)[:len(x)])
 
-    def compare_both_biorthogonal_window_variants(self):
+    def test_compare_both_biorthogonal_window_variants(self):
         window = signal.blackman(1024)
         shift = 256
         for_result = _biorthogonal_window_for(window, shift)
