@@ -38,9 +38,12 @@ class CharLabelHandler():
 
     """
 
-    def __init__(self, transcription_list):
+    def __init__(self, transcription_list, add_blank=True):
         self.label_to_int = dict()
         self.int_to_label = dict()
+        if add_blank:
+            self.label_to_int['BLANK'] = 0
+            self.int_to_label[0] = 'BLANK'
         for transcription in transcription_list:
             for char in transcription:
                 if not char in self.label_to_int:
@@ -60,3 +63,6 @@ class CharLabelHandler():
     def print_mapping(self):
         for char, i in self.label_to_int.items():
             print('{} -> {}'.format(char, i))
+
+    def __len__(self):
+        return len(self.label_to_int)
