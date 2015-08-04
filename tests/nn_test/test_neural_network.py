@@ -8,6 +8,7 @@ import numpy
 import numpy.testing
 import os
 import chainer.cuda
+import pickle
 
 # if chainer.cuda.available:
 #     chainer.cuda.init()

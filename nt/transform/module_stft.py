@@ -80,7 +80,7 @@ def _stft_frames_to_samples(frames, size, shift):
     return frames * shift + size - shift
 
 
-def _biorthogonal_window_for(analysis_window, shift):
+def _biorthogonal_window_loopy(analysis_window, shift):
     """
     This version of the synthesis calculation is as close as possible to the
     Matlab impelementation in terms of variable names.
@@ -110,7 +110,7 @@ def _biorthogonal_window_for(analysis_window, shift):
     return synthesis_window
 
 
-def _biorthogonal_window_vec(analysis_window, shift):
+def _biorthogonal_window(analysis_window, shift):
     """
     This is a vectorized implementation of the window calculation. It is much
     slower than the variant using for loops.
@@ -162,7 +162,7 @@ def istft(stft_signal, size=1024, shift=256,
         window = window(window_length)
         window = np.pad(window, (0, size-window_length), mode='constant')
 
-    window = _biorthogonal_window_for(window, shift)
+    window = _biorthogonal_window_loopy(window, shift)
 
     # Why? Line created by Hai, Lukas does not know, why it exists.
     window = window * size
@@ -196,7 +196,8 @@ def plot_spectrogram(spectrogram, limits=None):
     """
     Plots a spectrogram from a spectrogram (power) as input.
 
-    :param spectrogram: Real valued power spectrum.
+    :param spectrogram: Real valued power spectrum
+        with shape (frames, frequencies).
     :param limits: Color limits for clipping purposes.
     :return: None
     """
@@ -237,3 +238,4 @@ def spectrogram_to_energy_per_frame(spectrogram):
 
     # If energy is zero, we get problems with log
     energy = np.where(energy == 0, np.finfo(float).eps, energy)
+    return energy

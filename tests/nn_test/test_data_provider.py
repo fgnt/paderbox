@@ -30,6 +30,14 @@ class DataProviderFetcher(unittest.TestCase):
     def test_setup(self):
         self.assertEqual(len(self.dp), 5)
 
+    def test_error_on_same_names(self):
+        def make_dp():
+            return DataProvider((self.fetcher_1, self.fetcher_1),
+                               batch_size=2,
+                               max_queue_size=5,
+                               shuffle_data=False)
+        self.assertRaises(ValueError, make_dp)
+
     def test_iteration(self):
         for idx, batch_data in enumerate(self.dp):
             self.assertTrue('X' in batch_data)
