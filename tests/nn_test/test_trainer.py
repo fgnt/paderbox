@@ -88,6 +88,7 @@ class TrainerTest(unittest.TestCase):
         self.trainer.use_gpu = True
         self.trainer.test_run()
         self.trainer.test_run()
+        self.assertTrue(True)
 
     def test_modes(self):
         status = self.trainer.get_status()
