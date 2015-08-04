@@ -121,3 +121,40 @@ def assert_isreal(actual,
 
     import numpy as np
     np.testing.assert_equal(np.isreal(actual), True, err_msg, verbose)
+
+def assert_array_not_equal(x, y, err_msg='', verbose=True):
+    """
+    Raises an AssertionError if two array_like objects are equal.
+
+    Given two array_like objects, check that the shape is equal and all
+    elements of these objects are not equal. An exception is raised at
+    shape mismatch or conflicting values. In contrast to the standard usage
+    in numpy, NaNs are compared like numbers, no assertion is raised if
+    both objects have NaNs in the same positions (ToDo: Check 2 NaNs).
+
+    The usual caution for verifying equality with floating point numbers is
+    advised.
+
+    Parameters
+    ----------
+    x : array_like
+        The actual object to check.
+    y : array_like
+        The desired, expected object.
+    err_msg : str, optional
+        The error message to be printed in case of failure.
+    verbose : bool, optional
+        If True, the conflicting values are appended to the error message.
+
+    Raises
+    ------
+    AssertionError
+        If actual and desired objects are equal.
+
+    See Also
+    --------
+    assert_array_equal
+
+    """
+    assert_array_compare(operator.__ne__, x, y, err_msg=err_msg,
+                         verbose=verbose, header='Arrays are equal')
