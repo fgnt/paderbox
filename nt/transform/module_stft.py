@@ -238,3 +238,4 @@ def spectrogram_to_energy_per_frame(spectrogram):
 
     # If energy is zero, we get problems with log
     energy = np.where(energy == 0, np.finfo(float).eps, energy)
+    return energy
