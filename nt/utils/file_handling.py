@@ -11,3 +11,6 @@ def mkdir_p(path):
         os.makedirs(path)
     except FileExistsError:
         pass
+    except FileNotFoundError:
+        if path == '':
+            pass

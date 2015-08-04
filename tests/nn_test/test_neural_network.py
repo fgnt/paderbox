@@ -9,8 +9,8 @@ import numpy.testing
 import os
 import chainer.cuda
 
-if chainer.cuda.available:
-    chainer.cuda.init()
+# if chainer.cuda.available:
+#     chainer.cuda.init()
 
 
 def forward_train(nn):
@@ -118,3 +118,6 @@ class NeuralNetworkTest(unittest.TestCase):
 
     def test_save_load_gpu_gpu(self):
         self._test_save_load(True, True)
+
+    def test_to_gpu_error(self):
+        self.nn.to_gpu()

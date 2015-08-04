@@ -37,7 +37,8 @@ class TrainerTest(unittest.TestCase):
                                data_dir='test_tmp',
                                epochs=50,
                                logging_list=['h0'],
-                               grad_clip=5)
+                               grad_clip=5,
+                               use_gpu=False)
 
     def _forward(self):
         h0 = F.sigmoid(self.nn.layers.l1(self.nn.inputs.i))
@@ -73,3 +74,28 @@ class TrainerTest(unittest.TestCase):
             if isinstance(var, np.ndarray):
                 self.assertTrue(np.any(var > 0))
         self.trainer.stop_training()
+
+    def test_gpu(self):
+        self.trainer.use_gpu = True
+        self.trainer.start_training()
+        time.sleep(3)
+        self.assertTrue(self.trainer.training_thread.is_alive())
+        self.trainer.stop_training()
+        self.assertTrue(not self.trainer.training_thread.is_alive())
+
+    def test_test_mode(self):
+        self.trainer.test_run()
+        self.trainer.use_gpu = True
+        self.trainer.test_run()
+        self.trainer.test_run()
+        self.assertTrue(True)
+
+    def test_modes(self):
+        status = self.trainer.get_status()
+        self.assertEqual(status.current_mode, 'Idle')
+        self.trainer.start_training()
+        status = self.trainer.get_status()
+        self.assertTrue(status.current_mode == 'Train' or 'Cross-validation')
+        self.trainer.stop_training()
+        status = self.trainer.get_status()
+        self.assertEqual(status.current_mode, 'Stopped')

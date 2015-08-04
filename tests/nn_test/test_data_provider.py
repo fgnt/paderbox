@@ -55,3 +55,14 @@ class DataProviderFetcher(unittest.TestCase):
                                max_queue_size=5,
                                shuffle_data=False)
         self.assertRaises(EnvironmentError, create_dp)
+
+    def test_test_run(self):
+        data = self.dp.test_run()
+        numpy.testing.assert_equal(data['X'], numpy.asarray([0, 1]))
+        numpy.testing.assert_equal(data['Y'], numpy.asarray([0, 1]))
+
+    def test_data_shapes(self):
+        s = self.dp.get_data_shapes()
+        self.assertEqual(len(s), 2)
+        self.assertTrue('X' in s)
+        self.assertTrue('Y' in s)

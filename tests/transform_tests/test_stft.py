@@ -49,7 +49,7 @@ class TestSTFTMethods(unittest.TestCase):
         self.assertEqual(energy.all().imag, 0)  # Im(energy) ?= 0
         self.assertEqual(energy.shape, (186,))
 
-    def compare_both_biorthogonal_window_variants(self):
+    def test_compare_both_biorthogonal_window_variants(self):
         window = signal.blackman(1024)
         shift = 256
         for_result = _biorthogonal_window_for(window, shift)
