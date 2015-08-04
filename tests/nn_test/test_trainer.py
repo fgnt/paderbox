@@ -51,9 +51,12 @@ class TrainerTest(unittest.TestCase):
         self.assertTrue(os.path.exists(self.trainer.data_dir))
 
     def test_run_stop(self):
+        W = self.nn.layers.l1.W.copy()
         self.trainer.start_training()
         self.assertTrue(self.trainer.training_thread.is_alive())
         time.sleep(2)
+        W_ = self.nn.layers.l1.W.copy()
+        np.testing.assert_array_almost_equal(W, W_)
         self.assertTrue(self.trainer.training_thread.is_alive())
         self.trainer.stop_training()
         self.assertTrue(not self.trainer.training_thread.is_alive())
@@ -62,7 +65,7 @@ class TrainerTest(unittest.TestCase):
         self.trainer.start_training()
         request = ['l', 'h0', 'y']
         time.sleep(2)
-        responds = self.trainer.get_status(request)
+        responds = self.trainer.update_status(request)
         self.assertEqual(responds.description, 'unittest')
         for var in responds.__dict__.keys():
             if isinstance(var, float):
@@ -91,11 +94,11 @@ class TrainerTest(unittest.TestCase):
         self.assertTrue(True)
 
     def test_modes(self):
-        status = self.trainer.get_status()
+        status = self.trainer.update_status()
         self.assertEqual(status.current_mode, 'Idle')
         self.trainer.start_training()
-        status = self.trainer.get_status()
+        status = self.trainer.update_status()
         self.assertTrue(status.current_mode == 'Train' or 'Cross-validation')
         self.trainer.stop_training()
-        status = self.trainer.get_status()
+        status = self.trainer.update_status()
         self.assertEqual(status.current_mode, 'Stopped')
