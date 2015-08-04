@@ -196,7 +196,8 @@ def plot_spectrogram(spectrogram, limits=None):
     """
     Plots a spectrogram from a spectrogram (power) as input.
 
-    :param spectrogram: Real valued power spectrum.
+    :param spectrogram: Real valued power spectrum
+        with shape (frames, frequencies).
     :param limits: Color limits for clipping purposes.
     :return: None
     """
@@ -237,3 +238,4 @@ def spectrogram_to_energy_per_frame(spectrogram):
 
     # If energy is zero, we get problems with log
     energy = np.where(energy == 0, np.finfo(float).eps, energy)
+    return energy
