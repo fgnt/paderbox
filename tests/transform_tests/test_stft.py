@@ -9,8 +9,8 @@ from nt.transform.module_stft import _samples_to_stft_frames
 from nt.transform.module_stft import _stft_frames_to_samples
 from nt.transform.module_stft import stft
 from nt.transform.module_stft import istft
-from nt.transform.module_stft import _biorthogonal_window_for
-from nt.transform.module_stft import _biorthogonal_window_vec
+from nt.transform.module_stft import _biorthogonal_window_loopy
+from nt.transform.module_stft import _biorthogonal_window
 from nt.transform.module_stft import stft_to_spectrogram
 from nt.transform.module_stft import spectrogram_to_energy_per_frame
 from pymatbridge import Matlab
@@ -45,19 +45,19 @@ class TestSTFTMethods(unittest.TestCase):
         tc.assert_equal(X.shape, (186, 513))
 
         tc.assert_equal(spectrogram.shape, (186, 513))
-        tc.assert_array_greater_equal(spectrogram, 0)
         tc.assert_isreal(spectrogram)
+        tc.assert_array_greater_equal(spectrogram, 0)
 
         tc.assert_equal(energy.shape, (186,))
-        tc.assert_array_greater_equal(energy, 0)
         tc.assert_isreal(energy)
+        tc.assert_array_greater_equal(energy, 0)
 
     def test_compare_both_biorthogonal_window_variants(self):
         window = signal.blackman(1024)
         shift = 256
 
-        for_result = _biorthogonal_window_for(window, shift)
-        vec_result = _biorthogonal_window_vec(window, shift)
+        for_result = _biorthogonal_window_loopy(window, shift)
+        vec_result = _biorthogonal_window(window, shift)
 
         tc.assert_equal(for_result, vec_result)
         tc.assert_equal(for_result.shape, (1024,))
