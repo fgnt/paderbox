@@ -7,7 +7,7 @@ import operator
 
 
 """
-This is a coly of numpy.testing.assert_array_less.
+This is a copy of numpy.testing.assert_array_less.
 
 Raises an AssertionError if two array_like objects are not ordered by less
 than.
@@ -93,8 +93,7 @@ def assert_array_less_equal(x, y, err_msg='', verbose=True):
                          header='Arrays are not greater-ordered')
 
 
-def assert_isreal(actual,
-                    err_msg='', verbose=True):
+def assert_isreal(actual, err_msg='', verbose=True):
     """
     Raises an AssertionError if object is not real.
 
