@@ -1,4 +1,41 @@
+import numpy
+import json
+
 def print_template():
+    """ Prints the template used for the json file
+
+    :return:
+    """
+    print('<root>\n'
+          '..<train>\n'
+          '....<flists>\n'
+          '......<file_type> (z.B. wav)\n'
+          '..........<scenario> (z.B. tr05_simu, tr05_real...)\n'
+          '............<utterance_id>\n'
+          '..............<observed>\n'
+          '................<A>\n'
+          '..................path\n'
+          '................<B>\n'
+          '..................path\n'
+          '..............<image>\n'
+          '................<A>\n'
+          '..................path\n'
+          '................<B>\n'
+          '..................path\n'
+          '..............<source>\n'
+          '................path\n'
+          '\n'
+          '..<dev>\n'
+          '..<test>\n'
+          '..<orth>\n'
+          '....<word>\n'
+          '......<utterance_id>\n'
+          '....<phoneme>\n'
+          '......<utterance_id>\n'
+          '........string\n')
+
+
+def print_old_template():
     """ Prints the template used for the json file
 
     :return:
@@ -125,3 +162,34 @@ def get_flist_for_channel(flist, ch):
     assert len(ret_flist) > 0, \
         'Could not find any files for channel {c}'.format(c=str(ch))
     return ret_flist
+
+def safe_dump(dict_data, fid):
+    """ Writes a dict to a json, ignoring all type which cannot be serialized
+
+    :param fid:
+    :param dict:
+    :return:
+    """
+
+
+
+    def _filter(data):
+        if isinstance(data, list):
+            return data
+        if isinstance(data, dict):
+            return _build_dict(data)
+        if isinstance(data, float):
+            return data
+        if isinstance(data, int):
+            return data
+        if isinstance(data, numpy.ndarray):
+            return data.tolist()
+        if isinstance(data, str):
+            return data
+        else:
+            return 'Datatype not supported'
+
+    def _build_dict(data):
+        return {key: _filter(val) for key, val in data.items()}
+
+    json.dump(_build_dict(dict_data), fid, sort_keys=True, indent=2)
