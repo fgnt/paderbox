@@ -9,7 +9,7 @@ export LD_LIBRARY_PATH
 
 # Refresh toolbox
 /usr/bin/yes | pip uninstall nt || true
-/usr/bin/yes | pip install --user . || true
+/usr/bin/yes | pip install --user --upgrade . || true
 
 # Update chainer
 /usr/bin/yes | pip install --user --upgrade ./chainer/ || true
@@ -18,11 +18,11 @@ export LD_LIBRARY_PATH
 nosetests --with-xunit --all-modules --with-coverage --cover-package=nt || true
 
 # Export coverage
-python -m coverage xml --include=nt*
+python -m coverage xml --include=nt* || true
 
 # Pylint tests
 /net/ssd/software/anaconda/envs/py3k_jenkins/bin/pylint --disable=E1101 -f parseable nt || true
-make --directory=doc html
+make --directory=doc html || true
 
 # Store pip packages
 pip freeze > pip.txt || true

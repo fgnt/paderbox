@@ -97,7 +97,7 @@ def plot_ctc_decode(decode, label_handler, ax=None):
     :return:
     """
 
-    with sns.axes_style("dark"):
+    with sns.axes_style("darkgrid"):
         if ax is None:
             figure, ax = plt.subplots(1, 1)
     for char in range(decode.shape[2]):
