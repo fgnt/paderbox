@@ -67,7 +67,7 @@ def stft(signal, limits=None, ax=None):
     """
     spectrogram(nt.transform.stft_to_spectrogram(signal), limits=limits, ax=ax)
 
-def mask(signal, ax=None):
+def mask(signal, ax=None, **kwargs):
     """
     Plots any mask with values between zero and one.
 
@@ -87,3 +87,23 @@ def mask(signal, ax=None):
         ax.set_xlabel('Time frame index')
         ax.set_ylabel('Frequency bin index')
         ax.grid(False)
+
+def plot_ctc_decode(decode, label_handler, ax=None):
+    """ Plot a ctc decode
+
+    :param decode: Output of the network
+    :param label_handler: The label handler
+    :param ax: Optional figure axes to use with facet_grid()
+    :return:
+    """
+
+    with sns.axes_style("darkgrid"):
+        if ax is None:
+            figure, ax = plt.subplots(1, 1)
+    for char in range(decode.shape[2]):
+        _ = ax.plot(decode[:, 0, char], label=label_handler.int_to_label[char])
+        plt.legend(loc='lower center',
+                   ncol=decode.shape[2]//3,
+                   bbox_to_anchor=[0.5, -0.35])
+    ax.set_xlabel('Time frame index')
+    ax.set_ylabel('Unnormalized Propability')

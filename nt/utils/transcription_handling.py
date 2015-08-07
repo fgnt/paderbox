@@ -33,3 +33,25 @@ class CharLabelHandler():
 
     def __len__(self):
         return len(self.label_to_int)
+
+def argmax_ctc_decode(int_arr, label_handler):
+    """ Decodes a ctc sequence
+
+    :param int_arr: sequence to decode
+    :param label_handler: label handler
+    :type label_handler: CharLabelHandler
+    :return: decoded sequence
+    """
+
+    max_decode = numpy.argmax(int_arr, axis=1)
+    decode = numpy.zeros_like(max_decode)
+    idx_dec = 0
+    for idx, n in enumerate(max_decode):
+        if idx > 0 and not n == max_decode[idx - 1]:
+            decode[idx_dec] = n
+            idx_dec += 1
+        elif idx == 0:
+            decode[idx_dec] = n
+            idx_dec += 1
+    chars = [label_handler.int_to_label[c] for c in decode if c != 0]
+    return ''.join(chars)
