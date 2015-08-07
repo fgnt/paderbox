@@ -9,7 +9,7 @@ export LD_LIBRARY_PATH
 
 # Refresh toolbox
 /usr/bin/yes | pip uninstall nt || true
-/usr/bin/yes | pip install --user --upgrade . || true
+/usr/bin/yes | pip install --user . || true
 
 # Update chainer
 /usr/bin/yes | pip install --user --upgrade ./chainer/ || true
