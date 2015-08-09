@@ -40,12 +40,12 @@ class TrainerTest(unittest.TestCase):
                                grad_clip=5,
                                use_gpu=False)
 
-    def _forward(self):
-        h0 = F.sigmoid(self.nn.layers.l1(self.nn.inputs.i))
-        y = self.nn.layers.l2(h0)
-        self.nn.outputs.l = F.mean_squared_error(y, self.nn.inputs.t)
-        self.nn.outputs.h0 = h0
-        self.nn.outputs.y = y
+    def _forward(self, nn):
+        h0 = F.sigmoid(nn.layers.l1(nn.inputs.i))
+        y = nn.layers.l2(h0)
+        nn.outputs.l = F.mean_squared_error(y, nn.inputs.t)
+        nn.outputs.h0 = h0
+        nn.outputs.y = y
 
     def test_init(self):
         self.assertTrue(os.path.exists(self.trainer.data_dir))

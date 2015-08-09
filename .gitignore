@@ -10,7 +10,10 @@ __pycache__/
 
 # Distribution / packaging
 bin/
-build/
+#build/
+doc/build/html/*
+!doc/build/html/_static/
+
 develop-eggs/
 dist/
 eggs/
@@ -62,7 +65,7 @@ __pycache__/
 # Distribution / packaging
 .Python
 env/
-build/
+#build/
 develop-eggs/
 dist/
 downloads/
@@ -105,7 +108,7 @@ coverage.xml
 *.log
 
 # Sphinx documentation
-docs/_build/
+#docs/_build/
 
 # PyBuilder
 target/
