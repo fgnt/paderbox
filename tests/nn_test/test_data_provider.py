@@ -14,7 +14,7 @@ class IdentityFetcher(DataFetcher):
         return self.len
 
     def get_data_for_indices(self, idxs):
-        return numpy.asarray(list(idxs))
+        return numpy.asarray(list(idxs)),
 
 
 class DataProviderFetcher(unittest.TestCase):
