@@ -13,5 +13,5 @@ class ChimeTranscriptionDataFetcherTest(unittest.TestCase):
                             'train/A_database/flists/wav/channels_6/tr05_simu')
 
     def test_data_type(self):
-        data = self.fetcher.get_data_for_indices((0,))
+        data = self.fetcher.get_data_for_indices((0,))[0]
         self.assertEqual(data.dtype, numpy.int32)
