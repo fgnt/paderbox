@@ -1,38 +1,5 @@
 import numpy
 
-def create_dict_from_transcriptions(FileList, set, transcript_type):
-    """ Create dictionary for label to int mapping of transcriptions
-
-    :param FileList: Dictionary with label sequence for each type, set and recording id:
-                     FileList[transcript_type][set][recording_id]['label']
-    :param set: set to be used, e.g. 'test', 'train', 'eval'
-    :param transcript_type: type of transcription, e.g. 'phoneme_transcription', 'word_transcription'
-    :return: Dictionary for label to int mapping: Dictionary[label] = int_label
-    """
-    LabelToInt = dict()
-    for RecordingId in FileList[transcript_type][set]:
-        for Label in FileList[transcript_type][set][RecordingId]['label']:
-            if Label not in LabelToInt:
-                LabelToInt[Label] = len(LabelToInt)
-    return LabelToInt
-
-def get_files_and_transciptions(FileList, set, transcript_type, file_type='audio'):
-    """
-
-    :param FileList: Dictionary with label sequence and file names for each type, set and recording id:
-                     FileList[transcript_type][set][recording_id]['label']
-                     FileList[file_type][set][recording_id]
-    :param set: set to be used, e.g. 'test', 'train', 'eval'
-    :param transcript_type: type of transcription, e.g. 'phoneme_transcription', 'word_transcription'
-    :param file_type: type of files to read, e.g. 'audio'
-    :return: List of filenames, list of transcriptions, list of recording ids
-    """
-    Ids = list(FileList[file_type][set].keys())
-    Files = [FileList[file_type][set][Id] for Id in Ids]
-    Transcriptions = [FileList[transcript_type][set][Id] for Id in Ids]
-
-    return Files, Transcriptions, Ids
-
 class CharLabelHandler():
     """ Handles transforming from chars to integers and vice versa
 
@@ -66,3 +33,25 @@ class CharLabelHandler():
 
     def __len__(self):
         return len(self.label_to_int)
+
+def argmax_ctc_decode(int_arr, label_handler):
+    """ Decodes a ctc sequence
+
+    :param int_arr: sequence to decode
+    :param label_handler: label handler
+    :type label_handler: CharLabelHandler
+    :return: decoded sequence
+    """
+
+    max_decode = numpy.argmax(int_arr, axis=1)
+    decode = numpy.zeros_like(max_decode)
+    idx_dec = 0
+    for idx, n in enumerate(max_decode):
+        if idx > 0 and not n == max_decode[idx - 1]:
+            decode[idx_dec] = n
+            idx_dec += 1
+        elif idx == 0:
+            decode[idx_dec] = n
+            idx_dec += 1
+    chars = [label_handler.int_to_label[c] for c in decode if c != 0]
+    return ''.join(chars)

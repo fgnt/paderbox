@@ -14,18 +14,18 @@ class ChimeFeatureDataFetcherTest(unittest.TestCase):
                             feature_channels=['observed/CH1'])
 
     def test_data_type(self):
-        data = self.fetcher.get_data_for_indices((0,))
+        data = self.fetcher.get_data_for_indices((0,))[0]
         self.assertTrue(data.flags.c_contiguous)
 
     def test_data_shape(self):
-        data = self.fetcher.get_data_for_indices((0,))
+        data = self.fetcher.get_data_for_indices((0,))[0]
         self.assertEqual(data.shape[1], 1)
         self.assertEqual(data.shape[2], 1)
         self.fetcher.feature_type = 'fbank'
-        data = self.fetcher.get_data_for_indices((0,))
+        data = self.fetcher.get_data_for_indices((0,))[0]
         self.assertEqual(data.shape[1], 1)
         self.assertEqual(data.shape[2], 23)
         self.fetcher.feature_type = 'mfcc'
-        data = self.fetcher.get_data_for_indices((0,))
+        data = self.fetcher.get_data_for_indices((0,))[0]
         self.assertEqual(data.shape[1], 1)
         self.assertEqual(data.shape[2], 13)

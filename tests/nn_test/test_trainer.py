@@ -40,32 +40,41 @@ class TrainerTest(unittest.TestCase):
                                grad_clip=5,
                                use_gpu=False)
 
-    def _forward(self):
-        h0 = F.sigmoid(self.nn.layers.l1(self.nn.inputs.i))
-        y = self.nn.layers.l2(h0)
-        self.nn.outputs.l = F.mean_squared_error(y, self.nn.inputs.t)
-        self.nn.outputs.h0 = h0
-        self.nn.outputs.y = y
+    def _forward(self, nn):
+        h0 = F.sigmoid(nn.layers.l1(nn.inputs.i))
+        y = nn.layers.l2(h0)
+        nn.outputs.l = F.mean_squared_error(y, nn.inputs.t)
+        nn.outputs.h0 = h0
+        nn.outputs.y = y
 
     def test_init(self):
         self.assertTrue(os.path.exists(self.trainer.data_dir))
 
-    def test_run_stop(self):
-        W = self.nn.layers.l1.W.copy()
+    def _test_run_stop(self, use_gpu=False):
+        self.trainer.run_in_thread = True
+        if use_gpu:
+            self.trainer.use_gpu = True
         self.trainer.start_training()
-        self.assertTrue(self.trainer.training_thread.is_alive())
+        self.assertTrue(self.trainer.is_running)
         time.sleep(2)
-        W_ = self.nn.layers.l1.W.copy()
-        np.testing.assert_array_almost_equal(W, W_)
-        self.assertTrue(self.trainer.training_thread.is_alive())
+        self.assertTrue(self.trainer.is_running)
         self.trainer.stop_training()
-        self.assertTrue(not self.trainer.training_thread.is_alive())
+        self.assertTrue(not self.trainer.is_running)
 
-    def test_request(self):
+    def test_run_stop_cpu(self):
+        self._test_run_stop()
+
+    def test_run_stop_gpu(self):
+        self._test_run_stop(True)
+
+    def _test_request(self, use_gpu=False):
+        self.trainer.run_in_thread = True
+        if use_gpu:
+            self.trainer.use_gpu = True
         self.trainer.start_training()
         request = ['l', 'h0', 'y']
         time.sleep(2)
-        responds = self.trainer.update_status(request)
+        responds = self.trainer.get_status(request)
         self.assertEqual(responds.description, 'unittest')
         for var in responds.__dict__.keys():
             if isinstance(var, float):
@@ -78,13 +87,20 @@ class TrainerTest(unittest.TestCase):
                 self.assertTrue(np.any(var > 0))
         self.trainer.stop_training()
 
+    def test_request_cpu(self):
+        self._test_request()
+
+    def test_request_gpu(self):
+        self._test_request(True)
+
     def test_gpu(self):
         self.trainer.use_gpu = True
+        self.trainer.run_in_thread = True
         self.trainer.start_training()
         time.sleep(3)
-        self.assertTrue(self.trainer.training_thread.is_alive())
+        self.assertTrue(self.trainer.is_running)
         self.trainer.stop_training()
-        self.assertTrue(not self.trainer.training_thread.is_alive())
+        self.assertTrue(not self.trainer.is_running)
 
     def test_test_mode(self):
         self.trainer.test_run()
@@ -93,12 +109,21 @@ class TrainerTest(unittest.TestCase):
         self.trainer.test_run()
         self.assertTrue(True)
 
-    def test_modes(self):
-        status = self.trainer.update_status()
+    def _test_modes(self, use_gpu=False):
+        self.trainer.run_in_thread = True
+        if use_gpu:
+            self.trainer.use_gpu = True
+        status = self.trainer.get_status()
         self.assertEqual(status.current_mode, 'Idle')
         self.trainer.start_training()
-        status = self.trainer.update_status()
+        status = self.trainer.get_status()
         self.assertTrue(status.current_mode == 'Train' or 'Cross-validation')
         self.trainer.stop_training()
-        status = self.trainer.update_status()
+        status = self.trainer.get_status()
         self.assertEqual(status.current_mode, 'Stopped')
+
+    def test_modes_cpu(self):
+        self._test_modes()
+
+    def test_modes_gpu(self):
+        self._test_modes(True)

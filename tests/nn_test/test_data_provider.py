@@ -14,7 +14,7 @@ class IdentityFetcher(DataFetcher):
         return self.len
 
     def get_data_for_indices(self, idxs):
-        return numpy.asarray(list(idxs))
+        return numpy.asarray(list(idxs)),
 
 
 class DataProviderFetcher(unittest.TestCase):
@@ -57,6 +57,7 @@ class DataProviderFetcher(unittest.TestCase):
 
     def test_different_length(self):
         self.fetcher_2.len = 11
+
         def create_dp():
             self.dp = DataProvider((self.fetcher_1, self.fetcher_2),
                                batch_size=2,
@@ -74,3 +75,8 @@ class DataProviderFetcher(unittest.TestCase):
         self.assertEqual(len(s), 2)
         self.assertTrue('X' in s)
         self.assertTrue('Y' in s)
+
+    def test_output_list(self):
+        self.assertEqual(self.dp.output_list, ['X', 'Y'])
+
+    # TODO: Missing tests for get_data_types, get_data_shapes, print_data_info
