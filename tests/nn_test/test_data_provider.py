@@ -42,9 +42,9 @@ class DataProviderFetcher(unittest.TestCase):
         for idx, batch_data in enumerate(self.dp):
             self.assertTrue('X' in batch_data)
             self.assertTrue('Y' in batch_data)
-            numpy.testing.assert_equal(batch_data['X'][0],
+            numpy.testing.assert_equal(batch_data['X'],
                                        numpy.asarray([idx*2, idx*2+1]))
-            numpy.testing.assert_equal(batch_data['Y'][0],
+            numpy.testing.assert_equal(batch_data['Y'],
                                        numpy.asarray([idx*2, idx*2+1]))
 
     def test_reset(self):
@@ -67,8 +67,8 @@ class DataProviderFetcher(unittest.TestCase):
 
     def test_test_run(self):
         data = self.dp.test_run()
-        numpy.testing.assert_equal(data['X'][0], numpy.asarray([0, 1]))
-        numpy.testing.assert_equal(data['Y'][0], numpy.asarray([0, 1]))
+        numpy.testing.assert_equal(data['X'], numpy.asarray([0, 1]))
+        numpy.testing.assert_equal(data['Y'], numpy.asarray([0, 1]))
 
     def test_data_shapes(self):
         s = self.dp.get_data_shapes()
