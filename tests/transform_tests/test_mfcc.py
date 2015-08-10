@@ -17,4 +17,3 @@ class TestSTFTMethods(unittest.TestCase):
 
         tc.assert_equal(yFilterd.shape, (291, 13))
         tc.assert_isreal(yFilterd)
-        #ToDo: Outout predictable?

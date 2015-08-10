@@ -17,18 +17,15 @@ class TestSTFTMethods(unittest.TestCase):
 
         tc.assert_equal(feature.shape, (291, 26))
         tc.assert_isreal(feature)
-        tc.assert_array_greater_equal(feature, 0) #ToDo: Find correct min(feature)
-        tc.assert_array_less_equal(feature, 1) #ToDo: Find correct max(feature)
-        #ToDo: Outout predictable?
+        tc.assert_array_greater_equal(feature, 0)
 
     def test_get_filterbanks(self):
         fbank = transform.module_fbank.get_filterbanks()
 
         tc.assert_equal(fbank.shape, (20, 513))
         tc.assert_isreal(fbank)
-        tc.assert_array_greater_equal(fbank, 0) #ToDo: Find correct min(fbank)
-        tc.assert_array_less_equal(fbank, 1) #ToDo: Find correct max(fbank)
-        #ToDo: Outout predictable?
+        tc.assert_array_greater_equal(fbank, 0)
+        tc.assert_array_less_equal(fbank, 1)
 
     def test_hz2mel(self):
         tc.assert_equal(transform.module_fbank.hz2mel(6300), 2595)
