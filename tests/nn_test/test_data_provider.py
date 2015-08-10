@@ -42,9 +42,9 @@ class DataProviderFetcher(unittest.TestCase):
         for idx, batch_data in enumerate(self.dp):
             self.assertTrue('X' in batch_data)
             self.assertTrue('Y' in batch_data)
-            numpy.testing.assert_equal(batch_data['X'],
+            numpy.testing.assert_equal(batch_data['X'][0],
                                        numpy.asarray([idx*2, idx*2+1]))
-            numpy.testing.assert_equal(batch_data['Y'],
+            numpy.testing.assert_equal(batch_data['Y'][0],
                                        numpy.asarray([idx*2, idx*2+1]))
 
     def test_reset(self):
@@ -57,6 +57,7 @@ class DataProviderFetcher(unittest.TestCase):
 
     def test_different_length(self):
         self.fetcher_2.len = 11
+
         def create_dp():
             self.dp = DataProvider((self.fetcher_1, self.fetcher_2),
                                batch_size=2,
@@ -66,11 +67,16 @@ class DataProviderFetcher(unittest.TestCase):
 
     def test_test_run(self):
         data = self.dp.test_run()
-        numpy.testing.assert_equal(data['X'], numpy.asarray([0, 1]))
-        numpy.testing.assert_equal(data['Y'], numpy.asarray([0, 1]))
+        numpy.testing.assert_equal(data['X'][0], numpy.asarray([0, 1]))
+        numpy.testing.assert_equal(data['Y'][0], numpy.asarray([0, 1]))
 
     def test_data_shapes(self):
         s = self.dp.get_data_shapes()
         self.assertEqual(len(s), 2)
         self.assertTrue('X' in s)
         self.assertTrue('Y' in s)
+
+    def test_output_list(self):
+        self.assertEqual(self.dp.output_list, ['X', 'Y'])
+
+    # TODO: Missing tests for get_data_types, get_data_shapes, print_data_info
