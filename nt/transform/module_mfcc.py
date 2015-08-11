@@ -60,6 +60,7 @@ def _lifter(cepstra, L=22):
         L <= 0 disables lifter.
 
     Source: https://github.com/jameslyons/python_speech_features
+    Tutorial MFCC: http://practicalcryptography.com/miscellaneous/machine-learning/guide-mel-frequency-cepstral-coefficients-mfccs/
     """
     if L > 0:
         nframes,ncoeff = numpy.shape(cepstra)

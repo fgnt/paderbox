@@ -76,7 +76,7 @@ setup(
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=['numpy',
-                      'chainer', 'scipy', 'librosa', 'seaborn'],
+                      'chainer', 'scipy', 'librosa', 'seaborn', 'tqdm', 'dill'],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,

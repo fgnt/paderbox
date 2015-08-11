@@ -17,6 +17,11 @@ from pymatbridge import Matlab
 
 
 class TestSTFTMethods(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        path = '/net/speechdb/timit/pcm/train/dr1/fcjf0/sa1.wav'
+        self.x = audioread(path)
+
     def test_samples_to_stft_frames(self):
         size = 1024
         shift = 256
@@ -35,8 +40,7 @@ class TestSTFTMethods(unittest.TestCase):
         tc.assert_equal(_stft_frames_to_samples(2, size, shift), 1024 + 256)
 
     def test_restore_time_signal_from_stft_and_istft(self):
-        path = '/net/speechdb/timit/pcm/train/dr1/fcjf0/sa1.wav'
-        x = audioread(path)
+        x = self.x
         X = stft(x)
         spectrogram = stft_to_spectrogram(X)
         energy = spectrogram_to_energy_per_frame(spectrogram)
@@ -63,8 +67,7 @@ class TestSTFTMethods(unittest.TestCase):
         tc.assert_equal(for_result.shape, (1024,))
 
     def compare_with_matlab(self):
-        path = '/net/speechdb/timit/pcm/train/dr1/fcjf0/sa1.wav'
-        y = audioread(path)
+        y = self.x
         Y_python = stft(y)
 
         mlab = Matlab('nice -n 3 matlab -nodisplay -nosplash')
