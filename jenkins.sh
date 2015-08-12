@@ -21,7 +21,7 @@ nosetests --with-xunit --all-modules --with-coverage --cover-package=nt || true
 python -m coverage xml --include=nt* || true
 
 # Pylint tests
-/net/ssd/software/anaconda/envs/py3k_jenkins/bin/pylint --rcfile=pilint.cfg -f parseable nt || true
+/net/ssd/software/anaconda/envs/py3k_jenkins/bin/pylint --rcfile=pylint.cfg -f parseable nt || true
 make --directory=doc html || true
 
 # Store pip packages
