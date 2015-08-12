@@ -8,7 +8,7 @@ import nt.transform
 
 COLORMAP = sns.diverging_palette(220, 20, n=7, as_cmap=True)
 
-def time_series(signal, ax):
+def time_series(signal, ax, ylim=None):
     """
     Use together with facet_grid().
 
@@ -27,6 +27,8 @@ def time_series(signal, ax):
             ax.set_xlabel('Sample index')
         ax.set_ylabel('Amplitude')
         ax.grid(True)
+        if ylim is not None:
+            ax.set_ylim(ylim)
 
 
 def spectrogram(signal, limits=None, ax=None):
