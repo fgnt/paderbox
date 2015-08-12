@@ -23,9 +23,9 @@ class ArrayDataFetcherTest(unittest.TestCase):
         for idx, batch_data in enumerate(self.dp):
             self.assertTrue('X' in batch_data)
             self.assertTrue('Y' in batch_data)
-            numpy.testing.assert_equal(batch_data['X'][0],
+            numpy.testing.assert_equal(batch_data['X'],
                                        self.data[(idx*2, idx*2+1), ...])
-            numpy.testing.assert_equal(batch_data['Y'][0],
+            numpy.testing.assert_equal(batch_data['Y'],
                                        self.data_2[(idx*2, idx*2+1), ...])
 
     def test_reset(self):
