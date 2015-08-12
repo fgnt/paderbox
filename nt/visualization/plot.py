@@ -46,8 +46,9 @@ def spectrogram(signal, limits=None, ax=None):
     with sns.axes_style("dark"):
         if ax is None:
             figure, ax = plt.subplots(1, 1)
-        image = ax.imshow(np.clip(signal, limits[0], limits[1]),
+        image = ax.imshow(signal,
                           interpolation='nearest',
+                          vmin=limits[0], vmax=limits[1],
                           cmap=COLORMAP, origin='lower')
         cbar = plt.colorbar(image, ax=ax)
         cbar.set_label('Energy / dB')
