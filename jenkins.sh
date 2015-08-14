@@ -15,7 +15,7 @@ export LD_LIBRARY_PATH
 /usr/bin/yes | pip install --user --upgrade ./chainer/ || true
 
 # Unittets
-nosetests --with-xunit --all-modules --with-coverage --cover-package=nt || true
+nosetests --with-xunit --all-modules --with-coverage --no-skip --cover-package=nt || true
 
 # Export coverage
 python -m coverage xml --include=nt* || true
