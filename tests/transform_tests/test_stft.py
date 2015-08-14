@@ -15,6 +15,7 @@ from nt.transform.module_stft import stft_to_spectrogram
 from nt.transform.module_stft import spectrogram_to_energy_per_frame
 from pymatbridge import Matlab
 
+matlab = unittest.skip("matlab")
 
 class TestSTFTMethods(unittest.TestCase):
     @classmethod
@@ -66,7 +67,8 @@ class TestSTFTMethods(unittest.TestCase):
         tc.assert_equal(for_result, vec_result)
         tc.assert_equal(for_result.shape, (1024,))
 
-    def compare_with_matlab(self):
+    @matlab
+    def test_compare_with_matlab(self):
         y = self.x
         Y_python = stft(y)
 
