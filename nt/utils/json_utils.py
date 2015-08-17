@@ -163,6 +163,7 @@ def get_flist_for_channel(flist, ch):
         'Could not find any files for channel {c}'.format(c=str(ch))
     return ret_flist
 
+
 def safe_dump(dict_data, fid):
     """ Writes a dict to a json, ignoring all type which cannot be serialized
 
@@ -193,3 +194,38 @@ def safe_dump(dict_data, fid):
         return {key: _filter(val) for key, val in data.items()}
 
     json.dump(_build_dict(dict_data), fid, sort_keys=True, indent=2)
+def add_flist(flist, progress_json, scenario, stage='train',
+              file_type='wav', channel_type='observed', channel='CH1'):
+    """ Adds a file list to the current progress_json object
+
+    '....<flists>\n'\
+          '......<file_type> (z.B. wav)\n'\
+          '..........<scenario> (z.B. tr05_simu, tr05_real...)\n'\
+          '............<utterance_id>\n'\
+          '..............<observed>\n'\
+          '................<A>\n'
+
+    :param flist: A dictionary acting as a file list
+    :param progress_json: The current json object
+    :param scenario: Name for the file list
+    :param stage: [train, dev, test]
+    :param file_type: Type of the referenced files. e.g. wav, mfcc, ...
+    :return:
+    """
+
+    def _get_next_dict(cur_dict, key):
+        try:
+            return cur_dict[key]
+        except KeyError:
+            cur_dict[key] = dict()
+            return cur_dict[key]
+
+    cur_dict = progress_json[stage]
+    flists_dict = _get_next_dict(cur_dict, 'flists')
+    file_type_dict = _get_next_dict(flists_dict, file_type)
+    scenario_dict = _get_next_dict(file_type_dict, scenario)
+
+    for utt_id in flist:
+        utt_id_dict = _get_next_dict(scenario_dict, utt_id)
+        channel_type_dict = _get_next_dict(utt_id_dict, channel_type)
+        channel_type_dict[channel] = flist[utt_id]
