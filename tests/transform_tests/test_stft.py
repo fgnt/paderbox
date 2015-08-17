@@ -15,7 +15,8 @@ from nt.transform.module_stft import stft_to_spectrogram
 from nt.transform.module_stft import spectrogram_to_energy_per_frame
 from pymatbridge import Matlab
 
-matlab = unittest.skip("matlab")
+from os import environ
+matlab = unittest.skipUnless(environ.get('TEST_MATLAB'),'matlab-test')
 
 class TestSTFTMethods(unittest.TestCase):
     @classmethod
