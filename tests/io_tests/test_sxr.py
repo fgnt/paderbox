@@ -20,6 +20,7 @@ class InputSXRTest(unittest.TestCase):
         self.assertTrue(numpy.isinf(SIR))
         nptest.assert_almost_equal(SNR, expected_snr, decimal=1)
 
+    @condition.retry(10)
     def test_two_inputs_no_noise_no_average(self):
         expected_sir = numpy.array(10)
         size = (10000, 1, 2)
@@ -34,6 +35,7 @@ class InputSXRTest(unittest.TestCase):
         nptest.assert_almost_equal(SIR, expected_result, decimal=1)
         self.assertTrue(numpy.isinf(SNR).all())
 
+    @condition.retry(10)
     def test_two_different_inputs_no_noise(self):
         expected_sir = numpy.array(10)
         size = (10000, 1, 2)
@@ -63,6 +65,7 @@ class InputSXRTest(unittest.TestCase):
 
 class OutputSXRTest(unittest.TestCase):
 
+    @condition.retry(10)
     def test_for_single_input(self):
         expected_snr = numpy.array(10)
         size = (10000, 1, 1)
@@ -75,6 +78,7 @@ class OutputSXRTest(unittest.TestCase):
         self.assertTrue(numpy.isinf(SIR))
         nptest.assert_almost_equal(SNR, expected_snr, decimal=1)
 
+    @condition.retry(10)
     def test_two_equal_inputs_no_noise(self):
         expected_sir = numpy.array(20)
         size = (10000, 2, 2)
