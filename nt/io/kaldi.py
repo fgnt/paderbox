@@ -1,10 +1,9 @@
 import subprocess
 import tempfile
 import os
-
 import numpy as np
-
 from nt.utils import mkdir_p
+import warnings
 
 
 def import_feature_data(ark,
@@ -171,8 +170,19 @@ def import_alignment(ali_dir):
 def import_features_and_alignment(feat_scp, ali_dir):
     features = import_feat_scp(feat_scp)
     alignments = import_alignment(ali_dir)
-    common_length = len(set(list(features.keys()) + list(alignments.keys())))
-    assert common_length == len(features) and common_length == len(alignments), \
-        'Read {} features but {} alignments'.format(len(features),
-                                                    len(alignments))
-    return features, alignments
+    common_keys = set(features.keys()).intersection(set(alignments.keys()))
+    common_length = len(common_keys)
+    if common_length != len(features) or common_length != len(alignments):
+        warnings.warn('Found features for {} and alignments for {} utterances.'
+                      ' Returning common set.'.format(len(features),
+                                                     len(alignments)))
+    features_common = dict()
+    alignments_common = dict()
+    for utt_id in common_keys:
+        features_common[utt_id] = features[utt_id]
+        alignments_common[utt_id] = alignments[utt_id]
+        assert features[utt_id].shape[0] == alignments[utt_id].shape[0], \
+            'There are {} features for utterance {} but {} alignments'.format(
+                features[utt_id].shape[0], utt_id, alignments[utt_id].shape[0]
+            )
+    return features_common, alignments_common
