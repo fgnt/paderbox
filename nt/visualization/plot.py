@@ -1,12 +1,12 @@
 import seaborn as sns
 import numpy as np
-import matplotlib as mpl
-import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 
+from nt.speech_enhancement.beamform_utils import *
 import nt.transform
 
 COLORMAP = sns.diverging_palette(220, 20, n=7, as_cmap=True)
+
 
 def time_series(signal, ax, ylim=None):
     """
@@ -59,6 +59,7 @@ def spectrogram(signal, limits=None, ax=None):
         ax.set_ylabel('Frequency bin index')
         ax.grid(False)
 
+
 def stft(signal, limits=None, ax=None):
     """
     Plots a spectrogram from an stft signal as input. This is a wrapper of the
@@ -69,6 +70,7 @@ def stft(signal, limits=None, ax=None):
     :return: None
     """
     spectrogram(nt.transform.stft_to_spectrogram(signal), limits=limits, ax=ax)
+
 
 def mask(signal, ax=None, **kwargs):
     """
@@ -90,6 +92,7 @@ def mask(signal, ax=None, **kwargs):
         ax.set_xlabel('Time frame index')
         ax.set_ylabel('Frequency bin index')
         ax.grid(False)
+
 
 def plot_ctc_decode(decode, label_handler, ax=None):
     """ Plot a ctc decode
@@ -183,3 +186,33 @@ def plot_nn_current_timings_distribution(status, ax=None):
             ax.set_xlabel('Time [ms]')
             ax.set_title('Probability')
             plt.legend()
+
+
+def plot_beampattern(W, sensor_positions, fft_size, sample_rate,
+                     source_angles=None, ax=None):
+    if source_angles is None:
+        source_angles = numpy.arange(-numpy.pi, numpy.pi, 2 * numpy.pi / 360)
+        source_angles = numpy.vstack([source_angles,
+                                      numpy.zeros_like(source_angles)])
+
+    tdoa = get_farfield_TDOA(source_angles, sensor_positions)
+    s_vector = steering_vector(tdoa, fft_size, sample_rate)
+
+    B = numpy.zeros((fft_size // 2, source_angles.shape[1]))
+    for f in range(fft_size // 2):
+        for k in range(source_angles.shape[1]):
+            B[f, k] = numpy.abs(W[f].dot(s_vector[f, :, k])) ** 2 / \
+                      numpy.abs(W[f].dot(W[f])) ** 2
+
+    with sns.axes_style("dark"):
+        if ax is None:
+            figure, ax = plt.subplots(1, 1)
+        image = ax.imshow(10 * numpy.log10(B),
+                          vmin=-10, vmax=10,
+                          interpolation='nearest',
+                          cmap=COLORMAP, origin='lower')
+        cbar = plt.colorbar(image, ax=ax)
+        cbar.set_label('Gain / dB')
+        ax.set_xlabel('Angle')
+        ax.set_ylabel('Frequency bin index')
+        ax.grid(False)
