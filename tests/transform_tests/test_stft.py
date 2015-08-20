@@ -44,10 +44,17 @@ class TestSTFTMethods(unittest.TestCase):
     def test_restore_time_signal_from_stft_and_istft(self):
         x = self.x
         X = stft(x)
+
+        tc.assert_almost_equal(x, istft(X, 1024, 256)[:len(x)])
+        tc.assert_equal(X.shape, (186, 513))
+
+
+    def test_spectrogram_and_energy(self):
+        x = self.x
+        X = stft(x)
         spectrogram = stft_to_spectrogram(X)
         energy = spectrogram_to_energy_per_frame(spectrogram)
 
-        tc.assert_almost_equal(x, istft(X, 1024, 256)[:len(x)])
         tc.assert_equal(X.shape, (186, 513))
 
         tc.assert_equal(spectrogram.shape, (186, 513))
