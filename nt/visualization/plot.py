@@ -1,13 +1,14 @@
 import seaborn as sns
 import numpy as np
 import matplotlib.pyplot as plt
-
+from nt.visualization.new_cm import cmaps
+from nt.speech_enhancement.beamform_utils import *
 import nt.transform
 
-COLORMAP = sns.diverging_palette(220, 20, n=7, as_cmap=True)
+COLORMAP = cmaps['viridis']
 
 
-def time_series(signal, ax):
+def time_series(signal, ax, ylim=None):
     """
     Use together with facet_grid().
 
@@ -26,9 +27,11 @@ def time_series(signal, ax):
             ax.set_xlabel('Sample index')
         ax.set_ylabel('Amplitude')
         ax.grid(True)
+        if ylim is not None:
+            ax.set_ylim(ylim)
 
 
-def spectrogram(signal, limits=None, ax=None):
+def spectrogram(signal, limits=None, ax=None, **kwargs):
     """
     Plots a spectrogram from a spectrogram (power) as input.
 
@@ -38,7 +41,11 @@ def spectrogram(signal, limits=None, ax=None):
     :param ax: Provide axis. I.e. for use with facet_grid().
     :return: None
     """
-    signal = np.log10(signal).T
+
+    if kwargs.get('log', True):
+        signal = np.log10(signal).T
+    else:
+        signal = signal.T
 
     if limits is None:
         limits = (np.min(signal), np.max(signal))
@@ -46,8 +53,9 @@ def spectrogram(signal, limits=None, ax=None):
     with sns.axes_style("dark"):
         if ax is None:
             figure, ax = plt.subplots(1, 1)
-        image = ax.imshow(np.clip(signal, limits[0], limits[1]),
+        image = ax.imshow(signal,
                           interpolation='nearest',
+                          vmin=limits[0], vmax=limits[1],
                           cmap=COLORMAP, origin='lower')
         cbar = plt.colorbar(image, ax=ax)
         cbar.set_label('Energy / dB')
@@ -76,13 +84,15 @@ def mask(signal, ax=None, **kwargs):
     :param ax: Optional figure axis for use with facet_grid()
     :return:
     """
-    limits = (0, 1)
+
+    limits = kwargs.get('limits', (0, 1))
 
     with sns.axes_style("dark"):
         if ax is None:
             figure, ax = plt.subplots(1, 1)
         image = ax.imshow(np.clip(signal.T, limits[0], limits[1]),
-                          interpolation='nearest', origin='lower')
+                          interpolation='nearest', origin='lower',
+                          cmap=COLORMAP)
         cbar = plt.colorbar(image, ax=ax)
         cbar.set_label('Mask')
         ax.set_xlabel('Time frame index')
@@ -182,3 +192,33 @@ def plot_nn_current_timings_distribution(status, ax=None):
             ax.set_xlabel('Time [ms]')
             ax.set_title('Probability')
             plt.legend()
+
+
+def plot_beampattern(W, sensor_positions, fft_size, sample_rate,
+                     source_angles=None, ax=None):
+    if source_angles is None:
+        source_angles = numpy.arange(-numpy.pi, numpy.pi, 2 * numpy.pi / 360)
+        source_angles = numpy.vstack([source_angles,
+                                      numpy.zeros_like(source_angles)])
+
+    tdoa = get_farfield_TDOA(source_angles, sensor_positions)
+    s_vector = steering_vector(tdoa, fft_size, sample_rate)
+
+    B = numpy.zeros((fft_size // 2, source_angles.shape[1]))
+    for f in range(fft_size // 2):
+        for k in range(source_angles.shape[1]):
+            B[f, k] = numpy.abs(W[f].dot(s_vector[f, :, k])) ** 2 / \
+                      numpy.abs(W[f].dot(W[f])) ** 2
+
+    with sns.axes_style("dark"):
+        if ax is None:
+            figure, ax = plt.subplots(1, 1)
+        image = ax.imshow(10 * numpy.log10(B),
+                          vmin=-10, vmax=10,
+                          interpolation='nearest',
+                          cmap=COLORMAP, origin='lower')
+        cbar = plt.colorbar(image, ax=ax)
+        cbar.set_label('Gain / dB')
+        ax.set_xlabel('Angle')
+        ax.set_ylabel('Frequency bin index')
+        ax.grid(False)

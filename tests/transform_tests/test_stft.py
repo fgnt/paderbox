@@ -15,6 +15,8 @@ from nt.transform.module_stft import stft_to_spectrogram
 from nt.transform.module_stft import spectrogram_to_energy_per_frame
 from pymatbridge import Matlab
 
+from os import environ
+matlab = unittest.skipUnless(environ.get('TEST_MATLAB'),'matlab-test')
 
 class TestSTFTMethods(unittest.TestCase):
     @classmethod
@@ -42,10 +44,17 @@ class TestSTFTMethods(unittest.TestCase):
     def test_restore_time_signal_from_stft_and_istft(self):
         x = self.x
         X = stft(x)
+
+        tc.assert_almost_equal(x, istft(X, 1024, 256)[:len(x)])
+        tc.assert_equal(X.shape, (186, 513))
+
+
+    def test_spectrogram_and_energy(self):
+        x = self.x
+        X = stft(x)
         spectrogram = stft_to_spectrogram(X)
         energy = spectrogram_to_energy_per_frame(spectrogram)
 
-        tc.assert_almost_equal(x, istft(X, 1024, 256)[:len(x)])
         tc.assert_equal(X.shape, (186, 513))
 
         tc.assert_equal(spectrogram.shape, (186, 513))
@@ -66,7 +75,8 @@ class TestSTFTMethods(unittest.TestCase):
         tc.assert_equal(for_result, vec_result)
         tc.assert_equal(for_result.shape, (1024,))
 
-    def compare_with_matlab(self):
+    @matlab
+    def test_compare_with_matlab(self):
         y = self.x
         Y_python = stft(y)
 

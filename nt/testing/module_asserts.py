@@ -1,10 +1,10 @@
 """
 This file contains the STFT function and related helper functions.
 """
-
-from numpy.testing.utils import assert_array_compare
+import numpy as np
+from numpy.testing.utils import assert_array_compare, assert_array_less
 import operator
-
+from nt.utils import math
 
 """
 This is a copy of numpy.testing.assert_array_less.
@@ -157,3 +157,10 @@ def assert_array_not_equal(x, y, err_msg='', verbose=True):
     """
     assert_array_compare(operator.__ne__, x, y, err_msg=err_msg,
                          verbose=verbose, header='Arrays are equal')
+
+
+def assert_cosine_similarity(x, y, atol=1e-6):
+        x_normalized = math.normalize_vector_to_unit_length(x)
+        y_normalized = math.normalize_vector_to_unit_length(y)
+        distance = 1 - np.abs(math.vector_H_vector(x_normalized, y_normalized))**2
+        assert_array_less(distance, atol)

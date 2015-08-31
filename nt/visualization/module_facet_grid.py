@@ -10,7 +10,8 @@ def facet_grid(data_list, function_list, kwargs_list=(), colwrap=2, scale=1):
            len(data_list) == 1
     assert len(kwargs_list) == 0 or \
            len(kwargs_list) == 1 or \
-           (kwargs_list) == len(data_list)
+           len(kwargs_list) == len(data_list) or \
+           len(kwargs_list) == len(function_list)
 
     number_of_plots = max(len(function_list), len(data_list))
     number_of_rows = int(np.ceil(number_of_plots / colwrap))
