@@ -1,11 +1,11 @@
 import seaborn as sns
 import numpy as np
 import matplotlib.pyplot as plt
-
+from nt.visualization.new_cm import cmaps
 from nt.speech_enhancement.beamform_utils import *
 import nt.transform
 
-COLORMAP = sns.diverging_palette(220, 20, n=7, as_cmap=True)
+COLORMAP = cmaps['viridis']
 
 
 def time_series(signal, ax, ylim=None):
@@ -31,7 +31,7 @@ def time_series(signal, ax, ylim=None):
             ax.set_ylim(ylim)
 
 
-def spectrogram(signal, limits=None, ax=None):
+def spectrogram(signal, limits=None, ax=None, **kwargs):
     """
     Plots a spectrogram from a spectrogram (power) as input.
 
@@ -41,7 +41,11 @@ def spectrogram(signal, limits=None, ax=None):
     :param ax: Provide axis. I.e. for use with facet_grid().
     :return: None
     """
-    signal = np.log10(signal).T
+
+    if kwargs.get('log', True):
+        signal = np.log10(signal).T
+    else:
+        signal = signal.T
 
     if limits is None:
         limits = (np.min(signal), np.max(signal))
@@ -80,13 +84,15 @@ def mask(signal, ax=None, **kwargs):
     :param ax: Optional figure axis for use with facet_grid()
     :return:
     """
-    limits = (0, 1)
+
+    limits = kwargs.get('limits', (0, 1))
 
     with sns.axes_style("dark"):
         if ax is None:
             figure, ax = plt.subplots(1, 1)
         image = ax.imshow(np.clip(signal.T, limits[0], limits[1]),
-                          interpolation='nearest', origin='lower')
+                          interpolation='nearest', origin='lower',
+                          cmap=COLORMAP)
         cbar = plt.colorbar(image, ax=ax)
         cbar.set_label('Mask')
         ax.set_xlabel('Time frame index')
