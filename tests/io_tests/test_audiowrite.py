@@ -22,7 +22,7 @@ class AudioWriteTest(unittest.TestCase):
     def test_write_read_int(self):
         audiowrite((signal*int16_max).astype(numpy.int), path, threaded=False)
         read_data = audioread(path)
-        nptest.assert_almost_equal(signal, read_data, decimal=3)
+        nptest.assert_almost_equal(signal, read_data, decimal=5)
 
     def test_write_threaded(self):
         audiowrite(signal, path)

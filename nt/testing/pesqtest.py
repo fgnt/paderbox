@@ -1,4 +1,3 @@
-__author__ = 'aben saju'
 
 
 # Program for testing PESQ functionality ( pesq.py)
