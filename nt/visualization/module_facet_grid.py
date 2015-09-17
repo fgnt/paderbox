@@ -4,7 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def facet_grid(data_list, function_list, kwargs_list=(), colwrap=2, scale=1):
+def facet_grid(data_list, function_list, kwargs_list=(), colwrap=2, scale=1,
+               title_list=()):
     assert len(function_list) == len(data_list) or \
            len(function_list) == 1 or \
            len(data_list) == 1
@@ -12,6 +13,8 @@ def facet_grid(data_list, function_list, kwargs_list=(), colwrap=2, scale=1):
            len(kwargs_list) == 1 or \
            len(kwargs_list) == len(data_list) or \
            len(kwargs_list) == len(function_list)
+    assert len(title_list) == len(data_list) or \
+           len(title_list) == 0
 
     number_of_plots = max(len(function_list), len(data_list))
     number_of_rows = int(np.ceil(number_of_plots / colwrap))
@@ -41,6 +44,10 @@ def facet_grid(data_list, function_list, kwargs_list=(), colwrap=2, scale=1):
 
         for index in range(number_of_plots, number_of_rows * colwrap):
             axis.flatten()[index].axis('off')
+
+        if len(title_list) > 0:
+            for idx, title in enumerate(title_list):
+                axis.flatten()[idx].set_title(title)
 
         figure.tight_layout()
         plt.show()
