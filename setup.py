@@ -77,7 +77,8 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=['numpy',
                       'chainer', 'scipy', 'librosa', 'seaborn', 'tqdm', 'dill',
-                      'pip', 'IPython'],
+                      'pip', 'IPython',
+                      'sklearn','pylab','pymatbridge','h5py','line_profiler'],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
