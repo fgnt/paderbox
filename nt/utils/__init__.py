@@ -1,5 +1,5 @@
 from nt.utils.file_handling import *
-from nt.utils.time import *
+from nt.utils.timer import *
 from nt.utils.container import Container
 from nt.utils.json_utils import *
 

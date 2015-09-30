@@ -4,7 +4,7 @@ This file contains the STFT function and related helper functions.
 import numpy as np
 from numpy.testing.utils import assert_array_compare, assert_array_less
 import operator
-from nt.utils import math
+from nt.utils.math_ops import normalize_vector_to_unit_length, vector_H_vector
 
 """
 This is a copy of numpy.testing.assert_array_less.
@@ -160,7 +160,7 @@ def assert_array_not_equal(x, y, err_msg='', verbose=True):
 
 
 def assert_cosine_similarity(x, y, atol=1e-6):
-        x_normalized = math.normalize_vector_to_unit_length(x)
-        y_normalized = math.normalize_vector_to_unit_length(y)
-        distance = 1 - np.abs(math.vector_H_vector(x_normalized, y_normalized))**2
+        x_normalized = normalize_vector_to_unit_length(x)
+        y_normalized = normalize_vector_to_unit_length(y)
+        distance = 1 - np.abs(vector_H_vector(x_normalized, y_normalized))**2
         assert_array_less(distance, atol)
