@@ -33,10 +33,6 @@ def mfcc(time_signal, sample_rate=16000,
         default is samplerate/2
     :param preemphasis: apply preemphasis filter with preemph as coefficient.
         0 is no filter. Default is 0.97.
-    :param ceplifter: apply a lifter to final cepstral coefficients.
-        0 is no lifter. Default is 22.
-    :param appendEnergy: if this is true, the zeroth cepstral coefficient is
-        replaced with the log of the total frame energy.
     :returns: A numpy array of size (NUMFRAMES by numcep) containing features.
         Each row holds 1 feature vector.
     """

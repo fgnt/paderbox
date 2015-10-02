@@ -13,7 +13,7 @@ import h5py
 import nt.speech_enhancement.beamformer as bf
 from nt.transform.module_stft import istft
 from nt.evaluation import output_sxr
-from nt.evaluation.pesq import pesq
+from nt.evaluation.pesq import threaded_pesq as pesq
 from nt.utils import Timer, mkdir_p
 from nt.speech_enhancement.noise import get_snr
 from nt.speech_enhancement.mask_estimation import estimate_IBM
@@ -70,7 +70,7 @@ def get_beamform_results(Y, X, N, gamma_X, gamma_N, name, oracle=False,
         x = istft(X[:, 4, :], size=stft_size, shift=stft_shift)
         pesq_result = pesq(len(y) * [x], [y[k] for k in postfixes])
         for idx, postfix in enumerate(postfixes):
-            results['PESQ_' + name + '_' + postfix] = pesq_result[0][idx]
+            results['PESQ_' + name + '_' + postfix] = pesq_result[idx][-1]
 
     return results, y
 
