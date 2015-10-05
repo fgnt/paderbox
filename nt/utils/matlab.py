@@ -10,7 +10,7 @@ class Mlab():
     def process(self):
         mlab_process = Matlab('nice -n 3 /net/ssd/software/MATLAB/R2015a/bin/matlab -nodisplay -nosplash')
         mlab_process.start()
-        _ = mlab_process.run_code('run /net/home/ldrude/Projects/2015_python_matlab/matlab/startup.m')
+        _ = mlab_process.run_code('run /net/ssd/software/matlab_toolbox/startup.m')
         return mlab_process
 
 # define decorator to skip matlab_tests
