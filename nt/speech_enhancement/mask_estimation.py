@@ -60,39 +60,34 @@ def simple_ideal_soft_mask(*input, featureDim = -2, sourceDim = -1):
     (51, 31, 2)
     >>> simple_ideal_soft_mask(X_all, N).shape
     (51, 31, 3)
-    >>> simple_ideal_soft_mask(X, N, featureDim=-3).shape
+    >>> simple_ideal_soft_mask(X, N, feature_dim=-3).shape
     (51, 6, 2)
     """
 
-    assert featureDim != sourceDim
+    assert feature_dim != source_dim
 
     if len(input) != 1:
-        numDimsMax = 0
-        numDimsMin = 10000
-        for i in input:
-            numDimsMax = max(numDimsMax, np.ndim(i))
-            numDimsMin = min(numDimsMin, np.ndim(i))
-        if numDimsMax != numDimsMin:
-            assert numDimsMax == numDimsMin+1
-            input = list(input)
-            for idx in range(len(input)):
-                if np.ndim(input[idx]) == numDimsMin:
-                    input[idx] = np.expand_dims(input[idx], sourceDim)
+        num_dims_max = np.max([i.ndim for i in input])
+        num_dims_min = np.min([i.ndim for i in input])
+        if num_dims_max != num_dims_min:
+            assert num_dims_max == num_dims_min+1
+            # Expand dims, if necessary
+            input = [np.expand_dims(i, source_dim) if i.ndim == num_dims_min else i for i in input]
         else:
-            input = [np.expand_dims(i, numDimsMin+1) for i in input]
-
-        X = np.concatenate(input, axis=sourceDim)
+            input = [np.expand_dims(i, num_dims_min+1) for i in input]
+        X = np.concatenate(input, axis=source_dim)
     else:
         X = input[0]
 
-    if featureDim != -2 or sourceDim != -1:
+    # Permute if nessesary
+    if feature_dim != -2 or source_dim != -1:
         r = list(range(np.ndim(X)))
-        r[featureDim], r[-2] = r[-2], r[featureDim]
-        r[sourceDim], r[-1] = r[-1], r[sourceDim]
+        r[feature_dim], r[-2] = r[-2], r[feature_dim]
+        r[source_dim], r[-1] = r[-1], r[source_dim]
         X = np.transpose(X, axes=r)
 
     power = np.einsum('...dk,...dk->...k', X.conjugate(), X)
-    mask = power / np.sum(power, axis=power.ndim-1, keepdims=True)
+    mask = (power / np.sum(power, axis=power.ndim-1, keepdims=True)).real
 
     return mask
 
@@ -208,3 +203,5 @@ if __name__ == '__main__':
         tc.assert_equal(M4.shape, (51, 6, 2))
         tc.assert_almost_equal(np.sum(M4, axis=2), 1)
     test4()
+
+
