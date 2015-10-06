@@ -3,12 +3,16 @@ from nt.evaluation.pesq import pesq, threaded_pesq
 import numpy
 import numpy.testing as nptest
 from nt.io.audioread import audioread
+import os
+import inspect
 
 class TestPESQ(unittest.TestCase):
 
     def setUp(self):
-        self.ref = 'data/speech.wav'
-        self.deg = 'data/speech_bab_0dB.wav'
+        current_dir = os.path.dirname(os.path.abspath
+                                  (inspect.getfile(inspect.currentframe())))
+        self.ref = os.path.join(current_dir, 'data/speech.wav')
+        self.deg = os.path.join(current_dir, 'data/speech_bab_0dB.wav')
         self.refer = audioread(self.ref)
         self.rate = 16000
 
