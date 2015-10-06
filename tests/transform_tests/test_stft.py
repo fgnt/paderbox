@@ -76,12 +76,7 @@ class TestSTFTMethods(unittest.TestCase):
         y = self.x
         Y_python = stft(y)
         mlab = Mlab().process
-        # mlab = Matlab('nice -n 3 matlab -nodisplay -nosplash')
-        # mlab.start()
-        # _ = mlab.run_code('run /net/home/ldrude/Projects/2015_python_matlab/matlab/startup.m')
         mlab.set_variable('y', y)
         mlab.run_code('Y = transform.stft(y(:), 1024, 256, @blackman);')
-        # mlab.run_code('Y(1:10) = 1;')
         Y_matlab = mlab.get_variable('Y').T
-
-        tc.assert_equal(Y_matlab, Y_python)
+        tc.assert_almost_equal(Y_matlab, Y_python)
