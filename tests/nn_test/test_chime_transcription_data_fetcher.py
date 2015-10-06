@@ -2,12 +2,15 @@ import unittest
 import numpy
 from nt.nn.data_fetchers.chime_transcription_data_fetcher \
     import ChimeTranscriptionDataFetcher
+import json
 
-src = '/net/storage/2015/chime/chime_ref_data/data/json/chime.json'
+JSON_SRC = '/net/storage/2015/chime/chime_ref_data/data/json/chime.json'
 
 class ChimeTranscriptionDataFetcherTest(unittest.TestCase):
 
     def setUp(self):
+        with open(JSON_SRC) as fid:
+            src = json.load(fid)
         self.fetcher = ChimeTranscriptionDataFetcher('chime',
                             src,
                             'train/A_database/flists/wav/channels_6/tr05_simu')

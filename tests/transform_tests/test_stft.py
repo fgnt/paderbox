@@ -1,6 +1,5 @@
 import unittest
 from nt.io.audioread import audioread
-import numpy as np
 from scipy import signal
 
 import nt.testing as tc
@@ -14,9 +13,7 @@ from nt.transform.module_stft import _biorthogonal_window
 from nt.transform.module_stft import stft_to_spectrogram
 from nt.transform.module_stft import spectrogram_to_energy_per_frame
 from pymatbridge import Matlab
-
-from os import environ
-matlab = unittest.skipUnless(environ.get('TEST_MATLAB'),'matlab-test')
+from nt.utils.matlab import matlab_test, Mlab
 
 class TestSTFTMethods(unittest.TestCase):
     @classmethod
@@ -48,7 +45,6 @@ class TestSTFTMethods(unittest.TestCase):
         tc.assert_almost_equal(x, istft(X, 1024, 256)[:len(x)])
         tc.assert_equal(X.shape, (186, 513))
 
-
     def test_spectrogram_and_energy(self):
         x = self.x
         X = stft(x)
@@ -75,17 +71,12 @@ class TestSTFTMethods(unittest.TestCase):
         tc.assert_equal(for_result, vec_result)
         tc.assert_equal(for_result.shape, (1024,))
 
-    @matlab
+    @matlab_test
     def test_compare_with_matlab(self):
         y = self.x
         Y_python = stft(y)
-
-        mlab = Matlab('nice -n 3 matlab -nodisplay -nosplash')
-        mlab.start()
-        _ = mlab.run_code('run /net/home/ldrude/Projects/2015_python_matlab/matlab/startup.m')
+        mlab = Mlab().process
         mlab.set_variable('y', y)
         mlab.run_code('Y = transform.stft(y(:), 1024, 256, @blackman);')
-        # mlab.run_code('Y(1:10) = 1;')
         Y_matlab = mlab.get_variable('Y').T
-
-        tc.assert_equal(Y_matlab, Y_python)
+        tc.assert_almost_equal(Y_matlab, Y_python)

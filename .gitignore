@@ -12,8 +12,13 @@ __pycache__/
 bin/
 #build/
 doc/build/html/*
+doc/build/doctrees
 !doc/build/html/_static/
+*.doctree
 
+test_tmp
+*.nnet
+pesq_results.txt
 develop-eggs/
 dist/
 eggs/
