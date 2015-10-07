@@ -51,8 +51,16 @@ class Mlab():
             raise NameError('Matlab code not executeable! See above warning.')
         return ret
 
+    def run_code_print(self, code, check_success=True):
+        ret = self.run_code(code)
+        print('Matlab content: ', ret['content'])
+
+
     def get_variable(self, code):
         return self.process.get_variable(code)
+
+    def set_variable(self, code, var):
+        return self.process.set_variable(code, var)
 
 
 # define decorator to skip matlab_tests
