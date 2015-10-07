@@ -8,6 +8,15 @@ import nt.transform
 COLORMAP = cmaps['viridis']
 
 
+def _get_batch(signal, batch):
+    if signal.ndim == 3:
+        return signal[:, batch, :]
+    elif signal.ndim == 2:
+        return signal
+    else:
+        raise ValueError('The signal can only be two or three dimensional')
+
+
 def time_series(signal, ax, ylim=None):
     """
     Use together with facet_grid().
@@ -31,7 +40,7 @@ def time_series(signal, ax, ylim=None):
             ax.set_ylim(ylim)
 
 
-def spectrogram(signal, limits=None, ax=None, **kwargs):
+def spectrogram(signal, limits=None, ax=None, log=True, colorbar=True, batch=0):
     """
     Plots a spectrogram from a spectrogram (power) as input.
 
@@ -39,10 +48,15 @@ def spectrogram(signal, limits=None, ax=None, **kwargs):
         with shape (frames, frequencies).
     :param limits: Color limits for clipping purposes.
     :param ax: Provide axis. I.e. for use with facet_grid().
-    :return: None
+    :param log: Take the logarithm of the signal before plotting
+    :param colorbar: Display a colorbar right to the plot
+    :param batch: If the decode has 3 dimensions: Specify the which batch to plot
+    :return: axes
     """
 
-    if kwargs.get('log', True):
+    signal = _get_batch(signal, batch)
+
+    if log:
         signal = np.log10(signal).T
     else:
         signal = signal.T
@@ -57,35 +71,44 @@ def spectrogram(signal, limits=None, ax=None, **kwargs):
                           interpolation='nearest',
                           vmin=limits[0], vmax=limits[1],
                           cmap=COLORMAP, origin='lower')
-        cbar = plt.colorbar(image, ax=ax)
-        cbar.set_label('Energy / dB')
+        if colorbar:
+            cbar = plt.colorbar(image, ax=ax)
+            cbar.set_label('Energy / dB')
         ax.set_xlabel('Time frame index')
         ax.set_ylabel('Frequency bin index')
         ax.grid(False)
+    return ax
 
 
-def stft(signal, limits=None, ax=None):
+def stft(signal, limits=None, ax=None, log=True, colorbar=True, batch=0):
     """
     Plots a spectrogram from an stft signal as input. This is a wrapper of the
     plot function for spectrograms.
 
     :param signal: Complex valued stft signal.
     :param limits: Color limits for clipping purposes.
-    :return: None
+    :param log: Take the logarithm of the signal before plotting
+    :param colorbar: Display a colorbar right to the plot
+    :param batch: If the decode has 3 dimensions: Specify the which batch to plot
+    :return: axes
     """
-    spectrogram(nt.transform.stft_to_spectrogram(signal), limits=limits, ax=ax)
+    return spectrogram(nt.transform.stft_to_spectrogram(signal), limits=limits,
+                       ax=ax, log=log, colorbar=colorbar, batch=batch)
 
 
-def mask(signal, ax=None, **kwargs):
+def mask(signal, ax=None, limits=(0, 1), colobar=True, batch=0):
     """
     Plots any mask with values between zero and one.
 
     :param signal: Mask with shape (time-frames, frequency-bins)
     :param ax: Optional figure axis for use with facet_grid()
-    :return:
+    :param limits: Clip the signal to these limits
+    :param colorbar: Show colorbar right to the plot
+    :param batch: If the decode has 3 dimensions: Specify the which batch to plot
+    :return: axes
     """
 
-    limits = kwargs.get('limits', (0, 1))
+    signal = _get_batch(signal, batch)
 
     with sns.axes_style("dark"):
         if ax is None:
@@ -93,25 +116,25 @@ def mask(signal, ax=None, **kwargs):
         image = ax.imshow(np.clip(signal.T, limits[0], limits[1]),
                           interpolation='nearest', origin='lower',
                           cmap=COLORMAP)
-        cbar = plt.colorbar(image, ax=ax)
-        cbar.set_label('Mask')
+        if colobar:
+            cbar = plt.colorbar(image, ax=ax)
+            cbar.set_label('Mask')
         ax.set_xlabel('Time frame index')
         ax.set_ylabel('Frequency bin index')
         ax.grid(False)
+    return ax
 
 
-def plot_ctc_decode(decode, label_handler, ax=None):
+def plot_ctc_decode(decode, label_handler, ax=None, batch=0):
     """ Plot a ctc decode
 
     :param decode: Output of the network
     :param label_handler: The label handler
     :param ax: Optional figure axes to use with facet_grid()
+    :param batch: If the decode has 3 dimensions: Specify the which batch to plot
     :return:
     """
-    if decode.ndim == 3:
-        net_out = decode[:, 0, :]
-    else:
-        net_out = decode
+    net_out = _get_batch(decode, batch)
     net_out = net_out - np.amax(net_out)
     net_out_e = np.exp(net_out)
     net_out = net_out_e / \
@@ -128,6 +151,7 @@ def plot_ctc_decode(decode, label_handler, ax=None):
                        bbox_to_anchor=[0.5, -0.35])
         ax.set_xlabel('Time frame index')
         ax.set_ylabel('Propability')
+    return ax
 
 
 def plot_nn_current_loss(status, ax=None):

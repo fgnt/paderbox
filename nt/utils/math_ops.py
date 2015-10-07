@@ -1,6 +1,7 @@
 
 import numpy as np
 
+
 def normalize_vector_to_unit_length(vector):
     """
     Normalized each vector to unit length. This is useful, if all other
@@ -10,7 +11,7 @@ def normalize_vector_to_unit_length(vector):
     :return: Set of beamforming vectors with shape (bins, sensors)
     """
     normalization = np.sqrt(np.abs(vector_H_vector(vector, vector)))
-    return vector / normalization[:, np.newaxis]
+    return vector / np.expand_dims(normalization, axis=-1)
 
 
 def vector_H_vector(x, y):

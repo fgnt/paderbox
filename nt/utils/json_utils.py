@@ -1,6 +1,16 @@
 import numpy
 import json
 
+def load_json(json_file):
+    ''' Loads a json file and returns it as a dict
+
+    :param json_file: path to the json file
+    :return: dict with contents of the json file
+    '''
+    with open(json_file) as fid:
+        return json.load(fid)
+
+
 def print_template():
     """ Prints the template used for the json file
 
@@ -194,6 +204,8 @@ def safe_dump(dict_data, fid):
         return {key: _filter(val) for key, val in data.items()}
 
     json.dump(_build_dict(dict_data), fid, sort_keys=True, indent=2)
+
+
 def add_flist(flist, progress_json, scenario, stage='train',
               file_type='wav', channel_type='observed', channel='CH1'):
     """ Adds a file list to the current progress_json object
@@ -229,3 +241,46 @@ def add_flist(flist, progress_json, scenario, stage='train',
         utt_id_dict = _get_next_dict(scenario_dict, utt_id)
         channel_type_dict = _get_next_dict(utt_id_dict, channel_type)
         channel_type_dict[channel] = flist[utt_id]
+
+
+def combine_flists(data, flist_1_path, flist_2_path, flist_path, delimiter='/'):
+    ''' Combines two file lists into a new file list ``flist_name`
+
+    The new file list will only have those channels, which are present in both
+    file lists.
+
+    :param flist_1_path: Path to the first file list
+    :param flist_2: Path to the second file list
+    :param flist_name: Path to the new file list
+    '''
+
+    flist_1 = traverse_to_dict(data, flist_1_path, delimiter)
+    flist_2 = traverse_to_dict(data, flist_2_path, delimiter)
+
+    assert len(set(
+        list(flist_1.keys())+list(flist_2.keys()))) == len(flist_1) + len(flist_2), \
+        'The ids in the file lists must be unique.'
+
+    channels_flist_1 = get_available_channels(traverse_to_dict(
+        data, flist_1_path, delimiter
+    ))
+    channels_flist_2 = get_available_channels(traverse_to_dict(
+        data, flist_2_path, delimiter
+    ))
+
+    common_channels = set(
+        (ch.split('/')[0] for ch in channels_flist_1 if ch in channels_flist_2))
+
+    new_flist = dict()
+    for flist in [flist_1, flist_2]:
+        for id in flist.keys():
+            new_flist[id] = dict()
+            for ch in flist[id]:
+                if ch in common_channels:
+                    new_flist[id][ch] = flist[id][ch]
+
+    flist_name = flist_path.split(delimiter)[-1]
+    flist_parent_path = delimiter.join(flist_path.split(delimiter)[:-1])
+
+    flist_parent = traverse_to_dict(data, flist_parent_path, delimiter)
+    flist_parent[flist_name] = new_flist
