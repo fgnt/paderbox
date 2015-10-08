@@ -5,8 +5,26 @@ from os import environ
 from cached_property import cached_property
 import unittest
 import socket
+import warnings
+import os.path
 
 class Mlab():
+    def __init__(self, matlab_startup_path=None):
+
+        homeStartup = os.path.expanduser('~/startup.m')
+
+        if matlab_startup_path == None and os.path.isfile(homeStartup):
+            self.matlab_startup_path = homeStartup
+            # Example ~/startup.m:
+            #   cd '~/path/to/repo'
+            #   startup
+        elif matlab_startup_path == None:
+            self.matlab_startup_path = '/net/ssd/software/matlab_toolbox/startup.m'
+        else:
+            self.matlab_startup_path = matlab_startup_path
+
+
+
     @cached_property
     def process(self):
         hostname = socket.gethostname()
@@ -15,11 +33,35 @@ class Mlab():
         else:
             mlab_process = Matlab('nice -n 3 matlab -nodisplay -nosplash')
         mlab_process.start()
-        ret = mlab_process.run_code('run /net/ssd/software/matlab_toolbox/startup.m')
+        ret = mlab_process.run_code('run ' + self.matlab_startup_path)
         if not ret['success']:
             print(ret)
             raise NameError('Matlab is not working!')
         return mlab_process
+
+    def run_code(self, code, check_success=True):
+        ret = self.process.run_code(code)
+        if check_success and not ret['success']:
+            print(ret)
+            print(code)
+            warnings.warn(str('Matlab code not executeable! \nCode:\t ')
+                          +str(code)+
+                          str('\nMatlab return:\t ')+
+                          str(ret))
+            raise NameError('Matlab code not executeable! See above warning.')
+        return ret
+
+    def run_code_print(self, code, check_success=True):
+        ret = self.run_code(code)
+        print('Matlab content: ', ret['content'])
+
+
+    def get_variable(self, code):
+        return self.process.get_variable(code)
+
+    def set_variable(self, code, var):
+        return self.process.set_variable(code, var)
+
 
 # define decorator to skip matlab_tests
 matlab_test = unittest.skipUnless(environ.get('TEST_MATLAB'),'matlab-test')

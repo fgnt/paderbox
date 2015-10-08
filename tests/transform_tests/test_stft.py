@@ -2,11 +2,13 @@ import unittest
 from nt.io.audioread import audioread
 from scipy import signal
 
+import numpy as np
 import nt.testing as tc
 
 from nt.transform.module_stft import _samples_to_stft_frames
 from nt.transform.module_stft import _stft_frames_to_samples
 from nt.transform.module_stft import stft
+from nt.transform.module_stft import stft_single_channel
 from nt.transform.module_stft import istft
 from nt.transform.module_stft import _biorthogonal_window_loopy
 from nt.transform.module_stft import _biorthogonal_window
@@ -14,6 +16,7 @@ from nt.transform.module_stft import stft_to_spectrogram
 from nt.transform.module_stft import spectrogram_to_energy_per_frame
 from pymatbridge import Matlab
 from nt.utils.matlab import matlab_test, Mlab
+
 
 class TestSTFTMethods(unittest.TestCase):
     @classmethod
@@ -70,6 +73,45 @@ class TestSTFTMethods(unittest.TestCase):
 
         tc.assert_equal(for_result, vec_result)
         tc.assert_equal(for_result.shape, (1024,))
+
+    def test_batch_mode(self):
+        size = 1024
+        shift = 256
+
+        # Reference
+        X = stft_single_channel(self.x)
+
+        x1 = np.array([self.x,self.x])
+        X1 = stft(x1)
+        tc.assert_equal(X1.shape, (2, 186, 513))
+
+        for d in np.ndindex(2):
+            tc.assert_equal(X1[d,:, :].squeeze(), X)
+
+        x11 = np.array([x1,x1])
+        X11 = stft(x11)
+        tc.assert_equal(X11.shape, (2, 2, 186, 513))
+        for d, k in np.ndindex(2, 2):
+            tc.assert_equal(X11[d, k,:, :].squeeze(), X)
+
+        x2 = x1.transpose()
+        X2 = stft(x2)
+        tc.assert_equal(X2.shape, (186, 513, 2))
+        for d in np.ndindex(2):
+            tc.assert_equal(X2[:, :, d].squeeze(), X)
+
+        x21 = np.array([x2,x2])
+        X21 = stft(x21)
+        tc.assert_equal(X21.shape, (2, 186, 513, 2))
+        for d, k in np.ndindex(2, 2):
+            tc.assert_equal(X21[d,:, :, k].squeeze(), X)
+
+        x22 = x21.swapaxes(0,1)
+        X22 = stft(x22)
+        tc.assert_equal(X22.shape, (186, 513, 2, 2))
+        for d, k in np.ndindex(2, 2):
+            tc.assert_equal(X22[:, :, d, k].squeeze(), X)
+
 
     @matlab_test
     def test_compare_with_matlab(self):
