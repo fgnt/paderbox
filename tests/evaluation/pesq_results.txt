@@ -171,3 +171,11 @@ data/speech.wav	 data/speech_bab_0dB.wav	 1.969	 1.607	 16000	nb
 data/speech.wav	 data/speech_bab_0dB.wav	 1.969	 1.607	 16000	nb
 data/speech.wav	 data/speech_bab_0dB.wav	 1.969	 1.607	 16000	nb
 data/speech.wav	 data/speech_bab_0dB.wav	 -1.000	 1.083	 16000	wb
+data/speech.wav	 data/speech_bab_0dB.wav	 1.969	 1.607	 16000	nb
+data/speech.wav	 data/speech_bab_0dB.wav	 1.969	 1.607	 16000	nb
+data/speech.wav	 data/speech_bab_0dB.wav	 1.969	 1.607	 16000	nb
+data/speech.wav	 data/speech_bab_0dB.wav	 1.969	 1.607	 16000	nb
+data/speech.wav	 data/speech_bab_0dB.wav	 -1.000	 1.083	 16000	wb
+data/speech.wav	 data/speech_bab_0dB.wav	 -1.000	 1.083	 16000	wb
+data/speech.wav	 data/speech_bab_0dB.wav	 -1.000	 1.083	 16000	wb
+data/speech.wav	 data/speech_bab_0dB.wav	 -1.000	 1.083	 16000	wb

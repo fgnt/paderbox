@@ -56,7 +56,6 @@ class TrainerTest(unittest.TestCase):
             self.trainer.use_gpu = True
         self.trainer.start_training()
         self.assertTrue(self.trainer.is_running)
-        time.sleep(2)
         self.assertTrue(self.trainer.is_running)
         self.trainer.stop_training()
         self.assertTrue(not self.trainer.is_running)
