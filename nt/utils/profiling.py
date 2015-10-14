@@ -137,9 +137,10 @@ if __name__ == "__main__":
                 value_old = temp
             yield value
 
-    @do_cprofile("ncall")
+    #@do_cprofile("ncall")
     #@do_graphprofile
     #@do_memprofile([fibonacci])
+    #@do_lineprofile([fibonacci])
     #@timefunc
     def example_func():
         fib = 0
