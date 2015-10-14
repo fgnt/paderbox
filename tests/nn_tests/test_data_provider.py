@@ -75,7 +75,7 @@ class DataProviderFetcher(unittest.TestCase):
         _ = self.dp.__next__()
         self.dp.shutdown()
         for f in self.dp.fetchers:
-            self.assertTrue(f.thread is None)
+            self.assertTrue(f.process is None)
 
     def test_data_shapes(self):
         s = self.dp.get_data_shapes()
