@@ -6,6 +6,7 @@ import chainer.functions as F
 from chainer.optimizers import SGD
 import os
 import time
+import numpy.testing as nptest
 
 B = 10
 A = 5
@@ -50,13 +51,30 @@ class TrainerTest(unittest.TestCase):
     def test_init(self):
         self.assertTrue(os.path.exists(self.trainer.data_dir))
 
+    def test_training_step(self):
+        self.nn.mode = 'Train'
+        self.trainer.optimizer.setup(self.nn.layers)
+        batch = self.tr_provider.test_run()
+        self.trainer._train_forward_batch(batch)
+        self.assertGreater(self.nn.outputs.l.num, 0)
+        self.assertEqual(self.nn.outputs.y.num.shape, (2, 5))
+        self.trainer._reset_gradients()
+        nptest.assert_equal(self.nn.layers.l2.gW, np.zeros((5, 3)))
+        self.trainer._backprop()
+        self.assertFalse(np.sum(self.nn.layers.l2.gW) == 0)
+        W2_before = self.nn.layers.l2.W.copy()
+        self.trainer._update_parameters()
+        self.assertRaises(
+            AssertionError, nptest.assert_equal, W2_before, self.nn.layers.l2.W)
+        self.trainer._reset_gradients()
+        nptest.assert_equal(self.nn.layers.l2.gW, np.zeros((5, 3)))
+
     def _test_run_stop(self, use_gpu=False):
         self.trainer.run_in_thread = True
         if use_gpu:
             self.trainer.use_gpu = True
         self.trainer.start_training()
         self.assertTrue(self.trainer.is_running)
-        time.sleep(2)
         self.assertTrue(self.trainer.is_running)
         self.trainer.stop_training()
         self.assertTrue(not self.trainer.is_running)

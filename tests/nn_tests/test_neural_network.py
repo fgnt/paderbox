@@ -9,9 +9,7 @@ import numpy.testing
 import os
 import chainer.cuda
 import pickle
-
-if chainer.cuda.available:
-    chainer.cuda.init()
+import cupy
 
 
 def forward_train(nn):
@@ -59,7 +57,7 @@ class NeuralNetworkTest(unittest.TestCase):
         self.assertTrue(isinstance(self.nn.inputs.x,
                                    chainer.Variable))
         self.assertTrue(isinstance(self.nn.inputs.x.data,
-                                   chainer.cuda.GPUArray))
+                                   cupy.ndarray))
 
         self.assertTrue(isinstance(self.nn.outputs.y.num, numpy.ndarray))
         numpy.testing.assert_array_equal(self.default, self.nn.outputs.y.num)
