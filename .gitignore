@@ -1,5 +1,5 @@
 # Backup files
-*.~
+*~
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -15,6 +15,7 @@ doc/build/html/*
 doc/build/doctrees
 !doc/build/html/_static/
 *.doctree
+nt/evaluation/pesq_bin/build/*
 
 test_tmp
 *.nnet
