@@ -4,12 +4,11 @@ import datetime
 class Timer(object):
     """ Time code execution.
 
-    Example usage:
-        ```python
+    Example usage::
+
         with Timer as t:
             sleep(10)
         print(t.secs)
-        ```
 
     """
     def __init__(self, verbose=False):
