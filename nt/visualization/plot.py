@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from nt.visualization.new_cm import cmaps
 from nt.speech_enhancement.beamform_utils import *
 import nt.transform
+from nt.utils.math_ops import softmax
+from warnings import warn
 
 COLORMAP = cmaps['viridis']
 
@@ -55,6 +57,10 @@ def spectrogram(signal, limits=None, ax=None, log=True, colorbar=True, batch=0):
     """
 
     signal = _get_batch(signal, batch)
+
+    if np.any(signal < 0):
+        warn('The array passed to spectrogram contained negative values. This '
+             'leads to a wrong visualization and especially colorbar!')
 
     if log:
         signal = np.log10(signal).T
@@ -246,3 +252,22 @@ def plot_beampattern(W, sensor_positions, fft_size, sample_rate,
         ax.set_xlabel('Angle')
         ax.set_ylabel('Frequency bin index')
         ax.grid(False)
+
+def plot_ctc_label_probabilities(net_out, label_handler, batch=0):
+    """ Plots a posteriorgram of the network output of a CTC trained network
+
+    :param net_out: Output of the network
+    :param label_handler: Labelhandler holding the correspondence labels
+    :param batch: Batch to plot
+    """
+    x = _get_batch(net_out, batch)
+    x = softmax(x)
+    rc_params = {'axes.grid': False, 'figure.figsize': [18, 10]}
+    with plt.rc_context(rc=rc_params):
+        plt.imshow(x.T, cmap=COLORMAP,
+                   interpolation='none', aspect='auto')
+        plt.yticks(
+            range(len(label_handler)),
+            [label_handler.int_to_label[x] for x in range(len(label_handler))])
+        plt.xlabel('Timeframe')
+        plt.ylabel('Transcription')
