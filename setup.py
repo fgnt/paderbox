@@ -10,12 +10,21 @@ from setuptools import setup, find_packages
 # To use a consistent encoding
 from codecs import open
 from os import path
+# Enable Cython
+from distutils.core import setup as cythonSetup
+from Cython.Build import cythonize
 
 here = path.abspath(path.dirname(__file__))
 
 # Get the long description from the relevant file
 with open(path.join(here, 'DESCRIPTION.rst'), encoding='utf-8') as f:
     long_description = f.read()
+
+cythonSetup(
+
+     name = 'Image Method',
+     ext_modules = cythonize("nt/reverb/CalcRIR_Simple_C.pyx")
+ )
 
 setup(
     name='nt',
