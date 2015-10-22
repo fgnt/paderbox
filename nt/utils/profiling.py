@@ -2,7 +2,7 @@
 import line_profiler
 import memory_profiler
 import cProfile
-import time
+import time as time
 from pycallgraph import PyCallGraph
 from pycallgraph.output import GraphvizOutput
 from inspect import isclass, isfunction
@@ -17,7 +17,7 @@ def timefunc(func):
     return profiled_func
 
 
-def do_cprofile(func_or_str='tottime'):
+def cprun(func_or_str='tottime'):
     if isfunction(func_or_str):
         def profiled_func(*args, **kwargs):
             profile = cProfile.Profile()
@@ -44,14 +44,19 @@ def do_cprofile(func_or_str='tottime'):
         return inner
 
 
-def do_graphprofile(func):
+def gprun(func):
+    """
+    graph profiling
+    :param func:
+    :return:
+    """
     def profiled_func(*args, **kwargs):
         with PyCallGraph(output=GraphvizOutput()):
             return func(*args, **kwargs)
     return profiled_func
 
 
-def do_lineprofile(func_or_list=list()):
+def lprun(func_or_list=list()):
     if isfunction(func_or_list):
         def profiled_func(*args, **kwargs):
             profiler = line_profiler.LineProfiler()
@@ -86,7 +91,7 @@ def do_lineprofile(func_or_list=list()):
         return inner
 
 
-def do_memprofile(func_or_list=list()):
+def mprun(func_or_list=list()):
     if isfunction(func_or_list):
         def profiled_func(*args, **kwargs):
             profiler = memory_profiler.LineProfiler()
