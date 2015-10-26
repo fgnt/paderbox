@@ -102,7 +102,7 @@ def stft(signal, limits=None, ax=None, log=True, colorbar=True, batch=0):
                        ax=ax, log=log, colorbar=colorbar, batch=batch)
 
 
-def mask(signal, ax=None, limits=(0, 1), colobar=True, batch=0):
+def mask(signal, ax=None, limits=(0, 1), colorbar=True, batch=0):
     """
     Plots any mask with values between zero and one.
 
@@ -119,10 +119,11 @@ def mask(signal, ax=None, limits=(0, 1), colobar=True, batch=0):
     with sns.axes_style("dark"):
         if ax is None:
             figure, ax = plt.subplots(1, 1)
-        image = ax.imshow(np.clip(signal.T, limits[0], limits[1]),
+        image = ax.imshow(signal.T,
                           interpolation='nearest', origin='lower',
+                          vmin=limits[0], vmax=limits[1],
                           cmap=COLORMAP)
-        if colobar:
+        if colorbar:
             cbar = plt.colorbar(image, ax=ax)
             cbar.set_label('Mask')
         ax.set_xlabel('Time frame index')
