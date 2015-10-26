@@ -5,18 +5,18 @@ import nt.testing as tc
 import numpy.testing as nptest
 import nt.reverb.reverb_utils as rirUtils
 
-# uncomment, if you want to test matlab functions
-matlab_test = unittest.skipUnless(True,'matlab-test')
+# Uncomment, if you want to test Matlab functions.
+matlab_test = unittest.skipUnless(True, 'matlab-test')
 
 class TestReverbUtils(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
 
-        self.mlab = Mlab()
-        self.sampleRate = 16000 # Hz
-        self.filterLength = 2**13
-        self.roomDim = (10,10,4) # meter
+        self.matlab_session = Mlab()
+        self.sample_rate = 16000  # Hz
+        self.filter_length = 2**13
+        self.room_dimensions = (10, 10, 4)  # meter
 
     @matlab_test
     def test_comparePythonTranVuRirWithExpectedUsingMatlabTwoSensorTwoSrc(self):
@@ -26,40 +26,53 @@ class TestReverbUtils(unittest.TestCase):
         "Tranvu" algorithm.
         Here: 2 randomly placed sensors and sources each
         """
-        numSrcs = 2
-        numMics = 2
-        T60 = 0.1
+        number_of_sources = 2
+        number_of_sensors = 2
+        reverberation_time = 0.1
 
-        sources,mics = rirUtils.generateRandomSourcesAndSensors(self.roomDim,
-                                                                numSrcs,numMics)
-        mlab = self.mlab
-        pyRIR = rirUtils.generate_RIR(self.roomDim,sources,mics,self.sampleRate,
-                                      self.filterLength,T60)
+        sources, mics = rirUtils.generateRandomSourcesAndSensors(
+            self.room_dimensions,
+            number_of_sources,
+            number_of_sensors
+        )
 
-        mlab.run_code("roomDim = [{0};{1};{2}]".format(self.roomDim[0],
-                                          self.roomDim[1],self.roomDim[2]))
-        mlab.run_code("src = zeros(3,1); sensors = zeros(3,1);")
-        for s in range(numSrcs):
-            mlab.run_code("srctemp = [{0};{1};{2}]".format(sources[s][0],
-                                                      sources[s][1],
-                                                      sources[s][2]))
-            mlab.run_code("src = [src srctemp]")
-        for m in range(numMics):
-            mlab.run_code("sensorstemp = [{0};{1};{2}]".format(mics[m][0],
-                                                           mics[m][1],
-                                                           mics[m][2]))
-            mlab.run_code("sensors = [sensors sensorstemp]")
-        mlab.run_code("src = src(:,2:end)")
-        mlab.run_code("sensors = sensors(:,2:end)")
+        matlab_session = self.matlab_session
+        pyRIR = rirUtils.generate_RIR(
+            self.room_dimensions,
+            sources,
+            mics,
+            self.sample_rate,
+            self.filter_length,
+            reverberation_time
+        )
 
-        mlab.run_code("sampleRate = {0}".format(self.sampleRate))
-        mlab.run_code("filterLength = {0}".format(self.filterLength))
-        mlab.run_code("T60 = {0}".format(T60))
+        matlab_session.run_code("roomDim = [{0}; {1}; {2}]".format(self.room_dimensions[0],
+                                                         self.room_dimensions[1],
+                                                         self.room_dimensions[2]))
+        matlab_session.run_code("src = zeros(3,1); sensors = zeros(3,1);")
+        for s in range(number_of_sources):
+            matlab_session.run_code("srctemp = [{0};{1};{2}]".format(sources[s][0],
+                                                           sources[s][1],
+                                                           sources[s][2]))
+            matlab_session.run_code("src = [src srctemp]")
+        for m in range(number_of_sensors):
+            matlab_session.run_code("sensorstemp = [{0};{1};{2}]".format(mics[m][0],
+                                                               mics[m][1],
+                                                               mics[m][2]))
+            matlab_session.run_code("sensors = [sensors sensorstemp]")
 
-        mlab.run_code("rir = reverb.generate(roomDim,src,sensors,sampleRate,"+
-                     "filterLength,T60,'algorithm','TranVu');")
-        matlabRIR = mlab.get_variable('rir')
-        tc.assert_allclose(matlabRIR,pyRIR, atol = 1e-4)
+        matlab_session.run_code("src = src(:,2:end)")
+        matlab_session.run_code("sensors = sensors(:,2:end)")
+
+        matlab_session.run_code("sampleRate = {0}".format(self.sample_rate))
+        matlab_session.run_code("filterLength = {0}".format(self.filter_length))
+        matlab_session.run_code("T60 = {0}".format(reverberation_time))
+
+        matlab_session.run_code("rir = reverb.generate(roomDim, src, sensors, sampleRate, "+
+                     "filterLength, T60, 'algorithm', 'TranVu');")
+
+        matlabRIR = matlab_session.get_variable('rir')
+        tc.assert_allclose(matlabRIR, pyRIR, atol=1e-4)
 
     def test_compareTranVuMinimumTimeDelayWithSoundVelocity(self):
         """
@@ -71,35 +84,48 @@ class TestReverbUtils(unittest.TestCase):
         numMics = 1
         T60 = 0
 
-        sources,mics = rirUtils.generateRandomSourcesAndSensors(self.roomDim,
-                                                                numSrcs,numMics)
+        sources, mics = rirUtils.generateRandomSourcesAndSensors(
+            self.room_dimensions,
+            numSrcs,
+            numMics
+        )
         distance = numpy.linalg.norm(numpy.asarray(sources)-numpy.asarray(mics))
 
-        fixedshift = 128 #Tranvu: first index of returned RIR equals time-index
-                        # minus 128
-        RIR = rirUtils.generate_RIR(self.roomDim,sources,mics,self.sampleRate,
-                                    self.filterLength,T60)
+        # Tranvu: first index of returned RIR equals time-index minus 128
+        fixedshift = 128
+        RIR = rirUtils.generate_RIR(
+            self.room_dimensions,
+            sources,
+            mics,
+            self.sample_rate,
+            self.filter_length,
+            T60
+        )
         peak = numpy.argmax(RIR) - fixedshift
-        actual = peak / self.sampleRate;
+        actual = peak / self.sample_rate
         expected = distance / 343
-        tc.assert_allclose(actual,expected, atol = 1e-4)
+        tc.assert_allclose(actual, expected, atol=1e-4)
 
     @unittest.skip("")
     @matlab_test
     def test_compareTranVuExpectedT60WithCalculatedUsingSchroederMethod(self):
         pass
+
     @unittest.skip("")
     @matlab_test
     def test_compareDirectivityWithExpectedUsingTranVu(self):
         pass
+
     @unittest.skip("")
     @matlab_test
     def test_compareAzimuthSensorOrientationWithExpectedUsingTranVu(self):
         pass
+
     @unittest.skip("")
     @matlab_test
     def test_compareElevationSensorOrientationWithExpectedUsingTranvu(self):
         pass
+
     @unittest.skip("")
     @matlab_test
     def test_compareTranVuExpectedT60WithCalculatedUsingSchroederMethod(self):
