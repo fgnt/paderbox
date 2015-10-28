@@ -6,12 +6,12 @@ https://github.com/pypa/sampleproject
 """
 
 # Always prefer setuptools over distutils
-from setuptools import setup, find_packages
+from distutils.core import setup
+from setuptools import find_packages
 # To use a consistent encoding
 from codecs import open
 from os import path
-# Enable Cython
-from distutils.core import setup as cythonSetup
+
 from Cython.Build import cythonize
 
 here = path.abspath(path.dirname(__file__))
@@ -19,12 +19,6 @@ here = path.abspath(path.dirname(__file__))
 # Get the long description from the relevant file
 with open(path.join(here, 'DESCRIPTION.rst'), encoding='utf-8') as f:
     long_description = f.read()
-
-cythonSetup(
-
-     name = 'Image Method',
-     ext_modules = cythonize("nt/reverb/CalcRIR_Simple_C.pyx")
- )
 
 setup(
     name='nt',
@@ -98,6 +92,8 @@ setup(
         'dev': ['check-manifest'],
         'test': ['coverage'],
     },
+
+    ext_modules = cythonize("nt/reverb/CalcRIR_Simple_C.pyx"),
 
     # If there are data files included in your packages that need to be
     # installed, specify them here.  If using Python 2.6 or less, then these
