@@ -63,7 +63,7 @@ class WordLabelHandler():
 
     def label_seq_to_int_arr(self, label_seq):
         int_arr = list()
-        for word in enumerate(label_seq.split()):
+        for word in label_seq.split():
             try:
                 int_arr.append(self.label_to_int[word])
             except KeyError:
@@ -71,7 +71,7 @@ class WordLabelHandler():
         return numpy.asarray(int_arr, dtype=numpy.int32)
 
     def int_arr_to_label_seq(self, int_arr):
-        return ''.join([self.int_to_label[i] for i in int_arr])
+        return ' '.join([self.int_to_label[i] for i in int_arr])
 
     def print_mapping(self):
         for char, i in self.label_to_int.items():
