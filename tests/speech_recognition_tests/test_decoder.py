@@ -57,7 +57,7 @@ class TestDecoder(unittest.TestCase):
     def tearDown(self):
         self.dp_test.shutdown()
 
-    #@unittest.skip("")
+    @unittest.skip("")
     def test_ground_truth(self):
         utt = "THIS SHOULD BE RECOGNIZED"
         symbol_seq = "T_HI__S __SSHOOO_ULD BE_ __RECO_GNIIZ_ED____"
@@ -75,7 +75,7 @@ class TestDecoder(unittest.TestCase):
         for graph in decodes:
             self.assertEqual(utt, decodes[graph]["decode"])
 
-    #@unittest.skip("")
+    @unittest.skip("")
     def test_compare_argmax_ctc(self):
         batch = self.dp_test.__next__()
         
@@ -103,7 +103,7 @@ class TestDecoder(unittest.TestCase):
     #
     #     self.assertEqual(decodes["BDLG"]["decode"], decodes["BDL"]["decode"])
 
-    #@unittest.skip("")
+    @unittest.skip("")
     def test_one_word_grammar(self):
         word = "SHOULD"
         neg_cost = 1
@@ -129,7 +129,7 @@ class TestDecoder(unittest.TestCase):
         for graph in decodes:
             self.assertEqual(word, decodes[graph]["decode"])
 
-    #@unittest.skip("")
+    @unittest.skip("")
     def test_two_word_grammar(self):
         word1 = "ACOUSTIC"
         word2 = "LANGUAGE"
@@ -173,7 +173,7 @@ class TestDecoder(unittest.TestCase):
         for graph in decodes:
             self.assertEqual(word1, decodes[graph]["decode"])
 
-    #@unittest.skip("")
+    @unittest.skip("")
     def test_trigram_grammar(self):
         word1 = "HE"
         word2 = "SHE"
