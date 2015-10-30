@@ -164,3 +164,24 @@ def assert_cosine_similarity(x, y, atol=1e-6):
         y_normalized = normalize_vector_to_unit_length(y)
         distance = 1 - np.abs(vector_H_vector(x_normalized, y_normalized))**2
         assert_array_less(distance, atol)
+
+def assert_hermitian(matrix, axes=(-2, -1)):
+    np.testing.assert_allclose(matrix,
+                               matrix.swapaxes(*axes[::-1]).conj())
+
+def assert_positive_semidefinite(matrix):
+    # https://en.wikipedia.org/wiki/Positive-definite_matrix
+
+    # ToDo: make axes to a parameter
+    axes = (-2, -1)
+
+    # ToDo: Implement for non hermitian matrix
+    assert_hermitian(matrix, axes)
+    if axes == (-2, -1):
+        eigenvalues, _ = np.linalg.eigh(matrix)
+        assert_array_greater_equal(eigenvalues + 1e-6, 0)
+    else:
+        raise NotImplementedError()
+
+
+
