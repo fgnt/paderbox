@@ -1,16 +1,10 @@
 from nt.nn.models.template import *
 import unittest
 import chainer
-from io import StringIO
-from unittest.mock import patch
-import nt.utils
 import numpy
 import numpy.testing
 import os
 import chainer.cuda
-import pickle
-import cupy
-
 
 def forward_train(nn):
     h1 = chainer.functions.relu(nn.layers.l1(nn.inputs.x))
@@ -57,7 +51,7 @@ class NeuralNetworkTest(unittest.TestCase):
         self.assertTrue(isinstance(self.nn.inputs.x,
                                    chainer.Variable))
         self.assertTrue(isinstance(self.nn.inputs.x.data,
-                                   cupy.ndarray))
+                                   chainer.cuda.ndarray))
 
         self.assertTrue(isinstance(self.nn.outputs.y.num, numpy.ndarray))
         numpy.testing.assert_array_equal(self.default, self.nn.outputs.y.num)
