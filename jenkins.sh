@@ -13,10 +13,11 @@ export TEST_MATLAB
 
 # Refresh toolbox
 /usr/bin/yes | pip uninstall nt || true
-/usr/bin/yes | pip install --user . || true
+/usr/bin/yes | pip install --user -e . || true
 
 # Update chainer
-/usr/bin/yes | pip install --user --upgrade ./chainer/ || true
+/usr/bin/yes | pip uninstall chainer || true
+/usr/bin/yes | pip install --user -e  ./chainer/ || true
 
 # Unittets
 nosetests --with-xunit --with-coverage --cover-package=nt || true
