@@ -5,6 +5,7 @@ import nt.testing as tc
 import numpy.testing as nptest
 import nt.reverb.reverb_utils as rirUtils
 from nt.utils.profiling import *
+import nt.reverb.scenario as scenario
 
 # Uncomment, if you want to test Matlab functions.
 matlab_test = unittest.skipUnless(True, 'matlab-test')
@@ -18,6 +19,7 @@ class TestReverbUtils(unittest.TestCase):
         self.sample_rate = 16000  # Hz
         self.filter_length = 2**13
         self.room_dimensions = (10, 10, 4)  # meter
+        self.sensor_pos = (5.01,5,2)
 
     @matlab_test
     def test_comparePythonTranVuRirWithExpectedUsingMatlabTwoSensorTwoSrc(self):
@@ -164,13 +166,60 @@ class TestReverbUtils(unittest.TestCase):
         from different directivities with expected characteristic
         """
         SensorOrientationAngle = 0
-        fixedShift = 128
-        T60 = 0
+        # .. = get_directivity_characteristic(..)
+
+
+
+    def get_directivity_characteristic(self,algorithm = "TranVu",angle="azimuth",
+                     sensor_orientation_angle=0):
+        if algorithm == "TranVu":
+            fixedShift = 128
+            T60 = 0
+        elif algorithm == "Habets":
+            fixedShift = 0
+            T60 = 0.18
+        else:
+            fixedShift = 0
+            T60 = 0
         deltaAngle = numpy.pi/16
-        #azimuthAngle =
-        # todo: Testcase weiterschreiben.
 
-
+        if angle == "azimuth":
+            azimuth_angle = numpy.arange(0,2*numpy.pi,deltaAngle)
+            elevation_angle = numpy.zeros([2*numpy.pi/deltaAngle])
+            sensor_orientations = [sensor_orientation_angle, 0]
+        elif angle == "elevation":
+            azimuth_angle = numpy.zeros([2*numpy.pi/deltaAngle])
+            elevation_angle = numpy.arange(0,2*numpy.pi,deltaAngle)
+            sensor_orientations = [0, sensor_orientation_angle]
+        else:
+            raise NotImplementedError("Given angle not implemented!"
+                                      "Choose 'azimuth' or 'elevation'!")
+        radius = 1
+        sources_position = \
+            scenario.generate_equally_distributed_source_positions(
+                center=self.sensor_pos,
+                n=len(azimuth_angle),
+                azimuth_angle= azimuth_angle,
+                elevation_angle= elevation_angle,
+                radius = radius,
+                dims= 3
+            )
+        rir_py = rirUtils.generate_RIR(self.room_dimensions,
+                                       sources_position,
+                                       self.sensor_pos,
+                                       self.sample_rate,
+                                       self.filter_length,
+                                       T60,
+                                       algorithm="TranVu",
+                                       sensor_orientations= sensor_orientations,
+                                       )
+        #set RIR to 0 when receiving echoes
+        image_distance = numpy.array(self.room_dimensions*6).reshape((3,6))
+        filter = numpy.array([[1,0,0,-1,0,0],[0,1,0,0,-1,0],[0,0,1,0,0,-1]])
+        image_distance *= filter
+        first_source_image = sources_position.reshape([3,1,-1]) + \
+                            image_distance.reshape([3,1,1,-1])
+        # todo: Methode weiterschreiben
 
 
     @unittest.skip("")
