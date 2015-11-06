@@ -27,7 +27,7 @@ python -m coverage xml --include=nt* || true
 
 # Pylint tests
 /net/ssd/software/anaconda/envs/py3k_jenkins/bin/pylint --rcfile=pylint.cfg -f parseable nt || true
-cd doc/source/auto_reference/gen.bash
+bash doc/source/auto_reference/gen.bash
 make --directory=doc html || true
 
 # Store pip packages
