@@ -1,3 +1,5 @@
+'''
+Christoph: remove pathes to your home folder !!!
 
 
 # Program for testing PESQ functionality ( pesq.py)
@@ -40,6 +42,6 @@ elif pesqmode == 'wb':
 else:
     sys.exit()
 
-
+'''
 
 
