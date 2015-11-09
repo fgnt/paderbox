@@ -6,6 +6,7 @@ from nt.speech_enhancement.beamform_utils import *
 import nt.transform
 from nt.utils.math_ops import softmax
 from warnings import warn
+from collections import OrderedDict
 
 COLORMAP = cmaps['viridis']
 
@@ -254,7 +255,7 @@ def plot_beampattern(W, sensor_positions, fft_size, sample_rate,
         ax.set_ylabel('Frequency bin index')
         ax.grid(False)
 
-def plot_ctc_label_probabilities(net_out, label_handler, batch=0):
+def plot_ctc_label_probabilities(net_out, label_handler=None, batch=0):
     """ Plots a posteriorgram of the network output of a CTC trained network
 
     :param net_out: Output of the network
@@ -263,12 +264,18 @@ def plot_ctc_label_probabilities(net_out, label_handler, batch=0):
     """
     x = _get_batch(net_out, batch)
     x = softmax(x)
+    if label_handler is not None:
+        ordered_map = OrderedDict(sorted(label_handler.int_to_label.items(), key=lambda t:t[1]))
+        order = list(ordered_map.keys())
+    else:
+        order = list(range(x.shape[1]))
     rc_params = {'axes.grid': False, 'figure.figsize': [18, 10]}
     with plt.rc_context(rc=rc_params):
-        plt.imshow(x.T, cmap=COLORMAP,
+        plt.imshow(x[:, order].T, cmap=COLORMAP,
                    interpolation='none', aspect='auto')
-        plt.yticks(
-            range(len(label_handler)),
-            [label_handler.int_to_label[x] for x in range(len(label_handler))])
+        if label_handler is not None:
+            plt.yticks(
+                range(len(label_handler)),
+                list(ordered_map.values()))
         plt.xlabel('Timeframe')
         plt.ylabel('Transcription')
