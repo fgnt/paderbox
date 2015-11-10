@@ -41,12 +41,12 @@ class TestDecoder(unittest.TestCase):
 
         with open(json_path) as fid:
             json_data = json.load(fid)
-        self.feature_fetcher_test = JsonCallbackFetcher(
+        feature_fetcher_test = JsonCallbackFetcher(
             'fbank', json_data, flist_test, transform_features,
             feature_channels=['observed/ch1'], nist_format=True)
 
         # label_handler_test = trans_fetcher_test.label_handler
-        self.dp_test = DataProvider((self.feature_fetcher_test, ),
+        self.dp_test = DataProvider((feature_fetcher_test, ),
                                batch_size=1,
                                shuffle_data=True)
         self.dp_test.print_data_info()
@@ -88,12 +88,10 @@ class TestDecoder(unittest.TestCase):
         batch = self.dp_test.__next__()
         self.nn.set_inputs(**batch)
         self.forward(self.nn)
-        utt_idx = self.dp_test.current_observation_indices[0]
-        utt_id = self.feature_fetcher_test.utterance_ids[utt_idx]
+        utt_id = "TEST_UTT_2"
         net_out_list = [self.nn.outputs.trans_hat.num,]
         self.decoder.create_lattices(net_out_list, [utt_id,])
-        sym_decode, word_decode = self.decoder.decode(
-            lm_scale=1, table_out="symbols")
+        sym_decode, word_decode = self.decoder.decode(lm_scale=1)
 
         argmax_ctc = argmax_ctc_decode(
             self.nn.outputs.trans_hat.num[:, 0, :],
@@ -103,13 +101,16 @@ class TestDecoder(unittest.TestCase):
 
         self.assertEqual(argmax_ctc, word_decode[utt_id])
 
-    @unittest.skip("")
+    # @unittest.skip("")
     def test_one_word_grammar(self):
+
         word = "SHOULD"
+        utt_id = "TEST_UTT_3"
         neg_cost = 1
         utt_length = len(word)
 
-        with open("test/arpa.tmp", 'w') as arpa_fid:
+        lm_file = "arpa.tmp"
+        with open(lm_file, 'w') as arpa_fid:
             arpa_fid.write("\\data\\\nngram 1=3\nngram 2=0\nngram 3=0\n"
                            "\n\\1-grams:\n"
                            "0\t<s>\t0\n"
@@ -119,17 +120,16 @@ class TestDecoder(unittest.TestCase):
                            "\n\\3-grams:\n"
                            "\end\\\n")
 
-        self.decoder.lm_file = "test/arpa.tmp"
-        self.decoder.grammar_type = "trigram"
+        self.decoder = Decoder(self.label_handler, self.graph_dir,
+                      lm_file=lm_file, grammar_type="trigram")
+        self.decoder.create_graphs()
 
         trans_hat = np.zeros((utt_length, 1, len(self.label_handler)))
         trans_hat = Variable(trans_hat)
-        self.decoder.create_lattices(net_out_list, [utt_id,],
-                                     use_lexicon=False, use_lm=False)
-        decodes = self.decoder.decode(lm_scale=1)
+        self.decoder.create_lattices([trans_hat.num,], [utt_id,])
+        sym_decode, word_decode = self.decoder.decode(lm_scale=1)
 
-        for graph in decodes:
-            self.assertEqual(word, decodes[graph]["decode"])
+        self.assertEqual(word, word_decode[utt_id])
 
     @unittest.skip("")
     def test_two_word_grammar(self):
