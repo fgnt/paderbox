@@ -80,7 +80,7 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=['numpy',
                       'chainer', 'scipy', 'librosa', 'seaborn', 'tqdm', 'dill',
-                      'pip', 'IPython', 'sklearn','pylab','pymatbridge','h5py',
+                      'pip', 'IPython', 'sklearn', 'pylab', 'pymatbridge', 'h5py',
                       'line_profiler', 'memory_profiler', 'pycallgraph'
                       ],
 
