@@ -93,7 +93,7 @@ setup(
         'test': ['coverage'],
     },
 
-    ext_modules = cythonize("nt/reverb/CalcRIR_Simple_C.pyx"),
+    ext_modules=cythonize("nt/reverb/CalcRIR_Simple_C.pyx"),
 
     # If there are data files included in your packages that need to be
     # installed, specify them here.  If using Python 2.6 or less, then these
