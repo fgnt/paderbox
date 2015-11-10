@@ -30,11 +30,13 @@ def audioread(path, offset=0.0, duration=None, sample_rate=16000):
 
     .. admonition:: Example
         Only path provided:
+
         >>> path = '/net/speechdb/timit/pcm/train/dr1/fcjf0/sa1.wav'
         >>> signal = audioread(path)
 
         Say you load audio examples from a very long audio, you can provide a
         start position and a duration in seconds.
+
         >>> path = '/net/speechdb/timit/pcm/train/dr1/fcjf0/sa1.wav'
         >>> signal = audioread(path, offset=0, duration=1)
     """
@@ -53,7 +55,7 @@ def read_nist_wsj(path):
     :return:
     """
     tmp_file = tempfile.NamedTemporaryFile(delete=False)
-    cmd = "{}/sph2pipe -f wav {path} {dest_file}]".format(
+    cmd = "{}/sph2pipe -f wav {path} {dest_file}".format(
         UTILS_DIR, path = path, dest_file = tmp_file.name)
     dir = "{}/sph2pipe".format(UTILS_DIR)
     #subprocess.Popen([dir , '-f', 'wav', path, tmp_file.name])

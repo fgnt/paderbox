@@ -6,60 +6,65 @@ from chainer import Variable
 from nt.nn import NeuralNetwork, DataProvider
 from nt.nn.data_fetchers.json_callback_fetcher import JsonCallbackFetcher,\
     to_fbank, stack_to_batch, segment_data
-from nt.nn.data_fetchers.chime_transcription_data_fetcher \
-    import ChimeTranscriptionDataFetcher
 from nt.utils.transcription_handling import argmax_ctc_decode
-import copy
+import os
 import json
-from chainer import functions as func
+import tempfile
 
+number_of_filters = 80
+segment_length = 3
+segment_step = 3
 def transform_features(data_list):
-    number_of_filters = 80
     data = to_fbank(data_list, number_of_filters=number_of_filters)
-    data = segment_data(data, segment_length=11, segment_step=3)
+    data = [np.log(d) for d in data]
+    data = segment_data(data, segment_length=segment_length,
+                        segment_step=segment_step)
     return stack_to_batch(data, dtype=np.float32)
 
 class TestDecoder(unittest.TestCase):
     def setUp(self):
-        nn_path = "?"
-        label_handler_path = "?"
-
-        # NN validation
+        data_dir = "/net/storage/jheymann/notebooks_nt/toolbox_examples/nn/data/2015-11-03-11-03-40_Full_WSJ_CTC_dropout_google_init_stack_3_skip_3"
+        nn_path = os.path.join(data_dir, 'best.nnet')
+        label_handler_path = os.path.join(data_dir, 'label_handler')
 
         self.nn = NeuralNetwork().load(nn_path)
-
         with open(label_handler_path, 'rb') as label_handler_fid:
             self.label_handler = pickle.load(label_handler_fid)
             label_handler_fid.close()
 
-        json_path = '/net/storage/jheymann/speech_db/reverb/reverb.json'
-        flist_test = 'test/flists/wav/si_et_1'
+        self.graph_dir = tempfile.mkdtemp()
+        # self.graph_dir = "test"
+        print(self.graph_dir)
+
+        json_path = '/net/ssd/jheymann/owncloud/python_nt/nt/database/wsj/wsj.json'
+        flist_test = 'test/flist/wave/official_si_dt_05'
 
         with open(json_path) as fid:
             json_data = json.load(fid)
-        feature_fetcher_test = \
-            JsonCallbackFetcher('fbank', json_data, flist_test, transform_features,
-                                feature_channels=['observed/CH1'])
-
-        trans_fetcher_test = ChimeTranscriptionDataFetcher('trans', json_data,
-                                                           flist_test)
+        self.feature_fetcher_test = JsonCallbackFetcher(
+            'fbank', json_data, flist_test, transform_features,
+            feature_channels=['observed/ch1'], nist_format=True)
 
         # label_handler_test = trans_fetcher_test.label_handler
-        self.dp_test = DataProvider((feature_fetcher_test, trans_fetcher_test),
+        self.dp_test = DataProvider((self.feature_fetcher_test, ),
                                batch_size=1,
                                shuffle_data=True)
         self.dp_test.print_data_info()
 
         self.dp_test.__iter__()
 
-        self.decoder = Decoder(self.label_handler, grammar_type="unigram")
-
     def tearDown(self):
         self.dp_test.shutdown()
 
-    @unittest.skip("")
+    #@unittest.skip("")
     def test_ground_truth(self):
+
+        self.decoder = Decoder(self.label_handler, self.graph_dir,
+                      lm_file='/net/nas/ebbers/project_echo/wsj_system/lm/tcb05cnp', grammar_type="unigram")
+        self.decoder.create_graphs()
+
         utt = "THIS SHOULD BE RECOGNIZED"
+        utt_id = "TEST_UTT_1"
         symbol_seq = "T_HI__S __SSHOOO_ULD BE_ __RECO_GNIIZ_ED____"
 
         trans_hat = -100*np.ones((len(symbol_seq), 1, len(self.label_handler)))
@@ -70,46 +75,39 @@ class TestDecoder(unittest.TestCase):
             trans_hat[idx, 0, self.label_handler.label_to_int[sym]] = 0
 
         trans_hat = Variable(trans_hat)
-        decodes = self.decoder.run_decode(trans_hat,
-                                          graphs=["B", "BDL", "BDLG"])
-        for graph in decodes:
-            self.assertEqual(utt, decodes[graph]["decode"])
+        self.decoder.create_lattices([trans_hat.num,], [utt_id,])
+        sym_decode, word_decode = self.decoder.decode(lm_scale=1)
+        self.assertEqual(utt, word_decode[utt_id])
 
-    @unittest.skip("")
+    # @unittest.skip("")
     def test_compare_argmax_ctc(self):
+
+        self.decoder = Decoder(self.label_handler, self.graph_dir,
+                      lm_file='/net/nas/ebbers/project_echo/wsj_system/lm/tcb05cnp', grammar_type=None, use_lexicon=False)
+        self.decoder.create_graphs()
         batch = self.dp_test.__next__()
-        
         self.nn.set_inputs(**batch)
-        self.forward_net(self.nn)
-        trans_hat = self.nn.outputs.trans_hat
-        decodes = self.decoder.run_decode(trans_hat, graphs=["B"])
-        argmax_ctc = argmax_ctc_decode(trans_hat.data[:, 0, :],
-                                       self.label_handler)
+        self.forward(self.nn)
+        utt_idx = self.dp_test.current_observation_indices[0]
+        utt_id = self.feature_fetcher_test.utterance_ids[utt_idx]
+        net_out_list = [self.nn.outputs.trans_hat.num,]
+        self.decoder.create_lattices(net_out_list, [utt_id,])
+        sym_decode, word_decode = self.decoder.decode(
+            lm_scale=1, table_out="symbols")
+
+        argmax_ctc = argmax_ctc_decode(
+            self.nn.outputs.trans_hat.num[:, 0, :],
+            self.label_handler)
+        print(word_decode[utt_id])
         print(argmax_ctc)
 
-        for graph in decodes:
-            self.assertEqual(argmax_ctc, decodes[graph]["decode"])
-
-    # #@unittest.skip("")
-    # def test_cmpr_UBDL_UBDLG_noGraphCosts(self):
-    #     batch = self.dp_test.__next__()
-    #
-    #     self.nn.set_inputs(**batch)
-    #     self.forward_net(self.nn)
-    #     trans_hat = self.nn.outputs.trans_hat
-    #
-    #     decodes = self.decoder.run_decode(trans_hat, graphs=["BDL", "BDLG"],
-    #                                       lm_scale=0)
-    #
-    #     self.assertEqual(decodes["BDLG"]["decode"], decodes["BDL"]["decode"])
+        self.assertEqual(argmax_ctc, word_decode[utt_id])
 
     @unittest.skip("")
     def test_one_word_grammar(self):
         word = "SHOULD"
         neg_cost = 1
         utt_length = len(word)
-        trans_hat = np.zeros((utt_length, 1, len(self.label_handler)))
-        trans_hat = Variable(trans_hat)
 
         with open("test/arpa.tmp", 'w') as arpa_fid:
             arpa_fid.write("\\data\\\nngram 1=3\nngram 2=0\nngram 3=0\n"
@@ -121,10 +119,14 @@ class TestDecoder(unittest.TestCase):
                            "\n\\3-grams:\n"
                            "\end\\\n")
 
-        self.decoder.arpa_path = "test/arpa.tmp"
+        self.decoder.lm_file = "test/arpa.tmp"
         self.decoder.grammar_type = "trigram"
 
-        decodes = self.decoder.run_decode(trans_hat, graphs=["BDLG"])
+        trans_hat = np.zeros((utt_length, 1, len(self.label_handler)))
+        trans_hat = Variable(trans_hat)
+        self.decoder.create_lattices(net_out_list, [utt_id,],
+                                     use_lexicon=False, use_lm=False)
+        decodes = self.decoder.decode(lm_scale=1)
 
         for graph in decodes:
             self.assertEqual(word, decodes[graph]["decode"])
@@ -216,32 +218,19 @@ class TestDecoder(unittest.TestCase):
             self.assertEqual(utt, decodes[graph]["decode"])
 
     @staticmethod
-    def forward_net(nn, dropout_rate=0.):
-        def drop(x):
-            return func.dropout(x, dropout_rate)
+    def forward(nn, dropout_rate=0., noise_var=0.):
 
-        h_in_1 = func.clipped_relu(nn.layers.l_in_1_norm(nn.layers.l_in_1(drop(nn.inputs.fbank))))
-        h_in_2 = func.clipped_relu(nn.layers.l_in_2_norm(nn.layers.l_in_2(drop(h_in_1))))
-
-        act_fw = nn.layers.l_x_fw_norm(nn.layers.l_x_fw(drop(h_in_2)))
-        act_bw = nn.layers.l_x_bw_norm(nn.layers.l_x_bw(drop(h_in_2)))
-        lstm_fw, _, _ = nn.layers.l_lstm_fw(act_fw)
-        lstm_bw, _, _ = nn.layers.l_lstm_bw(act_bw)
+        x = nn.layers.l_x_norm(nn.inputs.fbank)
+        act_fw = nn.layers.l_x_fw(x)
+        act_bw = nn.layers.l_x_bw(x)
+        lstm_fw, _, _ = nn.layers.l_lstm_fw((act_fw))
+        lstm_bw, _, _ = nn.layers.l_lstm_bw((act_bw))
         blstm = lstm_fw + lstm_bw
 
-        relu_1 = func.clipped_relu(nn.layers.l_out_norm_1(nn.layers.l_out_1(drop(blstm))))
-        relu_2 = func.clipped_relu(nn.layers.l_out_norm_2(nn.layers.l_out_2(drop(relu_1))))
+        act_fw_2 = nn.layers.l_x_fw_2(blstm)
+        act_bw_2 = nn.layers.l_x_bw_2(blstm)
+        lstm_fw_2, _, _ = nn.layers.l_lstm_fw_2(act_fw_2)
+        lstm_bw_2, _, _ = nn.layers.l_lstm_bw_2(act_bw_2)
+        blstm_2 = lstm_fw_2 + lstm_bw_2
 
-        nn.outputs.trans_hat = nn.layers.l_output(relu_2)
-        # nn.outputs.ctc_loss = func.ctc(nn.outputs.trans_hat, nn.inputs.trans)
-        nn.outputs.trans = nn.inputs.trans
-
-        wer = 0
-        per = 0
-        # for b in range(nn.inputs.trans.num.shape[0]):
-        #     ref = label_handler.int_arr_to_label_seq(nn.inputs.trans.num[0, :].tolist())
-        #     dec = argmax_ctc_decode(nn.outputs.trans_hat.num[:, 0, :], label_handler)
-        #     wer += editdistance.eval(ref.split(), dec.split()) / len(ref.split()) * 100
-        #     per += editdistance.eval(list(ref), list(dec)) / len(list(ref)) * 100
-        nn.outputs.wer = wer / nn.inputs.trans.num.shape[0]
-        nn.outputs.per = per / nn.inputs.trans.num.shape[0]
+        nn.outputs.trans_hat = nn.layers.l_output(blstm_2)

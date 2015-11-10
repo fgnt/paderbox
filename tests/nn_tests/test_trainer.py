@@ -27,7 +27,7 @@ class TrainerTest(unittest.TestCase):
         self.cv_provider = DataProvider((x_cv_fetcher, t_cv_fetcher),
                                         batch_size=2)
         self.optimizer = SGD(1e-5)
-        self.optimizer.setup(self.nn.layers.collect_parameters())
+        self.optimizer.setup(self.nn.layers)
         self.trainer = Trainer(self.nn,
                                forward_fcn=self._forward,
                                data_provider_tr=self.tr_provider,
