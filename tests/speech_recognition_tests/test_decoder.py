@@ -105,11 +105,11 @@ class TestDecoder(unittest.TestCase):
     def test_one_word_grammar(self):
 
         word = "SHOULD"
-        utt_id = "TEST_UTT_3"
         neg_cost = 1
+        utt_id = "TEST_UTT_3"
         utt_length = len(word)
 
-        lm_file = "arpa.tmp"
+        lm_file = os.path.join(self.graph_dir, "arpa.tmp")
         with open(lm_file, 'w') as arpa_fid:
             arpa_fid.write("\\data\\\nngram 1=3\nngram 2=0\nngram 3=0\n"
                            "\n\\1-grams:\n"
@@ -131,11 +131,13 @@ class TestDecoder(unittest.TestCase):
 
         self.assertEqual(word, word_decode[utt_id])
 
-    @unittest.skip("")
+    #@unittest.skip("")
     def test_two_word_grammar(self):
         word1 = "ACOUSTIC"
         word2 = "LANGUAGE"
+        utt_id = "TEST_UTT_4"
         utt_length = len(word1)
+
         trans_hat = np.zeros((utt_length, 1, len(self.label_handler)))
         for idx in range(utt_length):
             sym = word1[idx]
@@ -147,10 +149,11 @@ class TestDecoder(unittest.TestCase):
         trans_hat = Variable(trans_hat)
 
         neg_cost1 = 0
-        neg_cost2 = 1/2.309
+        neg_cost2 = 1/np.log(10)
         # since scaling with -2.3 in arpa2fst ... maybe this is because of
         # bigram backoff fix=11
-        with open("test/arpa.tmp", 'w') as arpa_fid:
+        lm_file = os.path.join(self.graph_dir, "arpa.tmp")
+        with open(lm_file, 'w') as arpa_fid:
             arpa_fid.write("\\data\\\nngram 1=4\nngram 2=0\nngram 3=0\n"
                            "\n\\1-grams:\n"
                            "0\t<s>\t0\n"
@@ -161,29 +164,28 @@ class TestDecoder(unittest.TestCase):
                            "\n\\3-grams:\n"
                            "\n\end\\\n")
 
-        self.decoder.arpa_path = "test/arpa.tmp"
-        self.decoder.grammar_type = "trigram"
+        self.decoder = Decoder(self.label_handler, self.graph_dir,
+                      lm_file=lm_file, grammar_type="trigram")
+        self.decoder.create_graphs()
 
-        decodes = self.decoder.run_decode(trans_hat, graphs=["BDLG"],
-                                          am_scale=0.9)
-        for graph in decodes:
-            self.assertEqual(word2, decodes[graph]["decode"])
+        self.decoder.create_lattices([trans_hat.num,], [utt_id,])
 
-        decodes = self.decoder.run_decode(trans_hat, graphs=["BDLG"],
-                                          am_scale=1.1)
+        sym_decode, word_decode = self.decoder.decode(lm_scale=1.1)
+        self.assertEqual(word2, word_decode[utt_id])
 
-        for graph in decodes:
-            self.assertEqual(word1, decodes[graph]["decode"])
+        sym_decode, word_decode = self.decoder.decode(lm_scale=0.9)
+        self.assertEqual(word1, word_decode[utt_id])
 
-    @unittest.skip("")
+    # @unittest.skip("")
     def test_trigram_grammar(self):
         word1 = "HE"
         word2 = "SHE"
         word3 = "SEES"
 
+        utt_id = "TEST_UTT_5"
         utt = "SHE SEES"
         symbol_seq = "SHE SE_ES"
-        trans_hat = np.zeros((len(symbol_seq)+1, 1, len(self.label_handler)))
+        trans_hat = np.zeros((len(symbol_seq), 1, len(self.label_handler)))
         for idx in range(len(symbol_seq)):
             sym = symbol_seq[idx]
             if sym == "_":
@@ -191,7 +193,8 @@ class TestDecoder(unittest.TestCase):
             trans_hat[idx, 0, self.label_handler.label_to_int[sym]] = 1
         trans_hat = Variable(trans_hat)
 
-        with open("test/arpa.tmp", 'w') as arpa_fid:
+        lm_file = os.path.join(self.graph_dir, "arpa.tmp")
+        with open(lm_file, 'w') as arpa_fid:
             arpa_fid.write("\\data\\\nngram 1=5\nngram 2=2\nngram 3=4\n"
                            "\n\\1-grams:\n"
                            "1\t<s>\t0\n"
@@ -209,13 +212,13 @@ class TestDecoder(unittest.TestCase):
                            "{0}\t{1}\t{2}\t{3}\n".format(0, word2, word3, "</s>") +
                            "\n\end\\\n")
 
-        self.decoder.arpa_path = "test/arpa.tmp"
-        self.decoder.grammar_type = "trigram"
+        self.decoder = Decoder(self.label_handler, self.graph_dir,
+                      lm_file=lm_file, grammar_type="trigram")
+        self.decoder.create_graphs()
 
-        decodes = self.decoder.run_decode(trans_hat, graphs=["BDLG"])
-
-        for graph in decodes:
-            self.assertEqual(utt, decodes[graph]["decode"])
+        self.decoder.create_lattices([trans_hat.num,], [utt_id,])
+        sym_decode, word_decode = self.decoder.decode(lm_scale=1)
+        self.assertEqual(utt, word_decode[utt_id])
 
     @staticmethod
     def forward(nn, dropout_rate=0., noise_var=0.):
