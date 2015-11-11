@@ -10,7 +10,7 @@ __pycache__/
 
 # Distribution / packaging
 bin/
-#build/
+build/
 doc/build/html/*
 doc/build/doctrees
 !doc/build/html/_static/
@@ -67,6 +67,7 @@ __pycache__/
 
 # C extensions
 *.so
+nt/reverb/CalcRIR_Simple_C.c
 
 # Distribution / packaging
 .Python
