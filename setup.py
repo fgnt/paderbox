@@ -81,7 +81,8 @@ setup(
     install_requires=['numpy',
                       'chainer', 'scipy', 'librosa', 'seaborn', 'tqdm', 'dill',
                       'pip', 'IPython', 'sklearn', 'pylab', 'pymatbridge', 'h5py',
-                      'line_profiler', 'memory_profiler', 'pycallgraph'
+                      'line_profiler', 'memory_profiler', 'pycallgraph', 'pymatbridge',
+                      'cached_property'
                       ],
 
     # List additional groups of dependencies here (e.g. development
