@@ -11,7 +11,7 @@ from setuptools import find_packages
 # To use a consistent encoding
 from codecs import open
 from os import path
-
+import numpy
 from Cython.Build import cythonize
 
 here = path.abspath(path.dirname(__file__))
@@ -80,7 +80,7 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=['numpy',
                       'chainer', 'scipy', 'librosa', 'seaborn', 'tqdm', 'dill',
-                      'pip', 'IPython', 'sklearn','pylab','pymatbridge','h5py',
+                      'pip', 'IPython', 'sklearn', 'pylab', 'pymatbridge', 'h5py',
                       'line_profiler', 'memory_profiler', 'pycallgraph'
                       ],
 
@@ -93,7 +93,7 @@ setup(
         'test': ['coverage'],
     },
 
-    ext_modules = cythonize("nt/reverb/CalcRIR_Simple_C.pyx"),
+    ext_modules=cythonize("nt/reverb/CalcRIR_Simple_C.pyx"),
 
     # If there are data files included in your packages that need to be
     # installed, specify them here.  If using Python 2.6 or less, then these
@@ -107,7 +107,7 @@ setup(
     # http://docs.python.org/3.4/distutils/setupscript.html#installing-additional-files # noqa
     # In this case, 'data_file' will be installed into '<sys.prefix>/my_data'
     data_files=[('my_data', ['data/data_file'])],
-
+    include_dirs=[numpy.get_include()],
     # To provide executable scripts, use entry points in preference to the
     # "scripts" keyword. Entry points provide cross-platform support and allow
     # pip to create the appropriate form of executable for the target platform.

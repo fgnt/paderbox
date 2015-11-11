@@ -20,6 +20,7 @@ class TestReverbUtils(unittest.TestCase):
         self.filter_length = 2**13
         self.room_dimensions = (10, 10, 4)  # meter
         self.sensor_pos = (5.01,5,2)
+        self.soundvelocity = 343
 
     @matlab_test
     def test_comparePythonTranVuRirWithExpectedUsingMatlabTwoSensorTwoSrc(self):
@@ -166,7 +167,13 @@ class TestReverbUtils(unittest.TestCase):
         from different directivities with expected characteristic
         """
         SensorOrientationAngle = 0
-        # .. = get_directivity_characteristic(..)
+        actualAzimuth,expectedAzimuth = self.get_directivity_characteristic(
+            angle = "azimuth")
+        tc.assert_allclose(actualAzimuth,expectedAzimuth,atol=1e-5)
+
+        actualAzimuth,expectedAzimuth = self.get_directivity_characteristic(
+            angle ="elevation")
+        tc.assert_allclose(actualAzimuth,expectedAzimuth,atol= 1e-5)
 
 
 
@@ -186,40 +193,67 @@ class TestReverbUtils(unittest.TestCase):
         if angle == "azimuth":
             azimuth_angle = numpy.arange(0,2*numpy.pi,deltaAngle)
             elevation_angle = numpy.zeros([2*numpy.pi/deltaAngle])
-            sensor_orientations = [sensor_orientation_angle, 0]
+            sensor_orientations = [[sensor_orientation_angle, 0],]
         elif angle == "elevation":
             azimuth_angle = numpy.zeros([2*numpy.pi/deltaAngle])
             elevation_angle = numpy.arange(0,2*numpy.pi,deltaAngle)
-            sensor_orientations = [0, sensor_orientation_angle]
+            sensor_orientations = [[0, sensor_orientation_angle],]
         else:
             raise NotImplementedError("Given angle not implemented!"
                                       "Choose 'azimuth' or 'elevation'!")
         radius = 1
         sources_position = \
-            scenario.generate_equally_distributed_source_positions(
+            scenario.generate_deterministic_source_positions(
                 center=self.sensor_pos,
                 n=len(azimuth_angle),
-                azimuth_angle= azimuth_angle,
-                elevation_angle= elevation_angle,
+                azimuth_angles= azimuth_angle,
+                elevation_angles= elevation_angle,
                 radius = radius,
                 dims= 3
             )
         rir_py = rirUtils.generate_RIR(self.room_dimensions,
                                        sources_position,
-                                       self.sensor_pos,
+                                       [self.sensor_pos,],
                                        self.sample_rate,
                                        self.filter_length,
                                        T60,
                                        algorithm="TranVu",
-                                       sensor_orientations= sensor_orientations,
+                                       sensorOrientations= sensor_orientations,
                                        )
         #set RIR to 0 when receiving echoes
         image_distance = numpy.array(self.room_dimensions*6).reshape((3,6))
         filter = numpy.array([[1,0,0,-1,0,0],[0,1,0,0,-1,0],[0,0,1,0,0,-1]])
         image_distance *= filter
-        first_source_image = sources_position.reshape([3,1,-1]) + \
+        #Hier passt was nicht, das hier is nicht das gleiche wie im Matlab Testcase!
+        first_source_images = sources_position.reshape([3,1,-1,1]) + \
                             image_distance.reshape([3,1,1,-1])
-        # todo: Methode weiterschreiben
+        distance_sensor_images = numpy.sqrt(((numpy.asarray(
+            self.sensor_pos).reshape([3,1,1,1])-first_source_images)**2)
+            .sum(axis=0))
+
+        minimum_distance_sensor_image = numpy.min(distance_sensor_images)
+        minimum_echo_time_delay =\
+            minimum_distance_sensor_image/self.soundvelocity
+        minimum_echo_time_index = numpy.floor(
+            minimum_echo_time_delay*self.sample_rate + fixedShift)
+        cutoff_index = minimum_echo_time_index
+
+        rir_py[cutoff_index-1:,:,:] = numpy.zeros([
+            self.filter_length-cutoff_index+1,
+            rir_py.shape[1],
+            rir_py.shape[2]])
+
+        # calculate squared power for each source
+        squared_power = numpy.sum(rir_py*numpy.conjugate(rir_py),axis=0)
+        squared_power = numpy.reshape(squared_power,[len(azimuth_angle),1])
+
+        max_index = numpy.argmax(squared_power)
+        min_index = numpy.argmin(squared_power)
+        actual = numpy.array([(max_index)*deltaAngle,
+                              (min_index)*deltaAngle])
+        expected = numpy.array([sensor_orientation_angle,
+                                sensor_orientation_angle + numpy.pi])
+        return actual,expected
 
 
     @unittest.skip("")
