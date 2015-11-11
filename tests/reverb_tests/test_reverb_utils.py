@@ -160,25 +160,51 @@ class TestReverbUtils(unittest.TestCase):
         tc.assert_allclose(matlabRIR, rir, atol=1e-4)
         tc.assert_allclose(actualT60, T60, atol=0.14)
 
-    @matlab_test
+    #todo: Testcases anpassen: Mal wirklich wie die Methode es beschreibt, alle Directivities ausprobieren sowohl für azimuth als auch elevation
+    # todo: Und mit verschiedenen SensorOrientations! Achtung: Bidirectional hat maximum aber auch bei Pi; dafür minimum bei pi/2
     def test_compareDirectivityWithExpectedUsingTranVu(self):
         """
         Compare signal-power of RIR calculated by TranVu's algorithm
         from different directivities with expected characteristic
         """
         SensorOrientationAngle = 0
+        algorithm ="TranVu"
+        sensor_directivity = "cardioid"
         actualAzimuth,expectedAzimuth = self.get_directivity_characteristic(
-            angle = "azimuth")
+            algorithm= "TranVu",
+            angle= "azimuth",
+            sensor_orientation_angle= SensorOrientationAngle,
+            sensor_directivity=sensor_directivity)
         tc.assert_allclose(actualAzimuth,expectedAzimuth,atol=1e-5)
 
         actualAzimuth,expectedAzimuth = self.get_directivity_characteristic(
-            angle ="elevation")
+            angle ="elevation",
+            )
         tc.assert_allclose(actualAzimuth,expectedAzimuth,atol= 1e-5)
 
+    def test_compareAzimuthSensorOrientationWithExpectedUsingTranVu(self):
+        """
+        Compare signal-power of rir calculated by TranVu's algorithm
+        from different directivities with expected characteristic when a certain
+        non-zero sensorOrientation is given.
+        """
+        algorithm = "TranVu"
+        angle = "azimuth"
+        sensor_orientation_angle = numpy.pi/4
+        actual_azimuth,expected_azimuth = self.get_directivity_characteristic(
+                                                    algorithm,
+                                                    angle,
+                                                    sensor_orientation_angle)
+        tc.assert_allclose(actual_azimuth,expected_azimuth,atol=1e-5)
 
+
+    @unittest.skip("")
+    @matlab_test
+    def test_compareTranVuExpectedT60WithCalculatedUsingSchroederMethod(self):
+        pass
 
     def get_directivity_characteristic(self,algorithm = "TranVu",angle="azimuth",
-                     sensor_orientation_angle=0):
+                     sensor_orientation_angle=0,sensor_directivity="cardioid"):
         if algorithm == "TranVu":
             fixedShift = 128
             T60 = 0
@@ -211,6 +237,7 @@ class TestReverbUtils(unittest.TestCase):
                 radius = radius,
                 dims= 3
             )
+
         rir_py = rirUtils.generate_RIR(self.room_dimensions,
                                        sources_position,
                                        [self.sensor_pos,],
@@ -218,14 +245,14 @@ class TestReverbUtils(unittest.TestCase):
                                        self.filter_length,
                                        T60,
                                        algorithm="TranVu",
-                                       sensorOrientations= sensor_orientations,
+                                       sensorDirectivity=sensor_directivity,
+                                       sensorOrientations= sensor_orientations
                                        )
-        #set RIR to 0 when receiving echoes
+        #set RIR to 0 as of the point in time where we're receiving echoes
         image_distance = numpy.array(self.room_dimensions*6).reshape((3,6))
         filter = numpy.array([[1,0,0,-1,0,0],[0,1,0,0,-1,0],[0,0,1,0,0,-1]])
         image_distance *= filter
-        #Hier passt was nicht, das hier is nicht das gleiche wie im Matlab Testcase!
-        first_source_images = sources_position.reshape([3,1,-1,1]) + \
+        first_source_images = sources_position.transpose().reshape([3,1,-1,1])+\
                             image_distance.reshape([3,1,1,-1])
         distance_sensor_images = numpy.sqrt(((numpy.asarray(
             self.sensor_pos).reshape([3,1,1,1])-first_source_images)**2)
@@ -254,19 +281,3 @@ class TestReverbUtils(unittest.TestCase):
         expected = numpy.array([sensor_orientation_angle,
                                 sensor_orientation_angle + numpy.pi])
         return actual,expected
-
-
-    @unittest.skip("")
-    @matlab_test
-    def test_compareAzimuthSensorOrientationWithExpectedUsingTranVu(self):
-        pass
-
-    @unittest.skip("")
-    @matlab_test
-    def test_compareElevationSensorOrientationWithExpectedUsingTranvu(self):
-        pass
-
-    @unittest.skip("")
-    @matlab_test
-    def test_compareTranVuExpectedT60WithCalculatedUsingSchroederMethod(self):
-        pass
