@@ -82,18 +82,18 @@ class TestSTFTMethods(unittest.TestCase):
         # Reference
         X = stft_single_channel(self.x)
 
-        x1 = np.array([self.x,self.x])
+        x1 = np.array([self.x, self.x])
         X1 = stft(x1)
         tc.assert_equal(X1.shape, (2, 186, 513))
 
         for d in np.ndindex(2):
-            tc.assert_equal(X1[d,:, :].squeeze(), X)
+            tc.assert_equal(X1[d, :, :].squeeze(), X)
 
-        x11 = np.array([x1,x1])
+        x11 = np.array([x1, x1])
         X11 = stft(x11)
         tc.assert_equal(X11.shape, (2, 2, 186, 513))
         for d, k in np.ndindex(2, 2):
-            tc.assert_equal(X11[d, k,:, :].squeeze(), X)
+            tc.assert_equal(X11[d, k, :, :].squeeze(), X)
 
         x2 = x1.transpose()
         X2 = stft(x2)
@@ -101,13 +101,13 @@ class TestSTFTMethods(unittest.TestCase):
         for d in np.ndindex(2):
             tc.assert_equal(X2[:, :, d].squeeze(), X)
 
-        x21 = np.array([x2,x2])
+        x21 = np.array([x2, x2])
         X21 = stft(x21)
         tc.assert_equal(X21.shape, (2, 186, 513, 2))
         for d, k in np.ndindex(2, 2):
-            tc.assert_equal(X21[d,:, :, k].squeeze(), X)
+            tc.assert_equal(X21[d, :, :, k].squeeze(), X)
 
-        x22 = x21.swapaxes(0,1)
+        x22 = x21.swapaxes(0, 1)
         X22 = stft(x22)
         tc.assert_equal(X22.shape, (186, 513, 2, 2))
         for d, k in np.ndindex(2, 2):
