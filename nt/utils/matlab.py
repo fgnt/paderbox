@@ -1,5 +1,3 @@
-
-
 from pymatbridge import Matlab
 from os import environ
 from cached_property import cached_property
@@ -8,22 +6,21 @@ import socket
 import warnings
 import os.path
 
+
 class Mlab():
     def __init__(self, matlab_startup_path=None):
 
-        homeStartup = os.path.expanduser('~/startup.m')
+        home_startup = os.path.expanduser('~/startup.m')
 
-        if matlab_startup_path == None and os.path.isfile(homeStartup):
-            self.matlab_startup_path = homeStartup
+        if matlab_startup_path is None and os.path.isfile(home_startup):
+            self.matlab_startup_path = home_startup
             # Example ~/startup.m:
             #   cd '~/path/to/repo'
             #   startup
-        elif matlab_startup_path == None:
+        elif matlab_startup_path is None:
             self.matlab_startup_path = '/net/ssd/software/matlab_toolbox/startup.m'
         else:
             self.matlab_startup_path = matlab_startup_path
-
-
 
     @cached_property
     def process(self):
@@ -55,13 +52,11 @@ class Mlab():
         ret = self.run_code(code)
         print('Matlab content: ', ret['content'])
 
-
     def get_variable(self, code):
         return self.process.get_variable(code)
 
     def set_variable(self, code, var):
         return self.process.set_variable(code, var)
 
-
-# define decorator to skip matlab_tests
-matlab_test = unittest.skipUnless(environ.get('TEST_MATLAB'),'matlab-test')
+# Define decorator to skip matlab_tests
+matlab_test = unittest.skipUnless(environ.get('TEST_MATLAB'), 'matlab-test')

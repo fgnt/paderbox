@@ -14,6 +14,7 @@ from nt.transform.module_stft import _biorthogonal_window_loopy
 from nt.transform.module_stft import _biorthogonal_window
 from nt.transform.module_stft import stft_to_spectrogram
 from nt.transform.module_stft import spectrogram_to_energy_per_frame
+from nt.transform.module_stft import get_stft_center_frequencies
 from pymatbridge import Matlab
 from nt.utils.matlab import matlab_test, Mlab
 
@@ -112,6 +113,8 @@ class TestSTFTMethods(unittest.TestCase):
         for d, k in np.ndindex(2, 2):
             tc.assert_equal(X22[:, :, d, k].squeeze(), X)
 
+    def test_center_frequencies(self):
+        tc.assert_allclose(get_stft_center_frequencies(size=1024, sample_rate=16000)[0], 0)
 
     @matlab_test
     def test_compare_with_matlab(self):
