@@ -82,7 +82,8 @@ class TestDecoder(unittest.TestCase):
     def test_compare_argmax_ctc(self):
 
         self.decoder = Decoder(self.label_handler, self.tmpdir.name,
-                      lm_file='/net/nas/ebbers/project_echo/wsj_system/lm/tcb05cnp', grammar_type=None, use_lexicon=False)
+                      lm_file='/net/nas/ebbers/project_echo/wsj_system/lm/tcb05cnp',
+                               grammar_type=None, use_lexicon=False)
         self.decoder.create_graphs()
         batch = self.dp_test.__next__()
         self.nn.set_inputs(**batch)
