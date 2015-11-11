@@ -32,10 +32,6 @@ class TestDecoder(unittest.TestCase):
             self.label_handler = pickle.load(label_handler_fid)
             label_handler_fid.close()
 
-        self.graph_dir = tempfile.mkdtemp()
-        # self.graph_dir = "test"
-        print(self.graph_dir)
-
         json_path = '/net/ssd/jheymann/owncloud/python_nt/nt/database/wsj/wsj.json'
         flist_test = 'test/flist/wave/official_si_dt_05'
 
@@ -53,13 +49,16 @@ class TestDecoder(unittest.TestCase):
 
         self.dp_test.__iter__()
 
+        self.tmpdir = tempfile.TemporaryDirectory()
+        print(self.tmpdir.name)
+
     def tearDown(self):
+        self.tmpdir.cleanup()
         self.dp_test.shutdown()
 
     #@unittest.skip("")
     def test_ground_truth(self):
-
-        self.decoder = Decoder(self.label_handler, self.graph_dir,
+        self.decoder = Decoder(self.label_handler, self.tmpdir.name,
                       lm_file='/net/nas/ebbers/project_echo/wsj_system/lm/tcb05cnp', grammar_type="unigram")
         self.decoder.create_graphs()
 
@@ -82,7 +81,7 @@ class TestDecoder(unittest.TestCase):
     # @unittest.skip("")
     def test_compare_argmax_ctc(self):
 
-        self.decoder = Decoder(self.label_handler, self.graph_dir,
+        self.decoder = Decoder(self.label_handler, self.tmpdir.name,
                       lm_file='/net/nas/ebbers/project_echo/wsj_system/lm/tcb05cnp', grammar_type=None, use_lexicon=False)
         self.decoder.create_graphs()
         batch = self.dp_test.__next__()
@@ -109,7 +108,7 @@ class TestDecoder(unittest.TestCase):
         utt_id = "TEST_UTT_3"
         utt_length = len(word)
 
-        lm_file = os.path.join(self.graph_dir, "arpa.tmp")
+        lm_file = os.path.join(self.tmpdir.name, "arpa.tmp")
         with open(lm_file, 'w') as arpa_fid:
             arpa_fid.write("\\data\\\nngram 1=3\nngram 2=0\nngram 3=0\n"
                            "\n\\1-grams:\n"
@@ -120,7 +119,7 @@ class TestDecoder(unittest.TestCase):
                            "\n\\3-grams:\n"
                            "\end\\\n")
 
-        self.decoder = Decoder(self.label_handler, self.graph_dir,
+        self.decoder = Decoder(self.label_handler, self.tmpdir.name,
                       lm_file=lm_file, grammar_type="trigram")
         self.decoder.create_graphs()
 
@@ -152,7 +151,7 @@ class TestDecoder(unittest.TestCase):
         neg_cost2 = 1/np.log(10)
         # since scaling with -2.3 in arpa2fst ... maybe this is because of
         # bigram backoff fix=11
-        lm_file = os.path.join(self.graph_dir, "arpa.tmp")
+        lm_file = os.path.join(self.tmpdir.name, "arpa.tmp")
         with open(lm_file, 'w') as arpa_fid:
             arpa_fid.write("\\data\\\nngram 1=4\nngram 2=0\nngram 3=0\n"
                            "\n\\1-grams:\n"
@@ -164,7 +163,7 @@ class TestDecoder(unittest.TestCase):
                            "\n\\3-grams:\n"
                            "\n\end\\\n")
 
-        self.decoder = Decoder(self.label_handler, self.graph_dir,
+        self.decoder = Decoder(self.label_handler, self.tmpdir.name,
                       lm_file=lm_file, grammar_type="trigram")
         self.decoder.create_graphs()
 
@@ -193,7 +192,7 @@ class TestDecoder(unittest.TestCase):
             trans_hat[idx, 0, self.label_handler.label_to_int[sym]] = 1
         trans_hat = Variable(trans_hat)
 
-        lm_file = os.path.join(self.graph_dir, "arpa.tmp")
+        lm_file = os.path.join(self.tmpdir.name, "arpa.tmp")
         with open(lm_file, 'w') as arpa_fid:
             arpa_fid.write("\\data\\\nngram 1=5\nngram 2=2\nngram 3=4\n"
                            "\n\\1-grams:\n"
@@ -212,7 +211,7 @@ class TestDecoder(unittest.TestCase):
                            "{0}\t{1}\t{2}\t{3}\n".format(0, word2, word3, "</s>") +
                            "\n\end\\\n")
 
-        self.decoder = Decoder(self.label_handler, self.graph_dir,
+        self.decoder = Decoder(self.label_handler, self.tmpdir.name,
                       lm_file=lm_file, grammar_type="trigram")
         self.decoder.create_graphs()
 
