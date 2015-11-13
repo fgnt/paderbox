@@ -197,6 +197,8 @@ def safe_dump(dict_data, fid):
             return data.tolist()
         if isinstance(data, str):
             return data
+        if isinstance(data, tuple):
+            return data
         else:
             return 'Datatype not supported'
 
