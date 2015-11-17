@@ -2,9 +2,7 @@ import numpy
 import unittest
 from nt.utils.matlab import Mlab, matlab_test
 import nt.testing as tc
-import numpy.testing as nptest
 import nt.reverb.reverb_utils as rirUtils
-from nt.utils.profiling import *
 import nt.reverb.scenario as scenario
 
 # Uncomment, if you want to test Matlab functions.
@@ -34,7 +32,7 @@ class TestReverbUtils(unittest.TestCase):
         number_of_sensors = 2
         reverberation_time = 0.1
 
-        sources, mics = rirUtils.generateRandomSourcesAndSensors(
+        sources, mics = scenario.generate_uniformly_random_sources_and_sensors(
             self.room_dimensions,
             number_of_sources,
             number_of_sensors
@@ -88,7 +86,7 @@ class TestReverbUtils(unittest.TestCase):
         numMics = 1
         T60 = 0
 
-        sources, mics = rirUtils.generateRandomSourcesAndSensors(
+        sources, mics = scenario.generate_uniformly_random_sources_and_sensors(
             self.room_dimensions,
             numSrcs,
             numMics
@@ -124,7 +122,7 @@ class TestReverbUtils(unittest.TestCase):
         number_of_sensors = 1
         T60 = 0.2
 
-        sources, mics = rirUtils.generateRandomSourcesAndSensors(
+        sources, mics = scenario.generate_uniformly_random_sources_and_sensors(
             self.room_dimensions,
             number_of_sources,
             number_of_sensors
@@ -160,48 +158,109 @@ class TestReverbUtils(unittest.TestCase):
         tc.assert_allclose(matlabRIR, rir, atol=1e-4)
         tc.assert_allclose(actualT60, T60, atol=0.14)
 
-    #todo: Testcases anpassen: Mal wirklich wie die Methode es beschreibt, alle Directivities ausprobieren sowohl für azimuth als auch elevation
-    # todo: Und mit verschiedenen SensorOrientations! Achtung: Bidirectional hat maximum aber auch bei Pi; dafür minimum bei pi/2
-    def test_compareDirectivityWithExpectedUsingTranVu(self):
+    def test_TranVu_cardioid_sensororient_zero(self):
         """
-        Compare signal-power of RIR calculated by TranVu's algorithm
-        from different directivities with expected characteristic
+        Compare signal-power's max and min of RIR calculated by TranVu's
+        algorithm from cardioid directivity and zero sensor orientation with
+        expected characteristic.
         """
-        SensorOrientationAngle = 0
+        sensor_orientation = 0
         algorithm ="TranVu"
         sensor_directivity = "cardioid"
-        actualAzimuth,expectedAzimuth = self.get_directivity_characteristic(
-            algorithm= "TranVu",
+
+        self.make_tests_with_directivity_characteristic(algorithm=algorithm,
+                                   sensor_orientation_angle=sensor_orientation,
+                                       sensor_directivity=sensor_directivity)
+
+    def test_TranVu_subcardioid_sensororient_zero(self):
+        """
+        Compare signal-power's max and min of RIR calculated by TranVu's
+        algorithm from subcardioid directivity and zero sensor orientation
+        with expected characteristic.
+        """
+        sensor_orientation = 0
+        algorithm ="TranVu"
+        sensor_directivity = "subcardioid"
+
+        self.make_tests_with_directivity_characteristic(algorithm=algorithm,
+                                   sensor_orientation_angle=sensor_orientation,
+                                       sensor_directivity=sensor_directivity)
+
+    def test_TranVu_cardioid_sensororient_piover4(self):
+        """
+        Compare signal-power's max and min of RIR calculated by TranVu's
+        algorithm from cardioid directivity and pi over 4 sensor orientation
+        with expected characteristic.
+        """
+        sensor_orientation = numpy.pi/4
+        algorithm ="TranVu"
+        sensor_directivity = "cardioid"
+
+        self.make_tests_with_directivity_characteristic(algorithm=algorithm,
+                                   sensor_orientation_angle=sensor_orientation,
+                                       sensor_directivity=sensor_directivity)
+
+    def test_TranVu_subcardioid_sensororient_piover4(self):
+        """
+        Compare signal-power's max and min of RIR calculated by TranVu's
+        algorithm from subcardioid directivity and pi over 4 sensor orientation
+        with expected characteristic.
+        """
+        sensor_orientation = numpy.pi/4
+        algorithm ="TranVu"
+        sensor_directivity = "subcardioid"
+
+        self.make_tests_with_directivity_characteristic(algorithm=algorithm,
+                                   sensor_orientation_angle=sensor_orientation,
+                                       sensor_directivity=sensor_directivity)
+
+    def test_TranVu_cardioid_sensororient_piover2(self):
+        """
+        Compare signal-power's max and min of RIR calculated by TranVu's
+        algorithm from cardioid directivity and pi over 2 sensor orientation
+        with expected characteristic.
+        """
+        sensor_orientation = numpy.pi/2
+        algorithm ="TranVu"
+        sensor_directivity = "cardioid"
+
+        self.make_tests_with_directivity_characteristic(algorithm=algorithm,
+                                   sensor_orientation_angle=sensor_orientation,
+                                       sensor_directivity=sensor_directivity)
+
+    def test_TranVu_subcardioid_sensororient_piover2(self):
+        """
+        Compare signal-power's max and min of RIR calculated by TranVu's
+        algorithm from subcardioid directivity and pi over 2 sensor orientation
+        with expected characteristic.
+        """
+        sensor_orientation = numpy.pi/2
+        algorithm ="TranVu"
+        sensor_directivity = "subcardioid"
+
+        self.make_tests_with_directivity_characteristic(algorithm=algorithm,
+                                   sensor_orientation_angle=sensor_orientation,
+                                       sensor_directivity=sensor_directivity)
+
+    def make_tests_with_directivity_characteristic(self,algorithm="TranVu",
+                                    sensor_orientation_angle=0,
+                                    sensor_directivity="omnidirectional"):
+        actual_maxmin,expected_maxmin = self.get_directivity_characteristic(
+            algorithm= algorithm,
             angle= "azimuth",
-            sensor_orientation_angle= SensorOrientationAngle,
-            sensor_directivity=sensor_directivity)
-        tc.assert_allclose(actualAzimuth,expectedAzimuth,atol=1e-5)
-
-        actualAzimuth,expectedAzimuth = self.get_directivity_characteristic(
-            angle ="elevation",
+            sensor_orientation_angle= sensor_orientation_angle,
+            sensor_directivity=sensor_directivity
             )
-        tc.assert_allclose(actualAzimuth,expectedAzimuth,atol= 1e-5)
+        tc.assert_allclose(actual_maxmin,expected_maxmin,atol= 1e-5)
 
-    def test_compareAzimuthSensorOrientationWithExpectedUsingTranVu(self):
-        """
-        Compare signal-power of rir calculated by TranVu's algorithm
-        from different directivities with expected characteristic when a certain
-        non-zero sensorOrientation is given.
-        """
-        algorithm = "TranVu"
-        angle = "azimuth"
-        sensor_orientation_angle = numpy.pi/4
-        actual_azimuth,expected_azimuth = self.get_directivity_characteristic(
-                                                    algorithm,
-                                                    angle,
-                                                    sensor_orientation_angle)
-        tc.assert_allclose(actual_azimuth,expected_azimuth,atol=1e-5)
+        actual_maxmin,expected_maxmin = self.get_directivity_characteristic(
+            algorithm= algorithm,
+            angle= "elevation",
+            sensor_orientation_angle= sensor_orientation_angle,
+            sensor_directivity=sensor_directivity
+            )
+        tc.assert_allclose(actual_maxmin,expected_maxmin,atol= 1e-5)
 
-
-    @unittest.skip("")
-    @matlab_test
-    def test_compareTranVuExpectedT60WithCalculatedUsingSchroederMethod(self):
-        pass
 
     def get_directivity_characteristic(self,algorithm = "TranVu",angle="azimuth",
                      sensor_orientation_angle=0,sensor_directivity="cardioid"):
@@ -278,6 +337,10 @@ class TestReverbUtils(unittest.TestCase):
         min_index = numpy.argmin(squared_power)
         actual = numpy.array([(max_index)*deltaAngle,
                               (min_index)*deltaAngle])
-        expected = numpy.array([sensor_orientation_angle,
+        if sensor_directivity=="cardioid" or sensor_directivity=="subcardioid":
+            expected = numpy.array([sensor_orientation_angle,
                                 sensor_orientation_angle + numpy.pi])
+        else:
+            raise NotImplementedError("Test is not runnable for directivities"
+                                      "other than cardioid, subcardioid")
         return actual,expected
