@@ -186,7 +186,7 @@ def safe_dump(dict_data, fid):
 
     def _filter(data):
         if isinstance(data, list):
-            return data
+            return [_filter(d) for d in data]
         if isinstance(data, dict):
             return _build_dict(data)
         if isinstance(data, float):
@@ -198,9 +198,9 @@ def safe_dump(dict_data, fid):
         if isinstance(data, str):
             return data
         if isinstance(data, tuple):
-            return data
+            return [_filter(d) for d in data]
         else:
-            return 'Datatype not supported'
+            return 'Datatype {} not supported'.format(type(data))
 
     def _build_dict(data):
         return {key: _filter(val) for key, val in data.items()}
