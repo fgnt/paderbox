@@ -193,7 +193,7 @@ def safe_dump(dict_data, fid):
             return data
         if isinstance(data, int):
             return data
-        if isinstance(data, numpy.ndarray):
+        if hasattr(data, 'tolist') and callable(data.tolist):
             return data.tolist()
         if isinstance(data, str):
             return data
