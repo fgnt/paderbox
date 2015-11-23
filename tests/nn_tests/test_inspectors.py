@@ -9,7 +9,8 @@ from chainer.functions import mean_squared_error
 from chainer.links import Linear
 from chainer import Variable
 from chainer import computational_graph
-from nt.nn import ArrayDataFetcher, DataProvider
+from nt.nn import DataProvider
+from nt.nn.data_fetchers import ArrayDataFetcher
 
 B = 10
 A = 5

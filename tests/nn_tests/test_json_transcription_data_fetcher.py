@@ -6,7 +6,7 @@ import json
 
 JSON_SRC = '/net/storage/2015/chime/chime_ref_data/data/json/chime.json'
 
-class ChimeTranscriptionDataFetcherTest(unittest.TestCase):
+class JsonTranscriptionDataFetcherTest(unittest.TestCase):
 
     def setUp(self):
         with open(JSON_SRC) as fid:

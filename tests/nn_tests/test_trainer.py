@@ -1,5 +1,4 @@
 import unittest
-from nt.nn import *
 import numpy as np
 from chainer.optimizers import SGD
 import os
@@ -10,6 +9,10 @@ from chainer.functions import mean_squared_error
 from chainer.links import Linear
 from chainer.optimizer import GradientClipping
 import tempfile
+from nt.nn import Trainer
+from nt.nn import DataProvider
+from nt.nn.data_fetchers import ArrayDataFetcher
+from chainer.testing import attr
 
 B = 10
 A = 5
@@ -119,9 +122,11 @@ class TrainerTest(unittest.TestCase):
     def test_request_cpu(self):
         self._test_request()
 
+    @attr.gpu
     def test_request_gpu(self):
         self._test_request(True)
 
+    @attr.gpu
     def test_gpu(self):
         self.trainer.use_gpu = True
         self.trainer.run_in_thread = True
@@ -131,6 +136,7 @@ class TrainerTest(unittest.TestCase):
         self.trainer.stop_training()
         self.assertTrue(not self.trainer.is_running)
 
+    @attr.gpu
     def test_test_mode(self):
         self.trainer.test_run()
         self.trainer.use_gpu = True
@@ -154,5 +160,6 @@ class TrainerTest(unittest.TestCase):
     def test_modes_cpu(self):
         self._test_modes()
 
+    @attr.gpu
     def test_modes_gpu(self):
         self._test_modes(True)
