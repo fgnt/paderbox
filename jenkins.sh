@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Set Paths
-CUDA_PATH=/usr/local/cuda-6.5
+CUDA_PATH=/usr/local/cuda
 LD_LIBRARY_PATH=$CUDA_PATH/lib64:${LD_LIBRARY_PATH}
 PATH=/net/ssd/software/anaconda/envs/py3k_jenkins/bin:$CUDA_PATH/bin:$PATH
 export PATH
