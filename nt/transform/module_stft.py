@@ -7,7 +7,6 @@ import scipy
 
 from scipy import signal
 
-import pylab as plt
 import seaborn as sns
 sns.set_palette("deep", desat=.6)
 COLORMAP = sns.diverging_palette(220, 20, n=7, as_cmap=True)
@@ -41,7 +40,7 @@ def stft(time_signal, time_dim=None, size=1024, shift=256,
         time_dim = numpy.argmax(time_signal.shape)
 
     # Pad with zeros to have enough samples for the window function to fade.
-    if fading is True:
+    if fading:
         pad = [(0, 0)]*time_signal.ndim
         pad[time_dim] = [size-shift, size-shift]
         time_signal = numpy.pad(time_signal, pad, mode='constant')
@@ -91,7 +90,7 @@ def stft_single_channel(time_signal, size=1024, shift=256,
     assert len(time_signal.shape) == 1
 
     # Pad with zeros to have enough samples for the window function to fade.
-    if fading is True:
+    if fading:
         time_signal = numpy.pad(time_signal, size-shift, mode='constant')
 
     # Pad with trailing zeros, to have an integral number of frames.
@@ -280,40 +279,6 @@ def stft_to_spectrogram(stft_signal):
     """
     spectrogram = numpy.abs(stft_signal * numpy.conjugate(stft_signal))
     return spectrogram
-
-
-def plot_spectrogram(spectrogram, limits=None):
-    """
-    Plots a spectrogram from a spectrogram (power) as input.
-
-    :param spectrogram: Real valued power spectrum
-        with shape (frames, frequencies).
-    :param limits: Color limits for clipping purposes.
-    :return: None
-    """
-    if limits is None:
-        limits = (numpy.min(spectrogram), numpy.max(spectrogram))
-
-    plt.imshow(numpy.clip(numpy.log10(spectrogram).T, limits[0], limits[1]),
-               interpolation='none', origin='lower', cmap=COLORMAP)
-    plt.grid(False)
-    plt.xlabel('Time frame')
-    plt.ylabel('Frequency bin')
-    cbar = plt.colorbar()
-    cbar.set_label('Energy / dB')
-    plt.show()
-
-
-def plot_stft(stft_signal, limits=None):
-    """
-    Plots a spectrogram from an stft signal as input. This is a wrapper of the
-    plot function for spectrograms.
-
-    :param stft_signal: Complex valued stft signal.
-    :param limits: Color limits for clipping purposes.
-    :return: None
-    """
-    plot_spectrogram(stft_to_spectrogram(stft_signal), limits)
 
 
 def spectrogram_to_energy_per_frame(spectrogram):
