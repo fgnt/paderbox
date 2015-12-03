@@ -18,3 +18,9 @@ class Container:
 
     def as_dict(self):
         return self.__dict__
+
+    def __repr__(self, *args, **kwargs):
+        return self.as_dict().__repr__(*args, **kwargs)
+
+    def __str__(self, *args, **kwargs):
+        return self.as_dict().__str__(*args, **kwargs)
