@@ -102,7 +102,10 @@ def print_old_template():
           '..<test>\n'
           '..<orth>\n'
           '....<utterance_id>\n'
-          '......string\n')
+          '......string\n'
+          '..<flists>\n'
+          '....Flist_1\n'
+          '....Flist_2\n')
 
 
 def traverse_to_dict(data, path, delimiter='/'):
