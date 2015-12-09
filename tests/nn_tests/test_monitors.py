@@ -9,9 +9,9 @@ from chainer.link import Chain
 from chainer.links import Linear
 from chainer.optimizer import GradientClipping
 from chainer.optimizers import SGD
-
+from nt.nn.monitoring import Inspector
 from nt.nn import VariableInspector, SnapshotMonitor, LoggerMonitor, Trainer, \
-    DataProvider
+    DataProvider, RunningAverageMonitor
 from nt.nn.data_fetchers import ArrayDataFetcher
 
 B = 10
@@ -40,6 +40,15 @@ class DummyNetwork(Chain):
         return self.forward(**kwargs)
 
 
+class DummyInspector(Inspector):
+
+    def __init__(self):
+        pass
+
+    def get_data(self, computational_graph, batch):
+        return batch
+
+
 class LoggerMonitorTest(unittest.TestCase):
     def setUp(self):
         self.input = np.random.uniform(-1, 1, (B, A)).astype(np.float32)
@@ -65,7 +74,7 @@ class LoggerMonitorTest(unittest.TestCase):
                                use_gpu=False,
                                optimizer_hooks=hooks)
         g = self.trainer.get_computational_graph()
-        self.monitor = LoggerMonitor(VariableInspector(-3, g), 'Input', True)
+        self.monitor = LoggerMonitor(VariableInspector(('i', 0), g), 'Input', True)
         self.trainer.add_tr_monitor(self.monitor)
 
     def test_logging(self):
@@ -100,7 +109,7 @@ class SnapshotMonitorTest(unittest.TestCase):
                                use_gpu=False,
                                optimizer_hooks=hooks)
         g = self.trainer.get_computational_graph()
-        self.monitor = SnapshotMonitor(VariableInspector(-3, g), 'Input', True)
+        self.monitor = SnapshotMonitor(VariableInspector(('i', 0), g), 'Input', True)
         self.trainer.add_tr_monitor(self.monitor)
 
     def test_logging(self):
@@ -112,3 +121,17 @@ class SnapshotMonitorTest(unittest.TestCase):
         self.trainer.stop_training()
         nptest.assert_array_equal(
             self.monitor.logging_lists[0], self.trainer.current_batch)
+
+
+class RunningAverageMonitorTest(unittest.TestCase):
+    def setUp(self):
+
+        self.monitor = RunningAverageMonitor(DummyInspector(), 'Input', True)
+        self.monitor.reset()
+
+    def test_logging(self):
+        self.monitor.next_epoch()
+        self.monitor.log_data(None, 100000, (0,))
+        self.monitor.log_data(None, 200000, (0,))
+        self.monitor.log_data(None, 300000, (0,))
+        self.assertEqual(200000, self.monitor.logging_lists[0][0])
