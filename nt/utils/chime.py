@@ -1,14 +1,15 @@
 import os
 
-from nt.nn.data_fetchers.chime_feature_data_fetcher import \
-    ChimeFeatureDataFetcher
+from nt.nn.data_fetchers import JsonCallbackFetcher
 from nt.nn import DataProvider
+import json
 
-CHIME_JSON = '/net/storage/2015/chime/chime_ref_data/data/json/chime.json'
+CHIME_JSON_FILE = '/net/storage/2015/chime/chime_ref_data/data/json/chime.json'
+with open(CHIME_JSON_FILE) as fid:
+    CHIME_JSON = json.load(fid)
 
 
-def get_chime_data_provider_for_flist(flist, window_length=1024, stft_size=1024,
-                                      stft_shift=256,
+def get_chime_data_provider_for_flist(flist, callback_fcn,
                                       use_context_for_real=True):
     if flist[:2] == 'tr':
         stage = 'train'
@@ -25,42 +26,20 @@ def get_chime_data_provider_for_flist(flist, window_length=1024, stft_size=1024,
         end_key = 'end'
         feature_channels = ['embedded/CH{}'.format(ch) for ch in range(1, 7)]
         annotations = flist.replace('flists/wav/channels_6', 'annotations')
-        fetchers = ChimeFeatureDataFetcher('Y', CHIME_JSON, flist,
-                                           feature_type='stft',
-                                           feature_channels=feature_channels,
-                                           annotations=annotations,
-                                           audio_start_key=start_key,
-                                           audio_end_key=end_key,
-                                           context_length=5,
-                                           window_length=window_length,
-                                           stft_shift=stft_shift,
-                                           stft_size=stft_size),
-    if 'simu' in flist and not 'et' in flist:
-        fetchers = ChimeFeatureDataFetcher('X', CHIME_JSON, flist,
-                                           feature_type='stft',
-                                           feature_channels=[
-                                               'X/CH{}'.format(n) for n
-                                               in range(1, 7)],
-                                           window_length=window_length,
-                                           stft_shift=stft_shift,
-                                           stft_size=stft_size), \
-                   ChimeFeatureDataFetcher('N', CHIME_JSON, flist,
-                                           feature_type='stft',
-                                           feature_channels=[
-                                               'N/CH{}'.format(n) for n
-                                               in range(1, 7)],
-                                           window_length=window_length,
-                                           stft_shift=stft_shift,
-                                           stft_size=stft_size)
+        fetcher = JsonCallbackFetcher('Chime_fetcher', CHIME_JSON, flist,
+                                       callback_fcn, feature_channels,
+                                       annotations, start_key, end_key,
+                                       context_length=5)
+    elif 'simu' in flist and not 'et' in flist:
+        feature_channels = ['X/CH{}'.format(n) for n in range(1, 7)] + \
+                           ['N/CH{}'.format(n) for n in range(1, 7)]
+        fetcher = JsonCallbackFetcher('Chime_fetcher', CHIME_JSON, flist,
+                                      callback_fcn, feature_channels)
     else:
         feature_channels = ['observed/CH{}'.format(n) for n in range(1, 7)]
-        fetchers = ChimeFeatureDataFetcher('Y', CHIME_JSON, flist,
-                                           feature_type='stft',
-                                           feature_channels=feature_channels,
-                                           window_length=window_length,
-                                           stft_shift=stft_shift,
-                                           stft_size=stft_size),
-    return DataProvider(fetchers, batch_size=1)
+        fetcher = JsonCallbackFetcher('Chime_fetcher', CHIME_JSON, flist,
+                                      callback_fcn, feature_channels)
+    return DataProvider((fetcher,), batch_size=1, shuffle_data=False)
 
 
 def parse_kaldi_chime_results(kaldi_exp):
