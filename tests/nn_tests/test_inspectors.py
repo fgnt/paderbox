@@ -55,7 +55,7 @@ class TestVariableInspector(unittest.TestCase):
         batch_input = {k: Variable(v, name=k) for k,v in batch.items()}
         loss = self.nn.forward_train(**batch_input)
         cg = computational_graph.build_computational_graph([loss])
-        self.inspector = VariableInspector(-3, cg)
+        self.inspector = VariableInspector(('i', 0), cg)
 
     def test_get_data(self):
         batch = self.tr_provider.test_run()
@@ -83,7 +83,7 @@ class TestVariableGradientInspector(unittest.TestCase):
         batch_input = {k: Variable(v, name=k) for k,v in batch.items()}
         loss = self.nn.forward_train(**batch_input)
         cg = computational_graph.build_computational_graph([loss])
-        self.inspector = VariableGradientInspector(-3, cg)
+        self.inspector = VariableGradientInspector(('i', 0), cg)
 
     def test_get_data(self):
         batch = self.tr_provider.test_run()
