@@ -12,41 +12,39 @@ export LD_LIBRARY_PATH
 
 INFO=/net/storage/database_jsons/info.txt
 
+rm $INFO
+echo "" > /net/storage/database_jsons/BUILDING_NOW
+
 # Create info
 echo "Create on `date`" >> $INFO
 echo "Git revision `git rev-parse HEAD`" >> $INFO
-echo "" >> $INFO
-echo "" >> $INFO
-echo "LOG:" >> $INFO
 
 # Create and copy databases
 
-echo 'Creating TIDIGITS json' || tee -a $INFO
-python nt/database/tidigits/JSON_conv_tidigits.py || tee -a
+echo 'Creating TIDIGITS json'
+python nt/database/tidigits/JSON_conv_tidigits.py
 cp tidigits.json /net/storage/database_jsons/tidigits.json
-echo "" >> $INFO
 
-echo 'Creating TIMIT json' || tee -a $INFO
-python nt/database/timit/database_timit.py || tee -a
+echo 'Creating TIMIT json'
+python nt/database/timit/database_timit.py
 cp TIMIT.json /net/storage/database_jsons/timit.json
-echo "" >> $INFO
 
-echo 'Creating WSJ json' || tee -a $INFO
-python nt/database/wsj/database_wsj.py || tee -a $INFO
+echo 'Creating WSJ json'
+python nt/database/wsj/database_wsj.py
 cp wsj.json /net/storage/database_jsons/wsj.json
-echo "" >> $INFO
 
-echo 'Creating Reverb json' || tee -a $INFO
-python nt/database/reverb/gen_config.py || tee -a $INFO
-python nt/database/reverb/process_db.py || tee -a $INFO
+echo 'Creating Reverb json'
+cd nt/database/reverb
+python gen_config.py
+python process_db.py
 cp reverb.json /net/storage/database_jsons/reverb.json
-echo "" >> $INFO
+cd ../../..
 
-echo 'Creating GERMAN json' || tee -a $INFO
-python nt/database/german-speechdata-package-v2/database_german-speechdata-package-v2.py || tee -a $INFO
+echo 'Creating GERMAN json'
+python nt/database/german-speechdata-package-v2/database_german-speechdata-package-v2.py
 cp german-speechdata-package-v2.json /net/storage/database_jsons/german.json
-echo "" >> $INFO
-
 
 # Uninstall packages
 /usr/bin/yes | pip uninstall nt || true
+
+rm /net/storage/database_jsons/BUILDING_NOW
