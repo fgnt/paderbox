@@ -42,7 +42,10 @@ def print_template():
           '......<utterance_id>\n'
           '....<phoneme>\n'
           '......<utterance_id>\n'
-          '........string\n')
+          '........string\n'
+          '..<flists>\n'
+          '....Flist_1\n'
+          '....Flist_2\n')
 
 
 def print_old_template():
