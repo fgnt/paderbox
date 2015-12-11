@@ -390,6 +390,8 @@ class TestReverbUtils(unittest.TestCase):
         return actual,expected
 
     def test_convolution(self):
+        # Check whether convolution through frequency domain via fft yields the
+        # same as through time domain.
         testsignal = io.audioread(
             '/net/speechdb/timit/pcm/train/dr1/fcjf0/sa1.wav')
         [sources_positions, mic_positions] = scenario.\
