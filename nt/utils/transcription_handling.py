@@ -229,7 +229,7 @@ class EventLabelHandler(object):
         int_arr = numpy.zeros(
             (transcription_length_in_frames, number_of_events),
             dtype=numpy.int32)
-        for begin, end, label in transcription:
+        for begin, end, label in transcription[:-1]:
             begin_frame, end_frame = [self.sample_to_frame_idx(n)
                                       for n in (begin, end)]
             int_arr[begin_frame:end_frame, self.label_to_int[label]] = 1
