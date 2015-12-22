@@ -45,7 +45,7 @@ class DummyInspector(Inspector):
     def __init__(self):
         pass
 
-    def get_data(self, computational_graph, batch):
+    def get_data(self, computational_graph=None, batch=None, net_out=None):
         return batch
 
 
@@ -74,14 +74,15 @@ class LoggerMonitorTest(unittest.TestCase):
                                use_gpu=False,
                                optimizer_hooks=hooks)
         g = self.trainer.get_computational_graph()
-        self.monitor = LoggerMonitor(VariableInspector(('i', 0), g), 'Input', True)
+        self.monitor = LoggerMonitor(
+            'TestMon', VariableInspector(('i', 0), g), 'Input', True)
         self.trainer.add_tr_monitor(self.monitor)
 
     def test_logging(self):
         self.trainer.start_training()
         time.sleep(2)
         self.trainer.stop_training()
-        self.assertGreater(len(self.monitor.logging_lists[0]), 0)
+        self.assertGreater(len(self.monitor.data['Input']), 0)
 
 
 class SnapshotMonitorTest(unittest.TestCase):
@@ -109,7 +110,8 @@ class SnapshotMonitorTest(unittest.TestCase):
                                use_gpu=False,
                                optimizer_hooks=hooks)
         g = self.trainer.get_computational_graph()
-        self.monitor = SnapshotMonitor(VariableInspector(('i', 0), g), 'Input', True)
+        self.monitor = SnapshotMonitor(
+            'TestMon', VariableInspector(('i', 0), g), 'Input', True)
         self.trainer.add_tr_monitor(self.monitor)
 
     def test_logging(self):
@@ -120,18 +122,19 @@ class SnapshotMonitorTest(unittest.TestCase):
             pass
         self.trainer.stop_training()
         nptest.assert_array_equal(
-            self.monitor.logging_lists[0], self.trainer.current_batch)
+            self.monitor.data['Input'], self.trainer.current_batch['i'].num)
 
 
 class RunningAverageMonitorTest(unittest.TestCase):
     def setUp(self):
 
-        self.monitor = RunningAverageMonitor(DummyInspector(), 'Input', True)
+        self.monitor = RunningAverageMonitor(
+            'TestMon', DummyInspector(), 'Input', True)
         self.monitor.reset()
 
     def test_logging(self):
         self.monitor.next_epoch()
-        self.monitor.log_data(None, 100000, (0,))
-        self.monitor.log_data(None, 200000, (0,))
-        self.monitor.log_data(None, 300000, (0,))
-        self.assertEqual(200000, self.monitor.logging_lists[0][0])
+        self.monitor.log_data(None, 100000, None, (0,))
+        self.monitor.log_data(None, 200000, None, (0,))
+        self.monitor.log_data(None, 300000, None, (0,))
+        self.assertEqual(200000, self.monitor.data['Input'][0])

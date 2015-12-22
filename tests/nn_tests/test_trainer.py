@@ -73,7 +73,6 @@ class TrainerTest(unittest.TestCase):
         self.trainer.optimizer.setup(self.nn)
         batch = self.tr_provider.test_run()
         self.trainer._train_forward_batch(batch)
-        self.assertGreater(self.trainer.current_loss.num, 0)
         self.trainer._reset_gradients()
         nptest.assert_equal(self.nn.l2.W.grad, np.zeros((5, 3)))
         self.trainer._backprop()
