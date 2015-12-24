@@ -1,22 +1,33 @@
 import numpy
+import editdistance
 
 class CharLabelHandler(object):
     """ Handles transforming from chars to integers and vice versa
 
     """
 
-    def __init__(self, transcription_list, add_blank=True):
+    def __init__(self, transcription_list, add_blank=True,
+                 add_seq2seq_magic=False):
         self.label_to_int = dict()
         self.int_to_label = dict()
+
+        def _add_symbol(symbol):
+            if not symbol in self.label_to_int:
+                pos = len(self.label_to_int)
+                self.label_to_int[symbol] = pos
+                self.int_to_label[pos] = symbol
+
         if add_blank:
-            self.label_to_int['BLANK'] = 0
-            self.int_to_label[0] = 'BLANK'
+            _add_symbol('BLANK')
+        if add_seq2seq_magic:
+            _add_symbol('<s>')
+            self.start_symbol = self.label_to_int['<s>']
+            _add_symbol('</s>')
+            self.end_symbol = self.label_to_int['</s>']
+
         for transcription in transcription_list:
             for char in transcription:
-                if not char in self.label_to_int:
-                    number = len(self.label_to_int)
-                    self.label_to_int[char] = number
-                    self.int_to_label[number] = char
+                _add_symbol(char)
 
     def label_seq_to_int_arr(self, label_seq):
         int_arr = numpy.empty(len(label_seq), dtype=numpy.int32)
@@ -168,29 +179,6 @@ class HybridLabelHandler(object):
     def __len__(self):
         return len(self.label_to_int)
 
-def argmax_ctc_decode(int_arr, label_handler):
-    """ Decodes a ctc sequence
-
-    :param int_arr: sequence to decode
-    :param label_handler: label handler
-    :type label_handler: CharLabelHandler
-    :return: decoded sequence
-    """
-
-    max_decode = numpy.argmax(int_arr, axis=1)
-    decode = numpy.zeros_like(max_decode)
-    idx_dec = 0
-    for idx, n in enumerate(max_decode):
-        if idx > 0 and not n == max_decode[idx - 1]:
-            decode[idx_dec] = n
-            idx_dec += 1
-        elif idx == 0:
-            decode[idx_dec] = n
-            idx_dec += 1
-    idx_seq = [c for c in decode if c != 0]
-    sequence = label_handler.int_arr_to_label_seq(idx_seq)
-    return sequence
-
 
 class EventLabelHandler(object):
     """ Handles transforming from chars to integers and vice versa
@@ -253,3 +241,43 @@ def sample_to_frame_idx(sample_idx, frame_size, frame_shift):
     start_offset = (frame_size - frame_shift)/2
     frame_idx = (sample_idx - start_offset)//frame_shift
     return max(0, frame_idx)
+
+
+def argmax_ctc_decode(int_arr, label_handler):
+    """ Decodes a ctc sequence
+
+    :param int_arr: sequence to decode
+    :param label_handler: label handler
+    :type label_handler: CharLabelHandler
+    :return: decoded sequence
+    """
+
+    max_decode = numpy.argmax(int_arr, axis=1)
+    decode = numpy.zeros_like(max_decode)
+    idx_dec = 0
+    for idx, n in enumerate(max_decode):
+        if idx > 0 and not n == max_decode[idx - 1]:
+            decode[idx_dec] = n
+            idx_dec += 1
+        elif idx == 0:
+            decode[idx_dec] = n
+            idx_dec += 1
+    idx_seq = [c for c in decode if c != 0]
+    sequence = label_handler.int_arr_to_label_seq(idx_seq)
+    return sequence
+
+
+def argmax_ctc_decode_ler_wer(dec_arr, ref_arr, label_handler):
+    """ Decodes the ctc sequence and calculates label and word error rates
+
+    :param dec_arr: ctc network output
+    :param ref_arr: reference sequence (as int array)
+    :param label_handler: label handler
+    :return: decode, ler, wer
+    """
+    dec_seq = argmax_ctc_decode(dec_arr, label_handler)
+    ref_seq = label_handler.int_arr_to_label_seq(ref_arr)
+    ler = editdistance.eval(list(dec_seq), list(ref_seq)) / len(list(ref_seq))
+    wer = editdistance.eval(dec_seq.split(), ref_seq.split()) \
+          / len(ref_seq.split())
+    return dec_seq, ler, wer
