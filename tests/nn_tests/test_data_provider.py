@@ -86,4 +86,8 @@ class DataProviderFetcher(unittest.TestCase):
     def test_output_list(self):
         self.assertEqual(self.dp.output_list, ['X', 'Y'])
 
+    def test_print_data_info(self):
+        self.dp.print_data_info()
+        self.dp.print_data_info(format=0)
+
     # TODO: Missing tests for get_data_types, get_data_shapes, print_data_info
