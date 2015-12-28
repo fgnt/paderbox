@@ -17,12 +17,13 @@ from chainer.testing import attr
 B = 10
 A = 5
 
+
 class DummyNetwork(Chain):
 
     def __init__(self):
         super(DummyNetwork, self).__init__(
-            l1 = Linear(5, 3),
-            l2 = Linear(3, 5)
+            l1=Linear(5, 3),
+            l2=Linear(3, 5)
         )
 
     def forward(self, **kwargs):

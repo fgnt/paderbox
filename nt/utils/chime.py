@@ -26,19 +26,28 @@ def get_chime_data_provider_for_flist(flist, callback_fcn,
         end_key = 'end'
         feature_channels = ['embedded/CH{}'.format(ch) for ch in range(1, 7)]
         annotations = flist.replace('flists/wav/channels_6', 'annotations')
-        fetcher = JsonCallbackFetcher('Chime_fetcher', CHIME_JSON, flist,
-                                       callback_fcn, feature_channels,
-                                       annotations, start_key, end_key,
-                                       context_length=5)
-    elif 'simu' in flist and not 'et' in flist:
-        feature_channels = ['X/CH{}'.format(n) for n in range(1, 7)] + \
-                           ['N/CH{}'.format(n) for n in range(1, 7)]
-        fetcher = JsonCallbackFetcher('Chime_fetcher', CHIME_JSON, flist,
-                                      callback_fcn, feature_channels)
+        fetcher = JsonCallbackFetcher('Chime_fetcher',
+                                      json_src=CHIME_JSON,
+                                      flist=flist,
+                                      callback_fcn=callback_fcn,
+                                      feature_channels=feature_channels,
+                                      annotations=annotations,
+                                      audio_start_key=start_key,
+                                      audio_end_key=end_key,
+                                      context_length=5)
+    elif 'simu' in flist:
+        if not 'et' in flist:
+            feature_channels = ['X/CH{}'.format(n) for n in range(1, 7)] + \
+                               ['N/CH{}'.format(n) for n in range(1, 7)]
+        else:
+            feature_channels = ['observed/CH{}'.format(n) for n in range(1, 7)]
+        fetcher = JsonCallbackFetcher('Chime_fetcher',
+                                      json_src=CHIME_JSON,
+                                      flist=flist,
+                                      callback_fcn=callback_fcn,
+                                      feature_channels=feature_channels)
     else:
-        feature_channels = ['observed/CH{}'.format(n) for n in range(1, 7)]
-        fetcher = JsonCallbackFetcher('Chime_fetcher', CHIME_JSON, flist,
-                                      callback_fcn, feature_channels)
+        raise ValueError('Unknown filelist')
     return DataProvider((fetcher,), batch_size=1, shuffle_data=False)
 
 
@@ -80,8 +89,8 @@ def parse_kaldi_chime_results(kaldi_exp):
     train_database = []
     for train_folder in os.listdir(kaldi_exp):
         if train_folder.startswith('tri3b') and \
-                (train_folder.split('_')[2] =='multi'
-                or train_folder.split('_')[2] == 'simu'):
+                (train_folder.split('_')[2] == 'multi'
+                 or train_folder.split('_')[2] == 'simu'):
             train_database.append({
                 "train_folder": train_folder,
                 "train_set": train_folder.split('_')[1],
