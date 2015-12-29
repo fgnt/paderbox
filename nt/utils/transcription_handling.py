@@ -281,3 +281,26 @@ def argmax_ctc_decode_ler_wer(dec_arr, ref_arr, label_handler):
     wer = editdistance.eval(dec_seq.split(), ref_seq.split()) \
           / len(ref_seq.split())
     return dec_seq, ler, wer
+
+
+def argmax_ctc_decode_with_stats(dec_arr, ref_arr, label_handler):
+    """ Decodes the ctc sequence, calculates label and word error rates and
+    returns various stats
+
+    :param dec_arr: ctc network output
+    :param ref_arr: reference sequence (as int array)
+    :param label_handler: label handler
+    :return: decode, ler, wer, label_errors, word_errors, labels, words
+    """
+    dec_seq = argmax_ctc_decode(dec_arr, label_handler)
+    ref_seq = label_handler.int_arr_to_label_seq(ref_arr)
+    ref_words = ref_seq.split()
+    ref_labels = list(ref_seq)
+    dec_words = dec_seq.split()
+    dec_labels = list(dec_seq)
+    word_errors = editdistance.eval(dec_words, ref_words)
+    wer = word_errors / len(ref_words)
+    label_errors = editdistance.eval(dec_labels, ref_labels)
+    ler = label_errors / len(ref_labels)
+    return dec_seq, ler, wer, label_errors, word_errors,\
+           len(ref_labels), len(ref_words)
