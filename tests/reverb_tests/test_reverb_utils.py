@@ -21,7 +21,7 @@ class TestReverbUtils(unittest.TestCase):
         self.sensor_pos = (5.01,5,2)
         self.soundvelocity = 343
 
-    @unittest.skip("")
+    #@unittest.skip("")
     @matlab_test
     def test_comparePythonTranVuRirWithExpectedUsingMatlabTwoSensorTwoSrc(self):
         """
@@ -78,6 +78,7 @@ class TestReverbUtils(unittest.TestCase):
         matlabRIR = matlab_session.get_variable('rir')
         tc.assert_allclose(matlabRIR, pyRIR, atol=1e-4)
 
+    #@unittest.skip("")
     def test_compareTranVuMinimumTimeDelayWithSoundVelocity(self):
         """
         Compare theoretical TimeDelay from distance and soundvelocity with
@@ -110,7 +111,7 @@ class TestReverbUtils(unittest.TestCase):
         expected = distance / 343
         tc.assert_allclose(actual, expected, atol=1e-4)
 
-    @unittest.skip("")
+    #@unittest.skip("")
     @matlab_test
     def test_compareTranVuExpectedT60WithCalculatedUsingSchroederMethodFromMatlab(self):
         """
@@ -244,6 +245,7 @@ class TestReverbUtils(unittest.TestCase):
                                    sensor_orientation_angle=sensor_orientation,
                                        sensor_directivity=sensor_directivity)
 
+    #@unittest.skip("")
     @matlab_test
     def test_compare_mlab_conv_pyOverlap_Save(self):
         """
@@ -297,17 +299,17 @@ class TestReverbUtils(unittest.TestCase):
             )
         tc.assert_allclose(actual_maxmin,expected_maxmin,atol= 1e-5)
 
-        actual_maxmin,expected_maxmin = self.get_directivity_characteristic(
-            algorithm= algorithm,
+        actual_maxmin, expected_maxmin = self.get_directivity_characteristic(
+            algorithm=algorithm,
             angle= "elevation",
-            sensor_orientation_angle= sensor_orientation_angle,
+            sensor_orientation_angle=sensor_orientation_angle,
             sensor_directivity=sensor_directivity
             )
         tc.assert_allclose(actual_maxmin,expected_maxmin,atol= 1e-5)
 
 
-    def get_directivity_characteristic(self,algorithm = "TranVu",angle="azimuth",
-                     sensor_orientation_angle=0,sensor_directivity="cardioid"):
+    def get_directivity_characteristic(self, algorithm="TranVu", angle="azimuth",
+                     sensor_orientation_angle=0, sensor_directivity="cardioid"):
         if algorithm == "TranVu":
             fixedShift = 128
             T60 = 0
@@ -353,12 +355,15 @@ class TestReverbUtils(unittest.TestCase):
                                        )
         #set RIR to 0 as of the point in time where we're receiving echoes
         image_distance = numpy.array(self.room_dimensions*6).reshape((3,6))
-        filter = numpy.array([[1,0,0,-1,0,0],[0,1,0,0,-1,0],[0,0,1,0,0,-1]])
+        filter = numpy.array([[1, 0, 0, -1, 0, 0],
+                              [0, 1, 0, 0, -1, 0],
+                              [0, 0, 1, 0, 0, -1]]
+                             )
         image_distance *= filter
         first_source_images = sources_position.transpose().reshape([3,1,-1,1])+\
                             image_distance.reshape([3,1,1,-1])
         distance_sensor_images = numpy.sqrt(((numpy.asarray(
-            self.sensor_pos).reshape([3,1,1,1])-first_source_images)**2)
+            self.sensor_pos).reshape([3,1,1, 1])-first_source_images)**2)
             .sum(axis=0))
 
         minimum_distance_sensor_image = numpy.min(distance_sensor_images)
@@ -392,20 +397,48 @@ class TestReverbUtils(unittest.TestCase):
     def test_convolution(self):
         # Check whether convolution through frequency domain via fft yields the
         # same as through time domain.
-        testsignal = io.audioread(
+        testsignal1 = io.audioread(
             '/net/speechdb/timit/pcm/train/dr1/fcjf0/sa1.wav')
+        testsignal2 = io.audioread(
+            '/net/speechdb/timit/pcm/train/dr1/fcjf0/sa2.wav')
+        testsignal3 = io.audioread(
+            '/net/speechdb/timit/pcm/train/dr1/fcjf0/si648.wav')
+        # pad all audiosignals with zeros such they have equal lengths
+        maxlen = numpy.amax((len(testsignal1),
+                             len(testsignal2),
+                             len(testsignal3)
+                             ))
+        testsignal1 = numpy.pad(testsignal1,
+               (0,maxlen-len(testsignal1)),
+               'constant')
+        testsignal2 = numpy.pad(testsignal2,
+               (0,maxlen-len(testsignal2)),
+               'constant')
+        testsignal3 = numpy.pad(testsignal3,
+               (0,maxlen-len(testsignal3)),
+               'constant')
+        audio = numpy.vstack([testsignal1,
+                              testsignal2,
+                              testsignal3]
+                             )
         [sources_positions, mic_positions] = scenario.\
             generate_uniformly_random_sources_and_sensors(self.room_dimensions,
-                                                         6,
+                                                         3,
                                                          8)
         T60 = 0.3
-        rir_py = rirUtils.generate_RIR(self.room_dimensions,
-                                       sources_positions,
-                                       mic_positions,
-                                       self.sample_rate,
-                                       self.filter_length,
-                                       T60,
-                                       algorithm="TranVu")
-        convolved_signal_fft = rirUtils.fft_convolve(testsignal,rir_py)
-        convolved_signal_time = rirUtils.time_convolve(testsignal,rir_py)
-        tc.assert_allclose(convolved_signal_fft,convolved_signal_time,atol= 1e-10)
+        rir_py = rirUtils.generate_RIR(
+            self.room_dimensions,
+            sources_positions,
+            mic_positions,
+            self.sample_rate,
+            self.filter_length,
+            T60,
+            algorithm="TranVu"
+        )
+        convolved_signal_fft = rirUtils.fft_convolve(audio, rir_py)
+        convolved_signal_time = rirUtils.time_convolve(audio, rir_py)
+        tc.assert_allclose(
+            convolved_signal_fft,
+            convolved_signal_time,
+            atol=1e-10
+        )
