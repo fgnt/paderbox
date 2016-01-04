@@ -10,7 +10,7 @@ with open(CHIME_JSON_FILE) as fid:
 
 
 def get_chime_data_provider_for_flist(flist, callback_fcn,
-                                      use_context_for_real=True, indices_tuple=None):
+                                      use_context_for_real=True):
     if flist[:2] == 'tr':
         stage = 'train'
     elif flist[:2] == 'dt':
@@ -48,7 +48,7 @@ def get_chime_data_provider_for_flist(flist, callback_fcn,
                                       feature_channels=feature_channels)
     else:
         raise ValueError('Unknown filelist')
-    return DataProvider((fetcher,), batch_size=1, shuffle_data=False, indices_tuple=indices_tuple)
+    return DataProvider((fetcher,), batch_size=1, shuffle_data=False)
 
 
 def parse_kaldi_chime_results(kaldi_exp):
