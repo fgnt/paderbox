@@ -10,7 +10,7 @@ with open(CHIME_JSON_FILE) as fid:
 
 
 def get_chime_data_provider_for_flist(flist, callback_fcn,
-                                      use_context_for_real=True):
+                                      use_context_for_real=True, **kwargs):
     if flist[:2] == 'tr':
         stage = 'train'
     elif flist[:2] == 'dt':
@@ -34,7 +34,8 @@ def get_chime_data_provider_for_flist(flist, callback_fcn,
                                       annotations=annotations,
                                       audio_start_key=start_key,
                                       audio_end_key=end_key,
-                                      context_length=5)
+                                      context_length=5,
+                                      **kwargs)
     elif 'simu' in flist:
         if not 'et' in flist:
             feature_channels = ['X/CH{}'.format(n) for n in range(1, 7)] + \
@@ -45,7 +46,8 @@ def get_chime_data_provider_for_flist(flist, callback_fcn,
                                       json_src=CHIME_JSON,
                                       flist=flist,
                                       callback_fcn=callback_fcn,
-                                      feature_channels=feature_channels)
+                                      feature_channels=feature_channels,
+                                      **kwargs)
     else:
         raise ValueError('Unknown filelist')
     return DataProvider((fetcher,), batch_size=1, shuffle_data=False)
