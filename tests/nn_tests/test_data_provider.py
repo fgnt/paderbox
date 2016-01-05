@@ -67,8 +67,13 @@ class DataProviderFetcher(unittest.TestCase):
 
     def test_test_run(self):
         data = self.dp.test_run()
-        numpy.testing.assert_equal(data['X'], numpy.asarray([0, 1]))
-        numpy.testing.assert_equal(data['Y'], numpy.asarray([0, 1]))
+        numpy.testing.assert_equal(data['X'], numpy.asarray([0]))
+        numpy.testing.assert_equal(data['Y'], numpy.asarray([0]))
+
+    def test_get_indices(self):
+        data = self.dp.get_data_for_indices_tuple((0, 2, 4))
+        numpy.testing.assert_equal(data['X'], numpy.asarray([0, 2, 4]))
+        numpy.testing.assert_equal(data['Y'], numpy.asarray([0, 2, 4]))
 
     def test_shutdown(self):
         self.dp.__iter__()

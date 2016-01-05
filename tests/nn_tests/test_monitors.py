@@ -21,8 +21,8 @@ A = 5
 class DummyNetwork(Chain):
     def __init__(self):
         super(DummyNetwork, self).__init__(
-            l1=Linear(5, 3),
-            l2=Linear(3, 5)
+                l1=Linear(5, 3),
+                l2=Linear(3, 5)
         )
 
     def forward(self, **kwargs):
@@ -41,7 +41,6 @@ class DummyNetwork(Chain):
 
 
 class DummyInspector(Inspector):
-
     def __init__(self):
         pass
 
@@ -75,7 +74,7 @@ class LoggerMonitorTest(unittest.TestCase):
                                optimizer_hooks=hooks)
         g = self.trainer.get_computational_graph()
         self.monitor = LoggerMonitor(
-            'TestMon', VariableInspector(('i', 0), g), 'Input', True)
+                'TestMon', VariableInspector(('i', 0), g), 'Input', True)
         self.trainer.add_tr_monitor(self.monitor)
 
     def test_logging(self):
@@ -90,11 +89,12 @@ class SnapshotMonitorTest(unittest.TestCase):
         self.input = np.random.uniform(-1, 1, (B, A)).astype(np.float32)
         self.target = self.input.copy()
         self.nn = DummyNetwork()
-        x_fetcher = ArrayDataFetcher('i', self.input)
+        self.x_fetcher = ArrayDataFetcher('i', self.input)
         t_fetcher = ArrayDataFetcher('t', self.target)
         x_cv_fetcher = ArrayDataFetcher('i', self.input)
         t_cv_fetcher = ArrayDataFetcher('t', self.target)
-        self.tr_provider = DataProvider((x_fetcher, t_fetcher), batch_size=2)
+        self.tr_provider = DataProvider((self.x_fetcher, t_fetcher),
+                                        batch_size=2)
         self.cv_provider = DataProvider((x_cv_fetcher, t_cv_fetcher),
                                         batch_size=2)
         hooks = [GradientClipping(1)]
@@ -111,25 +111,20 @@ class SnapshotMonitorTest(unittest.TestCase):
                                optimizer_hooks=hooks)
         g = self.trainer.get_computational_graph()
         self.monitor = SnapshotMonitor(
-            'TestMon', VariableInspector(('i', 0), g), 'Input', True)
+                'TestMon', VariableInspector(('i', 0), g), 'Input', True)
         self.trainer.add_tr_monitor(self.monitor)
 
     def test_logging(self):
-        self.trainer.start_training()
-        time.sleep(2)
-        # Monitor is for training so we skip CV for this test
-        while self.trainer.training_status.current_mode == 'Cross-validation':
-            pass
-        self.trainer.stop_training()
-        nptest.assert_array_equal(
-            self.monitor.data['Input'], self.trainer.current_batch['i'].num)
+        self.trainer.test_run()
+        nptest.assert_almost_equal(
+                self.monitor.data['Input'], self.x_fetcher.get_data_for_indices(
+                    self.tr_provider.current_observation_indices)[0])
 
 
 class RunningAverageMonitorTest(unittest.TestCase):
     def setUp(self):
-
         self.monitor = RunningAverageMonitor(
-            'TestMon', DummyInspector(), 'Input', True)
+                'TestMon', DummyInspector(), 'Input', True)
         self.monitor.reset()
 
     def test_logging(self):
