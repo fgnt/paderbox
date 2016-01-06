@@ -171,7 +171,7 @@ class TestReverbUtils(unittest.TestCase):
         algorithm ="TranVu"
         sensor_directivity = "cardioid"
 
-        self.make_tests_with_directivity_characteristic(algorithm=algorithm,
+        self.process_with_directivity_characteristic(algorithm=algorithm,
                                    sensor_orientation_angle=sensor_orientation,
                                        sensor_directivity=sensor_directivity)
 
@@ -185,7 +185,7 @@ class TestReverbUtils(unittest.TestCase):
         algorithm ="TranVu"
         sensor_directivity = "subcardioid"
 
-        self.make_tests_with_directivity_characteristic(algorithm=algorithm,
+        self.process_with_directivity_characteristic(algorithm=algorithm,
                                    sensor_orientation_angle=sensor_orientation,
                                        sensor_directivity=sensor_directivity)
 
@@ -199,7 +199,7 @@ class TestReverbUtils(unittest.TestCase):
         algorithm ="TranVu"
         sensor_directivity = "cardioid"
 
-        self.make_tests_with_directivity_characteristic(algorithm=algorithm,
+        self.process_with_directivity_characteristic(algorithm=algorithm,
                                    sensor_orientation_angle=sensor_orientation,
                                        sensor_directivity=sensor_directivity)
 
@@ -213,7 +213,7 @@ class TestReverbUtils(unittest.TestCase):
         algorithm ="TranVu"
         sensor_directivity = "subcardioid"
 
-        self.make_tests_with_directivity_characteristic(algorithm=algorithm,
+        self.process_with_directivity_characteristic(algorithm=algorithm,
                                    sensor_orientation_angle=sensor_orientation,
                                        sensor_directivity=sensor_directivity)
 
@@ -227,7 +227,7 @@ class TestReverbUtils(unittest.TestCase):
         algorithm ="TranVu"
         sensor_directivity = "cardioid"
 
-        self.make_tests_with_directivity_characteristic(algorithm=algorithm,
+        self.process_with_directivity_characteristic(algorithm=algorithm,
                                    sensor_orientation_angle=sensor_orientation,
                                        sensor_directivity=sensor_directivity)
 
@@ -241,7 +241,7 @@ class TestReverbUtils(unittest.TestCase):
         algorithm ="TranVu"
         sensor_directivity = "subcardioid"
 
-        self.make_tests_with_directivity_characteristic(algorithm=algorithm,
+        self.process_with_directivity_characteristic(algorithm=algorithm,
                                    sensor_orientation_angle=sensor_orientation,
                                        sensor_directivity=sensor_directivity)
 
@@ -288,7 +288,7 @@ class TestReverbUtils(unittest.TestCase):
         #tc.assert_allclose(matlab_y, numpy.reshape(y_hat,(len(y_hat),1)), atol=1e-4)
 
 
-    def make_tests_with_directivity_characteristic(self,algorithm="TranVu",
+    def process_with_directivity_characteristic(self,algorithm="TranVu",
                                     sensor_orientation_angle=0,
                                     sensor_directivity="omnidirectional"):
         actual_maxmin,expected_maxmin = self.get_directivity_characteristic(
@@ -390,8 +390,9 @@ class TestReverbUtils(unittest.TestCase):
             expected = numpy.array([sensor_orientation_angle,
                                 sensor_orientation_angle + numpy.pi])
         else:
-            raise NotImplementedError("Test is not runnable for directivities"
-                                      "other than cardioid, subcardioid")
+            raise NotImplementedError("Test is not runnable for directivities "
+                                      "other than cardioid or subcardioid. "
+                                      "Selected directivity: "+sensor_directivity)
         return actual,expected
 
     def test_convolution(self):
