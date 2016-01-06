@@ -41,8 +41,8 @@ cp reverb.json /net/storage/database_jsons/reverb.json
 cd ../../..
 
 echo 'Creating GERMAN json'
-python nt/database/german-speechdata-package-v2/database_german-speechdata-package-v2.py
-cp german-speechdata-package-v2.json /net/storage/database_jsons/german.json
+python nt/database/german_speechdata_package_v2/database_german_speechdata_package_v2.py
+cp german_speechdata_package_v2.json /net/storage/database_jsons/german.json
 
 # Uninstall packages
 /usr/bin/yes | pip uninstall nt || true
