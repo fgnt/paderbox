@@ -33,14 +33,14 @@ print(reference)
 obj = psq.pesq()
 a,b = obj.pesqdef(reference,degraded,pesqmode,dirbin,rate)
 
-# Print the PESQ scores
-if pesqmode == 'nb':
-    print('P.862 Prediction- Raw MOS ',b)
-    print('P.862 Prediction- MOS-LQO ',a)
-elif pesqmode == 'wb':
-    print('P.862 Prediction- MOS-LQO ',a)
-else:
-    sys.exit()
+# Print the PESQ scores::
+    if pesqmode == 'nb':
+        print('P.862 Prediction- Raw MOS ',b)
+        print('P.862 Prediction- MOS-LQO ',a)
+    elif pesqmode == 'wb':
+        print('P.862 Prediction- MOS-LQO ',a)
+    else:
+        sys.exit()
 
 '''
 

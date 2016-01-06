@@ -217,12 +217,14 @@ def add_flist(flist, progress_json, scenario, stage='train',
               file_type='wav', channel_type='observed', channel='CH1'):
     """ Adds a file list to the current progress_json object
 
-    '....<flists>\n'\
-          '......<file_type> (z.B. wav)\n'\
-          '..........<scenario> (z.B. tr05_simu, tr05_real...)\n'\
-          '............<utterance_id>\n'\
-          '..............<observed>\n'\
-          '................<A>\n'
+    Example::
+
+    ....<flists>
+    ......<file_type> (z.B. wav)
+    ........<scenario> (z.B. tr05_simu, tr05_real...)
+    ..........<utterance_id>
+    ............<observed>
+    ..............<A>
 
     :param flist: A dictionary acting as a file list
     :param progress_json: The current json object
@@ -252,7 +254,7 @@ def add_flist(flist, progress_json, scenario, stage='train',
 
 def combine_flists(data, flist_1_path, flist_2_path,
                    flist_path, delimiter='/'):
-    """ Combines two file lists into a new file list ``flist_name`
+    """ Combines two file lists into a new file list ``flist_name``
 
     The new file list will only have those channels, which are present in both
     file lists.
