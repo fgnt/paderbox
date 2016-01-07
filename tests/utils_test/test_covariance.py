@@ -28,34 +28,34 @@ class TestCovariance(unittest.TestCase):
         mask = mask / np.sum(mask, axis=0, keepdims=True)
         return x, mask
 
-    def test_PSD_without_mask(self):
+    def test_covariance_without_mask(self):
         x = rand(3, 4)
         psd = covariance(x)
         tc.assert_equal(psd.shape, (3, 3))
         tc.assert_positive_semidefinite(psd)
 
-    def test_PSD_with_mask(self):
+    def test_covariance_with_mask(self):
         x = rand(3, 4)
         mask = np.random.uniform(0, 1, (4,))
         psd = covariance(x, mask)
         tc.assert_equal(psd.shape, (3, 3))
         tc.assert_positive_semidefinite(psd)
 
-    def test_PSD_with_mask_with_source(self):
+    def test_covariance_with_mask_with_source(self):
         x = rand(3, 4)
         mask = np.random.uniform(0, 1, (2, 4))
         psd = covariance(x[np.newaxis, ...], mask)
         tc.assert_equal(psd.shape, (2, 3, 3))
         tc.assert_positive_semidefinite(psd)
 
-    def test_PSD_with_mask_independent_dim(self):
+    def test_covariance_with_mask_independent_dim(self):
         x = rand(2, 3, 4)
         mask = np.random.uniform(0, 1, (2, 4,))
         psd = covariance(x, mask)
         tc.assert_equal(psd.shape, (2, 3, 3))
         tc.assert_positive_semidefinite(psd)
 
-    def test_PSD_without_mask_independent_dim(self):
+    def test_covariance_without_mask_independent_dim(self):
         x = rand(1, 2, 3, 4)
         psd = covariance(x)
         tc.assert_equal(psd.shape, (1, 2, 3, 3))
