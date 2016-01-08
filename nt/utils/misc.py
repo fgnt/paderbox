@@ -7,12 +7,13 @@ find something useful if you alter it a little bit.
 
 import os
 
-import numpy
+import numpy as np
 import h5py
 
 import nt.speech_enhancement.beamformer as bf
+from nt.utils.math_ops import covariance
 from nt.transform.module_stft import istft
-from nt.evaluation import output_sxr
+from nt.evaluation import input_sxr, output_sxr
 from nt.evaluation.pesq import threaded_pesq as pesq
 from nt.utils import Timer, mkdir_p
 from nt.speech_enhancement.noise import get_snr
@@ -21,65 +22,99 @@ from nt.utils.chime import get_chime_data_provider_for_flist
 from nt.io.audiowrite import audiowrite
 
 
-def get_beamform_results(Y, X, N, gamma_X, gamma_N, name, oracle=False,
-                         stft_size=1024, stft_shift=256, ctx_frames=0,
-                         calc_PESQ=True):
-    if not oracle:
-        phi_XX = bf.get_power_spectral_density_matrix(Y.T, gamma_X.T)
-        phi_NN = bf.get_power_spectral_density_matrix(Y.T, gamma_N.T)
-    else:
-        phi_XX = bf.get_power_spectral_density_matrix(X.T)
-        phi_NN = bf.get_power_spectral_density_matrix(N.T)
+def get_beamform_results(
+        Y,
+        X,
+        N,
+        mask_X,
+        mask_N,
+        context_frames=0,
+        stft_size=1024,
+        stft_shift=256,
+        calculate_PESQ=True):
+    """ A wrapper, if you want to calculate more than one beamforming result.
+
+    :param Y: Mixed signal with dimensions T times M times F
+    :param X: Source image with dimensions T times M times F
+    :param N: Noise image with dimensions T times M times F
+    :param mask_X: Source mask with dimensions T times F
+    :param mask_N: Noise mask with dimensions T times F
+    :param context_frames: Number of frames to be dropped after beamforming
+    :param stft_size: ...
+    :param stft_shift: ...
+    :param calculate_PESQ: If true, external PESQ library will calculate score.
+    :return:
+    """
+
+    # Translate from Neural Network to Beamformer conventions
+    Y = Y.T
+    X = X.T
+    N = N.T
+    mask_X = mask_X.T
+    mask_N = mask_N.T
+
+    phi_XX = covariance(Y, mask_X)
+    phi_NN = covariance(Y, mask_N)
 
     W_gev = bf.get_gev_vector(phi_XX, phi_NN)
     W_pca = bf.get_pca_vector(phi_XX)
     W_mvdr = bf.get_mvdr_vector(W_pca, phi_NN)
     W_gev_ban = bf.blind_analytic_normalization(W_gev, phi_NN)
 
-    postfixes = 'gev pca mvdr gev_ban'.split()
+    algorithms = 'gev pca mvdr gev_ban'.split()
+    results = dict()
+    z = dict()
+
+    def _istft(stft_signal):
+        return istft(stft_signal.T, size=stft_size, shift=stft_shift)
 
     def _get_results(W):
-        Y_bf = bf.apply_beamforming_vector(W, Y.T)
-        y_bf = istft(Y_bf.T, size=stft_size, shift=stft_shift)[ctx_frames:]
+        Y_bf = bf.apply_beamforming_vector(W, Y[:, :, context_frames:])
+        print(Y_bf.shape)
+        y_bf = _istft(Y_bf)
         if X is not None:
-            X_beam = bf.apply_beamforming_vector(W, X.T)
-            N_beam = bf.apply_beamforming_vector(W, N.T)
-            x_beam = istft(X_beam.T, size=stft_size, shift=stft_shift)[
-                     ctx_frames:]
-            n_beam = istft(N_beam.T, size=stft_size, shift=stft_shift)[
-                     ctx_frames:]
-            SDR, SIR, SNR = output_sxr(x_beam[:, None, None], n_beam[:, None])
+            X_bf = bf.apply_beamforming_vector(W, X[:, :, context_frames:])
+            N_bf = bf.apply_beamforming_vector(W, N[:, :, context_frames:])
+            x_bf = _istft(X_bf)
+            n_bf = _istft(N_bf)
+            SDR, SIR, SNR = output_sxr(
+                x_bf[:, np.newaxis, np.newaxis],
+                n_bf[:, np.newaxis, np.newaxis]
+            )
         else:
             SDR, SIR, SNR = None, None, None
         return SDR, SIR, SNR, y_bf
 
-    results = dict()
-    y = dict()
-    results['cond_' + name] = numpy.linalg.cond(phi_NN)
-    for postfix in postfixes:
-        SDR, SIR, SNR, y[postfix] = _get_results(
-            locals()['W_{}'.format(postfix)])
-        results['SDR_' + name + '_' + postfix] = SDR
-        results['SNR_' + name + '_' + postfix] = SNR
-        results['SIR_' + name + '_' + postfix] = SIR
-        # results['y_'+name+'_'+postfix] = y
+    results['cond'] = np.linalg.cond(phi_NN)
+    z['input'] = _istft(Y[:, 4, context_frames:])
+    for alg in algorithms:
+        SDR, _, SNR, y_bf = _get_results(locals()['W_{}'.format(alg)])
+        results['SDR_' + alg] = SDR
+        results['SNR_' + alg] = SNR
+        z[alg] = y_bf
 
-    if X is not None and calc_PESQ:
-        postfixes = postfixes + ['orig']
-        y['orig'] = istft(Y[:, 5, :], size=stft_size, shift=stft_shift)
-        x = istft(X[:, 4, :], size=stft_size, shift=stft_shift)
-        pesq_result = pesq(len(y) * [x], [y[k] for k in postfixes])
-        for idx, postfix in enumerate(postfixes):
-            results['PESQ_' + name + '_' + postfix] = pesq_result[idx][-1]
+    # Input SXR (here only on channel 5)
+    if X is not None:
+        x_bf = _istft(X[:, 4, context_frames:])
+        n_bf = _istft(N[:, 4, context_frames:])
+        results['input_SDR'], _, results['input_SNR'] = input_sxr(
+            x_bf[:, np.newaxis, np.newaxis],
+            n_bf[:, np.newaxis, np.newaxis]
+        )
+        if calculate_PESQ:
+            algorithms += ['input']
+            pesq_result = pesq(len(z) * [x_bf], [z[alg] for alg in algorithms])
+            for idx, alg in enumerate(algorithms):
+                results['PESQ_' + alg] = pesq_result[idx][-1]
 
-    return results, y
+    return results, z
 
 
 def get_masks_ito(utt_id, flist, ito_data):
     masks = ito_data[flist][utt_id]['m'][:].transpose((1, 0, 2))
     concentration = ito_data[flist][utt_id]['concentration'][:]
-    counts = numpy.bincount(numpy.argmax(concentration, axis=0))
-    target_mask = masks[:, numpy.argmax(counts), :]
+    counts = np.bincount(np.argmax(concentration, axis=0))
+    target_mask = masks[:, np.argmax(counts), :]
     noise_mask = 1 - target_mask
     return target_mask, noise_mask
 
@@ -90,9 +125,9 @@ def get_masks_ito_oracle(utt_id, flist, ito_data, X, N):
     cos_distances = list()
     for mask_idx in range(masks.shape[1]):
         mask = masks[:, mask_idx, :]
-        norm = numpy.linalg.norm(mask_X) + numpy.linalg.norm(mask)
-        cos_distances.append(numpy.sum(mask.ravel() * mask_X.ravel()) / norm)
-    target_mask = masks[:, numpy.argmax(cos_distances), :]
+        norm = np.linalg.norm(mask_X) + np.linalg.norm(mask)
+        cos_distances.append(np.sum(mask.ravel() * mask_X.ravel()) / norm)
+    target_mask = masks[:, np.argmax(cos_distances), :]
     noise_mask = 1 - target_mask
     return target_mask, noise_mask
 
@@ -155,10 +190,10 @@ def update_result_for_batch(result_dict, y_dict, batch, utt_id, flist_name, nns,
 
         # Neural networks
         for name, nn in nns.items():
-            nn.inputs.Y = nn.inputs.X = numpy.abs(Y)
+            nn.inputs.Y = nn.inputs.X = np.abs(Y)
             nn.decode()
-            gamma_X = numpy.median(nn.outputs.mask_X_hat.num, axis=1)
-            gamma_N = numpy.median(nn.outputs.mask_N_hat.num, axis=1)
+            gamma_X = np.median(nn.outputs.mask_X_hat.num, axis=1)
+            gamma_N = np.median(nn.outputs.mask_N_hat.num, axis=1)
 
             result, y = get_beamform_results(Y, X, N, gamma_X, gamma_N, name)
             result_dict[result_id].update(result)
@@ -241,10 +276,10 @@ def write_result_to_h5_file(batch, utt_id, flist_name, nns, ems, data_dir,
                 else:
                     grp = f[model_name]
                 if not model_name+'/gamma_X' in f:
-                    nn.inputs.Y = nn.inputs.X = numpy.abs(Y)
+                    nn.inputs.Y = nn.inputs.X = np.abs(Y)
                     nn.decode()
-                    gamma_X = numpy.median(nn.outputs.mask_X_hat.num, axis=1)
-                    gamma_N = numpy.median(nn.outputs.mask_N_hat.num, axis=1)
+                    gamma_X = np.median(nn.outputs.mask_X_hat.num, axis=1)
+                    gamma_N = np.median(nn.outputs.mask_N_hat.num, axis=1)
                     _create_result(grp, model_name, gamma_X, gamma_N)
 
             # Oracle
