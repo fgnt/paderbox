@@ -31,7 +31,9 @@ def get_beamform_results(
         context_frames=0,
         stft_size=1024,
         stft_shift=256,
-        calculate_PESQ=True):
+        calculate_PESQ=True,
+        reference_channel=4
+):
     """ A wrapper, if you want to calculate more than one beamforming result.
 
     :param Y: Mixed signal with dimensions T times M times F
@@ -48,8 +50,9 @@ def get_beamform_results(
 
     # Translate from Neural Network to Beamformer conventions
     Y = Y.T
-    X = X.T
-    N = N.T
+    if X is not None:
+        X = X.T
+        N = N.T
     mask_X = mask_X.T
     mask_N = mask_N.T
 
@@ -70,7 +73,6 @@ def get_beamform_results(
 
     def _get_results(W):
         Y_bf = bf.apply_beamforming_vector(W, Y[:, :, context_frames:])
-        print(Y_bf.shape)
         y_bf = _istft(Y_bf)
         if X is not None:
             X_bf = bf.apply_beamforming_vector(W, X[:, :, context_frames:])
@@ -86,7 +88,7 @@ def get_beamform_results(
         return SDR, SIR, SNR, y_bf
 
     results['cond'] = np.linalg.cond(phi_NN)
-    z['input'] = _istft(Y[:, 4, context_frames:])
+    z['input'] = _istft(Y[:, reference_channel, context_frames:])
     for alg in algorithms:
         SDR, _, SNR, y_bf = _get_results(locals()['W_{}'.format(alg)])
         results['SDR_' + alg] = SDR
@@ -95,8 +97,8 @@ def get_beamform_results(
 
     # Input SXR (here only on channel 5)
     if X is not None:
-        x_bf = _istft(X[:, 4, context_frames:])
-        n_bf = _istft(N[:, 4, context_frames:])
+        x_bf = _istft(X[:, reference_channel, context_frames:])
+        n_bf = _istft(N[:, reference_channel, context_frames:])
         results['input_SDR'], _, results['input_SNR'] = input_sxr(
             x_bf[:, np.newaxis, np.newaxis],
             n_bf[:, np.newaxis, np.newaxis]

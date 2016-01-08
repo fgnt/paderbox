@@ -4,6 +4,9 @@ from nt.nn.data_fetchers import JsonCallbackFetcher
 from nt.nn import DataProvider
 import json
 
+from nt.utils import mkdir_p
+from nt.io.audiowrite import audiowrite
+
 CHIME_JSON_FILE = '/net/storage/2015/chime/chime_ref_data/data/json/chime.json'
 with open(CHIME_JSON_FILE) as fid:
     CHIME_JSON = json.load(fid)
@@ -149,3 +152,25 @@ def parse_kaldi_chime_results(kaldi_exp):
                 decode_database.append(exp2_entry)
 
     return decode_database
+
+
+def export_enhanced_wav(utt_id, export_dir, flist, z):
+    """ Splits the strings and assembles the new file path.
+
+    :param utt_id: Chime utterance ID (i.e. '011_011c0201_ped')
+    :param export_dir: An export directory for your enhancement method.
+    :param flist: Name of the file list (i.e. 'tr05_simu')
+    :param z: Enhanced single channel signal
+    :return:
+    """
+    # Extract names
+    env = utt_id.split('_')[-1]
+    wav_dir = os.path.join(
+        export_dir,
+        '_'.join([flist.split('_')[0], env, flist.split('_')[1]])
+    )
+    mkdir_p(wav_dir)
+    wav_file = os.path.join(wav_dir, utt_id.upper() + '.wav')
+
+    # Create process to write wav
+    audiowrite(z, wav_file, normalize=True)
