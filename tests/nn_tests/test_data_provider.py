@@ -14,7 +14,7 @@ class IdentityFetcher(DataFetcher):
         return self.len
 
     def get_data_for_indices(self, idxs):
-        return numpy.asarray(list(idxs)),
+        return {self.name: numpy.asarray(list(idxs))}
 
 
 class DataProviderFetcher(unittest.TestCase):
@@ -39,7 +39,7 @@ class DataProviderFetcher(unittest.TestCase):
         self.assertRaises(ValueError, make_dp)
 
     def test_iteration(self):
-        for idx, batch_data in enumerate(self.dp):
+        for idx, batch_data in enumerate(self.dp.iterate()):
             self.assertTrue('X' in batch_data)
             self.assertTrue('Y' in batch_data)
             numpy.testing.assert_equal(batch_data['X'],
@@ -76,11 +76,10 @@ class DataProviderFetcher(unittest.TestCase):
         numpy.testing.assert_equal(data['Y'], numpy.asarray([0, 2, 4]))
 
     def test_shutdown(self):
-        self.dp.__iter__()
-        _ = self.dp.__next__()
+        self.dp._setup_data_fetchers()
         self.dp.shutdown()
         for f in self.dp.fetchers:
-            self.assertTrue(f.thread is None)
+            self.assertTrue(len(self.dp.fetcher_processes) == 0)
 
     def test_data_shapes(self):
         s = self.dp.get_data_shapes()

@@ -10,7 +10,7 @@ from nt.transform.module_filter import preemphasis
 import scipy.signal
 
 def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
-          number_of_filters=26, stft_size=512, lowest_frequency=0,
+          number_of_filters=23, stft_size=512, lowest_frequency=0,
           highest_frequency=None, preemphasis_factor=0.97,
           window=scipy.signal.hamming):
     """
@@ -30,7 +30,7 @@ def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
     :param stft_shift: the step between successive windows in seconds.
         Default is 0.01s (10 milliseconds)
     :param number_of_filters: the number of filters in the filterbank,
-        default 26.
+        default 23.
     :param stft_size: the FFT size. Default is 512.
     :param lowest_frequency: lowest band edge of mel filters.
         In Hz, default is 0.

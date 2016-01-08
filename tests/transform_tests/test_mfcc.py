@@ -13,7 +13,7 @@ class TestSTFTMethods(unittest.TestCase):
     def test_mfcc(self):
         path = '/net/speechdb/timit/pcm/train/dr1/fcjf0/sa1.wav'
         y = audioread(path)
-        yFilterd = transform.mfcc(y)
+        y_filtered = transform.mfcc(y)
 
-        tc.assert_equal(yFilterd.shape, (291, 13))
-        tc.assert_isreal(yFilterd)
+        tc.assert_equal(y_filtered.shape, (291, 13))
+        tc.assert_isreal(y_filtered)

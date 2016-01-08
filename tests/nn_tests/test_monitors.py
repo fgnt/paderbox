@@ -118,7 +118,7 @@ class SnapshotMonitorTest(unittest.TestCase):
         self.trainer.test_run()
         nptest.assert_almost_equal(
                 self.monitor.data['Input'], self.x_fetcher.get_data_for_indices(
-                    self.tr_provider.current_observation_indices)[0])
+                    self.tr_provider.current_observation_indices)['i'])
 
 
 class RunningAverageMonitorTest(unittest.TestCase):

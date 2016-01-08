@@ -20,7 +20,7 @@ class ArrayDataFetcherTest(unittest.TestCase):
         self.assertEqual(len(self.dp), 5)
 
     def test_iteration(self):
-        for idx, batch_data in enumerate(self.dp):
+        for idx, batch_data in enumerate(self.dp.iterate()):
             self.assertTrue('X' in batch_data)
             self.assertTrue('Y' in batch_data)
             numpy.testing.assert_equal(batch_data['X'],
@@ -33,8 +33,7 @@ class ArrayDataFetcherTest(unittest.TestCase):
         self.test_iteration()
 
     def test_data(self):
-        self.dp.__iter__()
-        batch = self.dp.__next__()
+        batch = self.dp.test_run()
         for data in batch.values():
             if isinstance(data, numpy.ndarray):
                 self.assertTrue(data.flags.c_contiguous)
