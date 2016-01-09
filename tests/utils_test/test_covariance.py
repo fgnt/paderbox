@@ -60,3 +60,10 @@ class TestCovariance(unittest.TestCase):
         psd = covariance(x)
         tc.assert_equal(psd.shape, (1, 2, 3, 3))
         tc.assert_positive_semidefinite(psd)
+
+    def test_multiple_sources_for_source_separation(self):
+        x = rand(2, 3, 4)
+        mask = np.random.uniform(0, 1, (5, 2, 4,))
+        psd = covariance(x[np.newaxis, ...], mask)
+        tc.assert_equal(psd.shape, (5, 2, 3, 3))
+        tc.assert_positive_semidefinite(psd)
