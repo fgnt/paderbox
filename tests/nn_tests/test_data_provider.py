@@ -75,20 +75,11 @@ class DataProviderFetcher(unittest.TestCase):
         numpy.testing.assert_equal(data['X'], numpy.asarray([0, 2, 4]))
         numpy.testing.assert_equal(data['Y'], numpy.asarray([0, 2, 4]))
 
-    def test_shutdown(self):
-        self.dp._setup_data_fetchers()
-        self.dp.shutdown()
-        for f in self.dp.fetchers:
-            self.assertTrue(len(self.dp.fetcher_processes) == 0)
-
     def test_data_shapes(self):
         s = self.dp.get_data_shapes()
         self.assertEqual(len(s), 2)
         self.assertTrue('X' in s)
         self.assertTrue('Y' in s)
-
-    def test_output_list(self):
-        self.assertEqual(self.dp.output_list, ['X', 'Y'])
 
     def test_print_data_info(self):
         self.dp.print_data_info()
