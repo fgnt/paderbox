@@ -46,14 +46,11 @@ class TestDecoder(unittest.TestCase):
                                     shuffle_data=True)
         self.dp_test.print_data_info()
 
-        self.dp_test.__iter__()
-
         self.tmpdir = tempfile.TemporaryDirectory()
         print(self.tmpdir.name)
 
     def tearDown(self):
         self.tmpdir.cleanup()
-        self.dp_test.shutdown()
 
     # @unittest.skip("")
     def test_ground_truth(self):
@@ -86,7 +83,7 @@ class TestDecoder(unittest.TestCase):
                                lm_file=os.path.join(data_dir, 'tcb05cnp'),
                                grammar_type=None, use_lexicon=False)
         self.decoder.create_graphs()
-        batch = self.dp_test.__next__()
+        batch = self.dp_test.test_run()
         net_out = self.nn._propagate(self.nn.data_to_variable(batch['x']))
         utt_id = "TEST_UTT_2"
         net_out_list = [net_out.num, ]
