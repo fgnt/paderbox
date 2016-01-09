@@ -15,7 +15,7 @@ class TestSTFTMethods(unittest.TestCase):
         y = audioread(path)
         feature = transform.fbank(y)
 
-        tc.assert_equal(feature.shape, (291, 26))
+        tc.assert_equal(feature.shape, (291, 23))
         tc.assert_isreal(feature)
         tc.assert_array_greater_equal(feature, 0)
 
