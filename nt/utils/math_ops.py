@@ -33,10 +33,11 @@ def covariance(x, mask=None):
     """ Calculate the covariance of a zero mean signal.
 
     The leading dimensions are independent and can be arbitrary.
+    An example is F times M times T.
 
-    :param x: Signal with dimensions ... times F times M times T.
-    :param mask: Mask with dimensions ... times F times T.
-    :return: Covariance matrices with dimensions ... times F times M times M.
+    :param x: Signal with dimensions ... times M times T.
+    :param mask: Mask with dimensions ... times T.
+    :return: Covariance matrices with dimensions ... times M times M.
     """
 
     if mask is None:
