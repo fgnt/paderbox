@@ -52,3 +52,10 @@ def covariance(x, mask=None):
         psd /= normalization
 
     return psd
+
+
+def cos_similarity(A, B):
+    similarity = np.abs(np.einsum('...d,...d', A, B.conj()))
+    similarity /= np.sqrt(np.abs(np.einsum('...d,...d', A, A.conj())))
+    similarity /= np.sqrt(np.abs(np.einsum('...d,...d', B, B.conj())))
+    return similarity
