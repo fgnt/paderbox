@@ -1,9 +1,11 @@
 import unittest
-from nt.chainer_models.mask_estimation_template import MaskEstimation
+
+from nt.chainer_models.mask_estimation.mask_estimation_template import \
+    MaskEstimation
 from nt.utils.chime import get_chime_data_provider_for_flist
 
-class TestMaskEstimationTemplate(unittest.TestCase):
 
+class TestMaskEstimationTemplate(unittest.TestCase):
     def setUp(self):
         self.model = MaskEstimation()
 
