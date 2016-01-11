@@ -226,8 +226,8 @@ class TestBeamformerMethods(unittest.TestCase):
         mlab = self.mlab
         mlab.set_variable('W_pca', W_pca_tmp)
         mlab.set_variable('Phi_NN', Phi_NN_tmp)
-        mlab.run_code_print('size(W_pca)')
-        mlab.run_code_print('size(Phi_NN)')
+        # mlab.run_code_print('size(W_pca)')
+        # mlab.run_code_print('size(Phi_NN)')
         mlab.run_code(
             "[W(:, :, 1), failing] = bss.beamformer.lcmv('observationMatrix', Phi_NN, 'lookDirection', W_pca, 'responseVector', [1 0]);")
         mlab.run_code(
