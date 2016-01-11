@@ -18,7 +18,8 @@ class Mlab():
             #   cd '~/path/to/repo'
             #   startup
         elif matlab_startup_path is None:
-            self.matlab_startup_path = '/net/ssd/software/matlab_toolbox/startup.m'
+            self.matlab_startup_path = \
+                '/net/ssd/software/matlab_toolbox/startup.m'
         else:
             self.matlab_startup_path = matlab_startup_path
 
@@ -26,7 +27,11 @@ class Mlab():
     def process(self):
         hostname = socket.gethostname()
         if 'nt' in hostname:
-            mlab_process = Matlab('nice -n 3 /net/ssd/software/MATLAB/R2015a/bin/matlab -nodisplay -nosplash')
+            mlab_process = Matlab(
+                'nice -n 3 ' +
+                '/net/ssd/software/MATLAB/R2015a/bin/matlab ' +
+                '-nodisplay -nosplash'
+            )
         else:
             mlab_process = Matlab('nice -n 3 matlab -nodisplay -nosplash')
         mlab_process.start()
@@ -38,6 +43,10 @@ class Mlab():
 
     def run_code(self, code, check_success=True):
         ret = self.process.run_code(code)
+
+        assert code[-1] == ';', \
+            'Every single line of Matlab code must end with a semicolon.'
+
         if check_success and not ret['success']:
             print(ret)
             print(code)
