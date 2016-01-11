@@ -28,7 +28,7 @@ def get_beamform_results(
         N,
         mask_X,
         mask_N,
-        context_frames=0,
+        context_samples=0,
         stft_size=1024,
         stft_shift=256,
         calculate_PESQ=True,
@@ -41,7 +41,7 @@ def get_beamform_results(
     :param N: Noise image with dimensions T times M times F
     :param mask_X: Source mask with dimensions T times F
     :param mask_N: Noise mask with dimensions T times F
-    :param context_frames: Number of frames to be dropped after beamforming
+    :param context_samples: Number of samples to be dropped after beamforming
     :param stft_size: ...
     :param stft_shift: ...
     :param calculate_PESQ: If true, external PESQ library will calculate score.
@@ -72,13 +72,13 @@ def get_beamform_results(
         return istft(stft_signal.T, size=stft_size, shift=stft_shift)
 
     def _get_results(W):
-        Y_bf = bf.apply_beamforming_vector(W, Y[:, :, context_frames:])
-        y_bf = _istft(Y_bf)
+        Y_bf = bf.apply_beamforming_vector(W, Y)
+        y_bf = _istft(Y_bf)[:, context_samples:]
         if X is not None:
-            X_bf = bf.apply_beamforming_vector(W, X[:, :, context_frames:])
-            N_bf = bf.apply_beamforming_vector(W, N[:, :, context_frames:])
-            x_bf = _istft(X_bf)
-            n_bf = _istft(N_bf)
+            X_bf = bf.apply_beamforming_vector(W, X)
+            N_bf = bf.apply_beamforming_vector(W, N)
+            x_bf = _istft(X_bf)[:, context_samples:]
+            n_bf = _istft(N_bf)[:, context_samples:]
             SDR, SIR, SNR = output_sxr(
                 x_bf[:, np.newaxis, np.newaxis],
                 n_bf[:, np.newaxis, np.newaxis]
@@ -88,7 +88,7 @@ def get_beamform_results(
         return SDR, SIR, SNR, y_bf
 
     results['cond'] = np.linalg.cond(phi_NN)
-    z['input'] = _istft(Y[:, reference_channel, context_frames:])
+    z['input'] = _istft(Y[:, reference_channel, :])[:, context_samples:]
     for alg in algorithms:
         SDR, _, SNR, y_bf = _get_results(locals()['W_{}'.format(alg)])
         results['SDR_' + alg] = SDR
@@ -97,8 +97,8 @@ def get_beamform_results(
 
     # Input SXR (here only on channel 5)
     if X is not None:
-        x_bf = _istft(X[:, reference_channel, context_frames:])
-        n_bf = _istft(N[:, reference_channel, context_frames:])
+        x_bf = _istft(X[:, reference_channel, :])[:, context_samples:]
+        n_bf = _istft(N[:, reference_channel, :])[:, context_samples:]
         results['input_SDR'], _, results['input_SNR'] = input_sxr(
             x_bf[:, np.newaxis, np.newaxis],
             n_bf[:, np.newaxis, np.newaxis]

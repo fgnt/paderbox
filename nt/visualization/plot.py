@@ -20,6 +20,26 @@ def _get_batch(signal, batch):
         raise ValueError('The signal can only be two or three dimensional')
 
 
+def line(signal, ax, ylim=None):
+    """
+    Use together with facet_grid().
+
+    :param f: Figure handle
+    :param ax: Axis handle
+    :param x: Tuple with time indices as first, and data as second element.
+    :return:
+    """
+
+    with sns.axes_style("darkgrid"):
+        if type(signal) is tuple:
+            ax.plot(signal[0], signal[1])
+        else:
+            ax.plot(signal)
+        ax.grid(True)
+        if ylim is not None:
+            ax.set_ylim(ylim)
+
+
 def time_series(signal, ax, ylim=None):
     """
     Use together with facet_grid().

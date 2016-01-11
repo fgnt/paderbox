@@ -6,15 +6,14 @@ from nt.utils import mkdir_p
 import warnings
 
 
-def import_feature_data(ark,
-                        is_zipped=False):
+def import_feature_data(ark, is_zipped=False):
     """ Read data from a kaldi ark file.
 
-    Since the binary form is not documented and may change in future release, a kaldi tool (copy-feats) is used to
-    first create a ark file in text mode. This file is then parsed and deleted afterwards.
+    Since the binary form is not documented and may change in future release, a
+    kaldi tool (copy-feats) is used to first create a ark file in text mode.
+    This file is then parsed and deleted afterwards.
 
     :param ark: The ark file to read
-    :param copy_feats: The location of the kaldi tool `copy-feats`
     :return: A dictionary with the file ids as keys and their data as values
     """
 
@@ -61,8 +60,9 @@ def import_alignment_data(ark,
                           is_zipped=True):
     """ Read data from a kaldi ark file.
 
-    Since the binary form is not documented and may change in future release, a kaldi tool (copy-feats) is used to
-    first create a ark file in text mode. This file is then parsed and deleted afterwards.
+    Since the binary form is not documented and may change in future release,
+    a kaldi tool (copy-feats) is used to first create a ark file in text mode.
+    This file is then parsed and deleted afterwards.
 
     :param ark: The ark file to read
     :param copy_feats: The location of the kaldi tool `copy-feats`
@@ -95,7 +95,8 @@ def import_alignment_data(ark,
             split = line.split()
             data[split[0]] = np.asarray(split[1:], dtype=np.int32)
         assert len(data) == matrix_number, \
-            'Copy-int-vector copied {num_matrix} vectors, but we read {num_data}'. \
+            'Copy-int-vector copied {num_matrix} vectors, ' \
+            'but we read {num_data}'. \
                 format(num_matrix=matrix_number, num_data=len(data))
     return data
 
@@ -104,8 +105,8 @@ def export_ark_data(data, ark_filename,
                     copy_feats='/net/ssd/software/kaldi/src/featbin/copy-feats'):
     """ Exports data to kaldi ark files.
 
-    The data is first exported as a text ark file and then copied using kaldi copy-feats to a binary ark file and its
-    final destination
+    The data is first exported as a text ark file and then copied using kaldi
+    copy-feats to a binary ark file and its final destination
 
     :param data: A dictionary with the data to export. The key is used for the id
     :param ark_filename: Destination of the ark file
