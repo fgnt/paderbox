@@ -63,4 +63,32 @@ class TestChimePaperModel(unittest.TestCase):
 class TestBasicCNNModel(TestChimePaperModel):
 
     def setUp(self):
-        super().setUp()
+        self.model = BasicCNNModel()
+        self.tmp_dir = TemporaryDirectory()
+        self.dp_train = get_chime_data_provider_for_flist(
+                'tr05_simu', self.model.transform_features_train)
+        self.dp_cv = get_chime_data_provider_for_flist(
+                'dt05_simu', self.model.transform_features_cv)
+        self.trainer = Trainer(
+                network=self.model,
+                data_provider_tr=self.dp_train,
+                data_provider_cv=self.dp_cv,
+                optimizer=Adam(),
+                description='ChimePaperModel',
+                data_dir=self.tmp_dir.name,
+                forward_fcn_tr=self.model.train,
+                forward_fcn_cv=self.model.train,
+                epochs=200,
+                use_gpu=True,
+                train_kwargs={},
+                cv_kwargs={},
+                run_in_thread=True,
+                retain_gradients=True,
+                patience=15,
+        )
+
+    def test_calc_masks(self):
+        batch = self.dp_train.test_run()
+        N_masks, X_masks = self.model.calc_masks(batch)
+        self.assertEqual(N_masks.shape[1:], (1, 513))
+        self.assertEqual(X_masks.shape[1:], (1, 513))
