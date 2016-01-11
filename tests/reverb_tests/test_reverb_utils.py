@@ -314,7 +314,7 @@ class TestReverbUtils(unittest.TestCase):
             algorithm=algorithm,
             angle="azimuth",
             sensor_orientation_angle=sensor_orientation_angle,
-            sensor_directivity=sensor_directivity
+            directivity=sensor_directivity
         )
         tc.assert_allclose(actual_maxmin, expected_maxmin, atol=1e-5)
 
@@ -322,14 +322,14 @@ class TestReverbUtils(unittest.TestCase):
             algorithm=algorithm,
             angle="elevation",
             sensor_orientation_angle=sensor_orientation_angle,
-            sensor_directivity=sensor_directivity
+            directivity=sensor_directivity
         )
         tc.assert_allclose(actual_maxmin, expected_maxmin, atol=1e-5)
 
     def get_directivity_characteristic(self, algorithm="TranVu",
                                        angle="azimuth",
                                        sensor_orientation_angle=0,
-                                       sensor_directivity="cardioid"):
+                                       directivity="cardioid"):
         if algorithm == "TranVu":
             fixedShift = 128
             T60 = 0
@@ -370,7 +370,7 @@ class TestReverbUtils(unittest.TestCase):
                                        self.filter_length,
                                        T60,
                                        algorithm="TranVu",
-                                       sensorDirectivity=sensor_directivity,
+                                       sensorDirectivity=directivity,
                                        sensorOrientations=sensor_orientations
                                        )
         # set RIR to 0 as of the point in time where we're receiving echoes
@@ -407,13 +407,15 @@ class TestReverbUtils(unittest.TestCase):
         min_index = numpy.argmin(squared_power)
         actual = numpy.array([(max_index) * deltaAngle,
                               (min_index) * deltaAngle])
-        if sensor_directivity == "cardioid" or sensor_directivity == "subcardioid":
+        if directivity == "cardioid" or directivity == "subcardioid":
             expected = numpy.array([sensor_orientation_angle,
                                     sensor_orientation_angle + numpy.pi])
         else:
-            raise NotImplementedError("Test is not runnable for directivities "
-                                      "other than cardioid or subcardioid. "
-                                      "Selected directivity: " + sensor_directivity)
+            raise NotImplementedError(
+                "Test is not runnable for directivities " +
+                "other than cardioid or subcardioid. " +
+                "Selected directivity: " + directivity
+            )
         return actual, expected
 
     def test_convolution(self):
@@ -444,9 +446,11 @@ class TestReverbUtils(unittest.TestCase):
                               testsignal3]
                              )
         [sources_positions, mic_positions] = scenario. \
-            generate_uniformly_random_sources_and_sensors(self.room_dimensions,
-                                                          3,
-                                                          8)
+            generate_uniformly_random_sources_and_sensors(
+            self.room_dimensions,
+            3,
+            8
+        )
         T60 = 0.3
         rir_py = rirUtils.generate_RIR(
             self.room_dimensions,
