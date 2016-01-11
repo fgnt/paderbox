@@ -13,6 +13,11 @@ def dereverb(settings_file_path=
              sample_rate=16000
              ):
 
+
+    # todo: Wav geschichten auslagern in unittestcase
+    # todo: Diese Methode soll nur np matrizen annehmen und ausgeben
+    # todo: Notebook schreiben, das ein Audiosignal liest,es verhallt mit einer
+    #  selbst erstellten RIR, dann enthallt mit wpe und beide audiosignale ausgeben kann
     mlab = Mlab()
     #Process each utterance
     file_no = 0
@@ -41,18 +46,18 @@ def dereverb(settings_file_path=
         mlab.set_variable("x",noisy_audiosignals)
         mlab.set_variable("settings",settings_file_path+"wpe_settings.m")
         assert np.allclose(mlab.get_variable("x"), noisy_audiosignals)
-        assert mlab.get_variable("settings")== settings_file_path+"wpe_settings.m"
+        assert mlab.get_variable("settings")==settings_file_path+"wpe_settings.m"
         mlab.run_code_print("addpath('"+settings_file_path+"')")
         # start wpe
         print("Dereverbing ...")
-        mlab.run_code_print("y = wpe(x, settings)")
+        mlab.run_code_print("y = wpe(x, settings);")
         # write dereverbed audio signals
         y = mlab.get_variable("y")
         for cha in range(num_channels):
             utt_to_write = utt.replace('ch1', 'ch'+str(cha+1)+'_derev')
             print(" - Writing channel "+str(cha+1))
             audiowrite.audiowrite(y[:,cha],
-                                  output_dir_path + utt_to_write,
+                                  utt_to_write,
                                   sample_rate )
     print("Finished successfully.")
 
