@@ -71,12 +71,12 @@ class TestReverbUtils(unittest.TestCase):
             )
             matlab_session.run_code("sensors = [sensors sensorstemp];")
 
-        matlab_session.run_code("src = src(:,2:end);")
-        matlab_session.run_code("sensors = sensors(:,2:end)")
+        matlab_session.run_code("src = src(:, 2:end);")
+        matlab_session.run_code("sensors = sensors(:, 2:end);")
 
-        matlab_session.run_code("sampleRate = {0}".format(self.sample_rate))
-        matlab_session.run_code("filterLength = {0}".format(self.filter_length))
-        matlab_session.run_code("T60 = {0}".format(reverberation_time))
+        matlab_session.run_code("sampleRate = {0};".format(self.sample_rate))
+        matlab_session.run_code("filterLength = {0};".format(self.filter_length))
+        matlab_session.run_code("T60 = {0};".format(reverberation_time))
 
         matlab_session.run_code(
             "rir = reverb.generate(roomDim, src, sensors, sampleRate, " +
