@@ -73,12 +73,12 @@ def get_beamform_results(
 
     def _get_results(W):
         Y_bf = bf.apply_beamforming_vector(W, Y)
-        y_bf = _istft(Y_bf)[:, context_samples:]
+        y_bf = _istft(Y_bf)[context_samples:]
         if X is not None:
             X_bf = bf.apply_beamforming_vector(W, X)
             N_bf = bf.apply_beamforming_vector(W, N)
-            x_bf = _istft(X_bf)[:, context_samples:]
-            n_bf = _istft(N_bf)[:, context_samples:]
+            x_bf = _istft(X_bf)[context_samples:]
+            n_bf = _istft(N_bf)[context_samples:]
             SDR, SIR, SNR = output_sxr(
                 x_bf[:, np.newaxis, np.newaxis],
                 n_bf[:, np.newaxis, np.newaxis]
@@ -88,7 +88,7 @@ def get_beamform_results(
         return SDR, SIR, SNR, y_bf
 
     results['cond'] = np.linalg.cond(phi_NN)
-    z['input'] = _istft(Y[:, reference_channel, :])[:, context_samples:]
+    z['input'] = _istft(Y[:, reference_channel, :])[context_samples:]
     for alg in algorithms:
         SDR, _, SNR, y_bf = _get_results(locals()['W_{}'.format(alg)])
         results['SDR_' + alg] = SDR
@@ -97,8 +97,8 @@ def get_beamform_results(
 
     # Input SXR (here only on channel 5)
     if X is not None:
-        x_bf = _istft(X[:, reference_channel, :])[:, context_samples:]
-        n_bf = _istft(N[:, reference_channel, :])[:, context_samples:]
+        x_bf = _istft(X[:, reference_channel, :])[context_samples:]
+        n_bf = _istft(N[:, reference_channel, :])[context_samples:]
         results['input_SDR'], _, results['input_SNR'] = input_sxr(
             x_bf[:, np.newaxis, np.newaxis],
             n_bf[:, np.newaxis, np.newaxis]
