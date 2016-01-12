@@ -4,6 +4,7 @@ from tempfile import TemporaryDirectory
 
 from chainer.optimizers import Adam
 from nt.chainer_models.mask_estimation.chime_paper import ChimePaperModel
+from nt.chainer_models.mask_estimation.cnn_models import BasicCNNChannelModel
 from nt.chainer_models.mask_estimation.cnn_models import BasicCNNModel
 
 from nt.nn import Trainer
@@ -28,7 +29,7 @@ class TestChimePaperModel(unittest.TestCase):
                 forward_fcn_tr=self.model.train,
                 forward_fcn_cv=self.model.train,
                 epochs=200,
-                use_gpu=True,
+                use_gpu=False,
                 train_kwargs={},
                 cv_kwargs={},
                 run_in_thread=True,
@@ -60,6 +61,39 @@ class TestChimePaperModel(unittest.TestCase):
     def tearDown(self):
         self.tmp_dir.cleanup()
 
+class TestBasicCNNChannelModel(TestChimePaperModel):
+
+    def setUp(self):
+        self.model = BasicCNNChannelModel()
+        self.tmp_dir = TemporaryDirectory()
+        self.dp_train = get_chime_data_provider_for_flist(
+                'tr05_simu', self.model.transform_features_train)
+        self.dp_cv = get_chime_data_provider_for_flist(
+                'dt05_simu', self.model.transform_features_cv)
+        self.trainer = Trainer(
+                network=self.model,
+                data_provider_tr=self.dp_train,
+                data_provider_cv=self.dp_cv,
+                optimizer=Adam(),
+                description='ChimePaperModel',
+                data_dir=self.tmp_dir.name,
+                forward_fcn_tr=self.model.train,
+                forward_fcn_cv=self.model.train,
+                epochs=200,
+                use_gpu=False,
+                train_kwargs={},
+                cv_kwargs={},
+                run_in_thread=True,
+                retain_gradients=True,
+                patience=15,
+        )
+
+    def test_calc_masks(self):
+        batch = self.dp_train.test_run()
+        N_masks, X_masks = self.model.calc_masks(batch)
+        self.assertEqual(N_masks.shape[1:], (1, 513))
+        self.assertEqual(X_masks.shape[1:], (1, 513))
+
 class TestBasicCNNModel(TestChimePaperModel):
 
     def setUp(self):
@@ -79,16 +113,10 @@ class TestBasicCNNModel(TestChimePaperModel):
                 forward_fcn_tr=self.model.train,
                 forward_fcn_cv=self.model.train,
                 epochs=200,
-                use_gpu=True,
+                use_gpu=False,
                 train_kwargs={},
                 cv_kwargs={},
                 run_in_thread=True,
                 retain_gradients=True,
                 patience=15,
         )
-
-    def test_calc_masks(self):
-        batch = self.dp_train.test_run()
-        N_masks, X_masks = self.model.calc_masks(batch)
-        self.assertEqual(N_masks.shape[1:], (1, 513))
-        self.assertEqual(X_masks.shape[1:], (1, 513))
