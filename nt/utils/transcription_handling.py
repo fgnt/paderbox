@@ -1,5 +1,6 @@
 import numpy
 import editdistance
+import math
 
 
 phone_map = dict(
@@ -240,8 +241,10 @@ class EventLabelHandler(object):
         self.label_to_int = dict()
         self.int_to_label = dict()
 
+        #self.sample_to_frame_idx = lambda sample_idx: \
+         #   sample_to_frame_idx(sample_idx, window_length, stft_shift)
         self.sample_to_frame_idx = lambda sample_idx: \
-            sample_to_frame_idx(sample_idx, window_length, stft_shift)
+            sample_to_frame_idx(sample_idx, stft_size, stft_shift)
 
         # set up mapping dictionaries
         # convention: the last element of the transcription list is the
@@ -273,8 +276,30 @@ class EventLabelHandler(object):
             int_arr[begin_frame:end_frame, self.label_to_int[label]] = 1
         return int_arr
 
+    def label_seq_to_int_arr_resampling(self, transcription, resampling_factor):
+        # Works same as label_seq_to_int_arr but resamples to a new sampling
+        # frequency. This is done to adjust the labels to the new sampling frequency.
+
+        assert transcription[-1][2] == 'END'
+        transcription_length_in_samples = transcription[-1][1]
+        transcription_length_in_frames = self.sample_to_frame_idx(
+            self.resample_labels(resampling_factor,transcription_length_in_samples))
+        number_of_events = len(self.label_to_int)
+
+        int_arr = numpy.zeros(
+            (int(transcription_length_in_frames), number_of_events),
+            dtype=numpy.int32)
+        for begin, end, label in transcription[:-1]:
+            begin_frame, end_frame = [int(self.sample_to_frame_idx(self.resample_labels(resampling_factor,n)))
+                                      for n in (begin, end)]
+            int_arr[begin_frame:end_frame, self.label_to_int[label]] = 1
+        return int_arr
+
     def int_arr_to_label_seq(self, int_arr):
         raise NotImplementedError('This feature is currently missing!')
+
+    def resample_labels(self,resampling_factor,sample_num_old):
+        return int(sample_num_old*resampling_factor)
 
     def print_mapping(self):
         for char, i in self.label_to_int.items():
@@ -282,6 +307,7 @@ class EventLabelHandler(object):
 
     def __len__(self):
         return len(self.label_to_int)
+
 
 
 class PhonemLabelHandler(object):
@@ -345,6 +371,10 @@ def sample_to_frame_idx(sample_idx, frame_size, frame_shift):
     """ Calculate corresponding frame index for sample index
         :param sample_idx: sample index
     """
+    #start_offset = (frame_size - frame_shift)/2
+    #frame_idx = (sample_idx - start_offset)//frame_shift
+    #return max(0, frame_idx)
+    return math.ceil((sample_idx - frame_size + frame_shift)/frame_shift)
     start_offset = (frame_size - frame_shift) / 2
     frame_idx = (sample_idx - start_offset) // frame_shift
     return max(0, frame_idx)
