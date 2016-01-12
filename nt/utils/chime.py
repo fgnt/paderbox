@@ -55,7 +55,8 @@ def get_chime_data_provider_for_flist(flist, callback_fcn,
                                       transform_kwargs=kwargs)
     else:
         raise ValueError('Unknown filelist')
-    return DataProvider((fetcher,), batch_size=1, shuffle_data=False)
+    return DataProvider((fetcher,), batch_size=1, shuffle_data=False,
+                        max_queue_size=30)
 
 
 def parse_kaldi_chime_results(kaldi_exp):
