@@ -1,67 +1,41 @@
 import numpy as np
 from nt.utils.matlab import Mlab
-from nt.io import audioread, audiowrite
 
 
-def dereverb(settings_file_path=
-             '/net/home/wilhelmk/PythonToolbox/nt/speech_enhancement/utils/',
-             input_file_paths=
-             {'/net/storage/python_unittest_data/speech_enhancement'
-              '/data/sample_ch1.wav':1,},
-             output_dir_path=
-             '/net/storage/python_unittest_data/speech_enhancement/data/',
-             sample_rate=16000
-             ):
+
+def dereverb(settings_file_path, x):
+    """
+    This method wraps the matlab WPE-dereverbing-method. Give it the path to
+    the settings.m and the wpe.p file and your reverbed signals as numpy matrix.
+    Return value will be the dereverbed signals as numpy matrix.
+
+    .. note:: The overall settings for this method are determined in the
+        settings.m file. The wpe.p needs that settings.m file as input argument
+        in order to work properly. Make sure that you read your audio signals
+        accordingly,
+
+    :param settings_file_path: Path to settings.m and wpe.p
+    :param x: NxC Numpy matrix of read audio signals. N denotes the signals'
+        number of frames and C stands for the number of channels you provide
+        for that signal
+    :return: NxC Numpy matrix of dereverbed audio signals. N and C as above.
+    """
 
 
-    # todo: Wav geschichten auslagern in unittestcase
-    # todo: Diese Methode soll nur np matrizen annehmen und ausgeben
     # todo: Notebook schreiben, das ein Audiosignal liest,es verhallt mit einer
     #  selbst erstellten RIR, dann enthallt mit wpe und beide audiosignale ausgeben kann
     mlab = Mlab()
+
     #Process each utterance
-    file_no = 0
-    for utt, num_channels in input_file_paths.items():
-        file_no += 1
-        print("Processing file no. {0} ({1} file(s) to process in total)"
-              .format(file_no, len(input_file_paths)))
-        noisy_audiosignals = np.ndarray(
-            shape=[audioread.getparams(utt).nframes, num_channels],
-            dtype=np.float32
-             )
-        #print(str(audioread.getparams(utt).nframes)+" frames per channel")
-        for cha in range(num_channels):
-            #read microphone signals (each channel)
-            print(" - Reading channel "+str(cha+1))
-            utt_to_read = utt.replace('ch1', 'ch'+str(cha+1))
-            signal = audioread.audioread(path= utt_to_read,
-                                         sample_rate=sample_rate
-                                         )
-            if not noisy_audiosignals.shape[0] == len(signal):
-                raise Exception("Signal "+utt_to_read+" has a different size "
-                                                      "than other signals.")
-            else:
-                noisy_audiosignals[:,cha] =  signal
+    mlab.set_variable("x",x)
+    mlab.set_variable("settings",settings_file_path+"wpe_settings.m")
+    assert np.allclose(mlab.get_variable("x"), x)
+    assert mlab.get_variable("settings") == settings_file_path+"wpe_settings.m"
+    mlab.run_code_print("addpath('"+settings_file_path+"');")
 
-        mlab.set_variable("x",noisy_audiosignals)
-        mlab.set_variable("settings",settings_file_path+"wpe_settings.m")
-        assert np.allclose(mlab.get_variable("x"), noisy_audiosignals)
-        assert mlab.get_variable("settings")==settings_file_path+"wpe_settings.m"
-        mlab.run_code_print("addpath('"+settings_file_path+"')")
-        # start wpe
-        print("Dereverbing ...")
-        mlab.run_code_print("y = wpe(x, settings);")
-        # write dereverbed audio signals
-        y = mlab.get_variable("y")
-        for cha in range(num_channels):
-            utt_to_write = utt.replace('ch1', 'ch'+str(cha+1)+'_derev')
-            print(" - Writing channel "+str(cha+1))
-            audiowrite.audiowrite(y[:,cha],
-                                  utt_to_write,
-                                  sample_rate )
-    print("Finished successfully.")
-
-if __name__ == "__main__":
-    from nt.speech_enhancement import wpe
-
-    wpe.dereverb()
+    # start wpe
+    print("Dereverbing ...")
+    mlab.run_code_print("y = wpe(x, settings);")
+    # write dereverbed audio signals
+    y = mlab.get_variable("y")
+    return y
