@@ -56,8 +56,12 @@ def get_beamform_results(
     mask_X = mask_X.T
     mask_N = mask_N.T
 
+    assert Y.shape[0] == 513
+
     phi_XX = covariance(Y, mask_X)
     phi_NN = covariance(Y, mask_N)
+
+    assert phi_XX.shape == (513, 6, 6)
 
     W_gev = bf.get_gev_vector(phi_XX, phi_NN)
     W_pca = bf.get_pca_vector(phi_XX)

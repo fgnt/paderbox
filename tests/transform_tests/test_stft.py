@@ -15,7 +15,6 @@ from nt.transform.module_stft import _biorthogonal_window
 from nt.transform.module_stft import stft_to_spectrogram
 from nt.transform.module_stft import spectrogram_to_energy_per_frame
 from nt.transform.module_stft import get_stft_center_frequencies
-from pymatbridge import Matlab
 from nt.utils.matlab import matlab_test, Mlab
 
 
