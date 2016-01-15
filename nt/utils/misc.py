@@ -57,6 +57,7 @@ def get_beamform_results(
     mask_N = mask_N.T
 
     assert Y.shape[0] == 513
+    assert Y.dtype in (np.complex, np.complex64, np.complex128)
 
     phi_XX = covariance(Y, mask_X)
     phi_NN = covariance(Y, mask_N)
