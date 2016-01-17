@@ -44,7 +44,7 @@ class TestDecoder(unittest.TestCase):
         self.dp_test = DataProvider((feature_fetcher_test,),
                                     batch_size=1,
                                     shuffle_data=True)
-        self.dp_test.print_data_info()
+        self.dp_test.get_data_info()
 
         self.tmpdir = tempfile.TemporaryDirectory()
         print(self.tmpdir.name)
