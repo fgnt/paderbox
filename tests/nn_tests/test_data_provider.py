@@ -82,7 +82,7 @@ class DataProviderFetcher(unittest.TestCase):
         self.assertTrue('Y' in s)
 
     def test_print_data_info(self):
-        df = self.dp.get_data_info()
+        df = self.dp.data_info
         assert list(df['Fetcher Name']) == ['X', 'Y'], 'Fetcher Names mismatch.'
 
     # TODO: Missing tests for get_data_types, get_data_shapes, print_data_info
