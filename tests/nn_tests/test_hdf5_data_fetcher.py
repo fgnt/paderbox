@@ -49,11 +49,8 @@ class TestH5DataFetcher(unittest.TestCase):
         fetcher = HDF5DataFetcher('test', '/tmp/h5_testing_file', 'testing',
                                   ['3d'], mode='frames')
         info = fetcher.get_batch_info_for_indices((0, 1))
-        self.assertIn('utt_id',info)
-        self.assertIn('frame_idx', info)
-        for i in range(1):
-            self.assertEqual(info['utt_id'][i], 'test')
-            self.assertEqual(int(info['frame_idx'][i]), i)
+        self.assertIn('utt_ids',info)
+        self.assertIn('frame_indices', info)
 
     def test_read_utterance(self):
         fetcher = HDF5DataFetcher('test', '/tmp/h5_testing_file', 'testing',
@@ -128,7 +125,8 @@ class TestH5DataFetcher(unittest.TestCase):
 
     def test_read_frame_cnn(self):
         fetcher = HDF5DataFetcher('test', '/tmp/h5_testing_file', 'testing',
-                                  ['3d'], mode='frames', cnn_features=True)
+                                  ['3d'], mode='frames', cnn_features=True,
+                                  context_list=['3d'])
         data = fetcher.get_data_for_indices((0,))
         for n in ['3d']:
             self.assertIn(n, data)
@@ -137,7 +135,7 @@ class TestH5DataFetcher(unittest.TestCase):
     def test_read_frame_cnn_channel_as_batch(self):
         fetcher = HDF5DataFetcher('test', '/tmp/h5_testing_file', 'testing',
                                   ['3d'], mode='frames', channels_as_batch=True,
-                                  cnn_features=True)
+                                  cnn_features=True, context_list=['3d'])
         data = fetcher.get_data_for_indices((0,))
         for n in ['3d']:
             self.assertIn(n, data)
@@ -145,7 +143,8 @@ class TestH5DataFetcher(unittest.TestCase):
 
     def test_read_frames_cnn(self):
         fetcher = HDF5DataFetcher('test', '/tmp/h5_testing_file', 'testing',
-                                  ['3d'], mode='frames', cnn_features=True)
+                                  ['3d'], mode='frames', cnn_features=True,
+                                  context_list=['3d'])
         data = fetcher.get_data_for_indices((0, 3, 1))
         for n in ['3d']:
             self.assertIn(n, data)
@@ -154,7 +153,7 @@ class TestH5DataFetcher(unittest.TestCase):
     def test_read_frames_cnn_channel_as_batch(self):
         fetcher = HDF5DataFetcher('test', '/tmp/h5_testing_file', 'testing',
                                   ['3d'], mode='frames', channels_as_batch=True,
-                                  cnn_features=True)
+                                  cnn_features=True, context_list=['3d'])
         data = fetcher.get_data_for_indices((0, 3, 1))
         for n in ['3d']:
             self.assertIn(n, data)
