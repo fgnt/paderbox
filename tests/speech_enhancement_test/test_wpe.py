@@ -3,6 +3,7 @@ import os.path
 import numpy as np
 from nt.io import audioread, audiowrite
 from nt.speech_enhancement import wpe
+import time
 
 
 class TestWPEWrapper(unittest.TestCase):
@@ -14,11 +15,11 @@ class TestWPEWrapper(unittest.TestCase):
             '/net/storage/python_unittest_data/speech_enhancement/data/'
         self.sample_rate = 16000
 
-    @unittest.skip("Change settings.m to one mic before running this")
     def test_dereverb_one_channel(self):
         input_file_paths =\
             {self.audiofiles_path + 'sample_ch1.wav': 1, }
         self.process_dereverbing_framework(input_file_paths)
+        time.sleep(2) # wait 2 seconds for audio files to pop up in file manager
 
         # check if audio files exist
         for utt, num_channels in input_file_paths.items():
@@ -31,6 +32,7 @@ class TestWPEWrapper(unittest.TestCase):
         input_file_paths =\
             {self.audiofiles_path + 'sample_ch1.wav': 8, }
         self.process_dereverbing_framework(input_file_paths)
+        time.sleep(2) # wait 2 seconds for audio files to pop up in file manager
 
         # check if audio files exist
         for utt, num_channels in input_file_paths.items():
