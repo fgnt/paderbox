@@ -28,6 +28,33 @@ class TestH5DataFetcher(unittest.TestCase):
     def tearDown(self):
         os.remove('/tmp/h5_testing_file')
 
+    def test_len_utterance_mode(self):
+        fetcher = HDF5DataFetcher('test', '/tmp/h5_testing_file', 'testing',
+                                  ['0d', '3d', '4d'])
+        self.assertEqual(len(fetcher), 1)
+
+    def test_len_frame_mode(self):
+        fetcher = HDF5DataFetcher('test', '/tmp/h5_testing_file', 'testing',
+                                  ['3d'], mode='frames')
+        self.assertEqual(len(fetcher), 4)
+
+    def test_get_batch_info_utterance_mode(self):
+        fetcher = HDF5DataFetcher('test', '/tmp/h5_testing_file', 'testing',
+                                  ['0d', '3d', '4d'])
+        info = fetcher.get_batch_info_for_indices((0,))
+        self.assertIn('utt_id',info)
+        self.assertEqual(info['utt_id'][0], 'test')
+
+    def test_get_batch_info_frames_mode(self):
+        fetcher = HDF5DataFetcher('test', '/tmp/h5_testing_file', 'testing',
+                                  ['3d'], mode='frames')
+        info = fetcher.get_batch_info_for_indices((0, 1))
+        self.assertIn('utt_id',info)
+        self.assertIn('frame_idx', info)
+        for i in range(1):
+            self.assertEqual(info['utt_id'][i], 'test')
+            self.assertEqual(int(info['frame_idx'][i]), i)
+
     def test_read_utterance(self):
         fetcher = HDF5DataFetcher('test', '/tmp/h5_testing_file', 'testing',
                                   ['0d', '3d', '4d'])
