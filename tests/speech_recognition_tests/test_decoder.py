@@ -136,7 +136,7 @@ class TestDecoder(unittest.TestCase):
     # @unittest.skip("")
     def test_one_word_grammar(self):
 
-        word = "SHOULD"
+        word = "TEST"
         utt_id = "TEST_UTT_3"
         utt_length = len(word)
 
@@ -207,3 +207,46 @@ class TestDecoder(unittest.TestCase):
         self.decoder.create_lattices([trans_hat.num, ], [utt_id, ])
         sym_decode, word_decode = self.decoder.decode(lm_scale=1)
         self.assertEqual(utt, word_decode[utt_id])
+
+    # @unittest.skip("")
+    def test_oov(self):
+
+        working_dir = self.tmpdir.name
+        lm_path_uni = os.path.join(working_dir, 'tcb05cnp')
+        arpa.write_ngram_grammar(os.path.join(data_dir, 'tcb05cnp'),
+                                 lm_path_uni, n=1)
+
+        lexicon = os.path.join(working_dir, 'lexicon.txt')
+        with open(lexicon, 'w') as fid:
+            fid.write("TEST T E S T")
+
+        self.decoder = Decoder(self.label_handler, working_dir,
+                               lexicon_file=lexicon,
+                               lm_file=lm_path_uni)
+
+        self.decoder.create_graphs()
+
+        word = "TEST"
+        utt_id = "TEST_UTT_3"
+        utt_length = len(word)
+
+        trans_hat = np.zeros((utt_length, 1, len(self.label_handler)))
+        for idx in range(len(word)):
+            trans_hat[idx, 0, self.label_handler.label_to_int["BLANK"]] = -10
+            # trans_hat[idx, 0, self.label_handler.label_to_int[" "]] = -10
+            # TODO
+            # Wieso können 4 space aufeinanderfolgen?
+
+        trans_hat = Variable(trans_hat)
+        self.decoder.create_lattices([trans_hat.num, ], [utt_id, ])
+        sym_decode, word_decode = self.decoder.decode(lm_scale=1)
+
+        with open(os.path.join(working_dir, "sym_decode.txt"), 'w') as fid:
+            print(sym_decode[utt_id])
+            fid.write(sym_decode[utt_id])
+
+        with open(os.path.join(working_dir, "word_decode.txt"), 'w') as fid:
+            print(word_decode[utt_id])
+            fid.write(word_decode[utt_id])
+
+        self.assertEqual(word, word_decode[utt_id])
