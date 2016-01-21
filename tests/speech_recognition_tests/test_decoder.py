@@ -16,7 +16,7 @@ import os
 import json
 import tempfile
 from chainer.serializers.hdf5 import load_hdf5
-
+from nt.speech_recognition import arpa
 
 class TestDecoder(unittest.TestCase):
     def setUp(self):
@@ -54,9 +54,44 @@ class TestDecoder(unittest.TestCase):
 
     # @unittest.skip("")
     def test_ground_truth(self):
+
+        working_dir = self.tmpdir.name
+        lm_path_uni = os.path.join(working_dir, 'tcb05cnp')
+        arpa.write_ngram_grammar(os.path.join(data_dir, 'tcb05cnp'),
+                                 lm_path_uni, n=1)
+
+        self.decoder = Decoder(self.label_handler, working_dir,
+                               lm_file=lm_path_uni)
+
+        self.decoder.create_graphs()
+
+        utt = "THIS SHOULD BE RECOGNIZED"
+        utt_id = "TEST_UTT_1"
+        symbol_seq = "T_HI__S __SSHOOO_ULD BE_ __RECO_GNIIZ_ED____"
+
+        trans_hat = -100 * np.ones(
+                (len(symbol_seq), 1, len(self.label_handler)))
+        for idx in range(len(symbol_seq)):
+            sym = symbol_seq[idx]
+            if sym == "_":
+                sym = "BLANK"
+            trans_hat[idx, 0, self.label_handler.label_to_int[sym]] = 0
+
+        trans_hat = Variable(trans_hat)
+        self.decoder.create_lattices([trans_hat.num, ], [utt_id, ])
+        sym_decode, word_decode = self.decoder.decode(lm_scale=1)
+        self.assertEqual(utt, word_decode[utt_id])
+
+    # @unittest.skip("")
+    def test_only_lex(self):
+
+        working_dir = self.tmpdir.name
+        lm_file = os.path.join(data_dir, 'tcb05cnp')
+        lexicon_file = os.path.join(working_dir, "lexicon.txt")
+        arpa.create_lexicon(lm_file, lexicon_file)
         self.decoder = Decoder(self.label_handler, self.tmpdir.name,
-                               lm_file=os.path.join(data_dir, 'tcb05cnp'),
-                               grammar_type="unigram")
+                               lexicon_file=lexicon_file, lm_file=None)
+
         self.decoder.create_graphs()
 
         utt = "THIS SHOULD BE RECOGNIZED"
@@ -80,8 +115,8 @@ class TestDecoder(unittest.TestCase):
     def test_compare_argmax_ctc(self):
 
         self.decoder = Decoder(self.label_handler, self.tmpdir.name,
-                               lm_file=os.path.join(data_dir, 'tcb05cnp'),
-                               grammar_type=None, use_lexicon=False)
+                               lexicon_file=None, lm_file=None)
+
         self.decoder.create_graphs()
         batch = self.dp_test.test_run()
         net_out = self.nn._propagate(self.nn.data_to_variable(batch['x']))
@@ -102,23 +137,13 @@ class TestDecoder(unittest.TestCase):
     def test_one_word_grammar(self):
 
         word = "SHOULD"
-        neg_cost = 1
         utt_id = "TEST_UTT_3"
         utt_length = len(word)
 
-        lm_file = os.path.join(self.tmpdir.name, "arpa.tmp")
-        with open(lm_file, 'w') as arpa_fid:
-            arpa_fid.write("\\data\\\nngram 1=3\nngram 2=0\nngram 3=0\n"
-                           "\n\\1-grams:\n"
-                           "0\t<s>\t0\n"
-                           "0\t</s>\t0\n"
-                           "{0}\t{1}\t{2}\n".format(neg_cost, word, 0) +
-                           "\n\\2-grams:\n"
-                           "\n\\3-grams:\n"
-                           "\end\\\n")
+        lm_file = os.path.join(data_dir, "arpa_one_word")
 
         self.decoder = Decoder(self.label_handler, self.tmpdir.name,
-                               lm_file=lm_file, grammar_type="trigram")
+                               lm_file=lm_file)
         self.decoder.create_graphs()
 
         trans_hat = np.zeros((utt_length, 1, len(self.label_handler)))
@@ -145,24 +170,11 @@ class TestDecoder(unittest.TestCase):
 
         trans_hat = Variable(trans_hat)
 
-        neg_cost1 = 0
-        neg_cost2 = 1 / np.log(10)
-        # since scaling with -2.3 in arpa2fst ... maybe this is because of
-        # bigram backoff fix=11
-        lm_file = os.path.join(self.tmpdir.name, "arpa.tmp")
-        with open(lm_file, 'w') as arpa_fid:
-            arpa_fid.write("\\data\\\nngram 1=4\nngram 2=0\nngram 3=0\n"
-                           "\n\\1-grams:\n"
-                           "0\t<s>\t0\n"
-                           "0\t</s>\t0\n"
-                           "{0}\t{1}\t{2}\n".format(neg_cost1, word1, 0) +
-                           "{0}\t{1}\t{2}\n".format(neg_cost2, word2, 0) +
-                           "\n\\2-grams:\n"
-                           "\n\\3-grams:\n"
-                           "\n\end\\\n")
+        lm_file = os.path.join(data_dir, "arpa_two_words_uni")
 
         self.decoder = Decoder(self.label_handler, self.tmpdir.name,
-                               lm_file=lm_file, grammar_type="trigram")
+                               lm_file=lm_file)
+
         self.decoder.create_graphs()
 
         self.decoder.create_lattices([trans_hat.num, ], [utt_id, ])
@@ -175,10 +187,6 @@ class TestDecoder(unittest.TestCase):
 
     # @unittest.skip("")
     def test_trigram_grammar(self):
-        word1 = "HE"
-        word2 = "SHE"
-        word3 = "SEES"
-
         utt_id = "TEST_UTT_5"
         utt = "SHE SEES"
         symbol_seq = "SHE SE_ES"
@@ -190,31 +198,10 @@ class TestDecoder(unittest.TestCase):
             trans_hat[idx, 0, self.label_handler.label_to_int[sym]] = 1
         trans_hat = Variable(trans_hat)
 
-        lm_file = os.path.join(self.tmpdir.name, "arpa.tmp")
-        with open(lm_file, 'w') as arpa_fid:
-            arpa_fid.write("\\data\\\nngram 1=5\nngram 2=2\nngram 3=4\n"
-                           "\n\\1-grams:\n"
-                           "1\t<s>\t0\n"
-                           "0\t</s>\t0\n"
-                           "{0}\t{1}\t{2}\n".format(-2, word1, 0) +
-                           "{0}\t{1}\t{2}\n".format(0, word2, 0) +
-                           "{0}\t{1}\t{2}\n".format(-2, word3, 0) +
-                           "\n\\2-grams:\n"
-                           "{0}\t{1}\t{2}\t{3}\n".format(-1, word1, word3, 0) +
-                           "{0}\t{1}\t{2}\t{3}\n".format(0, word2, word3, 0) +
-                           "\n\\3-grams:\n"
-                           "{0}\t{1}\t{2}\t{3}\n".format(0, "<s>", word1,
-                                                         word3) +
-                           "{0}\t{1}\t{2}\t{3}\n".format(0, "<s>", word2,
-                                                         word3) +
-                           "{0}\t{1}\t{2}\t{3}\n".format(0, word1, word3,
-                                                         "</s>") +
-                           "{0}\t{1}\t{2}\t{3}\n".format(0, word2, word3,
-                                                         "</s>") +
-                           "\n\end\\\n")
+        lm_file = os.path.join(data_dir, "arpa_three_words_tri")
 
         self.decoder = Decoder(self.label_handler, self.tmpdir.name,
-                               lm_file=lm_file, grammar_type="trigram")
+                               lm_file=lm_file)
         self.decoder.create_graphs()
 
         self.decoder.create_lattices([trans_hat.num, ], [utt_id, ])
