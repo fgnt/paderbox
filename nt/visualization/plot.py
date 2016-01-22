@@ -40,7 +40,7 @@ def line(signal, ax, ylim=None):
             ax.set_ylim(ylim)
 
 
-def time_series(signal, ax, ylim=None):
+def time_series(signal, ax=None, ylim=None):
     """
     Use together with facet_grid().
 
@@ -51,6 +51,8 @@ def time_series(signal, ax, ylim=None):
     """
 
     with sns.axes_style("darkgrid"):
+        if ax is None:
+            figure, ax = plt.subplots(1, 1)
         if type(signal) is tuple:
             ax.plot(signal[0], signal[1])
             ax.set_xlabel('Time / s')
@@ -63,7 +65,9 @@ def time_series(signal, ax, ylim=None):
             ax.set_ylim(ylim)
 
 
-def spectrogram(signal, limits=None, ax=None, log=True, colorbar=True, batch=0):
+def spectrogram(signal, limits=None, ax=None, log=True, colorbar=True, batch=0,
+                sample_rate=None, stft_size=None, x_label='Time frame index',
+                y_label='Frequency bin index'):
     """
     Plots a spectrogram from a spectrogram (power) as input.
 
@@ -74,12 +78,18 @@ def spectrogram(signal, limits=None, ax=None, log=True, colorbar=True, batch=0):
     :param log: Take the logarithm of the signal before plotting
     :param colorbar: Display a colorbar right to the plot
     :param batch: If the decode has 3 dimensions: Specify the which batch to plot
+    :param sample_rate: Sample rate of the signal.
+        If `sample_rate` and `stft_size` are specified, the y-ticks will be the
+        frequency
+    :param stft_size: Size of the STFT transformation.
+        If `sample_rate` and `stft_size` are specified, the y-ticks will be the
+        frequency
     :return: axes
     """
 
     signal = _get_batch(signal, batch)
 
-    if np.any(signal < 0):
+    if np.any(signal < 0) and log:
         warn('The array passed to spectrogram contained negative values. This '
              'leads to a wrong visualization and especially colorbar!')
 
@@ -101,13 +111,19 @@ def spectrogram(signal, limits=None, ax=None, log=True, colorbar=True, batch=0):
         if colorbar:
             cbar = plt.colorbar(image, ax=ax)
             cbar.set_label('Energy / dB')
-        ax.set_xlabel('Time frame index')
-        ax.set_ylabel('Frequency bin index')
+        ax.set_xlabel(x_label)
+        ax.set_ylabel(y_label)
+        if sample_rate is not None and stft_size is not None:
+            y_tick_range = np.linspace(0, 1024/2, num=5)
+            y_tick_labels = y_tick_range*(sample_rate/stft_size/1000)
+            plt.yticks(y_tick_range, y_tick_labels)
+            ax.set_ylabel('Frequency / kHz')
         ax.grid(False)
     return ax
 
 
-def stft(signal, limits=None, ax=None, log=True, colorbar=True, batch=0):
+def stft(signal, limits=None, ax=None, log=True, colorbar=True, batch=0,
+         sample_rate=None, stft_size=None):
     """
     Plots a spectrogram from an stft signal as input. This is a wrapper of the
     plot function for spectrograms.
@@ -117,10 +133,17 @@ def stft(signal, limits=None, ax=None, log=True, colorbar=True, batch=0):
     :param log: Take the logarithm of the signal before plotting
     :param colorbar: Display a colorbar right to the plot
     :param batch: If the decode has 3 dimensions: Specify the which batch to plot
+    :param sample_rate: Sample rate of the signal.
+        If `sample_rate` and `stft_size` are specified, the y-ticks will be the
+        frequency
+    :param stft_size: Size of the STFT transformation.
+        If `sample_rate` and `stft_size` are specified, the y-ticks will be the
+        frequency
     :return: axes
     """
     return spectrogram(nt.transform.stft_to_spectrogram(signal), limits=limits,
-                       ax=ax, log=log, colorbar=colorbar, batch=batch)
+                       ax=ax, log=log, colorbar=colorbar, batch=batch,
+                       sample_rate=sample_rate, stft_size=stft_size)
 
 
 def mask(signal, ax=None, limits=(0, 1), colorbar=True, batch=0):
