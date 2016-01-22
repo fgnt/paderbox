@@ -29,6 +29,7 @@ python -m coverage xml --include=nt* || true
 /net/ssd/software/anaconda/envs/py3k_jenkins/bin/pylint --rcfile=pylint.cfg -f parseable nt || true
 make --directory=doc/source/auto_reference/ clean
 make --directory=doc/source/auto_reference/
+make --directory=doc clean || true
 make --directory=doc html || true
 
 # Store pip packages
