@@ -13,7 +13,6 @@ bin/
 build/
 doc/build/html/*
 doc/build/doctrees
-!doc/build/html/_static/
 *.doctree
 nt/evaluation/pesq_bin/build/*
 
