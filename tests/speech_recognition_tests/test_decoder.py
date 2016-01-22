@@ -17,6 +17,7 @@ import json
 import tempfile
 from chainer.serializers.hdf5 import load_hdf5
 from nt.speech_recognition import arpa
+#from nt.utils.transcription_handling import CharLabelHandler
 
 class TestDecoder(unittest.TestCase):
     def setUp(self):
@@ -25,6 +26,10 @@ class TestDecoder(unittest.TestCase):
         with open(label_handler_path, 'rb') as label_handler_fid:
             self.label_handler = pickle.load(label_handler_fid)
             label_handler_fid.close()
+
+        space_key = "<SPACE>"
+        self.label_handler.label_to_int[space_key] = self.label_handler.label_to_int.pop(" ")
+        self.label_handler.int_to_label[self.label_handler.label_to_int[space_key]] = space_key
 
         self.nn = BLSTMModel(self.label_handler)
         load_hdf5(os.path.join(data_dir, 'best.nnet'), self.nn)
@@ -57,8 +62,7 @@ class TestDecoder(unittest.TestCase):
 
         working_dir = self.tmpdir.name
         lm_path_uni = os.path.join(working_dir, 'tcb05cnp')
-        arpa.write_ngram_grammar(os.path.join(data_dir, 'tcb05cnp'),
-                                 lm_path_uni, n=1)
+        arpa.write_unigram(os.path.join(data_dir, 'tcb05cnp'), lm_path_uni)
 
         self.decoder = Decoder(self.label_handler, working_dir,
                                lm_file=lm_path_uni)
@@ -67,7 +71,7 @@ class TestDecoder(unittest.TestCase):
 
         utt = "THIS SHOULD BE RECOGNIZED"
         utt_id = "TEST_UTT_1"
-        symbol_seq = "T_HI__S __SSHOOO_ULD BE_ __RECO_GNIIZ_ED____"
+        symbol_seq = "T_HI__S__SSHOOO_ULDBE___RECO_GNIIZ_ED____"
 
         trans_hat = -100 * np.ones(
                 (len(symbol_seq), 1, len(self.label_handler)))
@@ -80,6 +84,15 @@ class TestDecoder(unittest.TestCase):
         trans_hat = Variable(trans_hat)
         self.decoder.create_lattices([trans_hat.num, ], [utt_id, ])
         sym_decode, word_decode = self.decoder.decode(lm_scale=1)
+
+        with open(os.path.join(working_dir, "sym_decode.txt"), 'w') as fid:
+            print(sym_decode[utt_id])
+            fid.write(sym_decode[utt_id])
+
+        with open(os.path.join(working_dir, "word_decode.txt"), 'w') as fid:
+            print(word_decode[utt_id])
+            fid.write(word_decode[utt_id])
+
         self.assertEqual(utt, word_decode[utt_id])
 
     # @unittest.skip("")
@@ -96,7 +109,7 @@ class TestDecoder(unittest.TestCase):
 
         utt = "THIS SHOULD BE RECOGNIZED"
         utt_id = "TEST_UTT_1"
-        symbol_seq = "T_HI__S __SSHOOO_ULD BE_ __RECO_GNIIZ_ED____"
+        symbol_seq = "T_HI__S__SSHOOO_ULDBE___RECO_GNIIZ_ED____"
 
         trans_hat = -100 * np.ones(
                 (len(symbol_seq), 1, len(self.label_handler)))
@@ -120,7 +133,7 @@ class TestDecoder(unittest.TestCase):
         self.decoder.create_graphs()
         batch = self.dp_test.test_run()
         net_out = self.nn._propagate(self.nn.data_to_variable(batch['x']))
-        utt_id = "TEST_UTT_2"
+        utt_id = "TEST_UTT_1"
         net_out_list = [net_out.num, ]
         self.decoder.create_lattices(net_out_list, [utt_id, ])
         sym_decode, word_decode = self.decoder.decode(lm_scale=1)
@@ -137,7 +150,7 @@ class TestDecoder(unittest.TestCase):
     def test_one_word_grammar(self):
 
         word = "TEST"
-        utt_id = "TEST_UTT_3"
+        utt_id = "TEST_UTT_1"
         utt_length = len(word)
 
         lm_file = os.path.join(data_dir, "arpa_one_word")
@@ -157,7 +170,7 @@ class TestDecoder(unittest.TestCase):
     def test_two_word_grammar(self):
         word1 = "ACOUSTIC"
         word2 = "LANGUAGE"
-        utt_id = "TEST_UTT_4"
+        utt_id = "TEST_UTT_1"
         utt_length = len(word1)
 
         trans_hat = np.zeros((utt_length, 1, len(self.label_handler)))
@@ -187,9 +200,9 @@ class TestDecoder(unittest.TestCase):
 
     # @unittest.skip("")
     def test_trigram_grammar(self):
-        utt_id = "TEST_UTT_5"
+        utt_id = "TEST_UTT_1"
         utt = "SHE SEES"
-        symbol_seq = "SHE SE_ES"
+        symbol_seq = "SHE___SE_ES"
         trans_hat = np.zeros((len(symbol_seq), 1, len(self.label_handler)))
         for idx in range(len(symbol_seq)):
             sym = symbol_seq[idx]
@@ -213,12 +226,16 @@ class TestDecoder(unittest.TestCase):
 
         working_dir = self.tmpdir.name
         lm_path_uni = os.path.join(working_dir, 'tcb05cnp')
-        arpa.write_ngram_grammar(os.path.join(data_dir, 'tcb05cnp'),
-                                 lm_path_uni, n=1)
+        arpa.write_unigram(os.path.join(data_dir, 'tcb05cnp'), lm_path_uni)
+
+        word1 = "WORKS"
+        word2 = "FAILS"
 
         lexicon = os.path.join(working_dir, 'lexicon.txt')
         with open(lexicon, 'w') as fid:
-            fid.write("TEST T E S T")
+            fid.write(word1)
+            for letter in word1:
+                fid.write(" " + letter)
 
         self.decoder = Decoder(self.label_handler, working_dir,
                                lexicon_file=lexicon,
@@ -226,16 +243,15 @@ class TestDecoder(unittest.TestCase):
 
         self.decoder.create_graphs()
 
-        word = "TEST"
-        utt_id = "TEST_UTT_3"
-        utt_length = len(word)
+        utt_id = "TEST_UTT_1"
+        utt_length = len(word1)
 
         trans_hat = np.zeros((utt_length, 1, len(self.label_handler)))
-        for idx in range(len(word)):
-            trans_hat[idx, 0, self.label_handler.label_to_int["BLANK"]] = -10
-            # trans_hat[idx, 0, self.label_handler.label_to_int[" "]] = -10
-            # TODO
-            # Wieso können 4 space aufeinanderfolgen?
+        for idx in range(len(word1)):
+            sym1 = word1[idx]
+            sym2 = word2[idx]
+            trans_hat[idx, 0, self.label_handler.label_to_int[sym1]] += 5
+            trans_hat[idx, 0, self.label_handler.label_to_int[sym2]] += 10
 
         trans_hat = Variable(trans_hat)
         self.decoder.create_lattices([trans_hat.num, ], [utt_id, ])
@@ -249,4 +265,4 @@ class TestDecoder(unittest.TestCase):
             print(word_decode[utt_id])
             fid.write(word_decode[utt_id])
 
-        self.assertEqual(word, word_decode[utt_id])
+        self.assertEqual(word1, word_decode[utt_id])
