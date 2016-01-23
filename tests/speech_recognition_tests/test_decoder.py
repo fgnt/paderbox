@@ -17,7 +17,7 @@ import json
 import tempfile
 from chainer.serializers.hdf5 import load_hdf5
 from nt.speech_recognition import arpa
-#from nt.utils.transcription_handling import CharLabelHandler
+
 
 class TestDecoder(unittest.TestCase):
     def setUp(self):
@@ -30,26 +30,6 @@ class TestDecoder(unittest.TestCase):
         space_key = "<SPACE>"
         self.label_handler.label_to_int[space_key] = self.label_handler.label_to_int.pop(" ")
         self.label_handler.int_to_label[self.label_handler.label_to_int[space_key]] = space_key
-
-        self.nn = BLSTMModel(self.label_handler)
-        load_hdf5(os.path.join(data_dir, 'best.nnet'), self.nn)
-
-        self.nn.load_mean_and_var(os.path.join(data_dir, 'mean_and_var_train'))
-
-        json_path = '/net/storage/database_jsons/wsj.json'
-        flist_test = 'test/flist/wave/official_si_dt_05'
-
-        with open(json_path) as fid:
-            json_data = json.load(fid)
-        feature_fetcher_test = JsonCallbackFetcher(
-                'fbank', json_data, flist_test, self.nn.transform_features,
-                feature_channels=['observed/ch1'], nist_format=True)
-
-        # label_handler_test = trans_fetcher_test.label_handler
-        self.dp_test = DataProvider((feature_fetcher_test,),
-                                    batch_size=1,
-                                    shuffle_data=True)
-        print(self.dp_test.data_info)
 
         self.tmpdir = tempfile.TemporaryDirectory()
         print(self.tmpdir.name)
@@ -84,14 +64,42 @@ class TestDecoder(unittest.TestCase):
         trans_hat = Variable(trans_hat)
         self.decoder.create_lattices([trans_hat.num, ], [utt_id, ])
         sym_decode, word_decode = self.decoder.decode(lm_scale=1)
+        print(sym_decode[utt_id])
+        print(word_decode[utt_id])
 
-        with open(os.path.join(working_dir, "sym_decode.txt"), 'w') as fid:
-            print(sym_decode[utt_id])
-            fid.write(sym_decode[utt_id])
+        self.assertEqual(utt, word_decode[utt_id])
 
-        with open(os.path.join(working_dir, "word_decode.txt"), 'w') as fid:
-            print(word_decode[utt_id])
-            fid.write(word_decode[utt_id])
+    # @unittest.skip("")
+    def test_ground_truth_with_sil(self):
+
+        working_dir = self.tmpdir.name
+        lm_path_uni = os.path.join(working_dir, 'tcb05cnp')
+        arpa.write_unigram(os.path.join(data_dir, 'tcb05cnp'), lm_path_uni)
+        space = "<SPACE>"
+        self.decoder = Decoder(self.label_handler, working_dir,
+                               lm_file=lm_path_uni, sil=space)
+
+        self.decoder.create_graphs()
+
+        utt = "THIS SHOULD BE RECOGNIZED"
+        utt_id = "TEST_UTT_1"
+        symbol_seq = "T_HI__S__  ___SSHOOO_ULD__  BE___RECO_GNIIZ_ED____"
+
+        trans_hat = -100 * np.ones(
+                (len(symbol_seq), 1, len(self.label_handler)))
+        for idx in range(len(symbol_seq)):
+            sym = symbol_seq[idx]
+            if sym == "_":
+                sym = "BLANK"
+            if sym == " ":
+                sym = space
+            trans_hat[idx, 0, self.label_handler.label_to_int[sym]] = 0
+
+        trans_hat = Variable(trans_hat)
+        self.decoder.create_lattices([trans_hat.num, ], [utt_id, ])
+        sym_decode, word_decode = self.decoder.decode(lm_scale=1)
+        print(sym_decode[utt_id])
+        print(word_decode[utt_id])
 
         self.assertEqual(utt, word_decode[utt_id])
 
@@ -122,6 +130,8 @@ class TestDecoder(unittest.TestCase):
         trans_hat = Variable(trans_hat)
         self.decoder.create_lattices([trans_hat.num, ], [utt_id, ])
         sym_decode, word_decode = self.decoder.decode(lm_scale=1)
+        print(sym_decode[utt_id])
+        print(word_decode[utt_id])
         self.assertEqual(utt, word_decode[utt_id])
 
     # @unittest.skip("")
@@ -130,9 +140,29 @@ class TestDecoder(unittest.TestCase):
         self.decoder = Decoder(self.label_handler, self.tmpdir.name,
                                lexicon_file=None, lm_file=None)
 
+        nn = BLSTMModel(self.label_handler)
+        load_hdf5(os.path.join(data_dir, 'best.nnet'), nn)
+
+        nn.load_mean_and_var(os.path.join(data_dir, 'mean_and_var_train'))
+
+        json_path = '/net/storage/database_jsons/wsj.json'
+        flist_test = 'test/flist/wave/official_si_dt_05'
+
+        with open(json_path) as fid:
+            json_data = json.load(fid)
+        feature_fetcher_test = JsonCallbackFetcher(
+                'fbank', json_data, flist_test, nn.transform_features,
+                feature_channels=['observed/ch1'], nist_format=True)
+
+        # label_handler_test = trans_fetcher_test.label_handler
+        dp_test = DataProvider((feature_fetcher_test,),
+                                    batch_size=1,
+                                    shuffle_data=True)
+        print(dp_test.data_info)
+
         self.decoder.create_graphs()
-        batch = self.dp_test.test_run()
-        net_out = self.nn._propagate(self.nn.data_to_variable(batch['x']))
+        batch = dp_test.test_run()
+        net_out = nn._propagate(nn.data_to_variable(batch['x']))
         utt_id = "TEST_UTT_1"
         net_out_list = [net_out.num, ]
         self.decoder.create_lattices(net_out_list, [utt_id, ])
@@ -163,6 +193,8 @@ class TestDecoder(unittest.TestCase):
         trans_hat = Variable(trans_hat)
         self.decoder.create_lattices([trans_hat.num, ], [utt_id, ])
         sym_decode, word_decode = self.decoder.decode(lm_scale=1)
+        print(sym_decode[utt_id])
+        print(word_decode[utt_id])
 
         self.assertEqual(word, word_decode[utt_id])
 
@@ -193,9 +225,13 @@ class TestDecoder(unittest.TestCase):
         self.decoder.create_lattices([trans_hat.num, ], [utt_id, ])
 
         sym_decode, word_decode = self.decoder.decode(lm_scale=1.1)
+        print(sym_decode[utt_id])
+        print(word_decode[utt_id])
         self.assertEqual(word2, word_decode[utt_id])
 
         sym_decode, word_decode = self.decoder.decode(lm_scale=0.9)
+        print(sym_decode[utt_id])
+        print(word_decode[utt_id])
         self.assertEqual(word1, word_decode[utt_id])
 
     # @unittest.skip("")
@@ -219,6 +255,8 @@ class TestDecoder(unittest.TestCase):
 
         self.decoder.create_lattices([trans_hat.num, ], [utt_id, ])
         sym_decode, word_decode = self.decoder.decode(lm_scale=1)
+        print(sym_decode[utt_id])
+        print(word_decode[utt_id])
         self.assertEqual(utt, word_decode[utt_id])
 
     # @unittest.skip("")
@@ -256,13 +294,7 @@ class TestDecoder(unittest.TestCase):
         trans_hat = Variable(trans_hat)
         self.decoder.create_lattices([trans_hat.num, ], [utt_id, ])
         sym_decode, word_decode = self.decoder.decode(lm_scale=1)
-
-        with open(os.path.join(working_dir, "sym_decode.txt"), 'w') as fid:
-            print(sym_decode[utt_id])
-            fid.write(sym_decode[utt_id])
-
-        with open(os.path.join(working_dir, "word_decode.txt"), 'w') as fid:
-            print(word_decode[utt_id])
-            fid.write(word_decode[utt_id])
+        print(sym_decode[utt_id])
+        print(word_decode[utt_id])
 
         self.assertEqual(word1, word_decode[utt_id])
