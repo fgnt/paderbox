@@ -1,6 +1,7 @@
 import numpy
 import editdistance
 
+
 class CharLabelHandler(object):
     """ Handles transforming from chars to integers and vice versa
 
@@ -11,23 +12,33 @@ class CharLabelHandler(object):
         self.label_to_int = dict()
         self.int_to_label = dict()
 
-        def _add_symbol(symbol):
-            if not symbol in self.label_to_int:
-                pos = len(self.label_to_int)
-                self.label_to_int[symbol] = pos
-                self.int_to_label[pos] = symbol
+        def _add_symbol(sym_as_char, sym_as_int):
+            self.label_to_int[sym_as_char] = sym_as_int
+            self.int_to_label[sym_as_int] = sym_as_char
 
+        idx = 0
         if add_blank:
-            _add_symbol('BLANK')
+            self.blank_symbol = "BLANK"
+            _add_symbol(self.blank_symbol, idx)
+            idx += 1
         if add_seq2seq_magic:
-            _add_symbol('<s>')
+            _add_symbol('<s>', idx)
+            idx += 1
             self.start_symbol = self.label_to_int['<s>']
-            _add_symbol('</s>')
+            _add_symbol('</s>', idx)
+            idx += 1
             self.end_symbol = self.label_to_int['</s>']
 
+        chars = list()
         for transcription in transcription_list:
             for char in transcription:
-                _add_symbol(char)
+                if char not in chars:
+                    chars.append(char)
+
+        for char in sorted(chars):
+            _add_symbol(char, idx)
+            idx += 1
+
 
     def label_seq_to_int_arr(self, label_seq):
         int_arr = numpy.empty(len(label_seq), dtype=numpy.int32)
