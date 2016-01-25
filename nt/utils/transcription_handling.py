@@ -7,27 +7,29 @@ class CharLabelHandler(object):
 
     """
 
-    def __init__(self, transcription_list, add_blank=True,
+    def __init__(self, transcription_list, blank="BLANK",
                  add_seq2seq_magic=False):
         self.label_to_int = dict()
         self.int_to_label = dict()
+        self.blank_symbol = blank
+        self.start_symbol = None
+        self.end_symbol = None
 
         def _add_symbol(sym_as_char, sym_as_int):
             self.label_to_int[sym_as_char] = sym_as_int
             self.int_to_label[sym_as_int] = sym_as_char
 
         idx = 0
-        if add_blank:
-            self.blank_symbol = "BLANK"
+        if blank:
             _add_symbol(self.blank_symbol, idx)
             idx += 1
         if add_seq2seq_magic:
             _add_symbol('<s>', idx)
-            idx += 1
             self.start_symbol = self.label_to_int['<s>']
-            _add_symbol('</s>', idx)
             idx += 1
+            _add_symbol('</s>', idx)
             self.end_symbol = self.label_to_int['</s>']
+            idx += 1
 
         chars = list()
         for transcription in transcription_list:
@@ -38,7 +40,6 @@ class CharLabelHandler(object):
         for char in sorted(chars):
             _add_symbol(char, idx)
             idx += 1
-
 
     def label_seq_to_int_arr(self, label_seq):
         int_arr = numpy.empty(len(label_seq), dtype=numpy.int32)
@@ -62,12 +63,14 @@ class WordLabelHandler(object):
 
     """
 
-    def __init__(self, transcription_list, add_blank=True, min_count=20):
+    def __init__(self, transcription_list, blank='BLANK', min_count=20):
         self.label_to_int = dict()
         self.int_to_label = dict()
-        if add_blank:
-            self.label_to_int['BLANK'] = 0
-            self.int_to_label[0] = 'BLANK'
+        self.blank_symbol = blank
+
+        if blank:
+            self.label_to_int[blank] = 0
+            self.int_to_label[0] = blank
         self.label_to_int['<UNK>'] = len(self.label_to_int)
         self.int_to_label[len(self.int_to_label)] = '<UNK>'
         word_count = dict()
@@ -113,12 +116,14 @@ class HybridLabelHandler(object):
 
     """
 
-    def __init__(self, transcription_list, add_blank=True, min_count=20):
+    def __init__(self, transcription_list, blank='BLANK', min_count=20):
         self.label_to_int = dict()
         self.int_to_label = dict()
-        if add_blank:
-            self.label_to_int['BLANK'] = 0
-            self.int_to_label[0] = 'BLANK'
+        self.blank_symbol = blank
+
+        if blank:
+            self.label_to_int[blank] = 0
+            self.int_to_label[0] = blank
         self.label_to_int['<UNK>'] = len(self.label_to_int)
         self.int_to_label[len(self.int_to_label)] = '<UNK>'
         self.character_idxs = list()
