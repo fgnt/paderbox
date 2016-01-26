@@ -54,11 +54,11 @@ def dereverb(settings_file_path, x, stop_mlab=True):
     mlab.set_variable("settings", settings)
     assert np.allclose(mlab.get_variable("x"), x)
     assert mlab.get_variable("settings") == settings
-    mlab.run_code_print("addpath('"+settings_file_path+"');")
+    mlab.run_code("addpath('"+settings_file_path+"');")
 
     # start wpe
     print("Dereverbing ...")
-    mlab.run_code_print("y = wpe(x, settings);")
+    mlab.run_code("y = wpe(x, settings);")
     # write dereverbed audio signals
     y = mlab.get_variable("y")
 
