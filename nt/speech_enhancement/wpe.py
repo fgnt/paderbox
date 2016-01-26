@@ -1,8 +1,10 @@
 import numpy as np
 from nt.utils.matlab import Mlab
 
+mlab = Mlab()
 
-def dereverb(settings_file_path, x):
+
+def dereverb(settings_file_path, x, stop_mlab=True):
     """
     This method wraps the matlab WPE-dereverbing-method. Give it the path to
     the settings.m and the wpe.p file and your reverbed signals as numpy matrix.
@@ -19,10 +21,14 @@ def dereverb(settings_file_path, x):
     :param x: NxC Numpy matrix of read audio signals. N denotes the signals'
         number of frames and C stands for the number of channels you provide
         for that signal
+    :param stop_mlab: Whether matlab connection should be closed after execution
     :return: NxC Numpy matrix of dereverbed audio signals. N and C as above.
     """
+    if not mlab.process.started:
+        mlab.process.start()
+    else:
+        mlab.run_code('clear all;')
 
-    mlab = Mlab()
     settings = settings_file_path + "wpe_settings.m"
 
     # Check number of channels and set settings.m accordingly
@@ -36,10 +42,10 @@ def dereverb(settings_file_path, x):
                     line = 'num_mic = '+str(c)+";\n"
                     modify_settings = True
                 else:
-                    break #ignore variable lines
+                    break   #ignore variable lines
             lines.append(line)
     if modify_settings:
-        with open(settings,'w') as outfile:
+        with open(settings, 'w') as outfile:
             for line in lines:
                 outfile.write(line)
 
@@ -55,4 +61,7 @@ def dereverb(settings_file_path, x):
     mlab.run_code_print("y = wpe(x, settings);")
     # write dereverbed audio signals
     y = mlab.get_variable("y")
+
+    if mlab.process.started and stop_mlab:
+        mlab.process.stop()
     return y
