@@ -7,9 +7,9 @@ class ProcessCallerTest(unittest.TestCase):
         cmds = 5*['echo "Test"']
         stdout, stderr, ret_codes = pc.run_processes(cmds)
         for out in stdout:
-            self.assertEqual(out, ['Test\n'])
+            self.assertEqual(out, 'Test\n')
         for err in stderr:
-            self.assertEqual(err, [])
+            self.assertEqual(err, '')
         for code in ret_codes:
             self.assertEqual(code, 0)
 
@@ -17,9 +17,9 @@ class ProcessCallerTest(unittest.TestCase):
         cmds = 5*['echo "Test" 1>&2']
         stdout, stderr, ret_codes = pc.run_processes(cmds)
         for out in stdout:
-            self.assertEqual(out, [])
+            self.assertEqual(out, '')
         for err in stderr:
-            self.assertEqual(err, ['Test\n'])
+            self.assertEqual(err, 'Test\n')
         for code in ret_codes:
             self.assertEqual(code, 0)
 
