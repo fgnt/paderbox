@@ -51,8 +51,8 @@ class CharLabelHandler(object):
         return ''.join([self.int_to_label[i] for i in int_arr])
 
     def print_mapping(self):
-        for char, i in self.label_to_int.items():
-            print('{} -> {}'.format(char, i))
+        for i in sorted(self.int_to_label.keys()):
+            print('{} -> {}'.format(self.int_to_label[i], i))
 
     def __len__(self):
         return len(self.label_to_int)
