@@ -1,29 +1,31 @@
-import unittest
-import numpy as np
-from chainer.optimizers import SGD
 import os
+import tempfile
 import time
+import unittest
+import warnings
+
+import numpy as np
 import numpy.testing as nptest
-from chainer.link import Chain
 from chainer.functions import mean_squared_error
+from chainer.link import Chain
 from chainer.links import Linear
 from chainer.optimizer import GradientClipping
-import tempfile
-from nt.nn import Trainer
-from nt.nn import DataProvider
-from nt.nn.data_fetchers import ArrayDataFetcher
+from chainer.optimizers import SGD
 from chainer.testing import attr
+
+from nt.nn import DataProvider
+from nt.nn import Trainer
+from nt.nn.data_fetchers import ArrayDataFetcher
 
 B = 10
 A = 5
 
 
 class DummyNetwork(Chain):
-
     def __init__(self):
         super(DummyNetwork, self).__init__(
-            l1=Linear(5, 3),
-            l2=Linear(3, 5)
+                l1=Linear(5, 3),
+                l2=Linear(3, 5)
         )
 
     def forward(self, **kwargs):
@@ -34,15 +36,20 @@ class DummyNetwork(Chain):
         h = self.l2(h)
         return mean_squared_error(h, target)
 
-    def forward_train(self, **kwargs):
-        return self.forward(**kwargs)
+    def forward_train(self, a=1, b=2, **kwargs):
+        return dict(
+                net=self.forward(**kwargs),
+                a=a,
+                b=b)
 
-    def forward_cv(self, **kwargs):
-        return self.forward(**kwargs)
+    def forward_cv(self, a=1, b=2, **kwargs):
+        return dict(
+                net=self.forward(**kwargs),
+                a=a,
+                b=b)
 
 
 class TrainerTest(unittest.TestCase):
-
     def setUp(self):
         self.input = np.random.uniform(-1, 1, (B, A)).astype(np.float32)
         self.target = self.input.copy()
@@ -63,8 +70,12 @@ class TrainerTest(unittest.TestCase):
                                optimizer=SGD(),
                                description='unittest',
                                data_dir=tempfile.mkdtemp(),
+                               train_kwargs={'a': 2, 'b': 3},
+                               cv_kwargs={'a': 4, 'b': 5},
                                epochs=100,
                                use_gpu=False,
+                               loss_name_tr='net',
+                               loss_name_cv='net',
                                optimizer_hooks=hooks)
 
     def test_init(self):
@@ -80,9 +91,66 @@ class TrainerTest(unittest.TestCase):
         W2_before = self.nn.l2.W.data.copy()
         self.trainer._update_parameters()
         self.assertRaises(
-            AssertionError, nptest.assert_equal, W2_before, self.nn.l2.W.data)
+                AssertionError, nptest.assert_equal, W2_before,
+                self.nn.l2.W.data)
         self.trainer._reset_gradients()
         nptest.assert_equal(self.nn.l2.W.grad, np.zeros((5, 3)))
+
+    def test_tr_kwargs_called(self):
+        self.trainer.optimizer.setup(self.nn)
+        batch = self.tr_provider.test_run()
+        self.trainer._train_forward_batch(batch)
+        net_out = self.trainer.current_net_out
+        self.assertEqual(net_out['a'], 2)
+        self.assertEqual(net_out['b'], 3)
+
+    def test_cv_kwargs_called(self):
+        self.trainer.optimizer.setup(self.nn)
+        batch = self.tr_provider.test_run()
+        self.trainer._cv_forward_batch(batch)
+        net_out = self.trainer.current_net_out
+        self.assertEqual(net_out['a'], 4)
+        self.assertEqual(net_out['b'], 5)
+
+    def test_warn_on_wrong_kwarg_tr(self):
+        with warnings.catch_warnings(record=True) as w:
+            Trainer(self.nn,
+                    forward_fcn_tr=self.nn.forward_train,
+                    forward_fcn_cv=self.nn.forward_cv,
+                    data_provider_tr=self.tr_provider,
+                    data_provider_cv=self.cv_provider,
+                    optimizer=SGD(),
+                    description='unittest',
+                    data_dir=tempfile.mkdtemp(),
+                    train_kwargs={'a': 2, 'c': 3},
+                    cv_kwargs={'a': 4, 'b': 5},
+                    epochs=100,
+                    use_gpu=False,
+                    loss_name_tr='net',
+                    loss_name_cv='net')
+            self.assertEqual(len(w), 1)
+            self.assertIn('defined in train_kwargs but not part of',
+                          str(w[-1].message))
+
+    def test_warn_on_wrong_kwarg_cv(self):
+        with warnings.catch_warnings(record=True) as w:
+            Trainer(self.nn,
+                    forward_fcn_tr=self.nn.forward_train,
+                    forward_fcn_cv=self.nn.forward_cv,
+                    data_provider_tr=self.tr_provider,
+                    data_provider_cv=self.cv_provider,
+                    optimizer=SGD(),
+                    description='unittest',
+                    data_dir=tempfile.mkdtemp(),
+                    train_kwargs={'a': 2, 'b': 3},
+                    cv_kwargs={'a': 4, 'c': 5},
+                    epochs=100,
+                    use_gpu=False,
+                    loss_name_tr='net',
+                    loss_name_cv='net')
+            self.assertEqual(len(w), 1)
+            self.assertIn('defined in cv_kwargs but not part of',
+                          str(w[-1].message))
 
     def _test_run_stop(self, use_gpu=False):
         self.trainer.run_in_thread = True
