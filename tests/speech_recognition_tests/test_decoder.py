@@ -41,10 +41,14 @@ class TestDecoder(unittest.TestCase):
     def test_ground_truth(self):
 
         working_dir = self.tmpdir.name
+
         lm_path_uni = os.path.join(working_dir, 'tcb05cnp')
         arpa.write_unigram(os.path.join(data_dir, 'tcb05cnp'), lm_path_uni)
+        lexicon_file = os.path.join(working_dir, "lexicon.txt")
+        arpa.create_lexicon(lm_path_uni, lexicon_file)
 
         self.decoder = Decoder(self.label_handler, working_dir,
+                               lexicon_file=lexicon_file,
                                lm_file=lm_path_uni)
 
         self.decoder.create_graphs()
@@ -73,10 +77,15 @@ class TestDecoder(unittest.TestCase):
     def test_ground_truth_with_sil(self):
 
         working_dir = self.tmpdir.name
+
         lm_path_uni = os.path.join(working_dir, 'tcb05cnp')
         arpa.write_unigram(os.path.join(data_dir, 'tcb05cnp'), lm_path_uni)
+        lexicon_file = os.path.join(working_dir, "lexicon.txt")
+        arpa.create_lexicon(lm_path_uni, lexicon_file)
+
         space = "<SPACE>"
         self.decoder = Decoder(self.label_handler, working_dir,
+                               lexicon_file=lexicon_file,
                                lm_file=lm_path_uni, sil=space)
 
         self.decoder.create_graphs()
@@ -110,8 +119,9 @@ class TestDecoder(unittest.TestCase):
         lm_file = os.path.join(data_dir, 'tcb05cnp')
         lexicon_file = os.path.join(working_dir, "lexicon.txt")
         arpa.create_lexicon(lm_file, lexicon_file)
+
         self.decoder = Decoder(self.label_handler, self.tmpdir.name,
-                               lexicon_file=lexicon_file, lm_file=None)
+                               lexicon_file=lexicon_file)
 
         self.decoder.create_graphs()
 
@@ -179,14 +189,20 @@ class TestDecoder(unittest.TestCase):
     # @unittest.skip("")
     def test_one_word_grammar(self):
 
+        working_dir = self.tmpdir.name
+
         word = "TEST"
         utt_id = "TEST_UTT_1"
         utt_length = len(word)
 
         lm_file = os.path.join(data_dir, "arpa_one_word")
+        lexicon_file = os.path.join(working_dir, "lexicon.txt")
+        arpa.create_lexicon(lm_file, lexicon_file)
 
-        self.decoder = Decoder(self.label_handler, self.tmpdir.name,
+        self.decoder = Decoder(self.label_handler, working_dir,
+                               lexicon_file=lexicon_file,
                                lm_file=lm_file)
+
         self.decoder.create_graphs()
 
         trans_hat = np.zeros((utt_length, 1, len(self.label_handler)))
@@ -200,6 +216,9 @@ class TestDecoder(unittest.TestCase):
 
     # @unittest.skip("")
     def test_two_word_grammar(self):
+
+        working_dir = self.tmpdir.name
+
         word1 = "ACOUSTIC"
         word2 = "LANGUAGE"
         utt_id = "TEST_UTT_1"
@@ -216,8 +235,11 @@ class TestDecoder(unittest.TestCase):
         trans_hat = Variable(trans_hat)
 
         lm_file = os.path.join(data_dir, "arpa_two_words_uni")
+        lexicon_file = os.path.join(working_dir, "lexicon.txt")
+        arpa.create_lexicon(lm_file, lexicon_file)
 
-        self.decoder = Decoder(self.label_handler, self.tmpdir.name,
+        self.decoder = Decoder(self.label_handler, working_dir,
+                               lexicon_file=lexicon_file,
                                lm_file=lm_file)
 
         self.decoder.create_graphs()
@@ -236,6 +258,9 @@ class TestDecoder(unittest.TestCase):
 
     # @unittest.skip("")
     def test_trigram_grammar(self):
+
+        working_dir = self.tmpdir.name
+
         utt_id = "TEST_UTT_1"
         utt = "SHE SEES"
         symbol_seq = "SHE___SE_ES"
@@ -248,8 +273,11 @@ class TestDecoder(unittest.TestCase):
         trans_hat = Variable(trans_hat)
 
         lm_file = os.path.join(data_dir, "arpa_three_words_tri")
+        lexicon_file = os.path.join(working_dir, "lexicon.txt")
+        arpa.create_lexicon(lm_file, lexicon_file)
 
-        self.decoder = Decoder(self.label_handler, self.tmpdir.name,
+        self.decoder = Decoder(self.label_handler, working_dir,
+                               lexicon_file=lexicon_file,
                                lm_file=lm_file)
         self.decoder.create_graphs()
 
@@ -263,6 +291,7 @@ class TestDecoder(unittest.TestCase):
     def test_oov(self):
 
         working_dir = self.tmpdir.name
+
         lm_path_uni = os.path.join(working_dir, 'tcb05cnp')
         arpa.write_unigram(os.path.join(data_dir, 'tcb05cnp'), lm_path_uni)
 
