@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 from nt.nn.data_fetchers import KaldiDataFetcher
 
-SCP = '/net/storage/python_unittest_data/kaldi_data_fetcher/feats.scp'
+SCP = '/net/storage/python_unittest_data/kaldi_data_fetcher/feats_decompressed.scp'
 ALI = '/net/storage/python_unittest_data/kaldi_data_fetcher/'
 MODEL = '/net/storage/python_unittest_data/kaldi_data_fetcher/final.mdl'
 
