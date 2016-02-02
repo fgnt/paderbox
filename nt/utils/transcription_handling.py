@@ -2,6 +2,38 @@ import numpy
 import editdistance
 
 
+phone_map = dict(
+    aa='aa', ao='aa', ah='ah', ax='ah', er='er', axr='er',
+    hh='hh',
+    hv='hh',
+    ih='ih',
+    ix='ih',
+    l='l',
+    el='l',
+    m='m',
+    em='m',
+    n='n',
+    en='n',
+    nx='n',
+    ng='ng',
+    eng='ng',
+    sh='sh',
+    zh='sh',
+    sil='sil',
+    pcl='sil',
+    tcl='sil',
+    kcl='sil',
+    bcl='sil',
+    dcl='sil',
+    gcl='sil',
+    pau='sil',
+    epi='sil',
+    uw='uw',
+    ux='uw',
+)
+phone_map['ax-h'] = 'ah'
+phone_map['h#'] = 'sil'
+
 class CharLabelHandler(object):
     """ Handles transforming from chars to integers and vice versa
 
@@ -74,12 +106,14 @@ class WordLabelHandler(object):
         self.label_to_int['<UNK>'] = len(self.label_to_int)
         self.int_to_label[len(self.int_to_label)] = '<UNK>'
         word_count = dict()
+
         for transcription in transcription_list:
             for word in transcription.split():
                 try:
                     word_count[word] += 1
                 except KeyError:
                     word_count[word] = 1
+
         for word, count in word_count.items():
             if count > min_count:
                 number = len(self.label_to_int)
@@ -250,12 +284,69 @@ class EventLabelHandler(object):
         return len(self.label_to_int)
 
 
+class PhonemLabelHandler(object):
+    """
+        Handles transforming from Phonem to integers and vice versa
+    """
+    def __init__(self, transcription_list, blank='BLANK',
+                 add_seq2seq_magic=False, short=False):
+        self.label_to_int = dict()
+        self.int_to_label = dict()
+        self.blank_symbol = blank
+        self.start_symbol = None
+        self.end_symbol = None
+        self.short = short
+        if blank:
+            self.label_to_int[blank] = 0
+            self.int_to_label[0] = blank
+        if short:
+            self.cor_phonemes = phone_map
+
+        def _add_symbol(phon):
+            if self.short:
+                phon = self.cor_phonemes[phon]
+            if not phon in self.label_to_int:
+                number = len(self.label_to_int)
+                self.label_to_int[phon] = number
+                self.int_to_label[number] = phon
+
+        if add_seq2seq_magic:
+            _add_symbol('<s>')
+            self.start_symbol = self.label_to_int['<s>']
+            _add_symbol('</s>')
+            self.end_symbol = self.label_to_int['</s>']
+        for transcription in transcription_list:
+            for phon in transcription.split():
+                _add_symbol(phon)
+
+    def label_seq_to_int_arr(self, label_seq):
+        int_arr = list()
+        int_arr.append(self.start_symbol)
+        for phon in label_seq.split():
+            if self.short:
+                phon = self.cor_phonemes[phon]
+            int_arr.append(self.label_to_int[phon])
+        int_arr.append(self.end_symbol)
+        return numpy.asarray(int_arr, dtype=numpy.int32)
+
+    def int_arr_to_label_seq(self, int_arr):
+        return ' '.join([self.int_to_label[i] for i in int_arr if
+                         i not in [self.start_symbol, self.end_symbol]])
+
+    def print_mapping(self):
+        for char, i in self.label_to_int.items():
+            print('{} -> {}'.format(char, i))
+
+    def __len__(self):
+        return len(self.label_to_int)
+
+
 def sample_to_frame_idx(sample_idx, frame_size, frame_shift):
     """ Calculate corresponding frame index for sample index
         :param sample_idx: sample index
     """
-    start_offset = (frame_size - frame_shift)/2
-    frame_idx = (sample_idx - start_offset)//frame_shift
+    start_offset = (frame_size - frame_shift) / 2
+    frame_idx = (sample_idx - start_offset) // frame_shift
     return max(0, frame_idx)
 
 
@@ -318,5 +409,5 @@ def argmax_ctc_decode_with_stats(dec_arr, ref_arr, label_handler):
     wer = word_errors / len(ref_words)
     label_errors = editdistance.eval(dec_labels, ref_labels)
     ler = label_errors / len(ref_labels)
-    return dec_seq, ler, wer, label_errors, word_errors,\
+    return dec_seq, ler, wer, label_errors, word_errors, \
            len(ref_labels), len(ref_words)
