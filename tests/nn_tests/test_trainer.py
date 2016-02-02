@@ -204,6 +204,30 @@ class TrainerTest(unittest.TestCase):
         self.trainer.stop_training()
         self.assertTrue(not self.trainer.is_running)
 
+    def test_resume(self):
+        self.trainer.start_training()
+        time.sleep(1)
+        self.trainer.stop_training()
+        epoch = self.trainer.training_status.epoch
+        self.assertGreater(epoch, 1)
+        self.trainer.resume = True
+        self.trainer.start_training()
+        self.trainer.stop_training()
+        self.assertGreaterEqual(self.trainer.training_status.epoch, epoch)
+
+    def test_exception_on_data_dir_exists(self):
+        self.trainer.start_training()
+        time.sleep(1)
+        self.trainer.stop_training()
+        self.assertRaises(EnvironmentError, Trainer, *[self.nn],
+                    **dict(forward_fcn_tr=self.nn.forward_train,
+                    forward_fcn_cv=self.nn.forward_cv,
+                    data_provider_tr=self.tr_provider,
+                    data_provider_cv=self.cv_provider,
+                    optimizer=SGD(),
+                    description='unittest',
+                    data_dir=self.trainer.data_dir))
+
     @attr.gpu
     def test_test_mode(self):
         self.trainer.test_run()
