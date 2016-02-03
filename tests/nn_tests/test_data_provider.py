@@ -3,6 +3,7 @@ from nt.nn.data_fetchers.data_fetcher import DataFetcher
 import numpy
 import numpy.testing
 import unittest
+import pandas
 
 class IdentityFetcher(DataFetcher):
 
@@ -77,12 +78,34 @@ class DataProviderFetcher(unittest.TestCase):
 
     def test_data_shapes(self):
         s = self.dp.get_data_shapes()
-        self.assertEqual(len(s), 2)
-        self.assertTrue('X' in s)
-        self.assertTrue('Y' in s)
+        self.assertEqual(s['X'], (1,))
+        self.assertEqual(s['Y'], (1,))
 
-    def test_print_data_info(self):
+    def test_data_types(self):
+        s = self.dp.get_data_types()
+        self.assertEqual(s['X'], numpy.int64)
+        self.assertEqual(s['Y'], numpy.int64)
+
+    def test_data_info(self):
         df = self.dp.data_info
-        assert list(df['Fetcher Name']) == ['X', 'Y'], 'Fetcher Names mismatch.'
+
+        reference_df = pandas.DataFrame([
+            {'Fetcher Name': 'X', 'Output': 'X', 'Shape': (1,), 'Type': 'int64', 'C Contiguous': True},
+            {'Fetcher Name': 'Y', 'Output': 'Y', 'Shape': (1,), 'Type': 'int64', 'C Contiguous': True}
+        ])
+
+        # sorted_df = df[sorted([col for col in df])]
+        # sorted_reference_df = reference_df[sorted([col for col in reference_df])]
+
+        # print(sorted_df)
+        # print(sorted_reference_df)
+
+        # print(sorted_df.equals(sorted_reference_df))
+
+        # self.assertTrue(sorted_df.equals(sorted_reference_df))
+
+        # assert list(df['Fetcher Name']) == ['X', 'Y'], 'Fetcher Names mismatch.'
+
+        assert False
 
     # TODO: Missing tests for get_data_types, get_data_shapes, print_data_info
