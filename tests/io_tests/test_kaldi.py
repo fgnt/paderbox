@@ -4,7 +4,9 @@ from nt.io.kaldi import ArkWriter, import_feature_data, \
 import numpy as np
 import tempfile
 
-WAV_SCP = '/net/storage/python_unittest_data/kaldi_io/wav.scp'
+from nt.io.data_dir import testing as data_dir
+
+WAV_SCP = data_dir.join('kaldi_io/wav.scp')
 
 class KaldiIOTest(unittest.TestCase):
 

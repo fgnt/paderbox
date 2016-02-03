@@ -4,7 +4,9 @@ from nt.nn.data_fetchers.json_transcription_data_fetcher \
     import JsonTranscriptionDataFetcher
 import json
 
-JSON_SRC = '/net/storage/2015/chime/chime_ref_data/data/json/chime.json'
+from nt.io.data_dir import chime as chime_dir
+
+JSON_SRC = chime_dir.join('data', 'json', 'chime.json')
 
 class JsonTranscriptionDataFetcherTest(unittest.TestCase):
 
