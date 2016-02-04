@@ -31,6 +31,7 @@ class Timer(object):
             return self
 
     def __exit__(self, *args):
+
         if self.cuda_event:
             self.end.record()
             self.end.synchronize()
@@ -45,6 +46,7 @@ class Timer(object):
 
 
 def timeStamped(fname, fmt='%Y-%m-%d-%H-%M-%S: {fname}'):
+
     """ Timestamps a string according to ``fmt``
     :param fname: String to timestamp
     :param fmt: Format of the timestamp where ``{fname}`` is the placeholder for the string
