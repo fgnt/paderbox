@@ -1,28 +1,28 @@
 import unittest
-from nt.io.audioread import audioread
-from scipy import signal
 
 import numpy as np
-import nt.testing as tc
+from scipy import signal
 
+import nt.testing as tc
+from nt.io.audioread import audioread
+from nt.io.data_dir import testing as testing_dir
+from nt.transform.module_stft import _biorthogonal_window
+from nt.transform.module_stft import _biorthogonal_window_loopy
 from nt.transform.module_stft import _samples_to_stft_frames
 from nt.transform.module_stft import _stft_frames_to_samples
+from nt.transform.module_stft import get_stft_center_frequencies
+from nt.transform.module_stft import istft
+from nt.transform.module_stft import spectrogram_to_energy_per_frame
 from nt.transform.module_stft import stft
 from nt.transform.module_stft import stft_single_channel
-from nt.transform.module_stft import istft
-from nt.transform.module_stft import _biorthogonal_window_loopy
-from nt.transform.module_stft import _biorthogonal_window
 from nt.transform.module_stft import stft_to_spectrogram
-from nt.transform.module_stft import spectrogram_to_energy_per_frame
-from nt.transform.module_stft import get_stft_center_frequencies
 from nt.utils.matlab import matlab_test, Mlab
 
-from nt.io.data_dir import timit as timit_dir
 
 class TestSTFTMethods(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        path = timit_dir('pcm', 'train', 'dr1', 'fcjf0', 'sa1.wav')
+        path = testing_dir('timit', 'data', 'sample_1.wav')
         self.x = audioread(path)
 
     def test_samples_to_stft_frames(self):

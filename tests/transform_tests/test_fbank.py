@@ -1,18 +1,20 @@
 import unittest
-from nt.io.audioread import audioread
+
 import numpy as np
+
+from nt.io.audioread import audioread
 # from scipy import signal
 
 import nt.testing as tc
-
 import nt.transform as transform
 # from pymatbridge import Matlab
 
-from nt.io.data_dir import timit as timit_dir
+from nt.io.data_dir import testing as testing_dir
+
 
 class TestSTFTMethods(unittest.TestCase):
     def test_fbank(self):
-        path = timit_dir('pcm', 'train', 'dr1', 'fcjf0', 'sa1.wav')
+        path = testing_dir('timit', 'data', 'sample_1.wav')
         y = audioread(path)
         feature = transform.fbank(y)
 
@@ -37,6 +39,6 @@ class TestSTFTMethods(unittest.TestCase):
         tc.assert_equal(transform.module_fbank.mel2hz(np.array([2595, 2595, 2595])), 6300)
 
     def test_mel2hzandhz2mel(self):
-        rand = np.random.rand(5,5) * 1000
+        rand = np.random.rand(5, 5) * 1000
         tc.assert_almost_equal(rand, transform.module_fbank.mel2hz(transform.module_fbank.hz2mel(rand)))
         tc.assert_almost_equal(rand, transform.module_fbank.hz2mel(transform.module_fbank.mel2hz(rand)))
