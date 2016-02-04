@@ -8,11 +8,12 @@ import nt.testing as tc
 import nt.transform as transform
 # from pymatbridge import Matlab
 
+from nt.io.data_dir import timit as timit_dir
 
 class TestSTFTMethods(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        path = '/net/speechdb/timit/pcm/train/dr1/fcjf0/sa1.wav'
+        path = timit_dir('pcm', 'train', 'dr1', 'fcjf0', 'sa1.wav')
         self.x = audioread(path)
 
     def test_offcomp(self):

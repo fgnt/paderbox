@@ -1,5 +1,6 @@
 import numpy as np
 from nt.utils.matlab import Mlab
+import os.path
 
 mlab = Mlab()
 
@@ -29,7 +30,7 @@ def dereverb(settings_file_path, x, stop_mlab=True):
     else:
         mlab.run_code('clear all;')
 
-    settings = settings_file_path + "wpe_settings.m"
+    settings = os.path.join(settings_file_path, "wpe_settings.m")
 
     # Check number of channels and set settings.m accordingly
     c = x.shape[1]

@@ -5,19 +5,19 @@ from nt.io import audioread, audiowrite
 from nt.speech_enhancement import wpe
 import time
 
+from nt.io.data_dir import testing as data_dir
+from nt.io.data_dir import DataDir
 
 class TestWPEWrapper(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.settings_file_path =\
-            '/net/storage/python_unittest_data/speech_enhancement/utils/'
-        self.audiofiles_path =\
-            '/net/storage/python_unittest_data/speech_enhancement/data/'
+        self.settings_file_path = DataDir(data_dir.join('speech_enhancement', 'utils'))
+        self.audiofiles_path = DataDir(data_dir.join('speech_enhancement', 'data'))
         self.sample_rate = 16000
 
     def test_dereverb_one_channel(self):
         input_file_paths =\
-            {self.audiofiles_path + 'sample_ch1.wav': 1, }
+            {self.audiofiles_path('sample_ch1.wav'): 1, }
         self.process_dereverbing_framework(input_file_paths)
         time.sleep(2) # wait 2 seconds for audio files to pop up in file manager
 
@@ -30,7 +30,7 @@ class TestWPEWrapper(unittest.TestCase):
 
     def test_dereverb_eight_channels(self):
         input_file_paths =\
-            {self.audiofiles_path + 'sample_ch1.wav': 8, }
+            {self.audiofiles_path('sample_ch1.wav'): 8, }
         self.process_dereverbing_framework(input_file_paths)
         time.sleep(2) # wait 2 seconds for audio files to pop up in file manager
 

@@ -1,6 +1,8 @@
 import unittest
 
-ROOT = '/net/storage/database_jsons/'
+from nt.io.data_dir import database_jsons as database_jsons_dir
+
+ROOT = database_jsons_dir
 
 class DatabaseTest(unittest.TestCase):
 

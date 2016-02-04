@@ -1,5 +1,3 @@
-data_dir = "/net/storage/python_unittest_data/speech_recognition"
-
 import unittest
 import numpy as np
 import pickle
@@ -8,8 +6,10 @@ from chainer import Variable
 from nt.nn import DataProvider
 from nt.nn.data_fetchers.json_callback_fetcher import JsonCallbackFetcher
 import sys
+from nt.io.data_dir import testing as data_dir
+from nt.io.data_dir import database_jsons as database_jsons_dir
 
-sys.path.append(data_dir)
+sys.path.append(data_dir('speech_recognition'))
 from exp_models import BLSTMModel
 from nt.utils.transcription_handling import argmax_ctc_decode
 import os
@@ -22,7 +22,7 @@ from nt.speech_recognition import arpa
 class TestDecoder(unittest.TestCase):
     def setUp(self):
 
-        label_handler_path = os.path.join(data_dir, 'label_handler')
+        label_handler_path = data_dir('speech_recognition', 'label_handler')
         with open(label_handler_path, 'rb') as label_handler_fid:
             self.label_handler = pickle.load(label_handler_fid)
             label_handler_fid.close()
@@ -43,7 +43,7 @@ class TestDecoder(unittest.TestCase):
         working_dir = self.tmpdir.name
 
         lm_path_uni = os.path.join(working_dir, 'tcb05cnp')
-        arpa.write_unigram(os.path.join(data_dir, 'tcb05cnp'), lm_path_uni)
+        arpa.write_unigram(data_dir('speech_recognition', 'tcb05cnp'), lm_path_uni)
         lexicon_file = os.path.join(working_dir, "lexicon.txt")
         arpa.create_lexicon(lm_path_uni, lexicon_file)
 
@@ -79,7 +79,7 @@ class TestDecoder(unittest.TestCase):
         working_dir = self.tmpdir.name
 
         lm_path_uni = os.path.join(working_dir, 'tcb05cnp')
-        arpa.write_unigram(os.path.join(data_dir, 'tcb05cnp'), lm_path_uni)
+        arpa.write_unigram(data_dir('speech_recognition', 'tcb05cnp'), lm_path_uni)
         lexicon_file = os.path.join(working_dir, "lexicon.txt")
         arpa.create_lexicon(lm_path_uni, lexicon_file)
 
@@ -116,7 +116,7 @@ class TestDecoder(unittest.TestCase):
     def test_only_lex(self):
 
         working_dir = self.tmpdir.name
-        lm_file = os.path.join(data_dir, 'tcb05cnp')
+        lm_file = data_dir('speech_recognition', 'tcb05cnp')
         lexicon_file = os.path.join(working_dir, "lexicon.txt")
         arpa.create_lexicon(lm_file, lexicon_file)
 
@@ -151,11 +151,11 @@ class TestDecoder(unittest.TestCase):
                                lexicon_file=None, lm_file=None)
 
         nn = BLSTMModel(self.label_handler)
-        load_hdf5(os.path.join(data_dir, 'best.nnet'), nn)
+        load_hdf5(data_dir('speech_recognition', 'best.nnet'), nn)
 
-        nn.load_mean_and_var(os.path.join(data_dir, 'mean_and_var_train'))
+        nn.load_mean_and_var(data_dir('speech_recognition', 'mean_and_var_train'))
 
-        json_path = '/net/storage/database_jsons/wsj.json'
+        json_path = database_jsons_dir('wsj.json')
         flist_test = 'test/flist/wave/official_si_dt_05'
 
         with open(json_path) as fid:
@@ -195,7 +195,7 @@ class TestDecoder(unittest.TestCase):
         utt_id = "TEST_UTT_1"
         utt_length = len(word)
 
-        lm_file = os.path.join(data_dir, "arpa_one_word")
+        lm_file = data_dir('speech_recognition', "arpa_one_word")
         lexicon_file = os.path.join(working_dir, "lexicon.txt")
         arpa.create_lexicon(lm_file, lexicon_file)
 
@@ -234,7 +234,7 @@ class TestDecoder(unittest.TestCase):
 
         trans_hat = Variable(trans_hat)
 
-        lm_file = os.path.join(data_dir, "arpa_two_words_uni")
+        lm_file = data_dir('speech_recognition', "arpa_two_words_uni")
         lexicon_file = os.path.join(working_dir, "lexicon.txt")
         arpa.create_lexicon(lm_file, lexicon_file)
 
@@ -272,7 +272,7 @@ class TestDecoder(unittest.TestCase):
             trans_hat[idx, 0, self.label_handler.label_to_int[sym]] = 1
         trans_hat = Variable(trans_hat)
 
-        lm_file = os.path.join(data_dir, "arpa_three_words_tri")
+        lm_file = data_dir('speech_recognition', "arpa_three_words_tri")
         lexicon_file = os.path.join(working_dir, "lexicon.txt")
         arpa.create_lexicon(lm_file, lexicon_file)
 
@@ -293,7 +293,7 @@ class TestDecoder(unittest.TestCase):
         working_dir = self.tmpdir.name
 
         lm_path_uni = os.path.join(working_dir, 'tcb05cnp')
-        arpa.write_unigram(os.path.join(data_dir, 'tcb05cnp'), lm_path_uni)
+        arpa.write_unigram(data_dir('speech_recognition', 'tcb05cnp'), lm_path_uni)
 
         word1 = "WORKS"
         word2 = "FAILS"

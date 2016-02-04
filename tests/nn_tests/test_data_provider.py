@@ -93,19 +93,7 @@ class DataProviderFetcher(unittest.TestCase):
             {'Fetcher Name': 'X', 'Output': 'X', 'Shape': (1,), 'Type': 'int64', 'C Contiguous': True},
             {'Fetcher Name': 'Y', 'Output': 'Y', 'Shape': (1,), 'Type': 'int64', 'C Contiguous': True}
         ])
-
-        # sorted_df = df[sorted([col for col in df])]
-        # sorted_reference_df = reference_df[sorted([col for col in reference_df])]
-
-        # print(sorted_df)
-        # print(sorted_reference_df)
-
-        # print(sorted_df.equals(sorted_reference_df))
-
-        # self.assertTrue(sorted_df.equals(sorted_reference_df))
-
-        # assert list(df['Fetcher Name']) == ['X', 'Y'], 'Fetcher Names mismatch.'
-
-        assert False
-
-    # TODO: Missing tests for get_data_types, get_data_shapes, print_data_info
+        
+        for col in df:
+            for row in range(len(df[col])):
+                self.assertEqual(df[col][row], reference_df[col][row])

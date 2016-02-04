@@ -205,11 +205,17 @@ class TrainerTest(unittest.TestCase):
         self.assertTrue(not self.trainer.is_running)
 
     def test_resume(self):
-        self.trainer.start_training()
-        time.sleep(1)
-        self.trainer.stop_training()
-        epoch = self.trainer.training_status.epoch
-        self.assertGreater(epoch, 1)
+        epoch = 1
+        tries = 0
+        while (epoch < 2) and (tries < 5):
+            self.trainer.start_training()
+            time.sleep(tries)
+            self.trainer.stop_training()
+            epoch = self.trainer.training_status.epoch
+            if epoch is None:
+                epoch = 1
+            tries += 1
+        self.assertGreater(5, tries)
         self.trainer.resume = True
         self.trainer.start_training()
         self.trainer.stop_training()

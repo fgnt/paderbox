@@ -2,9 +2,11 @@ import numpy as np
 from nt.nn import DataProvider
 from nt.nn.data_fetchers import ChimeFeatureDataFetcher
 
+from nt.io.data_dir import chime as chime_dir
+
 def main():
     common_setup = {
-        'json_src': '/net/ssd/2015/chime/data/json/chime.json',
+        'json_src': chime_dir('data', 'json', 'chime.json'),
         'flist': 'train/A_database/flists/wav/channels_6/tr05_simu',
         'stft_shift': 256
     }
