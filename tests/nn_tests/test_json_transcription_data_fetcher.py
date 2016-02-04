@@ -5,10 +5,9 @@ from nt.nn.data_fetchers.json_transcription_data_fetcher \
 from nt.transcription_handling.transcription_handler import write_lexicon
 import json
 
-from nt.io.data_dir import chime as chime_dir
+from nt.io.data_dir import database_jsons as database_jsons_dir
 
-JSON_SRC = chime_dir.join('data', 'json', 'chime.json')
-
+JSON_SRC = database_jsons_dir.join('chime.json')
 
 class JsonTranscriptionDataFetcherTest(unittest.TestCase):
 
