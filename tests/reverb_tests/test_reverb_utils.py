@@ -1,12 +1,15 @@
-import numpy, scipy, scipy.signal
 import unittest
-from nt.utils.matlab import Mlab, matlab_test
-import nt.testing as tc
+
+import numpy
+import scipy
+import scipy.signal
+
+import nt.io.audioread as io
 import nt.reverb.reverb_utils as rirUtils
 import nt.reverb.scenario as scenario
-import nt.io.audioread as io
-
-from nt.io.data_dir import timit as timit_dir
+import nt.testing as tc
+from nt.io.data_dir import testing as testing_dir
+from nt.utils.matlab import Mlab, matlab_test
 
 # Uncomment, if you want to test Matlab functions.
 matlab_test = unittest.skipUnless(True, 'matlab-test')
@@ -424,11 +427,11 @@ class TestReverbUtils(unittest.TestCase):
         # Check whether convolution through frequency domain via fft yields the
         # same as through time domain.
         testsignal1 = io.audioread(
-            timit_dir('pcm', 'train', 'dr1', 'fcjf0', 'sa1.wav'))
+            testing_dir('timit', 'data', 'sample_1.wav'))
         testsignal2 = io.audioread(
-            timit_dir('pcm', 'train', 'dr1', 'fcjf0', 'sa2.wav'))
+            testing_dir('timit', 'data', 'sample_1.wav'))
         testsignal3 = io.audioread(
-            timit_dir('pcm', 'train', 'dr1', 'fcjf0', 'si648.wav'))
+            testing_dir('timit', 'data', 'sample_1.wav'))
         # pad all audiosignals with zeros such they have equal lengths
         maxlen = numpy.amax((len(testsignal1),
                              len(testsignal2),

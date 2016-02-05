@@ -4,6 +4,7 @@ from os import path
 import numpy as np
 
 import nt.testing as tc
+from nt.io.data_dir import testing as testing_dir
 from nt.speech_enhancement.beamformer import get_gev_vector
 from nt.speech_enhancement.beamformer import get_lcmv_vector
 from nt.speech_enhancement.beamformer import get_mvdr_vector
@@ -45,7 +46,7 @@ class TestBeamformerMethods(unittest.TestCase):
         K : sources, number of speakers
         :return:
         """
-        datafile = path.join(path.dirname(path.realpath(__file__)), 'data.npz')
+        datafile = testing_dir('speech_enhancement', 'data', 'beamformer.npz')
         datafile_multi_speaker = path.join(path.dirname(path.realpath(__file__)), 'data_multi_speaker.npz')
 
         self.mlab = Mlab()
