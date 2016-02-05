@@ -45,7 +45,7 @@ class Timer(object):
                 print('elapsed time: %f ms' % self.msecs)
 
 
-def timeStamped(fname, fmt='%Y-%m-%d-%H-%M-%S: {fname}'):
+def timeStamped(fname, fmt='{fname}_%Y-%m-%d-%H-%M-%S'):
 
     """ Timestamps a string according to ``fmt``
     :param fname: String to timestamp
