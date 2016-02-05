@@ -37,7 +37,7 @@ class TestDecoder(unittest.TestCase):
     # @unittest.skip("")
     def test_ground_truth(self):
 
-        working_dir = "/net/nas/ebbers/test" #self.tmpdir.name
+        working_dir = self.tmpdir.name
 
         lm_path_uni = os.path.join(working_dir, 'tcb05cnp')
         arpa.write_unigram(data_dir('speech_recognition', 'tcb05cnp'),
