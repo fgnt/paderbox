@@ -41,14 +41,24 @@ RAW_MFCC_CMD = KALDI_ROOT + '/src/featbin/' + \
     --num-ceps={num_ceps} --low-freq={low_freq} --high-freq={high_freq} \
     scp,p:{wav_scp} ark,scp:{dst_ark},{dst_scp}"""
 
+RAW_MFCC_DELTA_CMD = KALDI_ROOT + '/src/featbin/' + \
+    r"""compute-mfcc-feats --num-mel-bins={num_mel_bins} \
+    --num-ceps={num_ceps} --low-freq={low_freq} --high-freq={high_freq} \
+    scp,p:{wav_scp} ark:- | add-deltas ark:- ark,scp:{dst_ark},{dst_scp}"""
+
 RAW_FBANK_CMD = KALDI_ROOT + '/src/featbin/' + \
     r"""compute-fbank-feats --num-mel-bins={num_mel_bins} \
     --low-freq={low_freq} --high-freq={high_freq} \
     scp,p:{wav_scp} ark,scp:{dst_ark},{dst_scp}"""
 
+RAW_FBANK_DELTA_CMD = KALDI_ROOT + '/src/featbin/' + \
+    r"""compute-fbank-feats --num-mel-bins={num_mel_bins} \
+    --low-freq={low_freq} --high-freq={high_freq} \
+    scp,p:{wav_scp} ark:- | add-deltas ark:- ark,scp:{dst_ark},{dst_scp}"""
+
 
 def make_mfcc_features(wav_scp, dst_dir, num_mel_bins, num_ceps, low_freq=20,
-                       high_freq=-400, num_jobs=20):
+                       high_freq=-400, num_jobs=20, add_deltas=True):
     wav_scp = read_scp_file(wav_scp)
     split_mod = (len(wav_scp) // num_jobs) + 1
     print('Splitting jobs every {} ark'.format(split_mod))
@@ -64,7 +74,11 @@ def make_mfcc_features(wav_scp, dst_dir, num_mel_bins, num_ceps, low_freq=20,
                           'w') as fid:
                     for _utt_id, _ark in cur_scp.items():
                         fid.write('{} {}\n'.format(_utt_id, _ark))
-                cmds.append(RAW_MFCC_CMD.format(
+                if add_deltas:
+                    cmd = RAW_MFCC_DELTA_CMD
+                else:
+                    cmd = RAW_MFCC_CMD
+                cmds.append(cmd.format(
                     num_mel_bins=num_mel_bins, num_ceps=num_ceps,
                     low_freq=low_freq, high_freq=high_freq,
                     wav_scp=os.path.join(tmp_dir, '{}.scp'.format(scp_idx)),
@@ -92,7 +106,7 @@ def make_mfcc_features(wav_scp, dst_dir, num_mel_bins, num_ceps, low_freq=20,
 
 
 def make_fbank_features(wav_scp, dst_dir, num_mel_bins, low_freq=20,
-                       high_freq=-400, num_jobs=20):
+                       high_freq=-400, num_jobs=20, add_deltas=True):
     wav_scp = read_scp_file(wav_scp)
     split_mod = (len(wav_scp) // num_jobs) + 1
     print('Splitting jobs every {} ark'.format(split_mod))
@@ -108,7 +122,11 @@ def make_fbank_features(wav_scp, dst_dir, num_mel_bins, low_freq=20,
                           'w') as fid:
                     for _utt_id, _ark in cur_scp.items():
                         fid.write('{} {}\n'.format(_utt_id, _ark))
-                cmds.append(RAW_FBANK_CMD.format(
+                if add_deltas:
+                    cmd = RAW_FBANK_DELTA_CMD
+                else:
+                    cmd = RAW_FBANK_CMD
+                cmds.append(cmd.format(
                     num_mel_bins=num_mel_bins,
                     low_freq=low_freq, high_freq=high_freq,
                     wav_scp=os.path.join(tmp_dir, '{}.scp'.format(scp_idx)),

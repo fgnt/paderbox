@@ -1,6 +1,9 @@
-import numpy as np
-from nt.utils.matlab import Mlab
 import os.path
+
+import numpy as np
+
+from nt.utils.matlab import Mlab
+from nt.utils.numpy_utils import segment_axis
 
 mlab = Mlab()
 
@@ -40,22 +43,22 @@ def dereverb(settings_file_path, x, stop_mlab=True):
         for line in infile:
             if 'num_mic = ' in line:
                 if not str(c) in line:
-                    line = 'num_mic = '+str(c)+";\n"
+                    line = 'num_mic = ' + str(c) + ";\n"
                     modify_settings = True
                 else:
-                    break   #ignore variable lines
+                    break  # ignore variable lines
             lines.append(line)
     if modify_settings:
         with open(settings, 'w') as outfile:
             for line in lines:
                 outfile.write(line)
 
-    #Process each utterance
+    # Process each utterance
     mlab.set_variable("x", x)
     mlab.set_variable("settings", settings)
     assert np.allclose(mlab.get_variable("x"), x)
     assert mlab.get_variable("settings") == settings
-    mlab.run_code("addpath('"+settings_file_path+"');")
+    mlab.run_code("addpath('" + settings_file_path + "');")
 
     # start wpe
     print("Dereverbing ...")
@@ -66,3 +69,47 @@ def dereverb(settings_file_path, x, stop_mlab=True):
     if mlab.process.started and stop_mlab:
         mlab.process.stop()
     return y
+
+
+def wpe(Y, epsilon=1e-6, order=15, delay=1, iterations=10):
+    """
+
+    :param Y: Stft signal (TxF)
+    :param epsilon:
+    :param order: Linear prediction order
+    :param delay: Prediction delay
+    :param iterations: Number of iterations
+    :return: Dereverberated Stft signal
+    """
+    T, F = Y.shape
+    dtype = Y.dtype
+    power_spectrum = np.maximum(np.abs(Y * Y.conj()), epsilon)
+    dereverberated = np.zeros_like(Y)
+
+    for iteration in range(iterations):
+        regression_coefficient = np.zeros((F, order), dtype=dtype)
+        Y_norm = Y / np.sqrt(power_spectrum)
+        Y_windowed = segment_axis(
+            Y,
+            order,
+            order - 1,
+            axis=0).T[..., :-delay - 1]
+        Y_windowed_norm = segment_axis(Y_norm,
+                                       order, order - 1,
+                                       axis=0, ).T[..., :-delay - 1]
+        correlation_matrix = np.einsum('...dt,...et->...de', Y_windowed_norm,
+                                       Y_windowed_norm.conj())
+        cross_correlation_vector = np.sum(
+            Y_windowed_norm * Y_norm[order + delay:, None, :].T.conj(), axis=-1)
+        for f in range(F):
+            regression_coefficient[f, :] = np.linalg.solve(
+                correlation_matrix[f, :, :], cross_correlation_vector[f, :])
+        regression_signal = np.einsum('ab,abc->ac',
+                                      regression_coefficient.conj(),
+                                      Y_windowed).T
+        dereverberated[order + delay:, :] = \
+            Y[order + delay:, :] - regression_signal
+        power_spectrum = np.maximum(
+            np.abs(dereverberated * dereverberated.conj()), epsilon)
+
+    return dereverberated
