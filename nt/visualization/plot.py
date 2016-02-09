@@ -1,14 +1,11 @@
 import seaborn as sns
 import numpy as np
 import matplotlib.pyplot as plt
-from nt.visualization.new_cm import cmaps
 from nt.speech_enhancement.beamform_utils import *
 import nt.transform
 from nt.utils.math_ops import softmax
 from warnings import warn
 from collections import OrderedDict
-
-COLORMAP = cmaps['viridis']
 
 
 def _get_batch(signal, batch):
@@ -20,54 +17,54 @@ def _get_batch(signal, batch):
         raise ValueError('The signal can only be two or three dimensional')
 
 
-def line(signal, ax, ylim=None):
+def _create_subplot(ax):
+    if ax is None:
+        figure, ax = plt.subplots(1, 1)
+    return ax
+
+
+def line(signal, ax=None, ylim=None):
     """
     Use together with facet_grid().
 
-    :param f: Figure handle
+    :param signal: Single one-dimensional array or tuple of x and y values.
     :param ax: Axis handle
-    :param x: Tuple with time indices as first, and data as second element.
+    :param ylim: Tuple with y-axis limits
     :return:
     """
+    ax = _create_subplot(ax)
 
-    with sns.axes_style("darkgrid"):
-        if ax is None:
-            figure, ax = plt.subplots(1, 1)
-        if type(signal) is tuple:
-            ax.plot(signal[0], signal[1])
-        else:
-            ax.plot(signal)
-        ax.grid(True)
-        if ylim is not None:
-            ax.set_ylim(ylim)
+    if type(signal) is tuple:
+        ax.plot(signal[0], signal[1])
+    else:
+        ax.plot(signal)
+
+    if ylim is not None:
+        ax.set_ylim(ylim)
+    return ax
 
 
 def time_series(signal, ax=None, ylim=None):
     """
     Use together with facet_grid().
 
-    :param f: Figure handle
+    :param signal: Single one-dimensional array or tuple of x and y values.
     :param ax: Axis handle
-    :param x: Tuple with time indices as first, and data as second element.
+    :param ylim: Tuple with y-axis limits
     :return:
     """
+    ax = line(signal, ax=ax, ylim=ylim)
 
-    with sns.axes_style("darkgrid"):
-        if ax is None:
-            figure, ax = plt.subplots(1, 1)
-        if type(signal) is tuple:
-            ax.plot(signal[0], signal[1])
-            ax.set_xlabel('Time / s')
-        else:
-            ax.plot(signal)
-            ax.set_xlabel('Sample index')
-        ax.set_ylabel('Amplitude')
-        ax.grid(True)
-        if ylim is not None:
-            ax.set_ylim(ylim)
+    if type(signal) is tuple:
+        ax.set_xlabel('Time / s')
+    else:
+        ax.set_xlabel('Sample index')
+
+    ax.set_ylabel('Amplitude')
+    return ax
 
 
-def spectrogram(signal, limits=None, ax=None, log=True, colorbar=True, batch=0,
+def spectrogram(signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
                 sample_rate=None, stft_size=None, x_label='Time frame index',
                 y_label='Frequency bin index'):
     """
@@ -103,28 +100,26 @@ def spectrogram(signal, limits=None, ax=None, log=True, colorbar=True, batch=0,
     if limits is None:
         limits = (np.min(signal), np.max(signal))
 
-    with sns.axes_style("dark"):
-        if ax is None:
-            figure, ax = plt.subplots(1, 1)
-        image = ax.imshow(signal,
-                          interpolation='nearest',
-                          vmin=limits[0], vmax=limits[1],
-                          cmap=COLORMAP, origin='lower')
-        if colorbar:
-            cbar = plt.colorbar(image, ax=ax)
-            cbar.set_label('Energy / dB')
-        ax.set_xlabel(x_label)
-        ax.set_ylabel(y_label)
-        if sample_rate is not None and stft_size is not None:
-            y_tick_range = np.linspace(0, 1024/2, num=5)
-            y_tick_labels = y_tick_range*(sample_rate/stft_size/1000)
-            plt.yticks(y_tick_range, y_tick_labels)
-            ax.set_ylabel('Frequency / kHz')
-        ax.grid(False)
+    ax = _create_subplot(ax)
+    image = ax.imshow(signal,
+                      interpolation='nearest',
+                      vmin=limits[0], vmax=limits[1],
+                      cmap='viridis', origin='lower')
+    if colorbar:
+        cbar = plt.colorbar(image, ax=ax)
+        cbar.set_label('Energy / dB')
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+    if sample_rate is not None and stft_size is not None:
+        y_tick_range = np.linspace(0, 1024/2, num=5)
+        y_tick_labels = y_tick_range*(sample_rate/stft_size/1000)
+        plt.yticks(y_tick_range, y_tick_labels)
+        ax.set_ylabel('Frequency / kHz')
+    ax.grid(False)
     return ax
 
 
-def stft(signal, limits=None, ax=None, log=True, colorbar=True, batch=0,
+def stft(signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
          sample_rate=None, stft_size=None):
     """
     Plots a spectrogram from an stft signal as input. This is a wrapper of the
@@ -161,20 +156,17 @@ def mask(signal, ax=None, limits=(0, 1), colorbar=True, batch=0):
     """
 
     signal = _get_batch(signal, batch)
-
-    with sns.axes_style("dark"):
-        if ax is None:
-            figure, ax = plt.subplots(1, 1)
-        image = ax.imshow(signal.T,
-                          interpolation='nearest', origin='lower',
-                          vmin=limits[0], vmax=limits[1],
-                          cmap=COLORMAP)
-        if colorbar:
-            cbar = plt.colorbar(image, ax=ax)
-            cbar.set_label('Mask')
-        ax.set_xlabel('Time frame index')
-        ax.set_ylabel('Frequency bin index')
-        ax.grid(False)
+    ax = _create_subplot(ax)
+    image = ax.imshow(signal.T,
+                      interpolation='nearest', origin='lower',
+                      vmin=limits[0], vmax=limits[1],
+                      cmap='viridis')
+    if colorbar:
+        cbar = plt.colorbar(image, ax=ax)
+        cbar.set_label('Mask')
+    ax.set_xlabel('Time frame index')
+    ax.set_ylabel('Frequency bin index')
+    ax.grid(False)
     return ax
 
 
@@ -188,95 +180,90 @@ def plot_ctc_decode(decode, label_handler, ax=None, batch=0):
     :return:
     """
     net_out = _get_batch(decode, batch)
-    net_out = net_out - np.amax(net_out)
+    net_out -= np.amax(net_out)
     net_out_e = np.exp(net_out)
-    net_out = net_out_e / \
-              (np.sum(net_out_e, axis=1, keepdims=True) + 1e-20)
+    net_out = net_out_e / (np.sum(net_out_e, axis=1, keepdims=True) + 1e-20)
 
-    with sns.axes_style("darkgrid"):
-        if ax is None:
-            figure, ax = plt.subplots(1, 1)
-        for char in range(decode.shape[2]):
-            _ = ax.plot(net_out[:, char],
-                        label=label_handler.int_to_label[char])
-            plt.legend(loc='lower center',
-                       ncol=decode.shape[2] // 3,
-                       bbox_to_anchor=[0.5, -0.35])
-        ax.set_xlabel('Time frame index')
-        ax.set_ylabel('Propability')
+    ax = _create_subplot(ax)
+    for char in range(decode.shape[2]):
+        _ = ax.plot(net_out[:, char],
+                    label=label_handler.int_to_label[char])
+        plt.legend(loc='lower center',
+                   ncol=decode.shape[2] // 3,
+                   bbox_to_anchor=[0.5, -0.35])
+    ax.set_xlabel('Time frame index')
+    ax.set_ylabel('Probability')
     return ax
 
 
 def plot_nn_current_loss(status, ax=None):
-    with sns.axes_style("darkgrid"):
-        if ax is None:
-            figure, ax = plt.subplots(1, 1)
-        plot = False
+    ax = _create_subplot(ax)
+    plot = False
 
-        if len(status.loss_current_batch_training) > 1:
-            ax.plot(status.loss_current_batch_training,
-                    label='training')
-            plot = True
-        if len(status.loss_current_batch_cv) > 1:
-            ax.plot(status.loss_current_batch_cv,
-                    label='cross-validation')
-            plot = True
-        if plot:
-            ax.set_xlabel('Iterations')
-            ax.set_title('Batch loss')
-            plt.legend()
+    if len(status.loss_current_batch_training) > 1:
+        ax.plot(status.loss_current_batch_training,
+                label='training')
+        plot = True
+    if len(status.loss_current_batch_cv) > 1:
+        ax.plot(status.loss_current_batch_cv,
+                label='cross-validation')
+        plot = True
+    if plot:
+        ax.set_xlabel('Iterations')
+        ax.set_title('Batch loss')
+        plt.legend()
+    return ax
 
 
 def plot_nn_current_loss_distribution(status, ax=None):
-    with sns.axes_style("darkgrid"):
-        if ax is None:
-            figure, ax = plt.subplots(1, 1)
-        plot = False
+    ax = _create_subplot(ax)
+    plot = False
 
-        if len(status.loss_current_batch_training) > 10:
-            sns.distplot(status.loss_current_batch_training,
-                         label='training', ax=ax)
-            plot = True
-        if len(status.loss_current_batch_cv) > 10:
-            sns.distplot(status.loss_current_batch_cv,
-                         label='cross-validation', ax=ax)
-            plot = True
-        if plot:
-            ax.set_xlabel('Loss')
-            ax.set_title('Probability')
-            plt.legend()
+    if len(status.loss_current_batch_training) > 10:
+        sns.distplot(status.loss_current_batch_training,
+                     label='training', ax=ax)
+        plot = True
+    if len(status.loss_current_batch_cv) > 10:
+        sns.distplot(status.loss_current_batch_cv,
+                     label='cross-validation', ax=ax)
+        plot = True
+    if plot:
+        ax.set_xlabel('Loss')
+        ax.set_title('Probability')
+        plt.legend()
+    return ax
 
 
 def plot_nn_current_timings_distribution(status, ax=None):
-    with sns.axes_style("darkgrid"):
-        if ax is None:
-            figure, ax = plt.subplots(1, 1)
-        plot = False
+    ax = _create_subplot(ax)
+    plot = False
 
-        if len(status.cur_time_forward) > 10:
-            sns.distplot(status.cur_time_forward,
-                         label='training forward', ax=ax)
-            plot = True
-        if len(status.cur_time_backprop) > 10:
-            sns.distplot(status.cur_time_backprop,
-                         label='training backprop', ax=ax)
-            plot = True
-        if len(status.cur_time_cv) > 10:
-            sns.distplot(status.cur_time_cv,
-                         label='cross-validation', ax=ax)
-            plot = True
-        if plot:
-            ax.set_xlabel('Time [ms]')
-            ax.set_title('Probability')
-            plt.legend()
+    if len(status.cur_time_forward) > 10:
+        sns.distplot(status.cur_time_forward,
+                     label='training forward', ax=ax)
+        plot = True
+    if len(status.cur_time_backprop) > 10:
+        sns.distplot(status.cur_time_backprop,
+                     label='training backprop', ax=ax)
+        plot = True
+    if len(status.cur_time_cv) > 10:
+        sns.distplot(status.cur_time_cv,
+                     label='cross-validation', ax=ax)
+        plot = True
+    if plot:
+        ax.set_xlabel('Time [ms]')
+        ax.set_title('Probability')
+        plt.legend()
+    return ax
 
 
 def plot_beampattern(W, sensor_positions, fft_size, sample_rate,
                      source_angles=None, ax=None):
     if source_angles is None:
         source_angles = numpy.arange(-numpy.pi, numpy.pi, 2 * numpy.pi / 360)
-        source_angles = numpy.vstack([source_angles,
-                                      numpy.zeros_like(source_angles)])
+        source_angles = numpy.vstack(
+            [source_angles, numpy.zeros_like(source_angles)]
+        )
 
     tdoa = get_farfield_TDOA(source_angles, sensor_positions)
     s_vector = steering_vector(tdoa, fft_size, sample_rate)
@@ -287,20 +274,20 @@ def plot_beampattern(W, sensor_positions, fft_size, sample_rate,
             B[f, k] = numpy.abs(W[f].dot(s_vector[f, :, k])) ** 2 / \
                       numpy.abs(W[f].dot(W[f])) ** 2
 
-    with sns.axes_style("dark"):
-        if ax is None:
-            figure, ax = plt.subplots(1, 1)
-        image = ax.imshow(10 * numpy.log10(B),
-                          vmin=-10, vmax=10,
-                          interpolation='nearest',
-                          cmap=COLORMAP, origin='lower')
-        cbar = plt.colorbar(image, ax=ax)
-        cbar.set_label('Gain / dB')
-        ax.set_xlabel('Angle')
-        ax.set_ylabel('Frequency bin index')
-        ax.grid(False)
+    ax = _create_subplot(ax)
+    image = ax.imshow(10 * numpy.log10(B),
+                      vmin=-10, vmax=10,
+                      interpolation='nearest',
+                      cmap='viridis', origin='lower')
+    cbar = plt.colorbar(image, ax=ax)
+    cbar.set_label('Gain / dB')
+    ax.set_xlabel('Angle')
+    ax.set_ylabel('Frequency bin index')
+    ax.grid(False)
+    return ax
 
-def plot_ctc_label_probabilities(net_out, label_handler=None, batch=0):
+
+def plot_ctc_label_probabilities(net_out, ax=None, label_handler=None, batch=0):
     """ Plots a posteriorgram of the network output of a CTC trained network
 
     :param net_out: Output of the network
@@ -310,17 +297,25 @@ def plot_ctc_label_probabilities(net_out, label_handler=None, batch=0):
     x = _get_batch(net_out, batch)
     x = softmax(x)
     if label_handler is not None:
-        ordered_map = OrderedDict(sorted(label_handler.int_to_label.items(), key=lambda t:t[1]))
+        ordered_map = OrderedDict(
+            sorted(label_handler.int_to_label.items(), key=lambda t: t[1])
+        )
         order = list(ordered_map.keys())
     else:
         order = list(range(x.shape[1]))
-    rc_params = {'axes.grid': False, 'figure.figsize': [18, 10]}
-    with plt.rc_context(rc=rc_params):
-        plt.imshow(x[:, order].T, cmap=COLORMAP,
-                   interpolation='none', aspect='auto')
-        if label_handler is not None:
-            plt.yticks(
-                range(len(label_handler)),
-                list(ordered_map.values()))
-        plt.xlabel('Timeframe')
-        plt.ylabel('Transcription')
+
+    ax = _create_subplot(ax)
+
+    ax.imshow(
+        x[:, order].T,
+        cmap='viridis', interpolation='none', aspect='auto'
+    )
+
+    if label_handler is not None:
+        plt.yticks(
+            range(len(label_handler)),
+            list(ordered_map.values()))
+
+    ax.set_xlabel('Time frame index')
+    ax.set_ylabel('Transcription')
+    return ax
