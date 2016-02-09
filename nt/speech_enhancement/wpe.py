@@ -113,3 +113,86 @@ def wpe(Y, epsilon=1e-6, order=15, delay=1, iterations=10):
             np.abs(dereverberated * dereverberated.conj()), epsilon)
 
     return dereverberated
+
+
+from nt.utils.math_ops import scaled_full_correlation_matrix
+
+
+def _dereverberate(y, G_hat, K, Delta):
+    L, N, T = y.shape
+    dtype = y.dtype
+    x_hat = np.copy(y)
+    for l in range(L):
+        for t in range(Delta, T):  # Some restrictions
+            for tau in range(Delta, Delta + K):
+                x_hat[l, :, t] -= G_hat[l, tau - Delta, :, :].conj().T.dot(y[l, :, t-tau])
+    return x_hat
+
+
+def _get_spatial_correlation_matrix(y):
+    correlation_matrix, power = scaled_full_correlation_matrix(y)
+    return correlation_matrix[:, :, :, None] * power[:, None, None, :]
+
+
+def _get_crazy_matrix(Y, K, Delta):
+    # A view may possibly be enough as well.
+    L, N, T = Y.shape
+    dtype = Y.dtype
+    psi_bar = np.zeros((L, N*N*K, N, T), dtype=dtype)
+    for l in range(L):
+        for n0 in range(N):
+            for n1 in range(N):
+                for tau in range(Delta, Delta + K):
+                    for n2 in range(N):
+                        for t in range(T):
+                            if n0 == n2:
+                                psi_bar[l, N*N*(tau-Delta) + N*n0 + n1, n2, t] = Y[l, n1, t-tau]
+    return psi_bar
+
+
+def multichannel_wpe(Y, K, Delta, iterations=4):
+    # K: regression_order (possibly frequency dependent)
+    # Delta: prediction_delay
+    # L: frequency bins
+    # N: sensors
+    # T: time frames
+    L, N, T = Y.shape
+    dtype = Y.dtype
+
+    # Step 1
+    G_hat = np.zeros((L, K, N, N), dtype=dtype)
+
+    for _ in range(iterations):
+        # Step 2
+        x_hat = _dereverberate(Y, G_hat, K, Delta)
+        assert x_hat.shape == (L, N, T)
+
+        # Step 3
+        Lambda_hat = _get_spatial_correlation_matrix(x_hat) # Maybe better on a subpart, due to fade in
+        assert Lambda_hat.shape == (L, N, N, T)
+
+        # Step 4
+        psi_bar = _get_crazy_matrix(Y, K, Delta)
+        assert psi_bar.shape == (L, N*N*K, N, T)
+        # return psi_bar
+
+        inverse = np.zeros_like(Lambda_hat)
+        for l in range(L):
+            for t in range(T):
+                inverse[l, :, :, t] = np.linalg.inv(Lambda_hat[l, :, :, t])
+
+        R_hat = np.einsum('lmnt,lnot,lpot->lmp', psi_bar, inverse, psi_bar.conj())
+        assert R_hat.shape == (L, N*N*K, N*N*K)
+
+        r_hat = np.einsum('lmnt,lnot,lot->lm', psi_bar, inverse, Y)
+        assert r_hat.shape == (L, N*N*K)
+
+        # Step 5 (the easiness of the reshape depends on the definition of psi_bar)
+        g_hat = np.zeros((L, N*N*K), dtype=dtype)
+        for l in range(L):
+            g_hat[l, :] = np.linalg.inv(R_hat[l, :, :]).dot(r_hat[l, :])
+        assert g_hat.shape == (L, N*N*K)
+        G_hat = g_hat.reshape(L, N, N, K).transpose((0, 3, 1, 2))
+        assert G_hat.shape == (L, K, N, N)
+
+    return x_hat
