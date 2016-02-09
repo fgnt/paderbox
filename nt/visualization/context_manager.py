@@ -1,13 +1,19 @@
 import seaborn as sns
 import matplotlib.pyplot as plt
+from distutils.version import LooseVersion
+import matplotlib as mpl
 
 
-def create_context_manager(
+mpl_ge_150 = LooseVersion(mpl.__version__) >= '1.5.0'
+
+
+def context_manager(
     seaborn_axes_style='whitegrid',
     seaborn_plotting_context='notebook',
     font_scale=1.5,
     line_width=2,
     figure_size=[8.0, 6.0],
+    palette='muted',
     extra_rc={},
 ):
     """ Helper to create a plotting style with auto completion.
@@ -47,6 +53,23 @@ def create_context_manager(
     }
     rc_parameters.update(extra_rc)
 
+    colors = sns.palettes.color_palette(sns.color_palette(palette))
+
+    if mpl_ge_150:
+        from cycler import cycler
+        cyl = cycler('color', colors)
+        rc_parameters.update({
+            'axes.prop_cycle': cyl
+        })
+    else:
+        rc_parameters.update({
+            'axes.color_cycle': list(colors)
+        })
+
+    rc_parameters.update({
+        'patch.facecolor': colors[0]
+    })
+
     plotting_context = sns.plotting_context(
         seaborn_plotting_context,
         font_scale=font_scale,
@@ -56,6 +79,3 @@ def create_context_manager(
     final.update(rc_parameters)
 
     return plt.rc_context(final)
-
-
-default_context_manager = create_context_manager
