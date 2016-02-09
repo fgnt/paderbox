@@ -64,8 +64,8 @@ def scaled_full_correlation_matrix(X, iterations=4, trace_one_constraint=True):
     You can plot the time dependent power to validate this function.
 
     :param X: Assumes shape F, M, T.
-    :param iterations: Number of iterations between time dependent scling factor
-        (power) and covariance estimation.
+    :param iterations: Number of iterations between time dependent
+        scaling factor (power) and covariance estimation.
     :param trace_one_constraint: This constraint is not part of the original
         paper. It is not necessary for the result but removes the scaling
         ambiguity.
