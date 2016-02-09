@@ -31,6 +31,8 @@ def line(signal, ax, ylim=None):
     """
 
     with sns.axes_style("darkgrid"):
+        if ax is None:
+            figure, ax = plt.subplots(1, 1)
         if type(signal) is tuple:
             ax.plot(signal[0], signal[1])
         else:
