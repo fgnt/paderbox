@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def normalize_vector_to_unit_length(vector):
     """
     Normalized each vector to unit length. This is useful, if all other
@@ -52,6 +53,49 @@ def covariance(x, mask=None):
         psd /= normalization
 
     return psd
+
+
+def scaled_full_correlation_matrix(X, iterations=4, trace_one_constraint=True):
+    """ Scaled full correlation matrix.
+
+    See the paper "Generalization of Multi-Channel Linear Prediction
+    Methods for Blind MIMO Impulse Response Shortening" for reference.
+
+    You can plot the time dependent power to validate this function.
+
+    :param X: Assumes shape F, M, T.
+    :param iterations: Number of iterations between time dependent scling factor
+        (power) and covariance estimation.
+    :param trace_one_constraint: This constraint is not part of the original
+        paper. It is not necessary for the result but removes the scaling
+        ambiguity.
+    :return: Covariance matrix and time dependent power for each frequency.
+    """
+    F, M, T = X.shape
+
+    def _normalize(cm):
+        if trace_one_constraint:
+            trace = np.einsum('...mm', cm)
+            cm /= trace[:, None, None] / M
+            cm += 1e-6 * np.eye(M)[None, :, :]
+        return cm
+
+    covariance_matrix = covariance(X)
+    covariance_matrix = _normalize(covariance_matrix)
+
+    for i in range(iterations):
+        inverse = np.linalg.inv(covariance_matrix)
+
+        power = np.abs(np.einsum(
+            '...mt,...mn,...nt->...t',
+            X.conj(),
+            inverse,
+            X
+        )) / M
+
+        covariance_matrix = covariance(X, mask=1/power)
+        covariance_matrix = _normalize(covariance_matrix)
+    return covariance_matrix, power
 
 
 def cos_similarity(A, B):
