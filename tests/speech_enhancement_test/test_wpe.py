@@ -97,13 +97,19 @@ class TestMultichannelWPE(unittest.TestCase):
         testing.assert_allclose(ref[:, :, K+Delta:], vec[:, :, K+Delta:],
                                 rtol=1e-2)
 
-    def test_vectorized_get_crazy_matrix(self):
-        K = 10
-        Delta = 1
-        y = np.random.uniform(0, 1, (10, 3, 20))
-        ref = wpe._get_crazy_matrix(y, K, Delta)
-        vec = wpe._get_crazy_matrix_vectorized(y, K, Delta)
-        testing.assert_equal(ref, vec)
+    def test_multichannel_wpe_dimensions(self):
+        settings = [
+            (20, 3, 15, 1, 0),
+            (20, 3, 15, 3, 0),
+            (20, 3, 15, 3, 2),
+        ]
+
+        for setting in settings:
+            L, N, T, K, Delta = setting
+
+            Y = np.random.normal(size=(L, N, T)) + 1j * np.random.normal(size=(L, N, T))
+
+            _ = wpe.multichannel_wpe(Y, K, Delta)
 
 
 class TestGetCrazyMatrix(unittest.TestCase):
@@ -139,8 +145,34 @@ class TestGetCrazyMatrix(unittest.TestCase):
 
         assert np.array_equal(psi_bar, _load(L, N, T, K, Delta))
 
+    def _get_crazy_matrix_loopy(self, Y, K, Delta):
+        L, N, T = Y.shape
+        dtype = Y.dtype
+        psi_bar = np.zeros((L, N*N*K, N, T-Delta-K+1), dtype=dtype)
+        for l in range(L):
+            for n0 in range(N):
+                for n1 in range(N):
+                    for tau in range(Delta, Delta + K):
+                        for t in range(Delta+K-1, T):
+                            psi_bar[
+                                l, N*N*(tau-Delta) + N*n0 + n1, n0, t-Delta-K+1
+                            ] = Y[l, n1, t-tau]
+        return psi_bar
+
     def test_alphabet_example1(self):
         self._check_alphabet_example(L=1, N=6, T=4, K=2, Delta=0)
 
     def test_alphabet_example2(self):
         self._check_alphabet_example(L=1, N=2, T=6, K=2, Delta=1)
+
+    def test_compare_crazy_matrix_loopy_vectorized(self):
+        L = 1
+        N = 6
+        T = 4
+        K = 2
+        Delta = 0
+        Y = np.random.normal(size=(L, N, T)) + 1j * np.random.normal(size=(L, N, T))
+        a = self._get_crazy_matrix_loopy(Y, K, Delta)
+        b = wpe._get_crazy_matrix(Y, K, Delta)
+
+        np.testing.assert_allclose(a, b)
