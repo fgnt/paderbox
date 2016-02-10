@@ -4,6 +4,7 @@ import numpy as np
 from nt.io import audioread, audiowrite
 from nt.speech_enhancement import wpe
 import time
+from nt import testing
 
 from nt.io.data_dir import testing as data_dir
 from nt.io.data_dir import DataDir
@@ -83,3 +84,23 @@ class TestWPEWrapper(unittest.TestCase):
                                       self.sample_rate )
         print("Finished successfully.")
 
+
+class TestMultichannelWPE(unittest.TestCase):
+
+    def test_vecotrized_dereverb(self):
+        K = 10
+        Delta = 1
+        y = np.random.uniform(0, 1, (10, 3, 20))
+        G_hat = np.random.uniform(0, 1, (10, K, 3, 3))
+        ref = wpe._dereverberate(y, G_hat, K, Delta)
+        vec = wpe._dereverberate_vectorized(y, G_hat, K, Delta)
+        testing.assert_allclose(ref[:, :, K+Delta:], vec[:, :, K+Delta:],
+                                rtol=1e-2)
+
+    def test_vectorized_get_crazy_matrix(self):
+        K = 10
+        Delta = 1
+        y = np.random.uniform(0, 1, (10, 3, 20))
+        ref = wpe._get_crazy_matrix(y, K, Delta)
+        vec = wpe._get_crazy_matrix_vectorized(y, K, Delta)
+        testing.assert_equal(ref, vec)

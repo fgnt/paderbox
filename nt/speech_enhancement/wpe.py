@@ -2,10 +2,15 @@ import os.path
 
 import numpy as np
 
-from nt.utils.matlab import Mlab
+try:
+    from nt.utils.matlab import Mlab
+    matlab_available = True
+except ImportError:
+    matlab_available = False
 from nt.utils.numpy_utils import segment_axis
 
-mlab = Mlab()
+if matlab_available:
+    mlab = Mlab()
 
 
 def dereverb(settings_file_path, x, stop_mlab=True):
@@ -28,6 +33,8 @@ def dereverb(settings_file_path, x, stop_mlab=True):
     :param stop_mlab: Whether matlab connection should be closed after execution
     :return: NxC Numpy matrix of dereverbed audio signals. N and C as above.
     """
+    if not matlab_available:
+        raise EnvironmentError('Matlab not available')
     if not mlab.process.started:
         mlab.process.start()
     else:
@@ -123,9 +130,17 @@ def _dereverberate(y, G_hat, K, Delta):
     dtype = y.dtype
     x_hat = np.copy(y)
     for l in range(L):
-        for t in range(Delta, T):  # Some restrictions
+        for t in range(Delta+K, T):  # Some restrictions
             for tau in range(Delta, Delta + K):
                 x_hat[l, :, t] -= G_hat[l, tau - Delta, :, :].conj().T.dot(y[l, :, t-tau])
+    return x_hat
+
+def _dereverberate_vectorized(y, G_hat, K, Delta):
+    x_hat = np.copy(y)
+    for tau in range(Delta, Delta + K):
+        x_hat[:, :, K+Delta:] -= np.einsum('abc,abe->ace',
+                                    G_hat[:, tau - Delta, :, :].conj(),
+                                    y[..., K+Delta-tau:-tau])
     return x_hat
 
 
@@ -147,6 +162,20 @@ def _get_crazy_matrix(Y, K, Delta):
                         for t in range(T):
                             if n0 == n2:
                                 psi_bar[l, N*N*(tau-Delta) + N*n0 + n1, n2, t] = Y[l, n1, t-tau]
+    return psi_bar
+
+def _get_crazy_matrix_vectorized(Y, K, Delta):
+    # A view may possibly be enough as well.
+    L, N, T = Y.shape
+    dtype = Y.dtype
+    psi_bar = np.zeros((L, N*N*K, N, T), dtype=dtype)
+    for n0 in range(N):
+        for n1 in range(N):
+            for tau in range(Delta, Delta + K):
+                for n2 in range(N):
+                    for t in range(T):
+                        if n0 == n2:
+                            psi_bar[:, N*N*(tau-Delta) + N*n0 + n1, n2, t] = Y[:, n1, t-tau]
     return psi_bar
 
 
