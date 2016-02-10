@@ -153,16 +153,17 @@ def _get_crazy_matrix(Y, K, Delta):
     # A view may possibly be enough as well.
     L, N, T = Y.shape
     dtype = Y.dtype
-    psi_bar = np.zeros((L, N*N*K, N, T), dtype=dtype)
+    psi_bar = np.zeros((L, N*N*K, N, T-Delta-K+1), dtype=dtype)
     for l in range(L):
         for n0 in range(N):
             for n1 in range(N):
                 for tau in range(Delta, Delta + K):
-                    for n2 in range(N):
-                        for t in range(T):
-                            if n0 == n2:
-                                psi_bar[l, N*N*(tau-Delta) + N*n0 + n1, n2, t] = Y[l, n1, t-tau]
+                    for t in range(Delta+K-1, T):
+                        psi_bar[
+                            l, N*N*(tau-Delta) + N*n0 + n1, n0, t-Delta-K+1
+                        ] = Y[l, n1, t-tau]
     return psi_bar
+
 
 def _get_crazy_matrix_vectorized(Y, K, Delta):
     # A view may possibly be enough as well.
@@ -175,7 +176,9 @@ def _get_crazy_matrix_vectorized(Y, K, Delta):
                 for n2 in range(N):
                     for t in range(T):
                         if n0 == n2:
-                            psi_bar[:, N*N*(tau-Delta) + N*n0 + n1, n2, t] = Y[:, n1, t-tau]
+                            psi_bar[
+                                :, N*N*(tau-Delta) + N*n0 + n1, n2, t
+                            ] = Y[:, n1, t-tau]
     return psi_bar
 
 

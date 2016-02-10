@@ -5,9 +5,10 @@ from nt.io import audioread, audiowrite
 from nt.speech_enhancement import wpe
 import time
 from nt import testing
-
+from nt.io.data_dir import testing as testing_dir
 from nt.io.data_dir import testing as data_dir
 from nt.io.data_dir import DataDir
+
 
 class TestWPEWrapper(unittest.TestCase):
     @classmethod
@@ -41,7 +42,6 @@ class TestWPEWrapper(unittest.TestCase):
                 utt_to_check = utt.replace('ch1', 'ch'+str(cha+1)+'_derev')
                 # print('ch'+str(cha+1)+'_derev')
                 self.assertTrue(os.path.isfile(utt_to_check))
-
 
     def process_dereverbing_framework(self, input_file_paths):
         file_no = 0
@@ -87,7 +87,7 @@ class TestWPEWrapper(unittest.TestCase):
 
 class TestMultichannelWPE(unittest.TestCase):
 
-    def test_vecotrized_dereverb(self):
+    def test_vectorized_dereverb(self):
         K = 10
         Delta = 1
         y = np.random.uniform(0, 1, (10, 3, 20))
@@ -105,24 +105,42 @@ class TestMultichannelWPE(unittest.TestCase):
         vec = wpe._get_crazy_matrix_vectorized(y, K, Delta)
         testing.assert_equal(ref, vec)
 
-    def test_alphabet_example(self):
-        L = 1
-        N = 6
-        T = 2
-        Y = np.empty((L, N, T), dtype='<U6')
-        for page in range(L):
-            for row in range(N):
-                for column in range(T):
-                    Y[page, row, column] = 'l{}n{}t{}'.format(page, row, column)
-        Y
 
+class TestGetCrazyMatrix(unittest.TestCase):
+    def _generate_observation_matrix(self, L, N, T):
+        Y = np.empty((L, N, T), dtype='<U6')
+        for l in range(L):
+            for n in range(N):
+                for t in range(T):
+                    Y[l, n, t] = 'l{}n{}t{}'.format(l, n, t)
+        return Y
+
+    def _check_alphabet_example(self, L, N, T, K, Delta):
+        Y = self._generate_observation_matrix(L, N, T)
         def replace(x):
             if x == '':
                 return '      '
             else:
                 return x
-        vreplace = np.vectorize(replace)
+        vector_replace = np.vectorize(replace)
 
-        psi_bar = wpe._get_crazy_matrix(Y, K=1, Delta=0)
-        psi_bar = vreplace(psi_bar)
-        print(psi_bar.shape)
+        psi_bar = wpe._get_crazy_matrix(Y, K=K, Delta=Delta)
+        psi_bar = vector_replace(psi_bar)
+
+        def _get_fname(L, N, T, K, Delta):
+            file = 'wpe_psi_bar_L{}_N{}_T{}_K{}_Delta{}.npy'.format(
+                L, N, T, K, Delta
+            )
+            file = testing_dir('speech_enhancement', 'data', file)
+            return file
+
+        def _load(L, N, T, K, Delta):
+            return np.load(_get_fname(L, N, T, K, Delta))
+
+        assert np.array_equal(psi_bar, _load(L, N, T, K, Delta))
+
+    def test_alphabet_example1(self):
+        self._check_alphabet_example(L=1, N=6, T=4, K=2, Delta=0)
+
+    def test_alphabet_example2(self):
+        self._check_alphabet_example(L=1, N=2, T=6, K=2, Delta=1)
