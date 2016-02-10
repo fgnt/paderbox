@@ -104,3 +104,25 @@ class TestMultichannelWPE(unittest.TestCase):
         ref = wpe._get_crazy_matrix(y, K, Delta)
         vec = wpe._get_crazy_matrix_vectorized(y, K, Delta)
         testing.assert_equal(ref, vec)
+
+    def test_alphabet_example(self):
+        L = 1
+        N = 6
+        T = 2
+        Y = np.empty((L, N, T), dtype='<U6')
+        for page in range(L):
+            for row in range(N):
+                for column in range(T):
+                    Y[page, row, column] = 'l{}n{}t{}'.format(page, row, column)
+        Y
+
+        def replace(x):
+            if x == '':
+                return '      '
+            else:
+                return x
+        vreplace = np.vectorize(replace)
+
+        psi_bar = wpe._get_crazy_matrix(Y, K=1, Delta=0)
+        psi_bar = vreplace(psi_bar)
+        print(psi_bar.shape)
