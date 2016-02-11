@@ -6,6 +6,25 @@ import nt.transform
 from nt.utils.math_ops import softmax
 from warnings import warn
 from collections import OrderedDict
+from functools import wraps
+
+
+def create_subplot(f):
+    """ This decorator creates a subplot and passes the axes object if needed.
+
+    This function helps you to create figures in subplot notation, even when
+    you are not using subplots. Use it as a decorator.
+
+    :param f: Function to be wrapped
+    :return: Axes object
+    """
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        ax = kwargs.pop('ax', None)
+        if ax is None:
+            figure, ax = plt.subplots(1, 1)
+        return f(*args, ax=ax, **kwargs)
+    return wrapper
 
 
 def _get_batch(signal, batch):
@@ -17,12 +36,7 @@ def _get_batch(signal, batch):
         raise ValueError('The signal can only be two or three dimensional')
 
 
-def _create_subplot(ax):
-    if ax is None:
-        figure, ax = plt.subplots(1, 1)
-    return ax
-
-
+@create_subplot
 def line(signal, ax=None, ylim=None):
     """
     Use together with facet_grid().
@@ -32,8 +46,6 @@ def line(signal, ax=None, ylim=None):
     :param ylim: Tuple with y-axis limits
     :return:
     """
-    ax = _create_subplot(ax)
-
     if type(signal) is tuple:
         ax.plot(signal[0], signal[1])
     else:
@@ -44,6 +56,7 @@ def line(signal, ax=None, ylim=None):
     return ax
 
 
+@create_subplot
 def time_series(signal, ax=None, ylim=None):
     """
     Use together with facet_grid().
@@ -54,7 +67,6 @@ def time_series(signal, ax=None, ylim=None):
     :return:
     """
     ax = line(signal, ax=ax, ylim=ylim)
-
     if type(signal) is tuple:
         ax.set_xlabel('Time / s')
     else:
@@ -64,6 +76,7 @@ def time_series(signal, ax=None, ylim=None):
     return ax
 
 
+@create_subplot
 def spectrogram(signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
                 sample_rate=None, stft_size=None, x_label='Time frame index',
                 y_label='Frequency bin index'):
@@ -85,7 +98,6 @@ def spectrogram(signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
         frequency
     :return: axes
     """
-
     signal = _get_batch(signal, batch)
 
     if np.any(signal < 0) and log:
@@ -100,7 +112,6 @@ def spectrogram(signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
     if limits is None:
         limits = (np.min(signal), np.max(signal))
 
-    ax = _create_subplot(ax)
     image = ax.imshow(signal,
                       interpolation='nearest',
                       vmin=limits[0], vmax=limits[1],
@@ -119,6 +130,7 @@ def spectrogram(signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
     return ax
 
 
+@create_subplot
 def stft(signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
          sample_rate=None, stft_size=None):
     """
@@ -143,6 +155,7 @@ def stft(signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
                        sample_rate=sample_rate, stft_size=stft_size)
 
 
+@create_subplot
 def mask(signal, ax=None, limits=(0, 1), colorbar=True, batch=0):
     """
     Plots any mask with values between zero and one.
@@ -156,7 +169,6 @@ def mask(signal, ax=None, limits=(0, 1), colorbar=True, batch=0):
     """
 
     signal = _get_batch(signal, batch)
-    ax = _create_subplot(ax)
     image = ax.imshow(signal.T,
                       interpolation='nearest', origin='lower',
                       vmin=limits[0], vmax=limits[1],
@@ -170,6 +182,7 @@ def mask(signal, ax=None, limits=(0, 1), colorbar=True, batch=0):
     return ax
 
 
+@create_subplot
 def plot_ctc_decode(decode, label_handler, ax=None, batch=0):
     """ Plot a ctc decode
 
@@ -184,7 +197,6 @@ def plot_ctc_decode(decode, label_handler, ax=None, batch=0):
     net_out_e = np.exp(net_out)
     net_out = net_out_e / (np.sum(net_out_e, axis=1, keepdims=True) + 1e-20)
 
-    ax = _create_subplot(ax)
     for char in range(decode.shape[2]):
         _ = ax.plot(net_out[:, char],
                     label=label_handler.int_to_label[char])
@@ -196,8 +208,8 @@ def plot_ctc_decode(decode, label_handler, ax=None, batch=0):
     return ax
 
 
+@create_subplot
 def plot_nn_current_loss(status, ax=None):
-    ax = _create_subplot(ax)
     plot = False
 
     if len(status.loss_current_batch_training) > 1:
@@ -215,8 +227,8 @@ def plot_nn_current_loss(status, ax=None):
     return ax
 
 
+@create_subplot
 def plot_nn_current_loss_distribution(status, ax=None):
-    ax = _create_subplot(ax)
     plot = False
 
     if len(status.loss_current_batch_training) > 10:
@@ -234,8 +246,8 @@ def plot_nn_current_loss_distribution(status, ax=None):
     return ax
 
 
+@create_subplot
 def plot_nn_current_timings_distribution(status, ax=None):
-    ax = _create_subplot(ax)
     plot = False
 
     if len(status.cur_time_forward) > 10:
@@ -257,6 +269,7 @@ def plot_nn_current_timings_distribution(status, ax=None):
     return ax
 
 
+@create_subplot
 def plot_beampattern(W, sensor_positions, fft_size, sample_rate,
                      source_angles=None, ax=None):
     if source_angles is None:
@@ -274,7 +287,6 @@ def plot_beampattern(W, sensor_positions, fft_size, sample_rate,
             B[f, k] = numpy.abs(W[f].dot(s_vector[f, :, k])) ** 2 / \
                       numpy.abs(W[f].dot(W[f])) ** 2
 
-    ax = _create_subplot(ax)
     image = ax.imshow(10 * numpy.log10(B),
                       vmin=-10, vmax=10,
                       interpolation='nearest',
@@ -287,6 +299,7 @@ def plot_beampattern(W, sensor_positions, fft_size, sample_rate,
     return ax
 
 
+@create_subplot
 def plot_ctc_label_probabilities(net_out, ax=None, label_handler=None, batch=0):
     """ Plots a posteriorgram of the network output of a CTC trained network
 
@@ -303,8 +316,6 @@ def plot_ctc_label_probabilities(net_out, ax=None, label_handler=None, batch=0):
         order = list(ordered_map.keys())
     else:
         order = list(range(x.shape[1]))
-
-    ax = _create_subplot(ax)
 
     ax.imshow(
         x[:, order].T,

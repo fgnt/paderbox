@@ -26,28 +26,27 @@ def facet_grid(data_list, function_list, kwargs_list=(), colwrap=2, scale=1,
     if len(kwargs_list) == 1:
         kwargs_list = len(function_list) * kwargs_list
 
-    with sns.axes_style("darkgrid"):
-        figure, axis = plt.subplots(number_of_rows, colwrap)
-        figure.set_figwidth(figure.get_figwidth() * scale * colwrap)
-        figure.set_figheight(figure.get_figheight() * scale * number_of_rows)
+    figure, axis = plt.subplots(number_of_rows, colwrap)
+    figure.set_figwidth(figure.get_figwidth() * scale * colwrap)
+    figure.set_figheight(figure.get_figheight() * scale * number_of_rows)
 
-        if len(data_list) == 1:
-            data_list = list(itertools.repeat(data_list[0], len(function_list)))
-        if len(function_list) == 1:
-            function_list = list(
-                itertools.repeat(function_list[0], len(data_list)))
+    if len(data_list) == 1:
+        data_list = list(itertools.repeat(data_list[0], len(function_list)))
+    if len(function_list) == 1:
+        function_list = list(
+            itertools.repeat(function_list[0], len(data_list)))
 
-        for index in range(len(data_list)):
-            function_list[index](data_list[index],
-                                 ax=axis.flatten()[index],
-                                 **kwargs_list[index])
+    for index in range(len(data_list)):
+        function_list[index](data_list[index],
+                             ax=axis.flatten()[index],
+                             **kwargs_list[index])
 
-        for index in range(number_of_plots, number_of_rows * colwrap):
-            axis.flatten()[index].axis('off')
+    for index in range(number_of_plots, number_of_rows * colwrap):
+        axis.flatten()[index].axis('off')
 
-        if len(title_list) > 0:
-            for idx, title in enumerate(title_list):
-                axis.flatten()[idx].set_title(title)
+    if len(title_list) > 0:
+        for idx, title in enumerate(title_list):
+            axis.flatten()[idx].set_title(title)
 
-        figure.tight_layout()
-        plt.show()
+    figure.tight_layout()
+    plt.show()
