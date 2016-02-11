@@ -2,7 +2,7 @@ import unittest
 import numpy
 from nt.nn.data_fetchers.json_transcription_data_fetcher \
     import JsonTranscriptionDataFetcher
-from nt.transcription_handling.transcription_handler import write_lexicon
+from nt.transcription_handling.lexicon_handling import get_lexicon_from_json
 import json
 
 from nt.io.data_dir import database_jsons as database_jsons_dir
@@ -14,7 +14,7 @@ class JsonTranscriptionDataFetcherTest(unittest.TestCase):
     def setUp(self):
         with open(JSON_SRC) as fid:
             src = json.load(fid)
-        lexicon = write_lexicon(src)
+        lexicon = get_lexicon_from_json(src, 'orth')
         self.fetcher = JsonTranscriptionDataFetcher(
             'chime', src, 'train/A_database/flists/wav/channels_6/tr05_simu',
             lexicon)

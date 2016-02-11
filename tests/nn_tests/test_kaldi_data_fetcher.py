@@ -58,7 +58,7 @@ class TestKaldiDataFetcher(unittest.TestCase):
         self.assertEqual(data['x'].shape[0], 3)
         self.assertEqual(data['x'].shape[0], data['ali'].shape[0])
         self.assertEqual(data['x'].ndim, 2)
-        self.assertEqual(data['ali'].ndim, 2)
+        self.assertEqual(data['ali'].ndim, 1)
 
     def test_frame_mode_context(self):
         fetcher = KaldiDataFetcher('kaldi', SCP, ALI, MODEL, mode='frames',
@@ -70,7 +70,7 @@ class TestKaldiDataFetcher(unittest.TestCase):
         self.assertEqual(data['x'].shape[0], 3)
         self.assertEqual(data['x'].shape[0], data['ali'].shape[0])
         self.assertEqual(data['x'].ndim, 2)
-        self.assertEqual(data['ali'].ndim, 2)
+        self.assertEqual(data['ali'].ndim, 1)
 
     def test_frame_mode_context_cnn_features(self):
         fetcher = KaldiDataFetcher('kaldi', SCP, ALI, MODEL, mode='frames',
@@ -85,7 +85,7 @@ class TestKaldiDataFetcher(unittest.TestCase):
         self.assertEqual(data['x'].shape[0], 3)
         self.assertEqual(data['x'].shape[0], data['ali'].shape[0])
         self.assertEqual(data['x'].ndim, 4)
-        self.assertEqual(data['ali'].ndim, 2)
+        self.assertEqual(data['ali'].ndim, 1)
 
     def test_utterance_mode_no_ali(self):
         fetcher = KaldiDataFetcher('kaldi', SCP)
