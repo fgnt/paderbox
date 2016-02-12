@@ -1,6 +1,6 @@
-from nt.visualization.new_cm import viridis_hex
 from bokeh.plotting import figure
 import numpy as np
+
 
 def plot_image_2d(signal, shared_range=None, plot_height=300, plot_width=900,
                   title=None):
@@ -21,8 +21,7 @@ def plot_image_2d(signal, shared_range=None, plot_height=300, plot_width=900,
         x_range, y_range = shared_range
         p = figure(plot_height=plot_height, plot_width=plot_width,
                    x_range=x_range, y_range=y_range)
-    p.image([signal], x=[0], y=[0], dw=[signal.shape[1]], dh=[signal.shape[0]],
-            palette=viridis_hex)
+    p.image([signal], x=[0], y=[0], dw=[signal.shape[1]], dh=[signal.shape[0]])
     if title:
         p.title = title
     return p
