@@ -23,11 +23,14 @@ def get_chime_data_provider_for_flist(flist, callback_fcn,
     else:
         raise ValueError('flist seems to have the wrong format. It should be '
                          'something like tr05_simu or et05_real.')
+
+    channel_numbers = kwargs.pop('channel_numbers', range(1, 7))
+
     flist = '{}/A_database/flists/wav/channels_6/{}'.format(stage, flist)
     if 'real' in flist and use_context_for_real:
         start_key = 'start'
         end_key = 'end'
-        feature_channels = ['embedded/CH{}'.format(ch) for ch in range(1, 7)]
+        feature_channels = ['embedded/CH{}'.format(ch) for ch in channel_numbers]
         annotations = flist.replace('flists/wav/channels_6', 'annotations')
         kwargs['_Y'] = 'embedded'
         fetcher = JsonCallbackFetcher('Chime_fetcher',
@@ -42,10 +45,10 @@ def get_chime_data_provider_for_flist(flist, callback_fcn,
                                       transform_kwargs=kwargs)
     elif 'simu' in flist:
         if not 'et' in flist:
-            feature_channels = ['X/CH{}'.format(n) for n in range(1, 7)] + \
-                               ['N/CH{}'.format(n) for n in range(1, 7)]
+            feature_channels = ['X/CH{}'.format(n) for n in channel_numbers] + \
+                               ['N/CH{}'.format(n) for n in channel_numbers]
         else:
-            feature_channels = ['observed/CH{}'.format(n) for n in range(1, 7)]
+            feature_channels = ['observed/CH{}'.format(n) for n in channel_numbers]
         kwargs['_Y'] = 'observed'
         fetcher = JsonCallbackFetcher('Chime_fetcher',
                                       json_src=CHIME_JSON,
@@ -54,7 +57,7 @@ def get_chime_data_provider_for_flist(flist, callback_fcn,
                                       feature_channels=feature_channels,
                                       transform_kwargs=kwargs)
     else:
-        raise ValueError('Unknown filelist')
+        raise ValueError('Unknown flist')
     return DataProvider((fetcher,), batch_size=1, shuffle_data=False,
                         max_queue_size=30)
 

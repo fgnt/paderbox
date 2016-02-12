@@ -1,4 +1,3 @@
-import numpy
 import json
 
 def load_json(json_file):
@@ -116,12 +115,13 @@ def traverse_to_dict(data, path, delimiter='/'):
     """ Returns the dictionary at the end of the path defined by `path`
 
     :param data: A dict with the contents of the json file
-    :param path: A string defining the path
+    :param path: A string defining the path with or without
+        leading and trailing slashes
     :param delimiter: The delimiter to convert the string to a list
     :return: dict at the end of the path
     """
 
-    path = path.split(delimiter)
+    path = path.strip('/').split(delimiter)
     cur_dict = data[path[0]]
     for next_level in path[1:]:
         try:
