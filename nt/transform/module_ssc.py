@@ -3,7 +3,7 @@ Provides ssc features.
 """
 
 import numpy
-from nt.transform.module_filter import offcomp
+from nt.transform.module_filter import offset_compensation
 from nt.transform.module_filter import preemphasis
 from nt.transform.module_stft import stft
 from nt.transform.module_stft import stft_to_spectrogram
@@ -44,7 +44,7 @@ def ssc(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
     """
     highest_frequency = highest_frequency or sample_rate / 2
 
-    time_signal = offcomp(time_signal)
+    time_signal = offset_compensation(time_signal)
     time_signal = preemphasis(time_signal, preemphasis_factor)
 
     stft_signal = stft(time_signal, size=stft_size, shift=stft_shift,

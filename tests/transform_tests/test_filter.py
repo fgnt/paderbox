@@ -18,7 +18,7 @@ class TestSTFTMethods(unittest.TestCase):
 
     def test_offcomp(self):
         y = self.x
-        yFilterd = transform.offcomp(y)
+        yFilterd = transform.offset_compensation(y)
 
         tc.assert_equal(yFilterd.shape, y.shape)
         tc.assert_isreal(yFilterd)
