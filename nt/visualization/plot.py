@@ -278,8 +278,11 @@ def plot_beampattern(W, sensor_positions, fft_size, sample_rate,
             [source_angles, numpy.zeros_like(source_angles)]
         )
 
-    tdoa = get_farfield_TDOA(source_angles, sensor_positions)
-    s_vector = steering_vector(tdoa, fft_size, sample_rate)
+    tdoa = get_farfield_time_difference_of_arrival(
+        source_angles,
+        sensor_positions
+    )
+    s_vector = get_steering_vector(tdoa, fft_size, sample_rate)
 
     B = numpy.zeros((fft_size // 2, source_angles.shape[1]))
     for f in range(fft_size // 2):
