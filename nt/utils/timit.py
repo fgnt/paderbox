@@ -16,7 +16,7 @@ def get_data_provider_for_flist(flist, callback_fcn=default_transform):
     feature_channels = ['observed/ch1']
 
     if flist == 'train':
-        set_name = 'Complete Set'
+        set_name = 'Complete Train Set'
     elif flist == 'test':
         set_name = 'Complete Test Set'  # or 'Core Test Set'
     else:
