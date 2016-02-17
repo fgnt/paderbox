@@ -2,7 +2,7 @@ import unittest
 import json
 import db_test
 
-wsj_json = db_test.ROOT + "wsj.json"
+wsj_json = db_test.ROOT + "/wsj.json"
 #wsj_json = "wsj.json"
 
 def complete(scenario, word):

@@ -2,7 +2,7 @@ import unittest
 import json
 import db_test
 
-ger_json = db_test.ROOT + "german.json"
+ger_json = db_test.ROOT + "/german.json"
 #ger_json = "german_speechdata_package_v2.json"
 
 class test_ger_db(db_test.DatabaseTest):

@@ -2,7 +2,7 @@ import unittest
 import json
 import db_test
 
-tidigits_json = db_test.ROOT + "tidigits.json"
+tidigits_json = db_test.ROOT + "/tidigits.json"
 #tidigits_json = "tidigits.json"
 
 class test_tidigits_db(db_test.DatabaseTest):

@@ -2,7 +2,7 @@ import unittest
 import json
 import db_test
 
-timit_json = db_test.ROOT + "timit.json"
+timit_json = db_test.ROOT + "/timit.json"
 #timit_json = "TIMIT.json"
 
 class test_timit_db(db_test.DatabaseTest):
