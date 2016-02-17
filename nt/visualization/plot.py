@@ -23,6 +23,9 @@ def create_subplot(f):
         ax = kwargs.pop('ax', None)
         if ax is None:
             figure, ax = plt.subplots(1, 1)
+        title = kwargs.pop('title', None)
+        if title is not None:
+            ax.set_title(title)
         return f(*args, ax=ax, **kwargs)
     return wrapper
 
@@ -53,6 +56,27 @@ def line(signal, ax=None, ylim=None):
 
     if ylim is not None:
         ax.set_ylim(ylim)
+    return ax
+
+
+@create_subplot
+def scatter(signal, ax=None, ylim=None):
+    """
+    Use together with facet_grid().
+
+    :param signal: Single one-dimensional array or tuple of x and y values.
+    :param ax: Axis handle
+    :param ylim: Tuple with y-axis limits
+    :return:
+    """
+    if type(signal) is tuple:
+        ax.scatter(signal[0], signal[1])
+    else:
+        ax.scatter(range(len(signal)), signal)
+
+    if ylim is not None:
+        ax.set_ylim(ylim)
+
     return ax
 
 
