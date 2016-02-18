@@ -7,6 +7,7 @@ from nt.utils.math_ops import softmax
 from warnings import warn
 from collections import OrderedDict
 from functools import wraps
+from nt.visualization.new_cm import viridis_hex
 
 
 def create_subplot(f):
@@ -30,6 +31,24 @@ def create_subplot(f):
     return wrapper
 
 
+def allow_dict_input_and_colorize(f):
+    """ Allow dict input and use keys as labels
+    """
+    @wraps(f)
+    def wrapper(signal, *args, **kwargs):
+        ax = kwargs.pop('ax', None)
+
+        if isinstance(signal, dict):
+            colors = viridis_hex[::len(viridis_hex) // len(signal)]
+            for (label, data), color in zip(signal.items(), colors):
+                ax = f(data, *args, ax=ax, label=label, color=color, **kwargs)
+            ax.legend()
+        else:
+            ax = f(signal, *args, ax=ax, **kwargs)
+        return ax
+    return wrapper
+
+
 def _get_batch(signal, batch):
     if signal.ndim == 3:
         return signal[:, batch, :]
@@ -39,8 +58,33 @@ def _get_batch(signal, batch):
         raise ValueError('The signal can only be two or three dimensional')
 
 
+@allow_dict_input_and_colorize
 @create_subplot
-def line(signal, ax=None, ylim=None):
+def line(signal, ax=None, ylim=None, label=None, color=None):
+    """
+    Use together with facet_grid().
+
+    Signal can be a dict with labels and data. Data can then be a tuple or
+    a single vector of y-values.
+
+    :param signal: Single one-dimensional array or tuple of x and y values.
+    :param ax: Axis handle
+    :param ylim: Tuple with y-axis limits
+    :return:
+    """
+    if isinstance(signal, tuple):
+        ax.plot(signal[0], signal[1], label=label, color=color)
+    else:
+        ax.plot(signal, label=label, color=color)
+
+    if ylim is not None:
+        ax.set_ylim(ylim)
+    return ax
+
+
+@allow_dict_input_and_colorize
+@create_subplot
+def scatter(signal, ax=None, ylim=None, label=None, color=None):
     """
     Use together with facet_grid().
 
@@ -50,17 +94,19 @@ def line(signal, ax=None, ylim=None):
     :return:
     """
     if type(signal) is tuple:
-        ax.plot(signal[0], signal[1])
+        ax.scatter(signal[0], signal[1], label=label, color=color)
     else:
-        ax.plot(signal)
+        ax.scatter(range(len(signal)), signal, label=label, color=color)
 
     if ylim is not None:
         ax.set_ylim(ylim)
+
     return ax
 
 
+@allow_dict_input_and_colorize
 @create_subplot
-def scatter(signal, ax=None, ylim=None):
+def time_series(signal, ax=None, ylim=None, label=None, color=None):
     """
     Use together with facet_grid().
 
@@ -69,28 +115,7 @@ def scatter(signal, ax=None, ylim=None):
     :param ylim: Tuple with y-axis limits
     :return:
     """
-    if type(signal) is tuple:
-        ax.scatter(signal[0], signal[1])
-    else:
-        ax.scatter(range(len(signal)), signal)
-
-    if ylim is not None:
-        ax.set_ylim(ylim)
-
-    return ax
-
-
-@create_subplot
-def time_series(signal, ax=None, ylim=None):
-    """
-    Use together with facet_grid().
-
-    :param signal: Single one-dimensional array or tuple of x and y values.
-    :param ax: Axis handle
-    :param ylim: Tuple with y-axis limits
-    :return:
-    """
-    ax = line(signal, ax=ax, ylim=ylim)
+    ax = line(signal, ax=ax, ylim=ylim, label=label, color=None)
     if type(signal) is tuple:
         ax.set_xlabel('Time / s')
     else:
