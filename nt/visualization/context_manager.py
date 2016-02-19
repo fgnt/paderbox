@@ -10,7 +10,7 @@ mpl_ge_150 = LooseVersion(mpl.__version__) >= '1.5.0'
 def context_manager(
     seaborn_axes_style='whitegrid',
     seaborn_plotting_context='notebook',
-    font_scale=1.5,
+    font_scale=1.0,
     line_width=2,
     figure_size=[8.0, 6.0],
     palette='muted',

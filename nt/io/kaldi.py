@@ -1,7 +1,8 @@
 import os
+import struct
 import subprocess
+import tempfile
 import warnings
-import io
 
 import numpy as np
 import tqdm
@@ -9,10 +10,8 @@ import tqdm
 from nt.utils import mkdir_p
 from nt.utils.process_caller import run_processes
 
-import struct
-import tempfile
-
 ENABLE_CACHE = True
+
 
 class FeatureCache():
     def __init__(self):
@@ -37,24 +36,24 @@ feature_cache = FeatureCache()
 KALDI_ROOT = os.environ.get('KALDI_ROOT', '/net/ssd/software/kaldi')
 
 RAW_MFCC_CMD = KALDI_ROOT + '/src/featbin/' + \
-    r"""compute-mfcc-feats --num-mel-bins={num_mel_bins} \
-    --num-ceps={num_ceps} --low-freq={low_freq} --high-freq={high_freq} \
-    scp,p:{wav_scp} ark,scp:{dst_ark},{dst_scp}"""
+               r"""compute-mfcc-feats --num-mel-bins={num_mel_bins} \
+               --num-ceps={num_ceps} --low-freq={low_freq} --high-freq={high_freq} \
+               scp,p:{wav_scp} ark,scp:{dst_ark},{dst_scp}"""
 
 RAW_MFCC_DELTA_CMD = KALDI_ROOT + '/src/featbin/' + \
-    r"""compute-mfcc-feats --num-mel-bins={num_mel_bins} \
-    --num-ceps={num_ceps} --low-freq={low_freq} --high-freq={high_freq} \
-    scp,p:{wav_scp} ark:- | add-deltas ark:- ark,scp:{dst_ark},{dst_scp}"""
+                     r"""compute-mfcc-feats --num-mel-bins={num_mel_bins} \
+                     --num-ceps={num_ceps} --low-freq={low_freq} --high-freq={high_freq} \
+                     scp,p:{wav_scp} ark:- | add-deltas ark:- ark,scp:{dst_ark},{dst_scp}"""
 
 RAW_FBANK_CMD = KALDI_ROOT + '/src/featbin/' + \
-    r"""compute-fbank-feats --num-mel-bins={num_mel_bins} \
-    --low-freq={low_freq} --high-freq={high_freq} \
-    scp,p:{wav_scp} ark,scp:{dst_ark},{dst_scp}"""
+                r"""compute-fbank-feats --num-mel-bins={num_mel_bins} \
+                --low-freq={low_freq} --high-freq={high_freq} \
+                scp,p:{wav_scp} ark,scp:{dst_ark},{dst_scp}"""
 
 RAW_FBANK_DELTA_CMD = KALDI_ROOT + '/src/featbin/' + \
-    r"""compute-fbank-feats --num-mel-bins={num_mel_bins} \
-    --low-freq={low_freq} --high-freq={high_freq} \
-    scp,p:{wav_scp} ark:- | add-deltas ark:- ark,scp:{dst_ark},{dst_scp}"""
+                      r"""compute-fbank-feats --num-mel-bins={num_mel_bins} \
+                      --low-freq={low_freq} --high-freq={high_freq} \
+                      scp,p:{wav_scp} ark:- | add-deltas ark:- ark,scp:{dst_ark},{dst_scp}"""
 
 
 def make_mfcc_features(wav_scp, dst_dir, num_mel_bins, num_ceps, low_freq=20,
@@ -69,7 +68,7 @@ def make_mfcc_features(wav_scp, dst_dir, num_mel_bins, num_ceps, low_freq=20,
         cur_scp = dict()
         for idx, (utt_id, ark) in enumerate(wav_scp.items()):
             cur_scp[utt_id] = ark
-            if (not ((idx+1) % split_mod)) or (idx == (len(wav_scp) - 1)):
+            if (not ((idx + 1) % split_mod)) or (idx == (len(wav_scp) - 1)):
                 with open(os.path.join(tmp_dir, '{}.scp'.format(scp_idx)),
                           'w') as fid:
                     for _utt_id, _ark in cur_scp.items():
@@ -99,14 +98,14 @@ def make_mfcc_features(wav_scp, dst_dir, num_mel_bins, num_ceps, low_freq=20,
             missing = np.setdiff1d(np.unique(list(wav_scp.keys())),
                                    np.unique(list(feat_scp.keys())))
             raise ValueError(
-                    'Mismatch between number of wav files and number '
-                    'of feature files. Missing the utterances {}'.
-                        format(missing))
+                'Mismatch between number of wav files and number '
+                'of feature files. Missing the utterances {}'.
+                    format(missing))
         print('Finished successfully')
 
 
 def make_fbank_features(wav_scp, dst_dir, num_mel_bins, low_freq=20,
-                       high_freq=-400, num_jobs=20, add_deltas=True):
+                        high_freq=-400, num_jobs=20, add_deltas=True):
     wav_scp = read_scp_file(wav_scp)
     split_mod = (len(wav_scp) // num_jobs) + 1
     print('Splitting jobs every {} ark'.format(split_mod))
@@ -117,7 +116,7 @@ def make_fbank_features(wav_scp, dst_dir, num_mel_bins, low_freq=20,
         cur_scp = dict()
         for idx, (utt_id, ark) in enumerate(wav_scp.items()):
             cur_scp[utt_id] = ark
-            if (not ((idx+1) % split_mod)) or (idx == (len(wav_scp) - 1)):
+            if (not ((idx + 1) % split_mod)) or (idx == (len(wav_scp) - 1)):
                 with open(os.path.join(tmp_dir, '{}.scp'.format(scp_idx)),
                           'w') as fid:
                     for _utt_id, _ark in cur_scp.items():
@@ -147,9 +146,9 @@ def make_fbank_features(wav_scp, dst_dir, num_mel_bins, low_freq=20,
             missing = np.setdiff1d(np.unique(list(wav_scp.keys())),
                                    np.unique(list(feat_scp.keys())))
             raise ValueError(
-                    'Mismatch between number of wav files and number '
-                    'of feature files. Missing the utterances {}'.
-                        format(missing))
+                'Mismatch between number of wav files and number '
+                'of feature files. Missing the utterances {}'.
+                    format(missing))
         print('Finished successfully')
 
 
@@ -181,7 +180,8 @@ def import_feature_data(ark_descriptor):
                 header = struct.unpack('<xccccbibi', ark_read_buffer.read(15))
                 data[utt_id] = read_ark_mat(ark, pos)
                 rows, colums = header[-3], header[-1]
-                ark_read_buffer.seek(ark_read_buffer.tell() + (rows*colums*4))
+                ark_read_buffer.seek(
+                    ark_read_buffer.tell() + (rows * colums * 4))
         return data
     else:
         return read_ark_mat(ark, pos)
@@ -196,13 +196,14 @@ def read_ark_mat(ark, pos):
 
         if header[2] == b'C':
             raise ValueError("Input .ark file {} is compress. You have to "
-                             "decompress it first using copy-feats.".format(ark))
+                             "decompress it first using copy-feats.".format(
+                ark))
 
         m, rows = struct.unpack('<bi', ark_read_buffer.read(5))
         n, cols = struct.unpack('<bi', ark_read_buffer.read(5))
 
         tmp_mat = np.frombuffer(
-                ark_read_buffer.read(rows * cols * 4), dtype=np.float32)
+            ark_read_buffer.read(rows * cols * 4), dtype=np.float32)
         utt_mat = np.reshape(tmp_mat, (rows, cols))
 
         ark_read_buffer.close()
@@ -232,9 +233,9 @@ def import_alignment_data(ark, model_file, is_zipped=True):
         src_param = 'ark:{ark}'.format(ark=ark)
     dest_param = 'ark,t:-'
     copy_process = subprocess.Popen(
-            [copy_cmd, model_file, src_param, dest_param],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
+        [copy_cmd, model_file, src_param, dest_param],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE)
     out, err = copy_process.communicate()
     if copy_process.returncode != 0:
         raise ValueError("Returncode of ali-to-pdf was != 0. Stderr "
@@ -268,14 +269,14 @@ class ArkWriter():
         utt_mat = np.asarray(array, dtype=np.float32)
         rows, cols = utt_mat.shape
         self.ark_file_write.write(
-                struct.pack('<%ds'%(len(utt_id)), utt_id.encode()))
+            struct.pack('<%ds' % (len(utt_id)), utt_id.encode()))
         self.ark_file_write.write(
-                struct.pack('<cxcccc',
-                            ' '.encode(),
-                            'B'.encode(),
-                            'F'.encode(),
-                            'M'.encode(),
-                            ' '.encode()))
+            struct.pack('<cxcccc',
+                        ' '.encode(),
+                        'B'.encode(),
+                        'F'.encode(),
+                        'M'.encode(),
+                        ' '.encode()))
         self.ark_file_write.write(struct.pack('<bi', 4, rows))
         self.ark_file_write.write(struct.pack('<bi', 4, cols))
         self.ark_file_write.write(utt_mat)
@@ -321,7 +322,9 @@ def import_alignment(ali_dir, model_file):
     return data_dict
 
 
-def import_features_and_alignment(feat_scp, ali_dir, model_file):
+def import_features_and_alignment(feat_scp, ali_dir, model_file,
+                                  ali_mapper=lambda x: x, cut_alignments=False,
+                                  cut_features=False):
     """ Import features and alignments given a scp file and a ali directory
 
     This is basically a wrapper around the other functions
@@ -336,20 +339,28 @@ def import_features_and_alignment(feat_scp, ali_dir, model_file):
     """
     features = import_feat_scp(feat_scp)
     alignments = import_alignment(ali_dir, model_file)
-    common_keys = set(features.keys()).intersection(set(alignments.keys()))
-    common_length = len(common_keys)
-    if common_length != len(features) or common_length != len(alignments):
-        warnings.warn('Found features for {} and alignments for {} utterances.'
-                      ' Returning common set.'.format(len(features),
-                                                      len(alignments)))
+
     features_common = dict()
     alignments_common = dict()
-    for utt_id in common_keys:
-        features_common[utt_id] = features[utt_id]
-        alignments_common[utt_id] = alignments[utt_id]
-        assert features[utt_id].shape[0] == alignments[utt_id].shape[0], \
-            'There are {} features for utterance {} but {} alignments'.format(
-                    features[utt_id].shape[0], utt_id,
-                    alignments[utt_id].shape[0]
-            )
+    for utt_id in features.keys():
+        if ali_mapper(utt_id) in alignments.keys():
+            features_common[utt_id] = features[utt_id]
+            alignments_common[ali_mapper(utt_id)] = \
+                alignments[ali_mapper(utt_id)]
+            len_features = features_common[utt_id].shape[0]
+            len_ali = alignments_common[ali_mapper(utt_id)].shape[0]
+            if cut_features:
+                features_common[utt_id] = features_common[utt_id][:len_ali]
+            if cut_alignments:
+                alignments_common[ali_mapper(utt_id)] = \
+                    alignments_common[ali_mapper(utt_id)][:len_features]
+            assert features_common[utt_id].shape[0] == \
+                   alignments_common[ali_mapper(utt_id)].shape[0], \
+                'There are {} features for utterance {} but {} alignments'.format(
+                    features_common[utt_id].shape[0], utt_id,
+                    alignments_common[ali_mapper(utt_id)].shape[0]
+                )
+        else:
+            warnings.warn('No alignment found for utterance {}'.format(utt_id))
+
     return features_common, alignments_common

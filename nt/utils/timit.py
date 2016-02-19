@@ -12,11 +12,12 @@ def default_transform(data, **kwargs):
     }
 
 
-def get_data_provider_for_flist(flist, callback_fcn=default_transform):
+def get_data_provider_for_flist(flist, callback_fcn=default_transform, **kwargs):
     feature_channels = ['observed/ch1']
+    enable_cache = kwargs.pop('enable_cache', False)
 
     if flist == 'train':
-        set_name = 'Complete Set'
+        set_name = 'Complete Train Set'
     elif flist == 'test':
         set_name = 'Complete Test Set'  # or 'Core Test Set'
     else:
@@ -28,6 +29,8 @@ def get_data_provider_for_flist(flist, callback_fcn=default_transform):
         flist='{}/{}/wav'.format(flist, set_name),
         callback_fcn=callback_fcn,
         feature_channels=feature_channels,
+        transform_kwargs=kwargs,
+        enable_cache=enable_cache
     )
     return DataProvider(
         (fetcher,), batch_size=1, shuffle_data=False, max_queue_size=30
