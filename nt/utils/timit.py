@@ -18,9 +18,9 @@ def get_data_provider_for_flist(
     enable_cache = kwargs.pop('enable_cache', False)
 
     if flist == 'train':
-        set_name = 'Complete Train Set'
+        set_name = 'Complete Set'
     elif flist == 'test':
-        set_name = 'Complete Test Set'  # or 'Core Test Set'
+        set_name = 'Complete Set'  # or 'Core Set'
     else:
         raise ValueError('Unknown flist')
 
