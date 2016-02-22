@@ -44,6 +44,10 @@ echo 'Creating GERMAN json'
 python nt/database/german_speechdata_package_v2/database_german_speechdata_package_v2.py
 cp german_speechdata_package_v2.json /net/storage/database_jsons/german.json
 
+echo 'Creating NoiseX_92 json'
+python nt/database/NoiseX_92/database_NoiseX_92.py
+cp NoiseX_92.json /net/storage/database_jsons/NoiseX_92.json
+
 # Uninstall packages
 /usr/bin/yes | pip uninstall nt || true
 
