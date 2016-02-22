@@ -58,14 +58,14 @@ class TestBeamformerMethods(unittest.TestCase):
             X = data['X']
             Y = data['Y']
             N = data['N']
-        ibm = ideal_binary_mask(X[:, 4, :], N[:, 4, :])
+        ibm = ideal_binary_mask(X[4, :, :], N[4, :, :])
         self.Y_bf, self.X_bf, self.N_bf = Y.T, X.T, N.T
         self.ibm_X_bf = ibm[0].T
         self.ibm_N_bf = ibm[1].T
         self.ibm_X_bf_th = np.maximum(self.ibm_X_bf, 1e-4)
         self.ibm_N_bf_th = np.maximum(self.ibm_N_bf, 1e-4)
-        self.Phi_XX = get_power_spectral_density_matrix(self.Y_bf, self.ibm_X_bf_th)
-        self.Phi_NN = get_power_spectral_density_matrix(self.Y_bf, self.ibm_N_bf_th)
+        self.Phi_XX = get_power_spectral_density_matrix(self.Y_bf.transpose(0, 2, 1), self.ibm_X_bf_th)
+        self.Phi_NN = get_power_spectral_density_matrix(self.Y_bf.transpose(0, 2, 1), self.ibm_N_bf_th)
         self.Phi_NN = self.Phi_NN + np.tile(1e-10 * np.eye(self.Phi_NN.shape[1]), (self.Phi_NN.shape[0], 1, 1))
         self.W_pca = get_pca_vector(self.Phi_XX)
         self.W_mvdr = get_mvdr_vector(self.W_pca, self.Phi_NN)
