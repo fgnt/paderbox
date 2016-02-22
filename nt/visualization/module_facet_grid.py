@@ -49,4 +49,4 @@ def facet_grid(data_list, function_list, kwargs_list=(), colwrap=2, scale=1,
             axis.flatten()[idx].set_title(title)
 
     figure.tight_layout()
-    plt.show()
+    return figure
