@@ -27,6 +27,7 @@ class TestReshape(unittest.TestCase):
 
     def test_reshape_and_broadcast(self):
         assert reshape(A, 'T,B,F->T,1,B*F').shape == (T, 1, B*F)
+        tc.assert_equal(reshape(A, 'T,B,F->T,1,B*F').ravel(), A.ravel())
         assert reshape(A, 'T,B,F->1,T,1,B*F,1').shape == (1, T, 1, B*F, 1)
 
     def test_transpose_and_reshape(self):

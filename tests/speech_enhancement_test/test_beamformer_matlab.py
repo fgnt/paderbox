@@ -58,8 +58,8 @@ class TestBeamformerMethods(unittest.TestCase):
             X = data['X']
             Y = data['Y']
             N = data['N']
-        ibm = ideal_binary_mask(X[:, 4, :], N[:, 4, :])
-        self.Y_bf, self.X_bf, self.N_bf = Y.T, X.T, N.T
+        ibm = ideal_binary_mask(X[4, :, :], N[4, :, :])
+        self.Y_bf, self.X_bf, self.N_bf = Y.T.transpose(0, 2, 1), X.T.transpose(0, 2, 1), N.T.transpose(0, 2, 1)
         self.ibm_X_bf = ibm[0].T
         self.ibm_N_bf = ibm[1].T
         self.ibm_X_bf_th = np.maximum(self.ibm_X_bf, 1e-4)
