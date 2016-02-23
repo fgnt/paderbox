@@ -37,9 +37,13 @@ def facet_grid(data_list, function_list, kwargs_list=(), colwrap=2, scale=1,
             itertools.repeat(function_list[0], len(data_list)))
 
     for index in range(len(data_list)):
-        function_list[index](data_list[index],
-                             ax=axis.flatten()[index],
-                             **kwargs_list[index])
+        if data_list[index] is None:
+            function_list[index](ax=axis.flatten()[index],
+                                 **kwargs_list[index])
+        else:
+            function_list[index](data_list[index],
+                                 ax=axis.flatten()[index],
+                                 **kwargs_list[index])
 
     for index in range(number_of_plots, number_of_rows * colwrap):
         axis.flatten()[index].axis('off')
