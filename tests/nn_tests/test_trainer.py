@@ -16,6 +16,7 @@ from chainer.testing import attr
 from nt.nn import DataProvider
 from nt.nn import Trainer
 from nt.nn.data_fetchers import ArrayDataFetcher
+from nt.nn.training_status_utils import status_dict
 
 B = 10
 A = 5
@@ -24,8 +25,8 @@ A = 5
 class DummyNetwork(Chain):
     def __init__(self):
         super(DummyNetwork, self).__init__(
-                l1=Linear(5, 3),
-                l2=Linear(3, 5)
+            l1=Linear(5, 3),
+            l2=Linear(3, 5)
         )
 
     def forward(self, **kwargs):
@@ -38,15 +39,15 @@ class DummyNetwork(Chain):
 
     def forward_train(self, a=1, b=2, **kwargs):
         return dict(
-                net=self.forward(**kwargs),
-                a=a,
-                b=b)
+            net=self.forward(**kwargs),
+            a=a,
+            b=b)
 
     def forward_cv(self, a=1, b=2, **kwargs):
         return dict(
-                net=self.forward(**kwargs),
-                a=a,
-                b=b)
+            net=self.forward(**kwargs),
+            a=a,
+            b=b)
 
 
 class TrainerTest(unittest.TestCase):
@@ -91,8 +92,8 @@ class TrainerTest(unittest.TestCase):
         W2_before = self.nn.l2.W.data.copy()
         self.trainer._update_parameters()
         self.assertRaises(
-                AssertionError, nptest.assert_equal, W2_before,
-                self.nn.l2.W.data)
+            AssertionError, nptest.assert_equal, W2_before,
+            self.nn.l2.W.data)
         self.trainer._reset_gradients()
         nptest.assert_equal(self.nn.l2.W.grad, np.zeros((5, 3)))
 
@@ -207,15 +208,15 @@ class TrainerTest(unittest.TestCase):
     def test_resume(self):
         epoch = 1
         tries = 0
-        while (epoch < 2) and (tries < 5):
+        while (epoch < 2) and (tries < 10):
             self.trainer.start_training()
-            time.sleep(tries)
+            time.sleep(tries + 1)
             self.trainer.stop_training()
             epoch = self.trainer.training_status.epoch
             if epoch is None:
                 epoch = 1
             tries += 1
-        self.assertGreater(5, tries)
+        self.assertGreater(10, tries)
         self.trainer.resume = True
         self.trainer.start_training()
         self.trainer.stop_training()
@@ -226,13 +227,13 @@ class TrainerTest(unittest.TestCase):
         time.sleep(1)
         self.trainer.stop_training()
         self.assertRaises(EnvironmentError, Trainer, *[self.nn],
-                    **dict(forward_fcn_tr=self.nn.forward_train,
-                    forward_fcn_cv=self.nn.forward_cv,
-                    data_provider_tr=self.tr_provider,
-                    data_provider_cv=self.cv_provider,
-                    optimizer=SGD(),
-                    description='unittest',
-                    data_dir=self.trainer.data_dir))
+                          **dict(forward_fcn_tr=self.nn.forward_train,
+                                 forward_fcn_cv=self.nn.forward_cv,
+                                 data_provider_tr=self.tr_provider,
+                                 data_provider_cv=self.cv_provider,
+                                 optimizer=SGD(),
+                                 description='unittest',
+                                 data_dir=self.trainer.data_dir))
 
     @attr.gpu
     def test_test_mode(self):
@@ -261,3 +262,9 @@ class TrainerTest(unittest.TestCase):
     @attr.gpu
     def test_modes_gpu(self):
         self._test_modes(True)
+
+    def test_json_export(self):
+        self.trainer.test_run()
+        for part in status_dict:
+            self.assertTrue(
+                os.path.exists(self.trainer.data_dir + '/' + part + '.json'))
