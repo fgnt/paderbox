@@ -17,12 +17,7 @@ def get_data_provider_for_flist(
     feature_channels = ['observed/ch1']
     enable_cache = kwargs.pop('enable_cache', False)
 
-    if flist == 'train':
-        set_name = 'Complete Set'
-    elif flist == 'test':
-        set_name = 'Complete Set'  # or 'Core Set'
-    else:
-        raise ValueError('Unknown flist')
+    set_name = 'Complete Set'
 
     fetcher = JsonCallbackFetcher(
         'timit_fetcher',
