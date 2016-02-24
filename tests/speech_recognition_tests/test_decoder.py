@@ -100,7 +100,7 @@ class TestDecoder(unittest.TestCase):
             arpa.write_unigram(data_dir('speech_recognition', 'tcb05cnp'),
                                lm_path_uni)
             self.decoder = Decoder(trans_handler, working_dir,
-                                   lm_file=lm_path_uni, sil=space)
+                                   lm_file=lm_path_uni)
             self.decoder.create_graphs()
 
             self.decoder.create_lattices([trans_hat.num, ], [utt_id, ])
