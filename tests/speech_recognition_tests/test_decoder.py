@@ -86,9 +86,8 @@ class TestDecoder(unittest.TestCase):
     def test_ground_truth_with_sil(self):
 
         lex = get_lexicon_from_arpa(data_dir('speech_recognition', 'tcb05cnp'))
-        trans_handler = TranscriptionHandler(lex)
         space = "<space>"
-        trans_handler.label_handler.add_label(space)
+        trans_handler = TranscriptionHandler(lex, sil=space)
 
         utt = "THIS SHOULD BE RECOGNIZED"
         utt_id = "TEST_UTT_1"
@@ -101,7 +100,7 @@ class TestDecoder(unittest.TestCase):
             arpa.write_unigram(data_dir('speech_recognition', 'tcb05cnp'),
                                lm_path_uni)
             self.decoder = Decoder(trans_handler, working_dir,
-                                   lm_file=lm_path_uni, sil=space)
+                                   lm_file=lm_path_uni)
             self.decoder.create_graphs()
 
             self.decoder.create_lattices([trans_hat.num, ], [utt_id, ])
@@ -140,6 +139,8 @@ class TestDecoder(unittest.TestCase):
     def test_compare_argmax_ctc(self):
 
         nn, trans_handler = self.load_model()
+
+        trans_handler.sil = None  # temporary workaround
 
         json_path = database_jsons_dir('wsj.json')
         flist_test = 'test/flist/wave/official_si_dt_05'
