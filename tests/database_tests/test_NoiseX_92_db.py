@@ -2,7 +2,7 @@ import unittest
 import json
 import db_test
 
-NoiseX_92_json = db_test.ROOT + "NoiseX_92.json"
+NoiseX_92_json = db_test.ROOT + "/noisex_92.json"
 # NoiseX_92_json = "NoiseX_92.json"
 
 
