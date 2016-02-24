@@ -21,14 +21,14 @@ class test_timit_db(db_test.DatabaseTest):
         self.assertIn("annotation", self.json)
 
     def test_Complete_databank_len(self):
-        self.assertEqual(len(self.json['test']['Complete Test Set']['wav']), 1680,
-                         "There should be 1680 files in 'Complete Test Set'!")
-        self.assertEqual(len(self.json['train']['Complete Train Set']['wav']), 4620,
-                         "There should be 4620 files in 'Complete Train Set'!")
+        self.assertEqual(len(self.json['test']['Complete Set']['wav']), 1680,
+                         "There should be 1680 files in 'Complete Set'!")
+        self.assertEqual(len(self.json['train']['Complete Set']['wav']), 4620,
+                         "There should be 4620 files in 'Complete Set'!")
 
-    def test_Core_Test_Set_len(self):
-        self.assertEqual(len(self.json['test']['Core Test Set']['wav']),192,
-                         "There should be 192 files in 'Core Test Set'!")
+    def test_Core_Set_len(self):
+        self.assertEqual(len(self.json['test']['Core Set']['wav']),192,
+                         "There should be 192 files in 'Core Set'!")
 
     def test_orth_len(self):
         phoneme_len = len(self.json['orth']['phoneme'])

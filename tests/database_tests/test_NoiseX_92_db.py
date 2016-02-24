@@ -13,13 +13,16 @@ class test_NoiseX_92_db(db_test.DatabaseTest):
                 self.json = json.load(file)
 
         def test_train_test_dev(self):
-            self.assertIn("test_train", self.json)
+            self.assertIn("train", self.json)
 
         def test_orth(self):
             self.assertNotIn("orth", self.json)
 
         def test_set_len(self):
-            self.assertEqual(len(self.json['test_train']['complete set']['wav']), 34)
-            self.assertEqual(len(self.json['test_train']['standart set']['wav']), 15)
-            self.assertEqual(len(self.json['test_train']['16kHz set']['wav']), 18)
-            self.assertEqual(len(self.json['test_train']['metro set']['wav']), 1)
+            self.assertEqual(len(self.json['train']['flists']['wav']['standard set']), 15)
+            self.assertEqual(len(self.json['train']['flists']['wav']['16kHz set']), 18)
+            self.assertEqual(len(self.json['train']['flists']['wav']['metro set']), 1)
+
+
+if __name__ == '__main__':
+    unittest.main()
