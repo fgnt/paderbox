@@ -1,5 +1,7 @@
 class Container:
     """ A quick hack for a dictionary which is accessible with dot notation
+
+    Add more functions if necessary: http://stackoverflow.com/a/23976949/911441
     """
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
@@ -24,3 +26,6 @@ class Container:
 
     def __str__(self, *args, **kwargs):
         return self.as_dict().__str__(*args, **kwargs)
+
+    def keys(self):
+        return self.__dict__.keys()
