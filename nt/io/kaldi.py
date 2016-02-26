@@ -9,8 +9,31 @@ import tqdm
 
 from nt.utils import mkdir_p
 from nt.utils.process_caller import run_processes
+from nt.io.data_dir import kaldi_root
 
 ENABLE_CACHE = True
+
+def get_kaldi_env():
+    env = os.environ.copy()
+    env['PATH'] += ':{}/src/bin'.format(kaldi_root())
+    env['PATH'] += ':{}/tools/openfst/bin'.format(kaldi_root())
+    env['PATH'] += ':{}/src/fstbin/'.format(kaldi_root())
+    env['PATH'] += ':{}/src/gmmbin/'.format(kaldi_root())
+    env['PATH'] += ':{}/src/featbin/'.format(kaldi_root())
+    env['PATH'] += ':{}/src/lm/'.format(kaldi_root())
+    env['PATH'] += ':{}/src/sgmmbin/'.format(kaldi_root())
+    env['PATH'] += ':{}/src/sgmm2bin/'.format(kaldi_root())
+    env['PATH'] += ':{}/src/fgmmbin/'.format(kaldi_root())
+    env['PATH'] += ':{}/src/latbin/'.format(kaldi_root())
+    env['PATH'] += ':{}/src/nnetbin/'.format(kaldi_root())
+    env['PATH'] += ':{}/src/nnet2bin/'.format(kaldi_root())
+    env['PATH'] += ':{}/src/kwsbin/'.format(kaldi_root())
+    env['PATH'] += ':{}/src/online2bin/'.format(kaldi_root())
+    env['PATH'] += ':{}/src/ivectorbin/'.format(kaldi_root())
+    env['PATH'] += ':{}/src/lmbin/'.format(kaldi_root())
+    env['LC_ALL'] = 'C'
+    env['OMP_NUM_THREADS'] = '1'
+    return env
 
 
 class FeatureCache():
@@ -33,7 +56,7 @@ class FeatureCache():
 
 feature_cache = FeatureCache()
 
-KALDI_ROOT = os.environ.get('KALDI_ROOT', '/net/ssd/software/kaldi')
+KALDI_ROOT = kaldi_root()
 
 RAW_MFCC_CMD = KALDI_ROOT + '/src/featbin/' + \
                r"""compute-mfcc-feats --num-mel-bins={num_mel_bins} \
@@ -87,7 +110,7 @@ def make_mfcc_features(wav_scp, dst_dir, num_mel_bins, num_ceps, low_freq=20,
                 cur_scp = dict()
                 scp_idx += 1
         print('Starting the feature extraction')
-        run_processes(cmds, sleep_time=5)
+        run_processes(cmds, sleep_time=5, environment=get_kaldi_env())
         with open(os.path.join(dst_dir, 'feats.scp'), 'w') as feat_fid:
             for f in os.listdir(dst_dir):
                 if f.endswith('.scp'):
@@ -135,7 +158,7 @@ def make_fbank_features(wav_scp, dst_dir, num_mel_bins, low_freq=20,
                 cur_scp = dict()
                 scp_idx += 1
         print('Starting the feature extraction')
-        run_processes(cmds, sleep_time=5)
+        run_processes(cmds, sleep_time=5, environment=get_kaldi_env())
         with open(os.path.join(dst_dir, 'feats.scp'), 'w') as feat_fid:
             for f in os.listdir(dst_dir):
                 if f.endswith('.scp'):

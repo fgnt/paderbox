@@ -1,6 +1,6 @@
 import unittest
 from nt.io.kaldi import ArkWriter, import_feature_data, \
-    make_mfcc_features, import_feat_scp
+    make_mfcc_features, import_feat_scp, make_fbank_features
 import numpy as np
 import tempfile
 
@@ -31,4 +31,30 @@ class KaldiIOTest(unittest.TestCase):
             data = import_feat_scp(tmp_dir + '/feats.scp')
             self.assertEqual(len(data), 17)
             for d in data.values():
+                self.assertEqual(d.shape[1], 39)
+
+    def test_make_mfccs_no_delta(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            make_mfcc_features(WAV_SCP, tmp_dir, num_mel_bins=23, num_ceps=13,
+                               add_deltas=False)
+            data = import_feat_scp(tmp_dir + '/feats.scp')
+            self.assertEqual(len(data), 17)
+            for d in data.values():
                 self.assertEqual(d.shape[1], 13)
+
+    def test_make_fbank(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            make_fbank_features(WAV_SCP, tmp_dir, num_mel_bins=23)
+            data = import_feat_scp(tmp_dir + '/feats.scp')
+            self.assertEqual(len(data), 17)
+            for d in data.values():
+                self.assertEqual(d.shape[1], 3*23)
+
+    def test_make_fbank_no_delta(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            make_fbank_features(WAV_SCP, tmp_dir, num_mel_bins=23,
+                               add_deltas=False)
+            data = import_feat_scp(tmp_dir + '/feats.scp')
+            self.assertEqual(len(data), 17)
+            for d in data.values():
+                self.assertEqual(d.shape[1], 23)
