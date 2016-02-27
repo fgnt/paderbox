@@ -345,6 +345,16 @@ def read_trans_file(trans_file):
             transcriptions[utt_id] = trans.strip()
     return transcriptions
 
+
+def read_text_file(text_file):
+    transcriptions = dict()
+    with open(text_file) as fid:
+        for line in fid:
+            utt_id = line.split()[0]
+            transcriptions[utt_id] = ' '.join(line.split()[1:]).strip()
+    return transcriptions
+
+
 def import_alignment(ali_dir, model_file):
     """ Imports an alignments (pdf-ids)
 
