@@ -167,7 +167,10 @@ def spectrogram(signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
                       cmap='viridis', origin='lower')
     if colorbar:
         cbar = plt.colorbar(image, ax=ax)
-        cbar.set_label('Energy / dB')
+        if log:
+            cbar.set_label('Energy / dB')
+        else:
+            cbar.set_label('Energy (linear)')
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     if sample_rate is not None and stft_size is not None:
