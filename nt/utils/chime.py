@@ -8,12 +8,15 @@ from nt.utils import mkdir_p
 from nt.io.audiowrite import audiowrite
 
 CHIME_JSON_FILE = '/net/storage/2015/chime/chime_ref_data/data/json/chime.json'
-with open(CHIME_JSON_FILE) as fid:
-    CHIME_JSON = json.load(fid)
 
 
-def get_chime_data_provider_for_flist(flist, callback_fcn,
-                                      use_context_for_real=True, **kwargs):
+def get_chime_data_provider_for_flist(
+        flist,
+        callback_fcn,
+        use_context_for_real=True,
+        json_file=CHIME_JSON_FILE,
+        **kwargs
+):
     if flist[:2] == 'tr':
         stage = 'train'
     elif flist[:2] == 'dt':
@@ -27,14 +30,19 @@ def get_chime_data_provider_for_flist(flist, callback_fcn,
     channel_numbers = kwargs.pop('channel_numbers', range(1, 7))
 
     flist = '{}/A_database/flists/wav/channels_6/{}'.format(stage, flist)
+
+    with open(json_file) as fid:
+        json_src = json.load(fid)
+
     if 'real' in flist and use_context_for_real:
         start_key = 'start'
         end_key = 'end'
-        feature_channels = ['embedded/CH{}'.format(ch) for ch in channel_numbers]
+        feature_channels = ['embedded/CH{}'.format(ch)
+                            for ch in channel_numbers]
         annotations = flist.replace('flists/wav/channels_6', 'annotations')
         kwargs['_Y'] = 'embedded'
         fetcher = JsonCallbackFetcher('Chime_fetcher',
-                                      json_src=CHIME_JSON,
+                                      json_src=json_src,
                                       flist=flist,
                                       callback_fcn=callback_fcn,
                                       feature_channels=feature_channels,
@@ -48,7 +56,8 @@ def get_chime_data_provider_for_flist(flist, callback_fcn,
             feature_channels = ['X/CH{}'.format(n) for n in channel_numbers] + \
                                ['N/CH{}'.format(n) for n in channel_numbers]
         else:
-            feature_channels = ['observed/CH{}'.format(n) for n in channel_numbers]
+            feature_channels = ['observed/CH{}'.format(n)
+                                for n in channel_numbers]
         kwargs['_Y'] = 'observed'
         fetcher = JsonCallbackFetcher('Chime_fetcher',
                                       json_src=CHIME_JSON,
