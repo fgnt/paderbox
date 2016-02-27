@@ -60,7 +60,7 @@ def get_chime_data_provider_for_flist(
                                 for n in channel_numbers]
         kwargs['_Y'] = 'observed'
         fetcher = JsonCallbackFetcher('Chime_fetcher',
-                                      json_src=CHIME_JSON,
+                                      json_src=json_src,
                                       flist=flist,
                                       callback_fcn=callback_fcn,
                                       feature_channels=feature_channels,
