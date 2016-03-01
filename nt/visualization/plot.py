@@ -154,7 +154,7 @@ def spectrogram(signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
              'leads to a wrong visualization and especially colorbar!')
 
     if log:
-        signal = np.log10(signal).T
+        signal = np.log10(np.maximum(signal, np.max(signal)/1e6)).T
     else:
         signal = signal.T
 
