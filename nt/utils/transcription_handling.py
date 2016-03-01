@@ -3,6 +3,7 @@ import editdistance
 import math
 
 
+
 phone_map = dict(
     aa='aa', ao='aa', ah='ah', ax='ah', er='er', axr='er',
     hh='hh',
@@ -236,43 +237,46 @@ class EventLabelHandler(object):
 
     """
 
-    def __init__(self, transcription_list, window_length=400,
+    def __init__(self, transcription_list,events, window_length=400,
                  stft_size=512, stft_shift=160):
         self.label_to_int = dict()
         self.int_to_label = dict()
 
-        #self.sample_to_frame_idx = lambda sample_idx: \
-         #   sample_to_frame_idx(sample_idx, window_length, stft_shift)
         self.sample_to_frame_idx = lambda sample_idx: \
             sample_to_frame_idx(sample_idx, stft_size, stft_shift)
 
         # set up mapping dictionaries
-        # convention: the last element of the transcription list is the
-        # length of the wave file, therefore slice it off
-        for transcription_sequence in transcription_list.values():
-            for _, _, label in transcription_sequence:
-                if label not in self.label_to_int:
-                    number = len(self.label_to_int)
-                    self.label_to_int[label] = number
-                    self.int_to_label[number] = label
+        # add a Label for Silence First and fixate the event labels with integers
+        self.label_to_int['Silence'] = 0 # len(self.label_to_int)
+        self.int_to_label[0] = 'Silence' #len(self.label_to_int)
+        for i in range(len(events)):
+            self.label_to_int[events[i]]=i+1
+            self.int_to_label[i+1]= events[i]
 
-    def label_seq_to_int_arr(self, transcription):
+
+    def label_seq_to_int_arr(self, transcription, resampling_factor):
         # for event detection it is assumed that the transcription is list of
         # tuples of the scheme (begin, end, 'label'). The last element contains
         # the overall file length, therefore transcription[-1][1] is equal to
         # the sequence length in samples
         assert transcription[-1][2] == 'END'
         transcription_length_in_samples = transcription[-1][1]
+        #transcription_length_in_frames = self.sample_to_frame_idx(
+         #   transcription_length_in_samples)
         transcription_length_in_frames = self.sample_to_frame_idx(
-            transcription_length_in_samples)
+            self.resample_labels(resampling_factor,transcription_length_in_samples))
         number_of_events = len(self.label_to_int)
 
         int_arr = numpy.zeros(
             (transcription_length_in_frames, number_of_events),
             dtype=numpy.int32)
         for begin, end, label in transcription[:-1]:
-            begin_frame, end_frame = [self.sample_to_frame_idx(n)
+            #begin_frame, end_frame = [self.sample_to_frame_idx(n)
+            #                         for n in (begin, end)]
+            begin_frame, end_frame = [self.sample_to_frame_idx(self.resample_labels(resampling_factor,n))
                                       for n in (begin, end)]
+            if begin_frame <0:
+                begin_frame =0
             int_arr[begin_frame:end_frame, self.label_to_int[label]] = 1
         return int_arr
 
@@ -287,12 +291,17 @@ class EventLabelHandler(object):
         number_of_events = len(self.label_to_int)
 
         int_arr = numpy.zeros(
-            (int(transcription_length_in_frames), number_of_events),
+            (int(transcription_length_in_frames),),
             dtype=numpy.int32)
+
         for begin, end, label in transcription[:-1]:
             begin_frame, end_frame = [int(self.sample_to_frame_idx(self.resample_labels(resampling_factor,n)))
                                       for n in (begin, end)]
-            int_arr[begin_frame:end_frame, self.label_to_int[label]] = 1
+            if label == 'alarm':
+                label = 'alert'
+            if begin_frame <0:
+                begin_frame =0
+            int_arr[begin_frame:end_frame,] = self.label_to_int[label]
         return int_arr
 
     def int_arr_to_label_seq(self, int_arr):
@@ -374,10 +383,8 @@ def sample_to_frame_idx(sample_idx, frame_size, frame_shift):
     #start_offset = (frame_size - frame_shift)/2
     #frame_idx = (sample_idx - start_offset)//frame_shift
     #return max(0, frame_idx)
+    ### To Match with the calculation at the input side (see stft(..))
     return math.ceil((sample_idx - frame_size + frame_shift)/frame_shift)
-    start_offset = (frame_size - frame_shift) / 2
-    frame_idx = (sample_idx - start_offset) // frame_shift
-    return max(0, frame_idx)
 
 
 def argmax_ctc_decode(int_arr, label_handler):
