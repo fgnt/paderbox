@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from distutils.version import LooseVersion
 import matplotlib as mpl
 from matplotlib.ticker import ScalarFormatter
+import subprocess
 
 mpl_ge_150 = LooseVersion(mpl.__version__) >= '1.5.0'
 
@@ -18,7 +19,12 @@ class DollarFormatter(ScalarFormatter):
 
 
 class LatexContextManager(object):
-    def __init__(self, filename=None, formatter=DollarFormatter):
+    """ Context manager used for plotting which exports and calls Inkscape.
+
+    """
+    def __init__(self, filename=None,
+                 formatter=DollarFormatter):
+        assert filename.endswith('.svg')
         self.filename = filename
         self.formatter = formatter
 
@@ -39,6 +45,15 @@ class LatexContextManager(object):
         if self.filename is not None:
             try:
                 plt.savefig(self.filename)
+                try:
+                    subprocess.run([
+                        'inkscape', '-D', '-z', '--export-area-drawing',
+                        self.filename,
+                        '--export-pdf={}.pdf'.format(self.filename[:-4]),
+                        '--export-latex'
+                    ])
+                except:
+                    print('Could not perform Inkscape export.')
             except:
                 print('Could not save file.')
 
