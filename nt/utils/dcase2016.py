@@ -105,9 +105,8 @@ def get_train_cv_data_provider(json_data, flist, transcription_list, events,
     for i in range(train_data.shape[0]):
         train_data[i] = (train_data[i] - training_mean) / training_var
 
-    train_data_fetcher = ArrayDataFetcher('x', train_data, bins=[0, train_target.shape[0]], left_context=0,
-                                          right_context=0, with_context=False)
-    train_target_fetcher = ArrayDataFetcher('targets', train_target, with_context=False)
+    train_data_fetcher = ArrayDataFetcher('x', train_data)
+    train_target_fetcher = ArrayDataFetcher('targets', train_target)
 
     dp_train = DataProvider((train_data_fetcher, train_target_fetcher), batch_size=batch_size, shuffle_data=True)
 
@@ -115,10 +114,9 @@ def get_train_cv_data_provider(json_data, flist, transcription_list, events,
     for i in range(cv_data.shape[0]):
         cv_data[i] = (cv_data[i] - training_mean) / training_var
 
-    cv_data_fetcher = ArrayDataFetcher('x', cv_data, bins=[0, cv_target.shape[0]], left_context=0,
-                                       right_context=0, with_context=False)
-    cv_target_fetcher = ArrayDataFetcher('targets', cv_target, with_context=False)
+    cv_data_fetcher = ArrayDataFetcher('x', cv_data)
+    cv_target_fetcher = ArrayDataFetcher('targets', cv_target)
 
     dp_cv = DataProvider((cv_data_fetcher, cv_target_fetcher), batch_size=batch_size, shuffle_data=True)
 
-    return (dp_train, dp_cv)
+    return dp_train, dp_cv
