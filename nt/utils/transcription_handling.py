@@ -388,24 +388,30 @@ def argmax_ctc_decode_ler(dec_arr, ref_arr, label_handler):
     return dec_seq, ler
 
 
-def argmax_ctc_decode_with_stats(dec_arr, ref_arr, label_handler):
+def argmax_ctc_decode_with_stats(dec_arr, ref_arr, label_handler,
+                                 include_space=False):
     """ Decodes the ctc sequence, calculates label and word error rates and
     returns various stats
 
     :param dec_arr: ctc network output
     :param ref_arr: reference sequence (as int array)
     :param label_handler: label handler
+    :param include_space: The network can output a space. Thus we can also
+        calculate word statistics. Otherwise word statistics will be 0/-1
     :return: decode, ler, wer, label_errors, word_errors, labels, words
     """
     dec_seq = argmax_ctc_decode(dec_arr, label_handler)
     ref_seq = label_handler.int_arr_to_label_seq(ref_arr)
-    ref_words = ref_seq.split()
-    ref_labels = list(ref_seq)
-    dec_words = dec_seq.split()
-    dec_labels = list(dec_seq)
-    word_errors = editdistance.eval(dec_words, ref_words)
-    wer = word_errors / len(ref_words)
-    label_errors = editdistance.eval(dec_labels, ref_labels)
-    ler = label_errors / len(ref_labels)
+    if include_space:
+        ref_words = ''.join(ref_seq).split()
+        dec_words = ''.join(dec_seq).split()
+        word_errors = editdistance.eval(dec_words, ref_words)
+        wer = word_errors / len(ref_words)
+    else:
+        word_errors = -1
+        wer = -1
+        ref_words = []
+    label_errors = editdistance.eval(dec_seq, ref_seq)
+    ler = label_errors / len(ref_seq)
     return dec_seq, ler, wer, label_errors, word_errors, \
-           len(ref_labels), len(ref_words)
+           len(ref_seq), len(ref_words)
