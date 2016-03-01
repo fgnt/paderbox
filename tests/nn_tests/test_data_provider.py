@@ -5,17 +5,18 @@ import numpy.testing
 import unittest
 import pandas
 
+
 class IdentityFetcher(DataFetcher):
 
-    def __init__(self, name, len=10):
+    def __init__(self, name, length=10):
         DataFetcher.__init__(self, name)
-        self.len = len
+        self.len = length
 
     def __len__(self):
         return self.len
 
-    def get_data_for_indices(self, idxs):
-        return {self.name: numpy.asarray(list(idxs))}
+    def get_data_for_indices(self, indices):
+        return {self.name: numpy.asarray(list(indices))}
 
 
 class DataProviderFetcher(unittest.TestCase):
