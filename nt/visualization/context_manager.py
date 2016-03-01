@@ -51,7 +51,6 @@ def context_manager(
         'lines.linewidth': line_width,
         'figure.figsize': figure_size
     }
-    rc_parameters.update(extra_rc)
 
     colors = sns.palettes.color_palette(sns.color_palette(palette))
 
@@ -74,6 +73,8 @@ def context_manager(
         seaborn_plotting_context,
         font_scale=font_scale,
     )
+
+    rc_parameters.update(extra_rc)
 
     final = dict(axes_style, **plotting_context)
     final.update(rc_parameters)
