@@ -32,7 +32,10 @@ def get_kaldi_env():
     env['PATH'] += ':{}/src/online2bin/'.format(kaldi_root())
     env['PATH'] += ':{}/src/ivectorbin/'.format(kaldi_root())
     env['PATH'] += ':{}/src/lmbin/'.format(kaldi_root())
-    env["LD_LIBRARY_PATH"] += ":{}/tools/openfst/lib".format(kaldi_root())
+    if 'LD_LIBRARY_PATH' in env.keys():
+        env["LD_LIBRARY_PATH"] += ":{}/tools/openfst/lib".format(kaldi_root())
+    else:
+        env["LD_LIBRARY_PATH"] = ":{}/tools/openfst/lib".format(kaldi_root())
     env['LC_ALL'] = 'C'
     env['OMP_NUM_THREADS'] = '1'
     return env
