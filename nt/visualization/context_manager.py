@@ -2,9 +2,60 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from distutils.version import LooseVersion
 import matplotlib as mpl
-
+from matplotlib.ticker import ScalarFormatter
+import subprocess
 
 mpl_ge_150 = LooseVersion(mpl.__version__) >= '1.5.0'
+
+
+class DollarFormatter(ScalarFormatter):
+    def __call__(self, x, pos=None):
+        'Return the format for tick val *x* at position *pos*'
+        if len(self.locs) == 0:
+            return ''
+        else:
+            s = self.pprint_val(x)
+            return '\$' + self.fix_minus(s) + '\$'
+
+
+class LatexContextManager(object):
+    """ Context manager used for plotting which exports and calls Inkscape.
+
+    """
+    def __init__(self, filename=None,
+                 formatter=DollarFormatter):
+        assert filename.endswith('.svg')
+        self.filename = filename
+        self.formatter = formatter
+
+    def __enter__(self):
+        extra_rc = {
+            'svg.fonttype': 'none',
+            'text.usetex': False,
+            'text.latex.unicode': False,
+            'axes.unicode_minus': False
+        }
+        return context_manager(font_scale=2.5, extra_rc=extra_rc)
+
+    def __exit__(self, type, value, tb):
+        figure = plt.gcf()
+        for ax in figure.get_axes():
+            ax.xaxis.set_major_formatter(self.formatter())
+            ax.yaxis.set_major_formatter(self.formatter())
+        if self.filename is not None:
+            try:
+                plt.savefig(self.filename)
+                try:
+                    subprocess.run([
+                        'inkscape', '-D', '-z', '--export-area-drawing',
+                        self.filename,
+                        '--export-pdf={}.pdf'.format(self.filename[:-4]),
+                        '--export-latex'
+                    ])
+                except:
+                    print('Could not perform Inkscape export.')
+            except:
+                print('Could not save file.')
 
 
 def context_manager(

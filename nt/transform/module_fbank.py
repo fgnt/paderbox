@@ -97,6 +97,7 @@ def get_filterbanks(number_of_filters=20, nfft=1024, sample_rate=16000,
             fbank[j,i] = (bin[j+2]-i)/(bin[j+2]-bin[j+1])
     return fbank
 
+
 def hz2mel(hz):
     """Convert a value in Hertz to Mels
 
@@ -107,6 +108,7 @@ def hz2mel(hz):
     """
     return 2595 * numpy.log10(1+hz/700.0)
 
+
 def mel2hz(mel):
     """Convert a value in Mels to Hertz
 
@@ -116,3 +118,25 @@ def mel2hz(mel):
         array is returned.
     """
     return 700*(10**(mel/2595.0)-1)
+
+
+def logfbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
+          number_of_filters=23, stft_size=512, lowest_frequency=0,
+          highest_frequency=None, preemphasis_factor=0.97,
+          window=scipy.signal.hamming):
+    """Generates log fbank features from time signal.
+
+    Simply wraps fbank function. See parameters there.
+    """
+    return numpy.log10(fbank(
+        time_signal,
+        sample_rate=sample_rate,
+        window_length=window_length,
+        stft_shift=stft_shift,
+        number_of_filters=number_of_filters,
+        stft_size=stft_size,
+        lowest_frequency=lowest_frequency,
+        highest_frequency=highest_frequency,
+        preemphasis_factor=preemphasis_factor,
+        window=window
+    ))
