@@ -22,11 +22,15 @@ class LatexContextManager(object):
     """ Context manager used for plotting which exports and calls Inkscape.
 
     """
-    def __init__(self, filename=None,
-                 formatter=DollarFormatter):
+    def __init__(
+            self,
+            filename,
+            figure_size=[8.0, 6.0],
+            formatter=DollarFormatter):
         assert filename.endswith('.svg')
         self.filename = filename
         self.formatter = formatter
+        self.figure_size = figure_size
 
     def __enter__(self):
         extra_rc = {
@@ -35,7 +39,11 @@ class LatexContextManager(object):
             'text.latex.unicode': False,
             'axes.unicode_minus': False
         }
-        return context_manager(font_scale=2.5, extra_rc=extra_rc)
+        return context_manager(
+            font_scale=2.5,
+            extra_rc=extra_rc,
+            figure_size=self.figure_size
+        )
 
     def __exit__(self, type, value, tb):
         figure = plt.gcf()
