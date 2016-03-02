@@ -11,10 +11,10 @@ class TestNoiseMethods(unittest.TestCase):
         F = 123
         X = np.random.normal(size=(T, F)) + 1j * np.random.normal(size=(T, F))
         N = np.random.normal(size=(T, F)) + 1j * np.random.normal(size=(T, F))
-        X = 5*X
+        X *= 5
 
         snr = 20.0  # dB
-        X, N = set_snr(X, N, snr)
+        set_snr(X, N, snr)
         calculated_snr = get_snr(X, N)
 
         print(calculated_snr)
