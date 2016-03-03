@@ -60,7 +60,8 @@ def _get_batch(signal, batch):
 
 @allow_dict_input_and_colorize
 @create_subplot
-def line(signal, ax=None, ylim=None, label=None, color=None):
+def line(signal, ax=None, ylim=None, label=None, color=None, logx=False,
+         logy=False):
     """
     Use together with facet_grid().
 
@@ -72,10 +73,19 @@ def line(signal, ax=None, ylim=None, label=None, color=None):
     :param ylim: Tuple with y-axis limits
     :return:
     """
-    if isinstance(signal, tuple):
-        ax.plot(signal[0], signal[1], label=label, color=color)
+    if logx and logy:
+        plt_fcn = ax.loglog
+    elif logx:
+        plt_fcn = ax.semilogx
+    elif logy:
+        plt_fcn = ax.semilogy
     else:
-        ax.plot(signal, label=label, color=color)
+        plt_fcn = ax.plot
+
+    if isinstance(signal, tuple):
+        plt_fcn(signal[0], signal[1], label=label, color=color)
+    else:
+        plt_fcn(signal, label=label, color=color)
 
     if ylim is not None:
         ax.set_ylim(ylim)
