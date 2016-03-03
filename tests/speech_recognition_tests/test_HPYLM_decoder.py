@@ -86,6 +86,41 @@ class TestDecoder(unittest.TestCase):
         print(word_decode[utt_id])
         self.assertEqual(utt, word_decode[utt_id])
 
+    def test_simple_excl_lex(self):
+
+        with open(
+                data_dir(
+                    'speech_recognition', 'NHPYLM', 'label_handler.pkl'),
+                'rb') as fid:
+            trans_handler = pickle.load(fid)
+
+        utt = "AA BA AC"
+        utt_id = "TEST_UTT_1"
+        label_seq = "AA_AAAA____B_A____AA__CCCC"
+
+        trans_handler_net = TranscriptionHandler(trans_handler.lexicon)
+
+        trans_hat = self.write_net_out(trans_handler_net, label_seq, -1000)
+
+        with tempfile.TemporaryDirectory() as working_dir:
+
+            lm_path = data_dir('speech_recognition', 'NHPYLM', 'G.fst')
+
+            self.decoder = NHPYLMDecoder(trans_handler_net, working_dir,
+                                   lm_path, trans_handler)
+            self.decoder.create_graphs(debug=True,
+                                       phi_penalty=1,
+                                       sow_penalty=1,
+                                       exclusive_lex=True)
+            self.decoder.create_lattices([trans_hat.num, ], [utt_id, ])
+            self.decoder.draw_search_graphs()
+            sym_decode, word_decode = \
+                self.decoder.decode(lm_scale=1, out_type='string')
+
+        print(sym_decode[utt_id])
+        print(word_decode[utt_id])
+        self.assertEqual(utt, word_decode[utt_id])
+
     def test_new_word(self):
 
         with open(
@@ -109,6 +144,37 @@ class TestDecoder(unittest.TestCase):
             self.decoder = NHPYLMDecoder(trans_handler_net, working_dir,
                                    lm_path, trans_handler)
             self.decoder.create_graphs(debug=False)
+            self.decoder.create_lattices([trans_hat.num, ], [utt_id, ])
+            sym_decode, word_decode = \
+                self.decoder.decode(lm_scale=1, out_type='string')
+
+        print(sym_decode[utt_id])
+        print(word_decode[utt_id])
+        self.assertEqual(utt, word_decode[utt_id])
+
+    def test_new_word_excl_lex(self):
+
+        with open(
+                data_dir(
+                    'speech_recognition', 'NHPYLM', 'label_handler.pkl'),
+                'rb') as fid:
+            trans_handler = pickle.load(fid)
+
+        utt = "<A> AB AC"
+        utt_id = "TEST_UTT_1"
+        label_seq = "AA_AAAA____B_A_____CCCC"
+
+        trans_handler_net = TranscriptionHandler(trans_handler.lexicon)
+
+        trans_hat = self.write_net_out(trans_handler_net, label_seq, -1000)
+
+        with tempfile.TemporaryDirectory() as working_dir:
+
+            lm_path = data_dir('speech_recognition', 'NHPYLM', 'G.fst')
+
+            self.decoder = NHPYLMDecoder(trans_handler_net, working_dir,
+                                   lm_path, trans_handler)
+            self.decoder.create_graphs(debug=True, exclusive_lex=True)
             self.decoder.create_lattices([trans_hat.num, ], [utt_id, ])
             sym_decode, word_decode = \
                 self.decoder.decode(lm_scale=1, out_type='string')
@@ -162,7 +228,7 @@ class TestDecoder(unittest.TestCase):
 
 
         trans_handler_net = TranscriptionHandler(trans_handler.lexicon,
-                                                 include_space=True)
+                                                 sow=' ')
 
         trans_hat = self.write_net_out(trans_handler_net, label_seq, -1000)
 
@@ -213,7 +279,8 @@ class TestDecoder(unittest.TestCase):
         print(word_decode[utt_id])
         self.assertEqual(utt, word_decode[utt_id])
 
-    def _test_big_grammar(self, label_seq, utt="THIS SHOULD BE RECOGNIZED"):
+    def _test_big_grammar(self, label_seq, utt="THIS SHOULD BE RECOGNIZED",
+                          exclusive_lex=False):
 
         with open(
                 data_dir(
@@ -241,7 +308,8 @@ class TestDecoder(unittest.TestCase):
             self.decoder = NHPYLMDecoder(trans_handler_net, working_dir,
                                    lm_path, trans_handler, lexicon=lexicon)
             self.decoder.create_graphs(debug=False,
-                                       sow_penalty=0)
+                                       sow_penalty=0,
+                                       exclusive_lex=exclusive_lex)
             self.decoder.create_lattices([trans_hat.num, ], [utt_id, ])
             sym_decode, word_decode = \
                 self.decoder.decode(lm_scale=1, out_type='string')
@@ -253,6 +321,10 @@ class TestDecoder(unittest.TestCase):
     def test_big_grammar_1(self):
         self._test_big_grammar("T_HI__S__SSHOOO_ULDBE___RECO_GNIIZ_ED____")
 
+    def test_big_grammar_1_excl(self):
+        self._test_big_grammar("T_HI__S__SSHOOO_ULDBE___RECO_GNIIZ_ED____",
+                               exclusive_lex=True)
+
     def test_big_grammar_no_blanks(self):
         self._test_big_grammar("THIS_SHOULDBERECOGNIZED")
 
@@ -263,3 +335,9 @@ class TestDecoder(unittest.TestCase):
         self._test_big_grammar(
             "_T_H_I_S_S_H_O_U_L_D_B_E_E_N_R_E_C_O_G_N_I_Z_E_D_",
         utt='THIS SHOULD BE <EN> RECOGNIZED')
+
+    def test_big_grammar_new_word_excl(self):
+        self._test_big_grammar(
+            "_T_H_I_S_S_H_O_U_L_D_B_E_E_N_R_E_C_O_G_N_I_Z_E_D_",
+        utt='THIS SHOULD BE <EN> RECOGNIZED',
+        exclusive_lex=True)
