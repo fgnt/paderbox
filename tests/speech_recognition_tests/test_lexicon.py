@@ -12,16 +12,17 @@ class TestLexicon(unittest.TestCase):
 #        self.words = ['Mars', 'man', 'Martian', 'Marsman']
         self.words = ['AA', 'AB']
         self.lexicon = {word: list(word) for word in self.words}
-
-        self.special_symbols = {'blank': '<blank>', 'eps': '<eps>', 'phi': '<phi>', 'sow': '<sow>',
+        self.special_symbols = {'blank': None, 'eps': '<eps>', 'phi': '<phi>', 'sow': '<sow>',
                                 'eow': '</eow>', 'sos': '<sos>', 'eos': '</eos>'}
-        self.transcription_handler = TranscriptionHandler(self.lexicon, **self.special_symbols)
-        self.transcription_handler.add_word(self.special_symbols['eos'], [self.special_symbols['eos'], self.special_symbols['eow']])
+
+        self.transcription_handler = TranscriptionHandler(dict(self.lexicon), **self.special_symbols)
+        self.transcription_handler.add_word(self.special_symbols['eos'], [self.special_symbols['eos']])
 
         self.word_offset = len(self.transcription_handler.label_handler)
         self.int_lexicon = {self.transcription_handler.words2ints(word)[0] + self.word_offset:
                             self.transcription_handler.labels2ints(labels) for word, labels in self.lexicon.items()}
         self.int_eos_word = self.transcription_handler.words2ints(self.special_symbols['eos'])[0] + self.word_offset
+
         self.int_eps = self.transcription_handler.labels2ints(self.special_symbols['eps'])[0]
         self.int_eow = self.transcription_handler.labels2ints(self.special_symbols['eow'])[0]
         self.int_phi = self.transcription_handler.labels2ints(self.special_symbols['phi'])[0]
