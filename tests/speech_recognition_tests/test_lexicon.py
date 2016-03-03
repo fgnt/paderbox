@@ -21,16 +21,16 @@ class TestLexicon(unittest.TestCase):
         self.word_offset = len(self.transcription_handler.label_handler)
         self.int_lexicon = {self.transcription_handler.words2ints(word)[0] + self.word_offset:
                             self.transcription_handler.labels2ints(labels) for word, labels in self.lexicon.items()}
+        self.int_eos_word = self.transcription_handler.words2ints(self.special_symbols['eos'])[0] + self.word_offset
         self.int_eps = self.transcription_handler.labels2ints(self.special_symbols['eps'])[0]
         self.int_eow = self.transcription_handler.labels2ints(self.special_symbols['eow'])[0]
         self.int_phi = self.transcription_handler.labels2ints(self.special_symbols['phi'])[0]
         self.int_eos_label = self.transcription_handler.labels2ints(self.special_symbols['eos'])[0]
-        self.int_eos_word = self.transcription_handler.words2ints(self.special_symbols['eos'])[0]
         self.int_label = [self.transcription_handler.labels2ints(label)[0]
                           for label in self.transcription_handler.label_handler.labels]
 
-    def _test_write_fst(self, lexicon):
-        lexicon = Trie(self.int_eps, self.int_eow)
+    def _test_write_fst(self, class_type):
+        lexicon = class_type(self.int_eps, self.int_eow)
         for word in self.int_lexicon.items():
             lexicon.add_word(word)
 
@@ -47,7 +47,7 @@ class TestLexicon(unittest.TestCase):
             fst.draw(sym_filename, sym_filename, fst_filename, pdf_filename)
 
     def test_trie_write_fst(self):
-        self._test_write_fst(Trie(self.int_eps, self.int_eow))
+        self._test_write_fst(Trie)
 
     def test_linear_write_fst(self):
-        self._test_write_fst(Linear(self.int_eps, self.int_eow))
+        self._test_write_fst(Linear)
