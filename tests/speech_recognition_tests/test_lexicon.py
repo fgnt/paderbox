@@ -14,7 +14,7 @@ class TestLexicon(unittest.TestCase):
         self.special_symbols = {'blank': None, 'eps': '<eps>', 'phi': '<phi>', 'sow': '<sow>',
                                 'eow': '</eow>', 'sos': '<sos>', 'eos': '</eos>'}
 
-        self.transcription_handler = TranscriptionHandler(dict(self.lexicon), **self.special_symbols)
+        self.transcription_handler = TranscriptionHandler(self.lexicon, **self.special_symbols)
         self.transcription_handler.add_word(self.special_symbols['eos'], [self.special_symbols['eos']])
 
         self.word_offset = len(self.transcription_handler.label_handler)
