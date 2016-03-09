@@ -253,7 +253,7 @@ class EventLabelHandler(object):
             self.int_to_label[i + 1] = events[i]
 
     def label_seq_to_int_arr(self, transcription, resampling_factor):
-        # for event detection it is assumed that the transcription is list of
+        # for event detection (polyphonic) it is assumed that the transcription is list of
         # tuples of the scheme (begin, end, 'label'). The last element contains
         # the overall file length, therefore transcription[-1][1] is equal to
         # the sequence length in samples
