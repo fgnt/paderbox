@@ -12,7 +12,7 @@ class TestLexicon(unittest.TestCase):
         self.words = ['AA', 'AB']
         self.lexicon = {word: list(word) for word in self.words}
         self.special_symbols = {'blank': None, 'eps': '<eps>', 'phi': '<phi>', 'sow': '<sow>',
-                                'eow': '</eow>', 'sos': '<sos>', 'eos': '</eos>'}
+                                'eow': '</eow>', 'eos': '</eos>', 'eoc': '</eoc>'}
 
         self.transcription_handler = TranscriptionHandler(self.lexicon, **self.special_symbols)
         self.transcription_handler.add_word(self.special_symbols['eos'], [self.special_symbols['eos']])
@@ -26,16 +26,17 @@ class TestLexicon(unittest.TestCase):
         self.int_eow = self.transcription_handler.labels2ints(self.special_symbols['eow'])[0]
         self.int_phi = self.transcription_handler.labels2ints(self.special_symbols['phi'])[0]
         self.int_sow = self.transcription_handler.labels2ints(self.special_symbols['sow'])[0]
+        self.int_eoc = self.transcription_handler.labels2ints(self.special_symbols['eoc'])[0]
         self.int_eos_label = self.transcription_handler.labels2ints(self.special_symbols['eos'])[0]
         self.int_label = [self.transcription_handler.labels2ints(label)[0]
                           for label in self.transcription_handler.label_handler.labels]
 
-    def _test_write_fst(self, class_type, add_word_mode, build_character_model_mode):
-        lexicon = class_type(self.int_eps, self.int_eow)
+    def _test_write_fst(self, class_type, add_word_mode, build_character_model_mode, sow=None, eoc=None):
+        lexicon = class_type(self.int_eps, self.int_eow, eoc)
         for word in self.int_lexicon.items():
             lexicon.add_word(word, add_word_mode)
 
-        lexicon.build_character_model(self.int_label, build_character_model_mode, self.int_sow)
+        lexicon.build_character_model(self.int_label, build_character_model_mode, sow)
         lexicon.add_eos(self.int_eos_label, self.int_eos_word)
         lexicon.add_self_loops(self.int_phi)
 
@@ -48,25 +49,35 @@ class TestLexicon(unittest.TestCase):
             fst.draw(sym_filename, sym_filename, fst_filename, pdf_filename)
 
     def test_linear_linear_trie_write_fst(self):
-        self._test_write_fst(Linear, 'linear', 'trie')
+        for eoc in (None, self.int_eoc):
+            self._test_write_fst(Linear, 'linear', 'trie', eoc=eoc)
 
     def test_linear_linear_flat_write_fst(self):
-        self._test_write_fst(Linear, 'linear', 'flat')
+        for sow in (None, self.int_sow):
+            for eoc in (None, self.int_eoc):
+                self._test_write_fst(Linear, 'linear', 'flat', sow, eoc)
 
     def test_linear_linear_copy_write_fst(self):
-        self._test_write_fst(Linear, 'linear', 'copy')
+        for eoc in (None, self.int_eoc):
+            self._test_write_fst(Linear, 'linear', 'copy', eoc=eoc)
 
     def test_linear_linear_linear_write_fst(self):
-        self._test_write_fst(Linear, 'linear', 'linear')
+        for eoc in (None, self.int_eoc):
+            self._test_write_fst(Linear, 'linear', 'linear', eoc=eoc)
 
     def test_linear_trie_trie_write_fst(self):
-        self._test_write_fst(Linear, 'trie', 'trie')
+        for eoc in (None, self.int_eoc):
+            self._test_write_fst(Linear, 'trie', 'trie', eoc=eoc)
 
     def test_linear_trie_flat_write_fst(self):
-        self._test_write_fst(Linear, 'trie', 'flat')
+        for sow in (None, self.int_sow):
+            for eoc in (None, self.int_eoc):
+                self._test_write_fst(Linear, 'trie', 'flat', sow, eoc)
 
     def test_linear_trie_copy_write_fst(self):
-        self._test_write_fst(Linear, 'trie', 'copy')
+        for eoc in (None, self.int_eoc):
+            self._test_write_fst(Linear, 'trie', 'copy', eoc=eoc)
 
     def test_linear_trie_linear_write_fst(self):
-        self._test_write_fst(Linear, 'trie', 'linear')
+        for eoc in (None, self.int_eoc):
+            self._test_write_fst(Linear, 'trie', 'linear', eoc=eoc)
