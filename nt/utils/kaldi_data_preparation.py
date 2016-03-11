@@ -15,16 +15,21 @@ class word_to_grapheme():
     """ Word to grapheme conversion - splits a word into its letters, leaving fixed words unchanged
 
     :param fixed_words: words which should not be split
+    :param join: True: return string with letter separated by whitespace, False: return list of letters
 
     :return: a callable instance of this class which takes a word as input and outputs a one element
              list with the corresponding grapheme sequence
     """
-    def __init__(self, fixed_words=[]):
+    def __init__(self, fixed_words=(), join=True):
         self.fixed_words = fixed_words
+        self.join = join
 
     def __call__(self, word):
         if word not in self.fixed_words:
-            return [' '.join(list(word))]
+            if self.join:
+                return [' '.join(list(word))]
+            else:
+                return list(word)
         else:
             return [word]
 
