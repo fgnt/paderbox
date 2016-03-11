@@ -128,7 +128,7 @@ def logfbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
 
     Simply wraps fbank function. See parameters there.
     """
-    return numpy.log10(fbank(
+    return numpy.log(fbank(
         time_signal,
         sample_rate=sample_rate,
         window_length=window_length,
