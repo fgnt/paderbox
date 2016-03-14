@@ -200,6 +200,7 @@ def spectrogram(signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
         x_tick_labels = x_tick_range/blocks_per_second
         plt.xticks(x_tick_range, x_tick_labels)
         ax.set_xlabel('Time / s')
+    ax.set_aspect('auto')
     ax.grid(False)
     return ax
 
