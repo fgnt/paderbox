@@ -137,7 +137,8 @@ def time_series(signal, ax=None, ylim=None, label=None, color=None):
 
 @create_subplot
 def spectrogram(signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
-                sample_rate=None, stft_size=None, x_label='Time frame index',
+                sample_rate=None, stft_size=None, stft_shift=None,
+                x_label='Time frame index',
                 y_label='Frequency bin index'):
     """
     Plots a spectrogram from a spectrogram (power) as input.
@@ -155,6 +156,9 @@ def spectrogram(signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
     :param stft_size: Size of the STFT transformation.
         If `sample_rate` and `stft_size` are specified, the y-ticks will be the
         frequency
+    :param stft_shift: Amount of samples the stft window is advanced per frame.
+        If `sample_rate` and `stft_shift` are specified, the x-ticks will be the
+        time
     :return: axes
     """
     signal = _get_batch(signal, batch)
@@ -184,17 +188,26 @@ def spectrogram(signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     if sample_rate is not None and stft_size is not None:
-        y_tick_range = np.linspace(0, 1024/2, num=5)
+        y_tick_range = np.linspace(0, stft_size/2, num=5)
         y_tick_labels = y_tick_range*(sample_rate/stft_size/1000)
         plt.yticks(y_tick_range, y_tick_labels)
         ax.set_ylabel('Frequency / kHz')
+    if sample_rate is not None and stft_shift is not None:
+        seconds_per_tick = 0.5
+        blocks_per_second = sample_rate/stft_shift
+        x_tick_range = np.arange(0, signal.shape[1],
+                                 seconds_per_tick*blocks_per_second)
+        x_tick_labels = x_tick_range/blocks_per_second
+        plt.xticks(x_tick_range, x_tick_labels)
+        ax.set_xlabel('Time / s')
+    ax.set_aspect('auto')
     ax.grid(False)
     return ax
 
 
 @create_subplot
 def stft(signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
-         sample_rate=None, stft_size=None):
+         sample_rate=None, stft_size=None, stft_shift=None):
     """
     Plots a spectrogram from an stft signal as input. This is a wrapper of the
     plot function for spectrograms.
@@ -210,11 +223,15 @@ def stft(signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
     :param stft_size: Size of the STFT transformation.
         If `sample_rate` and `stft_size` are specified, the y-ticks will be the
         frequency
+    :param stft_shift: Amount of samples the stft window is advanced per frame.
+        If `sample_rate` and `stft_shift` are specified, the x-ticks will be the
+        time
     :return: axes
     """
     return spectrogram(nt.transform.stft_to_spectrogram(signal), limits=limits,
                        ax=ax, log=log, colorbar=colorbar, batch=batch,
-                       sample_rate=sample_rate, stft_size=stft_size)
+                       sample_rate=sample_rate, stft_size=stft_size,
+                       stft_shift=stft_shift)
 
 
 @create_subplot
