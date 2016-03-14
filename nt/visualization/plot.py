@@ -184,7 +184,7 @@ def spectrogram(signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     if sample_rate is not None and stft_size is not None:
-        y_tick_range = np.linspace(0, 1024/2, num=5)
+        y_tick_range = np.linspace(0, stft_size/2, num=5)
         y_tick_labels = y_tick_range*(sample_rate/stft_size/1000)
         plt.yticks(y_tick_range, y_tick_labels)
         ax.set_ylabel('Frequency / kHz')
