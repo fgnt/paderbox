@@ -37,7 +37,7 @@ class test_timit_db(db_test.DatabaseTest):
         self.assertEqual(word_len, 6300, "Databank has wrong number of word transciprions!")
 
     def test_flists_len(self):
-        self.assertEqual(len(self.json['flists']), 6492)
+        self.assertEqual(len(self.json['flists']), 3)
 
 if __name__ == '__main__':
     unittest.main()

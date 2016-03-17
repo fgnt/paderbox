@@ -279,7 +279,7 @@ class TestDecoder(unittest.TestCase):
                 for letter in word1:
                     fid.write(" " + letter)
 
-            lex = get_lexicon_from_txt(lex_file)
+            lex = get_lexicon_from_txt_file(lex_file)
             trans_handler = TranscriptionHandler(lex)
 
             lm_path_uni = os.path.join(working_dir, 'tcb05cnp')

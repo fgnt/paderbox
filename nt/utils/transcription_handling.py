@@ -1,6 +1,6 @@
 import numpy
 import editdistance
-
+import math
 
 phone_map = dict(
     aa='aa', ao='aa', ah='ah', ax='ah', er='er', axr='er',
@@ -33,6 +33,7 @@ phone_map = dict(
 )
 phone_map['ax-h'] = 'ah'
 phone_map['h#'] = 'sil'
+
 
 class CharLabelHandler(object):
     """ Handles transforming from chars to integers and vice versa
@@ -235,46 +236,79 @@ class EventLabelHandler(object):
 
     """
 
-    def __init__(self, transcription_list, window_length=400,
+    def __init__(self, transcription_list, events, window_length=400,
                  stft_size=512, stft_shift=160):
         self.label_to_int = dict()
         self.int_to_label = dict()
 
         self.sample_to_frame_idx = lambda sample_idx: \
-            sample_to_frame_idx(sample_idx, window_length, stft_shift)
+            sample_to_frame_idx(sample_idx, stft_size, stft_shift)
 
         # set up mapping dictionaries
-        # convention: the last element of the transcription list is the
-        # length of the wave file, therefore slice it off
-        for transcription_sequence in transcription_list.values():
-            for _, _, label in transcription_sequence:
-                if label not in self.label_to_int:
-                    number = len(self.label_to_int)
-                    self.label_to_int[label] = number
-                    self.int_to_label[number] = label
+        # add a Label for Silence First and fixate the event labels with integers
+        self.label_to_int['Silence'] = 0
+        self.int_to_label[0] = 'Silence'
+        for i in range(len(events)):
+            self.label_to_int[events[i]] = i + 1
+            self.int_to_label[i + 1] = events[i]
 
-    def label_seq_to_int_arr(self, transcription):
-        # for event detection it is assumed that the transcription is list of
+    def label_seq_to_int_arr(self, transcription, resampling_factor):
+        # for event detection (polyphonic) it is assumed that the transcription is list of
         # tuples of the scheme (begin, end, 'label'). The last element contains
         # the overall file length, therefore transcription[-1][1] is equal to
         # the sequence length in samples
         assert transcription[-1][2] == 'END'
         transcription_length_in_samples = transcription[-1][1]
+        # resamples to a new sampling frequency to adjust the labels to the new sampling frequency.
         transcription_length_in_frames = self.sample_to_frame_idx(
-            transcription_length_in_samples)
+            self.resample_labels(resampling_factor, transcription_length_in_samples))
         number_of_events = len(self.label_to_int)
 
         int_arr = numpy.zeros(
             (transcription_length_in_frames, number_of_events),
             dtype=numpy.int32)
         for begin, end, label in transcription[:-1]:
-            begin_frame, end_frame = [self.sample_to_frame_idx(n)
+            begin_frame, end_frame = [self.sample_to_frame_idx(self.resample_labels(resampling_factor, n))
                                       for n in (begin, end)]
+            if begin_frame < 0:
+                begin_frame = 0
             int_arr[begin_frame:end_frame, self.label_to_int[label]] = 1
+        ## Activating silence class where no class is activated.
+        for i in range(int_arr.shape[0]):
+            if not int_arr[i].any():
+                int_arr[i][0] = 1
+
+        return int_arr
+
+    def label_seq_to_int_arr_monophonic(self, transcription, resampling_factor):
+        # Works same as label_seq_to_int_arr but outputs an integer for class label
+        # Suited for DCASE2013 monophonic data
+
+        assert transcription[-1][2] == 'END'
+        transcription_length_in_samples = transcription[-1][1]
+        transcription_length_in_frames = self.sample_to_frame_idx(
+            self.resample_labels(resampling_factor, transcription_length_in_samples))
+        number_of_events = len(self.label_to_int)
+
+        int_arr = numpy.zeros(
+            (int(transcription_length_in_frames),),
+            dtype=numpy.int32)
+
+        for begin, end, label in transcription[:-1]:
+            begin_frame, end_frame = [int(self.sample_to_frame_idx(self.resample_labels(resampling_factor, n)))
+                                      for n in (begin, end)]
+            if label == 'alarm':
+                label = 'alert'
+            if begin_frame < 0:
+                begin_frame = 0
+            int_arr[begin_frame:end_frame, ] = self.label_to_int[label]
         return int_arr
 
     def int_arr_to_label_seq(self, int_arr):
         raise NotImplementedError('This feature is currently missing!')
+
+    def resample_labels(self, resampling_factor, sample_num_old):
+        return int(sample_num_old * resampling_factor)
 
     def print_mapping(self):
         for char, i in self.label_to_int.items():
@@ -288,6 +322,7 @@ class PhonemLabelHandler(object):
     """
         Handles transforming from Phonem to integers and vice versa
     """
+
     def __init__(self, transcription_list, blank='BLANK',
                  add_seq2seq_magic=False, short=False):
         self.label_to_int = dict()
@@ -345,9 +380,11 @@ def sample_to_frame_idx(sample_idx, frame_size, frame_shift):
     """ Calculate corresponding frame index for sample index
         :param sample_idx: sample index
     """
-    start_offset = (frame_size - frame_shift) / 2
-    frame_idx = (sample_idx - start_offset) // frame_shift
-    return max(0, frame_idx)
+    # start_offset = (frame_size - frame_shift)/2
+    # frame_idx = (sample_idx - start_offset)//frame_shift
+    # return max(0, frame_idx)
+    ### To Match with the calculation at the input side (see stft(..))
+    return math.ceil((sample_idx - frame_size + frame_shift) / frame_shift)
 
 
 def argmax_ctc_decode(int_arr, label_handler):
@@ -388,24 +425,30 @@ def argmax_ctc_decode_ler(dec_arr, ref_arr, label_handler):
     return dec_seq, ler
 
 
-def argmax_ctc_decode_with_stats(dec_arr, ref_arr, label_handler):
+def argmax_ctc_decode_with_stats(dec_arr, ref_arr, label_handler,
+                                 include_space=False):
     """ Decodes the ctc sequence, calculates label and word error rates and
     returns various stats
 
     :param dec_arr: ctc network output
     :param ref_arr: reference sequence (as int array)
     :param label_handler: label handler
+    :param include_space: The network can output a space. Thus we can also
+        calculate word statistics. Otherwise word statistics will be 0/-1
     :return: decode, ler, wer, label_errors, word_errors, labels, words
     """
     dec_seq = argmax_ctc_decode(dec_arr, label_handler)
     ref_seq = label_handler.int_arr_to_label_seq(ref_arr)
-    ref_words = ref_seq.split()
-    ref_labels = list(ref_seq)
-    dec_words = dec_seq.split()
-    dec_labels = list(dec_seq)
-    word_errors = editdistance.eval(dec_words, ref_words)
-    wer = word_errors / len(ref_words)
-    label_errors = editdistance.eval(dec_labels, ref_labels)
-    ler = label_errors / len(ref_labels)
+    if include_space:
+        ref_words = ''.join(ref_seq).split()
+        dec_words = ''.join(dec_seq).split()
+        word_errors = editdistance.eval(dec_words, ref_words)
+        wer = word_errors / len(ref_words)
+    else:
+        word_errors = -1
+        wer = -1
+        ref_words = []
+    label_errors = editdistance.eval(dec_seq, ref_seq)
+    ler = label_errors / len(ref_seq)
     return dec_seq, ler, wer, label_errors, word_errors, \
-           len(ref_labels), len(ref_words)
+           len(ref_seq), len(ref_words)

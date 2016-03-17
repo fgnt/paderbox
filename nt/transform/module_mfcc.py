@@ -3,6 +3,7 @@ from nt.transform.module_fbank import fbank
 import scipy.signal
 from scipy.fftpack import dct
 
+
 def mfcc(time_signal, sample_rate=16000,
          window_length=400, stft_shift=160, numcep=13,
          number_of_filters=26, stft_size=512,
@@ -14,7 +15,9 @@ def mfcc(time_signal, sample_rate=16000,
 
     Source: https://github.com/jameslyons/python_speech_features
 
-    Illustrations: http://ntjenkins.upb.de/view/PythonToolbox/job/python_toolbox_notebooks/HTML_Report/toolbox_examples/transform/06%20-%20Additional%20features.html
+    Illustrations: http://ntjenkins.upb.de/view/PythonToolbox/job/
+        python_toolbox_notebooks/HTML_Report/toolbox_examples/
+        transform/06%20-%20Additional%20features.html
 
     :param time_signal: the audio signal from which to compute features.
         Should be an N*1 array
@@ -56,7 +59,8 @@ def _lifter(cepstra, L=22):
         L <= 0 disables lifter.
 
     Source: https://github.com/jameslyons/python_speech_features
-    Tutorial MFCC: http://practicalcryptography.com/miscellaneous/machine-learning/guide-mel-frequency-cepstral-coefficients-mfccs/
+    Tutorial MFCC: http://practicalcryptography.com/miscellaneous/
+        machine-learning/guide-mel-frequency-cepstral-coefficients-mfccs/
     """
     if L > 0:
         nframes,ncoeff = numpy.shape(cepstra)
