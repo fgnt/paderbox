@@ -87,7 +87,6 @@ def make_input_arrays(json_data, flist, **kwargs):
 
     return noisy_train_data, noisy_cv_data, silence_lengths, scripts
 
-
 def transform_features(data, **kwargs):
     num_fbanks = kwargs.get('num_fbanks', 26)
     num_mfcc_coeff = kwargs.get('num_mfcc_coeff', 13)
@@ -193,13 +192,10 @@ def get_train_cv_data_provider(json_data, flist, transcription_list, events,
     return dp_train, dp_cv
 
 
-def _obtainTrainingParameters(json_data, flist, **kwargs):
-    train_data, cv_data = make_input_arrays(json_data, flist, **kwargs)
-    training_mean = np.mean(train_data, axis=0)
-    training_var = np.var(train_data, axis=0)
+def _obtainTrainingParameters(json_data, flist_train, **kwargs):
+    _, _, _, _, training_mean, training_var = make_input_arrays(json_data, flist_train, **kwargs)
 
     return training_mean, training_var
-
 
 def make_input_test_arrays(json_data, flist, **kwargs):
     fetcher = JsonCallbackFetcher('fbank',
@@ -208,15 +204,17 @@ def make_input_test_arrays(json_data, flist, **kwargs):
                                   transform_features,
                                   feature_channels=['observed/ch1'],
                                   transform_kwargs=kwargs)
+    scripts = list()
+    dev_data = list()
+    for idx in range(len(fetcher)):
+        # fetch the transformed data
+        data = fetcher.get_data_for_indices((idx,))
+        scripts.append(fetcher.utterance_ids[idx])
+        dev_data.append(data['observed'])
+        # print(fetcher.utterance_ids[idx],data['observed'].shape)
 
-    dp = DataProvider((fetcher,), batch_size=1, shuffle_data=False)
-
-    data_list = list()
-    for batch in dp.iterate():
-        data_list.append(batch['observed'])
-
-    data_list = np.concatenate(data_list, axis=0)
-    return data_list
+    dev_data = np.concatenate(dev_data, axis=0).astype(np.float32)
+    return dev_data, scripts
 
 
 def make_target_test_arrays(event_label_handler, transcription_list, resampling_factor, scripts):
@@ -229,23 +227,26 @@ def make_target_test_arrays(event_label_handler, transcription_list, resampling_
     return target_list
 
 
-def get_test_data_provider(json_data, flist_dev, flist_train, transcription_list, events, scripts,
+def get_test_data_provider(json_data, flist_dev, transcription_list, events,
                            resampling_factor=16 / 44.1, batch_size=32, cnn_features=False, **kwargs):
     left_context = kwargs.get('left_context', 0)
     right_context = kwargs.get('right_context', 0)
     step_width = kwargs.get('step_width', 1)
 
     # Load Test input data
-    dev_data = make_input_test_arrays(json_data, flist_dev, **kwargs)
+    dev_data, scripts = make_input_test_arrays(json_data, flist_dev, **kwargs)
 
     # Normalize the test data all at once with parameters of training data
-    # training_mean, training_var = _obtainTrainingParameters(json_data,flist_train,**kwargs)
-    # print(training_mean.shape,training_var.shape)
+    # flist_train = 'train/Complete Set/wav/mono'
+    #training_mean, training_var = _obtainTrainingParameters(json_data, flist_train, **kwargs)
 
-    # dev_data = (dev_data - training_mean) / np.sqrt(training_var)
+    # Normalize the test data
+    training_mean = np.mean(dev_data, axis=0)
+    training_var = np.var(dev_data, axis=0)
+
+    dev_data = (dev_data - training_mean) / np.sqrt(training_var)
 
     T, F = dev_data.shape
-    # print(T, F)
 
     dev_data = add_context(
         dev_data.reshape(T, 1, F),
@@ -270,6 +271,7 @@ def get_test_data_provider(json_data, flist_dev, flist_train, transcription_list
     for script in scripts:
         dev_target_script = make_target_test_arrays(event_label_handler, transcription_list, resampling_factor,
                                                     [script])
+        #print(script,dev_target_script.shape)
         dev_target_scripts.append(dev_target_script)
 
     dp_scripts = list()
