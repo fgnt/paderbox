@@ -19,11 +19,11 @@ class TestNN(Chain):
             conv1=L.Convolution2D(1, 32, 8, 4),
             conv2=L.Convolution2D(32, 64, 4, 2),
             conv3=L.Convolution2D(64, 12, 3, 1),
-            recurrent=L.LSTM(1560, output_size)
+            recurrent=L.LSTM(648, output_size)
         )
-        self.conv1.W.data.fill(0)
-        self.conv2.W.data.fill(0)
-        self.conv3.W.data.fill(0)
+        #self.conv1.W.data.fill(0)
+        #self.conv2.W.data.fill(0)
+        #self.conv3.W.data.fill(0)
         self.output_size = output_size
         self.recurrentState = None, None
 
@@ -73,6 +73,26 @@ def show_screen(resolution, screen):
             i += 1
     img.show()
 
+show_screen = True
+training_episodes = 1
+cv_episodes = 1
+epochs = 10000
+epsilon = 0.6 # for epsilon greedy
+frame_skipping = 4
+game_name = 'space_invaders'
+
+ale = ALEInterface()
+ale.setBool('display_screen', show_screen)
+ale.setBool('color_averaging', True)
+ale.setInt("frame_skip",frame_skipping)
+ale.setInt("random_seed", random.randint(0,100000))
+ale.loadROM('/home/jflick/ale/roms/'+game_name+'.bin')
+# Get the list of legal actions
+legal_actions = ale.getMinimalActionSet()
+resolution = ale.getScreenDims()
+dimension = resolution[0] * resolution[1]
+reduced_dimension = int(resolution[0]/2 * resolution[1]/2)
+
 def preprocess_screen(screen):
     reshaped = np.reshape(screen, (resolution[1],resolution[0]))
 
@@ -84,24 +104,6 @@ def preprocess_screen(screen):
         newscreen.append(row)
     return np.array([newscreen], dtype=np.uint8)
 
-show_screen = False
-training_episodes = 3
-cv_episodes = 3
-epochs = 100
-epsilon = 0.6 # for epsilon greedy
-frame_skipping = 4
-
-ale = ALEInterface()
-ale.setBool('display_screen', show_screen)
-ale.setInt("frame_skip",frame_skipping)
-ale.setInt("random_seed", random.randint(0,100000))
-ale.loadROM('/home/jflick/ale/roms/pong.bin')
-# Get the list of legal actions
-legal_actions = ale.getMinimalActionSet()
-resolution = ale.getScreenDims()
-dimension = resolution[0] * resolution[1]
-reduced_dimension = int(resolution[0]/2 * resolution[1]/2)
-'''
 def get_screen():
     if ale.game_over():
         return None
@@ -111,15 +113,17 @@ def get_screen():
     return preprocess_screen(screen).astype(np.float32)
 def get_reward(action):
     return ale.act(action)
-
-get_screen()
 '''
 def get_screen():
-    if random.randint(0,20) == 20:
+    if random.randint(0,20) == 0:
         return None
-    return np.array([random.uniform(0,20) for i in range(dimension)], dtype=np.float32)
+    screen = np.array([random.randint(0,100) for i in range(dimension)], dtype=np.uint8)
+    ale.getScreen(screen)
+    screen = np.reshape(screen, (resolution[1],resolution[0]))
+    return preprocess_screen(screen).astype(np.float32)
 def get_reward(action):
     return random.uniform(0,20)
+'''
 
 nn = TestNN(reduced_dimension, len(legal_actions))
 
@@ -127,23 +131,23 @@ trainer = QNNTrainer(nn,
                      get_screen,
                      get_reward,
                      SGD(),
-                     'Pong Test',
-                     'test',
+                     game_name.capitalize() + ' Learner',
+                     game_name,
                      nn.forward,
                      nn.forward,
                      nn.predict,
-                     batch_size=5,
                      action_set=legal_actions,
                      epochs=epochs,
                      use_gpu=False,
-                     run_in_thread=False,
+                     run_in_thread=True,
                      retain_gradients=True,
                      resume=True,
                      update_interval=50,
                      train_kwargs={'epsilon': epsilon},
                      cv_kwargs={'epsilon': 0.},
                      train_episodes = training_episodes,
-                     cv_episodes = cv_episodes)
+                     cv_episodes = cv_episodes,
+                     patience = 100)
 
 def prepare_episode():
     ale.reset_game()
@@ -151,7 +155,6 @@ def prepare_episode():
 
 trainer.register_pre_cv_episode_fcn(prepare_episode)
 trainer.register_pre_train_episode_fcn(prepare_episode)
-trainer.start_training()
 trainer.test_run(1)
 net_out = trainer.current_net_out
 graph = trainer.get_computational_graph()
