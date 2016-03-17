@@ -5,10 +5,11 @@ from nt.nn.data_fetchers import JsonCallbackFetcher
 import numpy as np
 from nt.transform.module_fbank import logfbank
 from nt.transform.module_mfcc import mfcc
-from nt.utils.numpy_utils import stack_context, add_context
-from scipy.fftpack import dct
+from nt.utils.numpy_utils import add_context
 import librosa
-from nt.speech_enhancement.noise import get_snr, set_snr
+from nt.speech_enhancement.noise import set_snr
+from nt.transform import module_stft
+
 
 cv_scripts = ['clearthroat113', 'cough151', 'doorslam022', 'drawer072', 'keyboard066', 'keysDrop031', 'knock070',
               'laughter134', 'pageturn075', 'phone079', 'speech055', 'clearthroat115', 'cough168', 'doorslam023',
@@ -292,3 +293,31 @@ def get_test_data_provider(json_data, flist_dev, transcription_list, events,
         dp_scripts.append(dp_script)
 
     return dp_scripts
+
+
+def resample_and_convert_frame_to_seconds(frame_num, frame_size=512, frame_shift=160, resampling_factor=44.1 / 16,
+                                          sampling_rate=44100):
+    sample_num = module_stft._stft_frames_to_samples(int(resampling_factor * frame_num), frame_size, frame_shift)
+    return '%.4f' % (sample_num / sampling_rate)
+
+
+def generate_onset_offset_label(decoded_allFrames, event_id, event_label_handler, filename):
+    on_off_label = list()
+    i = 0
+    while i < decoded_allFrames.shape[0] - 1:
+        onset = resample_and_convert_frame_to_seconds(
+            i + 1)  # To save frame no. which is 1 greater than the array index.
+        label_now = decoded_allFrames[i]
+        j = i + 1
+        label_next = decoded_allFrames[j]
+        while (label_next == label_now and j < decoded_allFrames.shape[0] - 1):
+            j += 1
+            label_next = decoded_allFrames[j]
+        offset = resample_and_convert_frame_to_seconds(
+            j)  # To save frame no. [not exceeded by 1 here as it is already greater than the offset index by 1]
+        if label_now == 1:
+            class_label = event_label_handler.int_to_label[event_id]  # To save
+            on_off_label.append((onset, offset, class_label))  # save
+
+        i = j
+    return on_off_label
