@@ -26,11 +26,16 @@ class LatexContextManager(object):
             self,
             filename,
             figure_size=[8.0, 6.0],
-            formatter=DollarFormatter):
+            formatter=DollarFormatter,
+            format_x=True,
+            format_y=True
+    ):
         assert filename.endswith('.svg')
         self.filename = filename
         self.formatter = formatter
         self.figure_size = figure_size
+        self.format_x = format_x
+        self.format_y = format_y
 
     def __enter__(self):
         extra_rc = {
@@ -48,8 +53,10 @@ class LatexContextManager(object):
     def __exit__(self, type, value, tb):
         figure = plt.gcf()
         for ax in figure.get_axes():
-            ax.xaxis.set_major_formatter(self.formatter())
-            ax.yaxis.set_major_formatter(self.formatter())
+            if self.format_x:
+                ax.xaxis.set_major_formatter(self.formatter())
+            if self.format_y:
+                ax.yaxis.set_major_formatter(self.formatter())
         if self.filename is not None:
             try:
                 plt.savefig(self.filename)
