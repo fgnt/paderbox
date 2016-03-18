@@ -2,7 +2,7 @@ from abc import ABCMeta, abstractmethod
 
 import numpy
 
-from .utils import set_snr
+from nt.speech_enhancement.noise.utils import set_snr
 
 
 class NoiseGeneratorTemplate:
@@ -38,7 +38,7 @@ class NoiseGeneratorWhite(NoiseGeneratorTemplate):
         >>> time_signal.shape
         (1000, 2)
         >>> SDR, SIR, SNR = sxr.input_sxr(time_signal[:, :, numpy.newaxis], n)
-        >>> print('%.1f' % SNR)
+        >>> SNR
         20.0
 
         """
