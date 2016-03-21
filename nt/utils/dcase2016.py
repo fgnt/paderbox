@@ -90,15 +90,17 @@ def make_input_arrays(json_data, flist, **kwargs):
 
 def transform_features(data, **kwargs):
     num_fbanks = kwargs.get('num_fbanks', 26)
-    num_mfcc_coeff = kwargs.get('num_mfcc_coeff', 13)
+    delta = kwargs.get('delta', 0)
+    delta_delta = kwargs.get('delta_delta', 0)
     logfbank_feat = logfbank(data['observed'][0], number_of_filters=num_fbanks).astype(np.float32)
-    if num_mfcc_coeff > 0:
-        mfcc_feat = mfcc(data['observed'][0], numcep=num_mfcc_coeff, number_of_filters=num_fbanks)
-        delta_feat = librosa.feature.delta(mfcc_feat)
-        delta_delta_feat = librosa.feature.delta(mfcc_feat, order=2)
-        data['observed'] = np.concatenate((logfbank_feat, delta_feat, delta_delta_feat), axis=1)
-    else:
-        data['observed'] = logfbank_feat
+    data['observed'] = logfbank_feat
+    if delta == 1:
+        delta_feat = librosa.feature.delta(logfbank_feat, width=3)
+        data['observed'] = np.concatenate((data['observed'], delta_feat), axis=1)
+    if delta_delta == 1:
+        delta_delta_feat = librosa.feature.delta(logfbank_feat, width=3, order=2)
+        data['observed'] = np.concatenate((data['observed'], delta_delta_feat), axis=1)
+
     return data
 
 
