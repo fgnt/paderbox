@@ -30,7 +30,7 @@ def softmax(x, feature_axis=-1):
     return net_out_e
 
 
-def covariance(x, mask=None):
+def covariance(x, mask=None, normalize=True):
     """ Calculate the covariance of a zero mean signal.
 
     The leading dimensions are independent and can be arbitrary.
@@ -43,14 +43,16 @@ def covariance(x, mask=None):
 
     if mask is None:
         psd = np.einsum('...dt,...et->...de', x, x.conj())
-        psd /= x.shape[-1]
+        if normalize:
+            psd /= x.shape[-1]
     else:
         assert x.ndim == mask.ndim + 1, 'Wrong total number of dimensions.'
         assert x.shape[-1] == mask.shape[-1], 'Check dimension for summation.'
         mask = np.expand_dims(mask, -2)
         psd = np.einsum('...dt,...et->...de', mask * x, x.conj())
-        normalization = np.maximum(np.sum(mask, axis=-1, keepdims=True), 1e-10)
-        psd /= normalization
+        if normalize:
+            normalization = np.maximum(np.sum(mask, axis=-1, keepdims=True), 1e-10)
+            psd /= normalization
 
     return psd
 
@@ -103,3 +105,16 @@ def cos_similarity(A, B):
     similarity /= np.sqrt(np.abs(np.einsum('...d,...d', A, A.conj())))
     similarity /= np.sqrt(np.abs(np.einsum('...d,...d', B, B.conj())))
     return similarity
+
+
+def _calculate_block_boundaries(T, block_size, first_block_size):
+    block_boundaries = []
+    block_start = 0
+    block_end = np.minimum(first_block_size, T)
+    while True:
+        block_boundaries.append((block_start, block_end))
+        if block_end == T:
+            break
+        block_start = block_end
+        block_end = np.minimum(block_start + block_size, T)
+    return block_boundaries
