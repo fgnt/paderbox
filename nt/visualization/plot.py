@@ -39,9 +39,15 @@ def allow_dict_input_and_colorize(f):
         ax = kwargs.pop('ax', None)
 
         if isinstance(signal, dict):
-            colors = viridis_hex[::len(viridis_hex) // len(signal)]
-            for (label, data), color in zip(signal.items(), colors):
-                ax = f(data, *args, ax=ax, label=label, color=color, **kwargs)
+            # Scatter does not cycle the colors so we need to do this explicitly
+            if f.__name__ == 'scatter':
+                cyl = plt.rcParams['axes.prop_cycle']
+                for (label, data), prob_cycle in zip(signal.items(), cyl):
+                    ax = f(data, *args, ax=ax, label=label,
+                           color=prob_cycle['color'], **kwargs)
+            else:
+                for label, data in signal.items():
+                    ax = f(data, *args, ax=ax, label=label, **kwargs)
             ax.legend()
         else:
             ax = f(signal, *args, ax=ax, **kwargs)
@@ -168,6 +174,7 @@ def spectrogram(signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
              'leads to a wrong visualization and especially colorbar!')
 
     if log:
+        print('Test')
         signal = np.log10(np.maximum(signal, np.max(signal)/1e6)).T
     else:
         signal = signal.T

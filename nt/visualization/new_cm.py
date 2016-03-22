@@ -1,4 +1,5 @@
 from matplotlib.colors import ListedColormap
+import numpy as np
 
 _magma_data = [[0.001462, 0.000466, 0.013866],
                [0.002258, 0.001295, 0.018331],
@@ -1028,11 +1029,24 @@ _viridis_data = [[0.267004, 0.004874, 0.329415],
                  [0.983868, 0.904867, 0.136897],
                  [0.993248, 0.906157, 0.143936]]
 
+_upb_data = np.asarray([[0, 32, 91],
+             [199, 201, 199],
+             [255, 198, 0],
+             [255, 130, 0],
+             [198, 53, 39],
+             [138, 27, 97],
+             [0, 159, 223],
+             [0, 155, 119],
+             [132, 189, 0],
+             [208, 223, 0]
+             ]) / 255
+
 cmaps = {}
 for (name, data) in (('magma', _magma_data),
                      ('inferno', _inferno_data),
                      ('plasma', _plasma_data),
-                     ('viridis', _viridis_data)):
+                     ('viridis', _viridis_data),
+                     ('upb', _upb_data)):
     cmaps[name] = ListedColormap(data, name=name)
 
 viridis_hex = ['#440154',

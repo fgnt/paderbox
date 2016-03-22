@@ -77,7 +77,7 @@ def context_manager(
     seaborn_axes_style='whitegrid',
     seaborn_plotting_context='notebook',
     font_scale=1.0,
-    line_width=2,
+    line_width=3,
     figure_size=[8.0, 6.0],
     palette='muted',
     extra_rc={},
@@ -122,7 +122,10 @@ def context_manager(
 
     if mpl_ge_150:
         from cycler import cycler
-        cyl = cycler('color', colors)
+        mul = len(colors)
+        colors = 4*colors
+        cyl = cycler('color', colors) + cycler(
+            'linestyle', [*mul*['-'], *mul*['--'], *mul*[':'], *mul*['-.']])
         rc_parameters.update({
             'axes.prop_cycle': cyl
         })
