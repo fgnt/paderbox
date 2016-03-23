@@ -29,6 +29,8 @@ def _generate_scripts(json_data):
 def make_input_arrays(json_data, flist, **kwargs):
     """Returns unstacked and normalized features """
 
+    add_noise = kwargs.get('add_noise', 0)
+
     fetcher = JsonCallbackFetcher(
         'fbank',
         json_data,
@@ -47,7 +49,8 @@ def make_input_arrays(json_data, flist, **kwargs):
         scripts.append(fetcher.utterance_ids[idx])
         # Randomize the amount of silence appended
         num_silent_rows = np.random.random_integers(0,
-                                                    300)  # 300= randomly choosing a higher number > largest number of data frames in any event file
+                                                    300)
+        # 300= randomly choosing a higher number > largest number of data frames in any event file
         silence_lengths.update({fetcher.utterance_ids[idx]: num_silent_rows})
         appending_silence = np.zeros((num_silent_rows, data['observed'].shape[1]))
         data['observed'] = np.concatenate((data['observed'], appending_silence)).astype(np.float32)
@@ -67,40 +70,44 @@ def make_input_arrays(json_data, flist, **kwargs):
     train_data = (train_data - training_mean) / np.sqrt(training_var)
     cv_data = (cv_data - training_mean) / np.sqrt(training_var)
 
-    ## Append training data with all 5 SNRs
+    # Append training data with all 5 SNRs
     noisy_train_data = list()
     for snr in [-10, -6, 0, 6, 10]:
-        ## Generate white noise and set SNR for training data
+        # Generate white noise and set SNR for training data
         noise = np.random.normal(0, 1, train_data.shape)
         set_snr(train_data, noise, snr)
         noisy_train_data.append((train_data + noise).astype(np.float32))
     noisy_train_data = np.concatenate(noisy_train_data)
 
-    ## Append cv data with random SNRs from amongst the list, 5 times
+    # Append cv data with random SNRs from amongst the list, 5 times
     noisy_cv_data = list()
     for i in range(5):  # range(1)
         snr = np.random.choice([-10, -6, 0, 6, 10])
-        ## Generate white noise and set SNR for cv data
+        # Generate white noise and set SNR for cv data
         noise = np.random.normal(0, 1, cv_data.shape)
         set_snr(cv_data, noise, snr)
         noisy_cv_data.append((cv_data + noise).astype(np.float32))
     noisy_cv_data = np.concatenate(noisy_cv_data)
 
-    return noisy_train_data, noisy_cv_data, silence_lengths, scripts
+    if add_noise == 1:
+        return noisy_train_data, noisy_cv_data, silence_lengths, scripts
+    else:
+        return train_data, cv_data, silence_lengths, scripts
 
 def transform_features(data, **kwargs):
     num_fbanks = kwargs.get('num_fbanks', 26)
     delta = kwargs.get('delta', 0)
     delta_delta = kwargs.get('delta_delta', 0)
+    # Amplitude normalize the data befor extracting features
+    # data['observed'] = data['observed']/np.max(data['observed'])
     logfbank_feat = logfbank(data['observed'][0], number_of_filters=num_fbanks).astype(np.float32)
     data['observed'] = logfbank_feat
     if delta == 1:
-        delta_feat = librosa.feature.delta(logfbank_feat, width=3)
+        delta_feat = librosa.feature.delta(logfbank_feat, axis=0)  # row-wise in our case
         data['observed'] = np.concatenate((data['observed'], delta_feat), axis=1)
     if delta_delta == 1:
-        delta_delta_feat = librosa.feature.delta(logfbank_feat, width=3, order=2)
+        delta_delta_feat = librosa.feature.delta(logfbank_feat, axis=0, order=2)
         data['observed'] = np.concatenate((data['observed'], delta_delta_feat), axis=1)
-
     return data
 
 
