@@ -63,6 +63,7 @@ class TrainerTest(unittest.TestCase):
         self.cv_provider = DataProvider((x_cv_fetcher, t_cv_fetcher),
                                         batch_size=2)
         hooks = [GradientClipping(1)]
+        self.tmpdir = tempfile.TemporaryDirectory()
         self.trainer = Trainer(self.nn,
                                forward_fcn_tr=self.nn.forward_train,
                                forward_fcn_cv=self.nn.forward_cv,
@@ -70,7 +71,7 @@ class TrainerTest(unittest.TestCase):
                                data_provider_cv=self.cv_provider,
                                optimizer=SGD(),
                                description='unittest',
-                               data_dir=tempfile.mkdtemp(),
+                               data_dir=self.tmpdir.name,
                                train_kwargs={'a': 2, 'b': 3},
                                cv_kwargs={'a': 4, 'b': 5},
                                epochs=100,
@@ -78,6 +79,9 @@ class TrainerTest(unittest.TestCase):
                                loss_name_tr='net',
                                loss_name_cv='net',
                                optimizer_hooks=hooks)
+
+    def tearDown(self):
+        self.tmpdir.cleanup()
 
     def test_init(self):
         self.assertTrue(os.path.exists(self.trainer.data_dir))

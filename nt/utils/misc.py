@@ -355,7 +355,7 @@ def collect_results(flist, result_dir,
         res_str = measure + '_'
     else:
         res_str = '{}_{}'.format(measure, beamformer)
-    dp = get_chime_data_provider_for_flist(flist)
+    dp = get_chime_data_provider_for_flist(flist, lambda x: x)
     utt_ids = get_available_utt_ids(dp)
     results = dict()
     for utt_id in utt_ids:
