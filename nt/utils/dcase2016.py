@@ -4,152 +4,151 @@ from nt.nn import DataProvider
 from nt.nn.data_fetchers import JsonCallbackFetcher
 import numpy as np
 from nt.transform.module_fbank import logfbank
-from nt.transform.module_mfcc import mfcc
 from nt.utils.numpy_utils import add_context
 import librosa
-from nt.speech_enhancement.noise import set_snr
 from nt.transform import module_stft
+import os
+from nt.io.audiowrite import audiowrite
+from nt.speech_enhancement.noise import NoiseGeneratorWhite
+from math import ceil
 
+
+def _samples_to_stft_frames(samples, size, shift):
+    """
+    Calculates STFT frames from samples in time domain.
+    :param samples: Number of samples in time domain.
+    :param size: FFT size.
+    :param shift: Hop in samples.
+    :return: Number of STFT frames.
+    """
+    # I changed this from np.ceil to math.ceil, to yield an integer result.
+    return ceil((samples - size + shift) / shift)
 
 cv_scripts = ['clearthroat113', 'cough151', 'doorslam022', 'drawer072', 'keyboard066', 'keysDrop031', 'knock070',
               'laughter134', 'pageturn075', 'phone079', 'speech055', 'clearthroat115', 'cough168', 'doorslam023',
               'drawer076', 'keyboard068',
               'keysDrop072', 'knock072', 'laughter144', 'pageturn081', 'phone082', 'speech056']
 
-def _generate_scripts(json_data):
-    # generates training scripts
-    train_scripts = list()
-    events_list = json_data['train']['Complete Set']['annotation']['events']
-    for key in events_list.keys():
-        if key not in cv_scripts:
-            train_scripts.append(key)
-    return train_scripts
 
-
-def make_input_arrays(json_data, flist, **kwargs):
-    """Returns unstacked and normalized features """
-
-    add_noise = kwargs.get('add_noise', 0)
-
-    fetcher = JsonCallbackFetcher(
-        'fbank',
-        json_data,
-        flist,
-        transform_features,
-        feature_channels=['observed/ch1'],
-        transform_kwargs=kwargs
-    )
-    scripts = list()
-    cv_data = list()
-    train_data = list()
+def generate_augmented_training_data(dir_name, stft_size, stft_shift):
+    train_time_signal = list()
+    cv_time_signal = list()
     silence_lengths = dict()
-    for idx in range(len(fetcher)):
-        # fetch the transformed data
-        data = fetcher.get_data_for_indices((idx,))
-        scripts.append(fetcher.utterance_ids[idx])
-        # Randomize the amount of silence appended
-        num_silent_rows = np.random.random_integers(0,
-                                                    300)
-        # 300= randomly choosing a higher number > largest number of data frames in any event file
-        silence_lengths.update({fetcher.utterance_ids[idx]: num_silent_rows})
-        appending_silence = np.zeros((num_silent_rows, data['observed'].shape[1]))
-        data['observed'] = np.concatenate((data['observed'], appending_silence)).astype(np.float32)
+    scripts = list()
 
-        if fetcher.utterance_ids[idx] in cv_scripts:
-            cv_data.append(data['observed'])
+    for file in os.listdir(dir_name):
+        scripts.append(file[:-4])
+        filename = ''.join((dir_name, file))
+        y, sr = librosa.load(filename, 16000)
+        num_silent_rows = np.random.random_integers(512, 50000)  # 10000
+        silence = np.zeros((num_silent_rows,))
+
+        if file[:-4] in cv_scripts:
+            cv_time_signal.append(np.concatenate((y, silence)))
+            silence_frames = (_samples_to_stft_frames(cv_time_signal[-1].shape[0], stft_size, stft_shift) -
+                              _samples_to_stft_frames(num_silent_rows, stft_size, stft_shift))
+            silence_lengths.update({file[:-4]: silence_frames})
         else:
-            train_data.append(data['observed'])
+            train_time_signal.append(np.concatenate((y, silence)))
+            silence_frames = (_samples_to_stft_frames(train_time_signal[-1].shape[0], stft_size, stft_shift) -
+                              _samples_to_stft_frames(y.shape[0], stft_size, stft_shift))
+            silence_lengths.update({file[:-4]: silence_frames})
 
-    # This data is composed of both signal and silences!
-    train_data = np.concatenate(train_data, axis=0)
-    cv_data = np.concatenate(cv_data, axis=0)
+    cv_time_signal = np.concatenate(cv_time_signal)
+    train_time_signal = np.concatenate(train_time_signal)
 
-    # Normalize training and cv data (Per feature basis) -->> yields much BETTER results
-    training_mean = np.mean(train_data, axis=0)
-    training_var = np.var(train_data, axis=0)
-    train_data = (train_data - training_mean) / np.sqrt(training_var)
-    cv_data = (cv_data - training_mean) / np.sqrt(training_var)
+    n_gen = NoiseGeneratorWhite()
+    noisy_train_signal = list()
+    for snr in [-12, -6, 0, 6, 12]:
+        noisy_train_signal.append(train_time_signal + n_gen.get_noise_for_signal(train_time_signal, snr=snr))
+    noisy_train_signal = np.concatenate(noisy_train_signal)
 
-    # Append training data with all 5 SNRs
-    noisy_train_data = list()
-    for snr in [-10, -6, 0, 6, 10]:
-        # Generate white noise and set SNR for training data
-        noise = np.random.normal(0, 1, train_data.shape)
-        set_snr(train_data, noise, snr)
-        noisy_train_data.append((train_data + noise).astype(np.float32))
-    noisy_train_data = np.concatenate(noisy_train_data)
+    # Normalize the training data
+    training_mean = np.mean(noisy_train_signal)
+    training_var = np.var(noisy_train_signal)
+    noisy_train_signal = (noisy_train_signal - training_mean) / np.sqrt(training_var)
+    audiowrite(noisy_train_signal, 'training_events_noise.wav', normalize=True)
 
-    # Append cv data with random SNRs from amongst the list, 5 times
-    noisy_cv_data = list()
-    for i in range(5):  # range(1)
-        snr = np.random.choice([-10, -6, 0, 6, 10])
-        # Generate white noise and set SNR for cv data
-        noise = np.random.normal(0, 1, cv_data.shape)
-        set_snr(cv_data, noise, snr)
-        noisy_cv_data.append((cv_data + noise).astype(np.float32))
-    noisy_cv_data = np.concatenate(noisy_cv_data)
+    noisy_cv_signal = list()
+    for i in range(5):
+        snr = np.random.choice([-12, -6, 0, 6, 12])
+        noisy_cv_signal.append(cv_time_signal + n_gen.get_noise_for_signal(cv_time_signal, snr=snr))
+    noisy_cv_signal = np.concatenate(noisy_cv_signal)
+    noisy_cv_signal = (noisy_cv_signal - training_mean) / np.sqrt(training_var)
+    audiowrite(noisy_cv_signal, 'cv_events_noise.wav', normalize=True)
 
-    if add_noise == 1:
-        return noisy_train_data, noisy_cv_data, silence_lengths, scripts
-    else:
-        return train_data, cv_data, silence_lengths, scripts
+    return noisy_train_signal, noisy_cv_signal, silence_lengths, scripts
+
+
+def make_input_arrays(dir_name, stft_size, stft_shift, **kwargs):
+    """Extract features from the generated time signals """
+
+    noisy_train_signal, noisy_cv_signal, silence_lengths, scripts = generate_augmented_training_data(dir_name,
+                                                                                                     stft_size,
+                                                                                                     stft_shift)
+    # print(noisy_train_signal.shape, noisy_cv_signal.shape)
+    transformed_train = transform_features(noisy_train_signal, **kwargs)
+    transformed_cv = transform_features(noisy_cv_signal, **kwargs)
+    # print(transformed_train.shape,transformed_cv.shape)
+    return transformed_train, transformed_cv, silence_lengths, scripts
 
 def transform_features(data, **kwargs):
     num_fbanks = kwargs.get('num_fbanks', 26)
     delta = kwargs.get('delta', 0)
     delta_delta = kwargs.get('delta_delta', 0)
-    # Amplitude normalize the data befor extracting features
-    # data['observed'] = data['observed']/np.max(data['observed'])
-    logfbank_feat = logfbank(data['observed'][0], number_of_filters=num_fbanks).astype(np.float32)
-    data['observed'] = logfbank_feat
+
+    logfbank_feat = logfbank(data, number_of_filters=num_fbanks).astype(np.float32)
+    data = logfbank_feat
     if delta == 1:
         delta_feat = librosa.feature.delta(logfbank_feat, axis=0)  # row-wise in our case
-        data['observed'] = np.concatenate((data['observed'], delta_feat), axis=1)
+        data = np.concatenate((data, delta_feat), axis=1)
     if delta_delta == 1:
         delta_delta_feat = librosa.feature.delta(logfbank_feat, axis=0, order=2)
-        data['observed'] = np.concatenate((data['observed'], delta_delta_feat), axis=1)
+        data = np.concatenate((data, delta_delta_feat), axis=1)
     return data
 
 
 def make_target_arrays(event_label_handler, transcription_list, resampling_factor, scripts, silence_lengths):
-    cv_target_list = list()
     train_target_list = list()
+    cv_target_list = list()
 
     assert len(scripts) == len(silence_lengths.keys())
     for script in scripts:
         transcription_script = transcription_list[script]
         target = event_label_handler.label_seq_to_int_arr(transcription_script,
-                                                          resampling_factor)  # 2d matrix of size #transcriptionFrames X 12
-        target_noise = np.zeros((silence_lengths[script], target.shape[1]))
+                                                          resampling_factor)
+        silence_frames = silence_lengths[script]
+        target_noise = np.zeros((silence_frames, target.shape[1]))
         target_noise[:, 0] = 1
-        target = np.concatenate((target, target_noise))
         if script in cv_scripts:
-            cv_target_list.append(target)
+            cv_target_list.append(np.concatenate((target, target_noise)))
+            print(script, cv_target_list[-1].shape[0])
         else:
-            train_target_list.append(target)
+            train_target_list.append(np.concatenate((target, target_noise)))
+            print(script, train_target_list[-1].shape[0])
+
+    cv_target_list = np.concatenate(cv_target_list)
+    train_target_list = np.concatenate(train_target_list)
 
     # extend training and cv targets 5 times to match the 5 SNR corrupted input data
 
     train_data = np.concatenate(train_target_list).astype(np.float32)
-    train_data = np.tile(train_data, (5, 1))  # np.tile(train_data, (1, 1))
+    train_data = np.tile(train_data, (5, 1))
     cv_data = np.concatenate(cv_target_list).astype(np.float32)
-    cv_data = np.tile(cv_data, (5, 1))  #np.tile(cv_data, (1, 1))
+    cv_data = np.tile(cv_data, (5, 1))
 
     return train_data, cv_data
 
 
-def get_train_cv_data_provider(json_data, flist, transcription_list, events,
+def get_train_cv_data_provider(dir_name, stft_size, stft_shift, json_data, flist, transcription_list, events,
                                resampling_factor=16 / 44.1, batch_size=32,
                                cnn_features=False, **kwargs):
     left_context = kwargs.get('left_context', 0)
     right_context = kwargs.get('right_context', 0)
     step_width = kwargs.get('step_width', 1)
-    num_fbanks = kwargs.get('num_fbanks', 26)
 
-    train_scripts = _generate_scripts(json_data)
-
-    ### Load training and CV input data #######
-    train_data, cv_data, silence_lengths, scripts = make_input_arrays(json_data, flist, **kwargs)
+    # Load training and CV input data #######
+    train_data, cv_data, silence_lengths, scripts = make_input_arrays(dir_name, stft_size, stft_shift, **kwargs)
 
     T, F = train_data.shape
     train_data = add_context(
