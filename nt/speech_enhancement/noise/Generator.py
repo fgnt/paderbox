@@ -3,6 +3,7 @@ from abc import ABCMeta, abstractmethod
 import numpy
 
 from nt.speech_enhancement.noise.utils import set_snr
+from scipy.signal import lfilter
 
 
 class NoiseGeneratorTemplate:
@@ -51,20 +52,61 @@ class NoiseGeneratorWhite(NoiseGeneratorTemplate):
 
 
 class NoiseGeneratorPink(NoiseGeneratorTemplate):
-    def __init__(self):
-        raise NotImplementedError()
+    name = 'pinkNoise'
 
-    def _pink_noise_generator(N, D):
+    def __init__(self, samples, channels):
+        self.n = samples # number of samples
+        self.d = channels # number of channels
+
+    def _pink_noise_generator(self,n, d):
+        """Generates pink noise. You still need to rescale it to your needs.
+
+            This code was taken from the book
+            Spectral Audio Signal Processing, by Julius O. Smith III,
+            W3K Publishing, 2011, ISBN 978-0-9745607-3-1:
+            `Spectral Audio Signal Processing <https://ccrma.stanford.edu/~jos/sasp/Example_Synthesis_1_F_Noise.html>`
+
+            Alternative implementation can be found in
+            `dsp.stackexchange.com <http://dsp.stackexchange.com/a/376/8515>`.
+
+        :param n: Number of samples
+        :param d: Number of channels
+        :return: Pink noise of dimension number of samples times one
+        """
+
         B = [0.049922035, -0.095993537, 0.050612699, -0.004408786]
-        A = [1 - 2.494956002, 2.017265875, -0.522189400]
-        nT60 = round(numpy.log(1000) / (1 - max(abs(numpy.roots(A)))))  # T60 est.
-        v = numpy.random.randn(N + nT60, D)  # Gaussian white noise: N(0,1)
-        x = filter(B, A, v)  # Apply 1/F roll-off to PSD
-        x = x[nT60 + 1:, :]  # Skip transient response
+        A = [1, - 2.494956002, 2.017265875, -0.522189400]
+#        nT60 = numpy.around(numpy.log(1000) / (1 - (abs(numpy.roots(A))).max(0)))  # T60 est.
+        nT60 = 1430 #  T60 est.- Original Matlab Code: nT60 = round(log(1000)/(1-max(abs(roots(A)))));
+        v = numpy.random.randn(n + nT60, d)  # Gaussian white noise: N(0,1)
+        x = lfilter(B, A, v, axis = 0)  # Apply 1/F roll-off to PSD
+        x = x[nT60 :, :]  # Skip transient response
         return (x)
 
     def get_noise_for_signal(self, time_signal, snr, seed=None, **kwargs):
-        raise NotImplementedError()
+        """
+        Example:
+
+        >>> import nt.evaluation.sxr as sxr
+        >>> n = 1000
+        >>> d = 5
+        >>> time_signal = numpy.random.randn(n, d)
+        >>> n_gen = NoiseGeneratorPink(n, d)
+        >>> pinknoise = n_gen.get_noise_for_signal(time_signal, 20)
+        >>> n = n_gen.get_noise_for_signal(time_signal, 20)
+        >>> n.shape
+        (1000, 5)
+        >>> time_signal.shape
+        (1000, 5)
+        >>> SDR, SIR, SNR = sxr.input_sxr(time_signal[:, :, None], n)
+        >>> SNR
+        20.0
+
+         """
+        numpy.random.seed(seed=seed)
+        noise_signal = self._pink_noise_generator(self.n, self.d)
+        set_snr(time_signal, noise_signal, snr)
+        return noise_signal
 
 
 class NoiseGeneratorMix:
