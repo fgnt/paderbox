@@ -4,6 +4,9 @@ from distutils.version import LooseVersion
 import matplotlib as mpl
 from matplotlib.ticker import ScalarFormatter
 import subprocess
+import platform
+import os
+
 
 mpl_ge_150 = LooseVersion(mpl.__version__) >= '1.5.0'
 
@@ -61,12 +64,19 @@ class LatexContextManager(object):
             try:
                 plt.savefig(self.filename)
                 try:
-                    subprocess.run([
-                        'inkscape', '-D', '-z', '--export-area-drawing',
-                        self.filename,
-                        '--export-pdf={}.pdf'.format(self.filename[:-4]),
+                    if platform.system() == 'Darwin':  # OS X
+                        inkscape_path = ('/Applications/Inkscape.app/' +
+                                         'Contents/Resources/bin/inkscape')
+                    else:
+                        inkscape_path = 'inkscape'
+                    cmd = [
+                        inkscape_path, '-D', '-z', '--export-area-drawing',
+                        os.path.realpath(self.filename),
+                        '--export-pdf={}.pdf'.format(
+                            os.path.realpath(self.filename)[:-4]),
                         '--export-latex'
-                    ])
+                    ]
+                    subprocess.run(cmd)
                 except:
                     print('Could not perform Inkscape export.')
             except:
