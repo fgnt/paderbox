@@ -141,11 +141,80 @@ def time_series(signal, ax=None, ylim=None, label=None, color=None):
     return ax
 
 
+def _time_frequency_plot(
+        signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
+        sample_rate=None, stft_size=None, stft_shift=None,
+        x_label=None, y_label=None, z_label=None
+):
+    signal = _get_batch(signal, batch)
+
+    if np.any(signal < 0) and log:
+        warn('The array passed to spectrogram contained negative values. This '
+             'leads to a wrong visualization and especially colorbar!')
+
+    if log:
+        signal = np.log10(np.maximum(signal, np.max(signal)/1e6)).T
+    else:
+        signal = signal.T
+
+    if limits is None:
+        limits = (np.min(signal), np.max(signal))
+
+    image = ax.imshow(
+        signal,
+        interpolation='nearest',
+        vmin=limits[0],
+        vmax=limits[1],
+        cmap='viridis',
+        origin='lower'
+    )
+
+    if x_label is None:
+        if sample_rate is not None and stft_shift is not None:
+            seconds_per_tick = 0.5
+            blocks_per_second = sample_rate/stft_shift
+            x_tick_range = np.arange(0, signal.shape[1],
+                                     seconds_per_tick*blocks_per_second)
+            x_tick_labels = x_tick_range/blocks_per_second
+            plt.xticks(x_tick_range, x_tick_labels)
+            ax.set_xlabel('Time / s')
+        else:
+            ax.set_xlabel('Time frame index')
+    else:
+        ax.set_xlabel(x_label)
+
+    if y_label is None:
+        if sample_rate is not None and stft_size is not None:
+            y_tick_range = np.linspace(0, stft_size/2, num=5)
+            y_tick_labels = y_tick_range*(sample_rate/stft_size/1000)
+            plt.yticks(y_tick_range, y_tick_labels)
+            ax.set_ylabel('Frequency / kHz')
+        else:
+            ax.set_ylabel('Frequency bin index')
+    else:
+        ax.set_ylabel(y_label)
+
+    if colorbar:
+        cbar = plt.colorbar(image, ax=ax)
+        if z_label is None:
+            if log:
+                cbar.set_label('Energy / dB')
+            else:
+                cbar.set_label('Energy (linear)')
+        else:
+            cbar.set_label(z_label)
+
+    ax.set_aspect('auto')
+    ax.grid(False)
+    return ax
+
+
 @create_subplot
-def spectrogram(signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
-                sample_rate=None, stft_size=None, stft_shift=None,
-                x_label='Time frame index',
-                y_label='Frequency bin index'):
+def spectrogram(
+        signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
+        sample_rate=None, stft_size=None, stft_shift=None,
+        x_label=None, y_label=None, z_label=None
+):
     """
     Plots a spectrogram from a spectrogram (power) as input.
 
@@ -155,7 +224,8 @@ def spectrogram(signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
     :param ax: Provide axis. I.e. for use with facet_grid().
     :param log: Take the logarithm of the signal before plotting
     :param colorbar: Display a colorbar right to the plot
-    :param batch: If the decode has 3 dimensions: Specify the which batch to plot
+    :param batch: If the decode has 3 dimensions:
+        Specify the which batch to plot
     :param sample_rate: Sample rate of the signal.
         If `sample_rate` and `stft_size` are specified, the y-ticks will be the
         frequency
@@ -167,54 +237,19 @@ def spectrogram(signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
         time
     :return: axes
     """
-    signal = _get_batch(signal, batch)
-
-    if np.any(signal < 0) and log:
-        warn('The array passed to spectrogram contained negative values. This '
-             'leads to a wrong visualization and especially colorbar!')
-
-    if log:
-        print('Test')
-        signal = np.log10(np.maximum(signal, np.max(signal)/1e6)).T
-    else:
-        signal = signal.T
-
-    if limits is None:
-        limits = (np.min(signal), np.max(signal))
-
-    image = ax.imshow(signal,
-                      interpolation='nearest',
-                      vmin=limits[0], vmax=limits[1],
-                      cmap='viridis', origin='lower')
-    if colorbar:
-        cbar = plt.colorbar(image, ax=ax)
-        if log:
-            cbar.set_label('Energy / dB')
-        else:
-            cbar.set_label('Energy (linear)')
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
-    if sample_rate is not None and stft_size is not None:
-        y_tick_range = np.linspace(0, stft_size/2, num=5)
-        y_tick_labels = y_tick_range*(sample_rate/stft_size/1000)
-        plt.yticks(y_tick_range, y_tick_labels)
-        ax.set_ylabel('Frequency / kHz')
-    if sample_rate is not None and stft_shift is not None:
-        seconds_per_tick = 0.5
-        blocks_per_second = sample_rate/stft_shift
-        x_tick_range = np.arange(0, signal.shape[1],
-                                 seconds_per_tick*blocks_per_second)
-        x_tick_labels = x_tick_range/blocks_per_second
-        plt.xticks(x_tick_range, x_tick_labels)
-        ax.set_xlabel('Time / s')
-    ax.set_aspect('auto')
-    ax.grid(False)
-    return ax
+    return _time_frequency_plot(
+        signal, ax=ax, limits=limits, log=log, colorbar=colorbar, batch=batch,
+        sample_rate=sample_rate, stft_size=stft_size, stft_shift=stft_shift,
+        x_label=x_label, y_label=y_label, z_label=z_label
+    )
 
 
 @create_subplot
-def stft(signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
-         sample_rate=None, stft_size=None, stft_shift=None):
+def stft(
+        signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
+         sample_rate=None, stft_size=None, stft_shift=None,
+        x_label=None, y_label=None, z_label=None
+):
     """
     Plots a spectrogram from an stft signal as input. This is a wrapper of the
     plot function for spectrograms.
@@ -223,7 +258,8 @@ def stft(signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
     :param limits: Color limits for clipping purposes.
     :param log: Take the logarithm of the signal before plotting
     :param colorbar: Display a colorbar right to the plot
-    :param batch: If the decode has 3 dimensions: Specify the which batch to plot
+    :param batch: If the decode has 3 dimensions:
+        Specify the which batch to plot
     :param sample_rate: Sample rate of the signal.
         If `sample_rate` and `stft_size` are specified, the y-ticks will be the
         frequency
@@ -235,14 +271,20 @@ def stft(signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
         time
     :return: axes
     """
-    return spectrogram(nt.transform.stft_to_spectrogram(signal), limits=limits,
-                       ax=ax, log=log, colorbar=colorbar, batch=batch,
-                       sample_rate=sample_rate, stft_size=stft_size,
-                       stft_shift=stft_shift)
+    return spectrogram(
+        nt.transform.stft_to_spectrogram(signal),
+        ax=ax, limits=limits, log=log, colorbar=colorbar, batch=batch,
+        sample_rate=sample_rate, stft_size=stft_size, stft_shift=stft_shift,
+        x_label=x_label, y_label=y_label, z_label=z_label
+    )
 
 
 @create_subplot
-def mask(signal, ax=None, limits=(0, 1), colorbar=True, batch=0):
+def mask(
+        signal, ax=None, limits=(0, 1), log=False, colorbar=True, batch=0,
+        sample_rate=None, stft_size=None, stft_shift=None,
+        x_label=None, y_label=None, z_label='Mask'
+):
     """
     Plots any mask with values between zero and one.
 
@@ -250,22 +292,15 @@ def mask(signal, ax=None, limits=(0, 1), colorbar=True, batch=0):
     :param ax: Optional figure axis for use with facet_grid()
     :param limits: Clip the signal to these limits
     :param colorbar: Show colorbar right to the plot
-    :param batch: If the decode has 3 dimensions: Specify the which batch to plot
+    :param batch: If the decode has 3 dimensions:
+        Specify the which batch to plot
     :return: axes
     """
-
-    signal = _get_batch(signal, batch)
-    image = ax.imshow(signal.T,
-                      interpolation='nearest', origin='lower',
-                      vmin=limits[0], vmax=limits[1],
-                      cmap='viridis')
-    if colorbar:
-        cbar = plt.colorbar(image, ax=ax)
-        cbar.set_label('Mask')
-    ax.set_xlabel('Time frame index')
-    ax.set_ylabel('Frequency bin index')
-    ax.grid(False)
-    return ax
+    return _time_frequency_plot(
+        signal, ax=ax, limits=limits, log=log, colorbar=colorbar, batch=batch,
+        sample_rate=sample_rate, stft_size=stft_size, stft_shift=stft_shift,
+        x_label=x_label, y_label=y_label, z_label=z_label
+    )
 
 
 @create_subplot
