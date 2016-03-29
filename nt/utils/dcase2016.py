@@ -11,9 +11,10 @@ import os
 from nt.io.audiowrite import audiowrite
 from nt.speech_enhancement.noise import NoiseGeneratorWhite
 from math import ceil
+from nt.utils.numpy_utils import segment_axis
 
 
-def _samples_to_stft_frames(samples, size, shift):
+def _samples_to_stft_frames(samples, size=512, shift=160):
     """
     Calculates STFT frames from samples in time domain.
     :param samples: Number of samples in time domain.
@@ -33,7 +34,7 @@ cv_scripts = ['clearthroat113', 'cough151', 'doorslam022', 'drawer072', 'keyboar
 def generate_augmented_training_data(dir_name, stft_size, stft_shift):
     train_time_signal = list()
     cv_time_signal = list()
-    silence_lengths = dict()
+    total_lengths = dict()
     scripts = list()
 
     for file in os.listdir(dir_name):
@@ -42,17 +43,15 @@ def generate_augmented_training_data(dir_name, stft_size, stft_shift):
         y, sr = librosa.load(filename, 16000)
         num_silent_rows = np.random.random_integers(512, 50000)  # 10000
         silence = np.zeros((num_silent_rows,))
+        total_samples = y.shape[0] + num_silent_rows
+        total_lengths.update({file[:-4]: total_samples})
 
         if file[:-4] in cv_scripts:
             cv_time_signal.append(np.concatenate((y, silence)))
-            silence_frames = (_samples_to_stft_frames(cv_time_signal[-1].shape[0], stft_size, stft_shift) -
-                              _samples_to_stft_frames(num_silent_rows, stft_size, stft_shift))
-            silence_lengths.update({file[:-4]: silence_frames})
+            # print(file[:-4], y.shape[0], num_silent_rows, cv_time_signal[-1].shape[0])
         else:
             train_time_signal.append(np.concatenate((y, silence)))
-            silence_frames = (_samples_to_stft_frames(train_time_signal[-1].shape[0], stft_size, stft_shift) -
-                              _samples_to_stft_frames(y.shape[0], stft_size, stft_shift))
-            silence_lengths.update({file[:-4]: silence_frames})
+            # print(file[:-4], y.shape[0], num_silent_rows, train_time_signal[-1].shape[0])
 
     cv_time_signal = np.concatenate(cv_time_signal)
     train_time_signal = np.concatenate(train_time_signal)
@@ -77,7 +76,7 @@ def generate_augmented_training_data(dir_name, stft_size, stft_shift):
     noisy_cv_signal = (noisy_cv_signal - training_mean) / np.sqrt(training_var)
     audiowrite(noisy_cv_signal, 'cv_events_noise.wav', normalize=True)
 
-    return noisy_train_signal, noisy_cv_signal, silence_lengths, scripts
+    return noisy_train_signal, noisy_cv_signal, total_lengths, scripts
 
 
 def make_input_arrays(dir_name, stft_size, stft_shift, **kwargs):
@@ -86,10 +85,10 @@ def make_input_arrays(dir_name, stft_size, stft_shift, **kwargs):
     noisy_train_signal, noisy_cv_signal, silence_lengths, scripts = generate_augmented_training_data(dir_name,
                                                                                                      stft_size,
                                                                                                      stft_shift)
-    # print(noisy_train_signal.shape, noisy_cv_signal.shape)
+    #print(noisy_train_signal.shape, noisy_cv_signal.shape)
     transformed_train = transform_features(noisy_train_signal, **kwargs)
     transformed_cv = transform_features(noisy_cv_signal, **kwargs)
-    # print(transformed_train.shape,transformed_cv.shape)
+    #print(transformed_train.shape,transformed_cv.shape)
     return transformed_train, transformed_cv, silence_lengths, scripts
 
 def transform_features(data, **kwargs):
@@ -108,36 +107,50 @@ def transform_features(data, **kwargs):
     return data
 
 
-def make_target_arrays(event_label_handler, transcription_list, resampling_factor, scripts, silence_lengths):
+def make_target_arrays(event_label_handler, transcription_list, resampling_factor, scripts, total_lengths, stft_size,
+                       stft_shift):
     train_target_list = list()
     cv_target_list = list()
 
-    assert len(scripts) == len(silence_lengths.keys())
+    assert len(scripts) == len(total_lengths.keys())
     for script in scripts:
         transcription_script = transcription_list[script]
-        target = event_label_handler.label_seq_to_int_arr(transcription_script,
+        target = event_label_handler.label_seq_to_int_arr_samples(transcription_script,
                                                           resampling_factor)
-        silence_frames = silence_lengths[script]
-        target_noise = np.zeros((silence_frames, target.shape[1]))
-        target_noise[:, 0] = 1
-        if script in cv_scripts:
-            cv_target_list.append(np.concatenate((target, target_noise)))
-            print(script, cv_target_list[-1].shape[0])
-        else:
-            train_target_list.append(np.concatenate((target, target_noise)))
-            print(script, train_target_list[-1].shape[0])
 
-    cv_target_list = np.concatenate(cv_target_list)
-    train_target_list = np.concatenate(train_target_list)
+        silence_samples = total_lengths[script] - target.shape[0]
+        target_silence = np.zeros((silence_samples, target.shape[1]))
+        target_silence[:, 0] = 1
+        if script in cv_scripts:
+            cv_target_list.append(np.concatenate((target, target_silence)))
+        else:
+            train_target_list.append(np.concatenate((target, target_silence)))
+            #print(script, target.shape[0], silence_samples, train_target_list[-1].shape[0])
 
     # extend training and cv targets 5 times to match the 5 SNR corrupted input data
 
-    train_data = np.concatenate(train_target_list).astype(np.float32)
-    train_data = np.tile(train_data, (5, 1))
-    cv_data = np.concatenate(cv_target_list).astype(np.float32)
-    cv_data = np.tile(cv_data, (5, 1))
+    train_target = np.concatenate(train_target_list).astype(np.float32)
+    train_target = np.tile(train_target, (5, 1))
+    cv_target = np.concatenate(cv_target_list).astype(np.float32)
+    cv_target = np.tile(cv_target, (5, 1))
 
-    return train_data, cv_data
+    # convert from samples to frames- activating an event if it's present at least in 50% of the frame
+    # TODO: Implement it more time efficiently
+    frames_arr_train = np.zeros((_samples_to_stft_frames(train_target.shape[0]), train_target.shape[1]))
+    for i in range(train_target.shape[1]):  # i.e. for every event
+        time_signal_seg = segment_axis(train_target[:, i], length=stft_size, overlap=stft_size - stft_shift)
+        for j in range(time_signal_seg.shape[0]):
+            row = time_signal_seg[j, :]
+            frames_arr_train[j, i] = (sum(row) > 0.5 * stft_size).astype(np.int32)
+
+    frames_arr_cv = np.zeros((_samples_to_stft_frames(cv_target.shape[0]), cv_target.shape[1]))
+    for i in range(cv_target.shape[1]):  # i.e. for every event
+        time_signal_seg = segment_axis(cv_target[:, i], length=stft_size, overlap=stft_size - stft_shift)
+        for j in range(time_signal_seg.shape[0]):
+            row = time_signal_seg[j, :]
+            frames_arr_cv[j, i] = (sum(row) > 0.5 * stft_size).astype(np.int32)
+
+    return frames_arr_train, frames_arr_cv
 
 
 def get_train_cv_data_provider(dir_name, stft_size, stft_shift, json_data, flist, transcription_list, events,
@@ -200,17 +213,33 @@ def get_train_cv_data_provider(dir_name, stft_size, stft_shift, json_data, flist
 
     return dp_train, dp_cv
 
-
 def _obtainTrainingParameters(json_data, flist_train, **kwargs):
     _, _, _, _, training_mean, training_var = make_input_arrays(json_data, flist_train, **kwargs)
 
     return training_mean, training_var
 
+
+def transform_features_test(data, **kwargs):
+    num_fbanks = kwargs.get('num_fbanks', 26)
+    delta = kwargs.get('delta', 0)
+    delta_delta = kwargs.get('delta_delta', 0)
+    # Amplitude normalize the data before extracting features
+    # data['observed'] = data['observed']/np.max(data['observed'])
+    logfbank_feat = logfbank(data['observed'][0], number_of_filters=num_fbanks).astype(np.float32)
+    data['observed'] = logfbank_feat
+    if delta == 1:
+        delta_feat = librosa.feature.delta(logfbank_feat, axis=0)  # row-wise in our case
+        data['observed'] = np.concatenate((data['observed'], delta_feat), axis=1)
+    if delta_delta == 1:
+        delta_delta_feat = librosa.feature.delta(logfbank_feat, axis=0, order=2)
+        data['observed'] = np.concatenate((data['observed'], delta_delta_feat), axis=1)
+    return data
+
 def make_input_test_arrays(json_data, flist, **kwargs):
     fetcher = JsonCallbackFetcher('fbank',
                                   json_data,
                                   flist,
-                                  transform_features,
+                                  transform_features_test,
                                   feature_channels=['observed/ch1'],
                                   transform_kwargs=kwargs)
     scripts = list()

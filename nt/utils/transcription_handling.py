@@ -262,6 +262,7 @@ class EventLabelHandler(object):
         # resamples to a new sampling frequency to adjust the labels to the new sampling frequency.
         transcription_length_in_frames = self.sample_to_frame_idx(
             self.resample_labels(resampling_factor, transcription_length_in_samples))
+        # print(transcription, transcription_length_in_frames)
         number_of_events = len(self.label_to_int)
 
         int_arr = numpy.zeros(
@@ -274,6 +275,26 @@ class EventLabelHandler(object):
                 begin_frame = 0
             int_arr[begin_frame:end_frame, self.label_to_int[label]] = 1
         ## Activating silence class where no class is activated.
+        for i in range(int_arr.shape[0]):
+            if not int_arr[i].any():
+                int_arr[i][0] = 1
+
+        return int_arr
+
+    def label_seq_to_int_arr_samples(self, transcription, resampling_factor):
+        # for event detection (polyphonic) using only samples!
+        assert transcription[-1][2] == 'END'
+        transcription_length_in_samples = transcription[-1][1]
+        number_of_events = len(self.label_to_int)
+
+        int_arr = numpy.zeros(
+            (self.resample_labels(resampling_factor, transcription_length_in_samples), number_of_events),
+            dtype=numpy.int32)
+        for begin, end, label in transcription[:-1]:
+            # resample to 16000 Hz
+            begin_sample, end_sample = [self.resample_labels(resampling_factor, n) for n in (begin, end)]
+            int_arr[begin_sample:end_sample, self.label_to_int[label]] = 1
+        # Activating silence class where no class is activated. Used in dev scripts
         for i in range(int_arr.shape[0]):
             if not int_arr[i].any():
                 int_arr[i][0] = 1
@@ -308,7 +329,7 @@ class EventLabelHandler(object):
         raise NotImplementedError('This feature is currently missing!')
 
     def resample_labels(self, resampling_factor, sample_num_old):
-        return int(sample_num_old * resampling_factor)
+        return int(numpy.ceil(sample_num_old * resampling_factor))
 
     def print_mapping(self):
         for char, i in self.label_to_int.items():
