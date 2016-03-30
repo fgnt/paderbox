@@ -31,14 +31,15 @@ pip uninstall --quiet --yes chainer
 pip install --quiet --user -e  ./chainer/
 
 # Unittets
-nosetests --with-xunit --with-coverage --cover-package=nt -v --processes=-1
+nosetests --with-xunit --with-coverage --cover-package=nt --processes=-1
 # Use as many prosesses as you have cores: --processes=-1
 
 # Export coverage
 python -m coverage xml --include=nt*
 
 # Pylint tests
-/net/ssd/software/anaconda/envs/py3k_jenkins/bin/pylint --rcfile=pylint.cfg -f parseable nt
+pylint --rcfile=pylint.cfg -f parseable nt > pylint.txt
+# --files-output=y is a bad option, because it produces hundreds of files
 
 # Build documentation
 make --directory=doc/source/auto_reference/ clean
