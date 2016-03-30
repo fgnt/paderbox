@@ -1,14 +1,25 @@
 #!/usr/bin/env bash
 
+renice -n 20 $$
+
+# set a prefix for each cmd
+green='\033[0;32m'
+NC='\033[0m' # No Color
+trap 'echo -e "${green}$ $BASH_COMMAND ${NC}"' DEBUG
+
+# Force Exit 0
+trap 'exit 0' EXIT SIGINT SIGTERM EXIT
+
 # Set Paths
 CUDA_PATH=/usr/local/cuda
 LD_LIBRARY_PATH=$CUDA_PATH/lib64:${LD_LIBRARY_PATH}
-PATH=/net/ssd/software/anaconda/envs/py3k_jenkins/bin:$CUDA_PATH/bin:$PATH
+PATH=$CUDA_PATH/bin:$PATH
 export PATH
 export LD_LIBRARY_PATH
+source activate py35
 
 # Refresh toolbox
-/usr/bin/yes | pip install --user -e . || true
+/usr/bin/yes | pip install --quiet --user -e . || true
 
 INFO=/net/storage/database_jsons/info.txt
 
@@ -49,6 +60,6 @@ python nt/database/NoiseX_92/database_NoiseX_92.py
 cp NoiseX_92.json /net/storage/database_jsons/noisex_92.json
 
 # Uninstall packages
-/usr/bin/yes | pip uninstall nt || true
+pip uninstall --quiet --yes nt || true
 
 rm /net/storage/database_jsons/BUILDING_NOW
