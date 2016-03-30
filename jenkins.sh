@@ -1,40 +1,52 @@
 #!/usr/bin/env bash
 
+# set a prefix for each cmd
+green='\033[0;32m'
+NC='\033[0m' # No Color
+trap 'echo -e "${green}$ $BASH_COMMAND ${NC}"' DEBUG
+trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
+
+# Force Exit 0
+trap 'exit 0' EXIT
+
 # Set Paths
 CUDA_PATH=/usr/local/cuda
 LD_LIBRARY_PATH=$CUDA_PATH/lib64:${LD_LIBRARY_PATH}
-PATH=/net/ssd/software/anaconda/envs/py3k_jenkins/bin:$CUDA_PATH/bin:$PATH
+PATH=$CUDA_PATH/bin:$PATH
 export PATH
 export LD_LIBRARY_PATH
+source activate py35
 
 # enable matlab tests
 TEST_MATLAB=true
 export TEST_MATLAB
 
 # Refresh toolbox
-/usr/bin/yes | pip uninstall nt || true
-/usr/bin/yes | pip install --user -e . || true
+pip uninstall --quiet --yes nt
+pip install  --quiet --user -e .
 
 # Update chainer
-/usr/bin/yes | pip uninstall chainer || true
-/usr/bin/yes | pip install --user -e  ./chainer/ || true
+pip uninstall --quiet --yes chainer
+pip install --quiet --user -e  ./chainer/
 
 # Unittets
-nosetests --with-xunit --with-coverage --cover-package=nt -v || true
+nosetests --with-xunit --with-coverage --cover-package=nt -v
 
 # Export coverage
-python -m coverage xml --include=nt* || true
+python -m coverage xml --include=nt*
 
 # Pylint tests
-/net/ssd/software/anaconda/envs/py3k_jenkins/bin/pylint --rcfile=pylint.cfg -f parseable nt || true
+/net/ssd/software/anaconda/envs/py3k_jenkins/bin/pylint --rcfile=pylint.cfg -f parseable nt
+
+# Build documentation
 make --directory=doc/source/auto_reference/ clean
 make --directory=doc/source/auto_reference/
-make --directory=doc clean || true
-make --directory=doc html || true
+make --directory=doc clean
+make --directory=doc html
 
 # Store pip packages
-pip freeze > pip.txt || true
+pip freeze > pip.txt
 
 # Uninstall packages
-/usr/bin/yes | pip uninstall chainer || true
-/usr/bin/yes | pip uninstall nt || true
+pip uninstall --quiet --yes chainer
+pip uninstall --quiet --yes nt
