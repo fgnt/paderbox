@@ -31,7 +31,7 @@ pip uninstall --quiet --yes chainer
 pip install --quiet --user -e  ./chainer/
 
 # Unittets
-nosetests --with-xunit --with-coverage --cover-package=nt --processes=-1
+nosetests --with-xunit --with-coverage --cover-package=nt # --processes=-1
 # Use as many prosesses as you have cores: --processes=-1
 
 # Export coverage
