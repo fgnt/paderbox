@@ -44,6 +44,9 @@ Copyright (C) 2007,2010 E.A.P. Habets
   http://www.gnu.org/copyleft/gpl.html or by writing to
   Free Software Foundation, Inc.,675 Mass Ave, Cambridge, MA 02139, USA.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+# Sperical (isotropic) noise MATLAB implemention can be found on:
+    https://www.audiolabs-erlangen.de/fau/professor/habets/software/noise-generators
 """
 
 from math import acos, sqrt
@@ -55,15 +58,17 @@ from numpy.fft import irfft as ifft
 from numpy.fft import fft as fft
 from numpy.random import randn
 from scipy.signal import detrend
+from numba import jit
 
-def sinf_3D(P, length, fs=8000, c=340, N=256):
+
+def _sinf_3D(positions, signal_length, sample_rate=8000, c=340, N=256):
     """
 
-    :param P:
-    :param length:
-    :param fs:
-    :param c:
-    :param N:
+    :param P: position of microphones in cartesian coordinates, shape 3 x #channels
+    :param length: signal length
+    :param sample_rate: sample frequency
+    :param c: sound velocity in m/s
+    :param N: number of cylindrical angles
     :return:
 
     Example:
@@ -71,15 +76,15 @@ def sinf_3D(P, length, fs=8000, c=340, N=256):
     >>> M = 4 # Number of sensors
     >>> P = randn(3, M)
     >>> N = 300
-    >>> sinf_3D(P, N)
+    >>> _sinf_3D(P, N);
 
     """
 
-    M = P.shape[1]  # Number of sensors
-    NFFT = 2 ** ceil(log2(length))  # Number of frequency bins
+    M = positions.shape[1]  # Number of sensors
+    NFFT = 2 ** ceil(log2(signal_length))  # Number of frequency bins
     X = zeros((M, NFFT / 2 + 1), dtype=numpy.complex128)
 
-    w = 2 * pi * fs * numpy.arange(0, NFFT // 2 + 1) / NFFT
+    w = 2 * pi * sample_rate * numpy.arange(0, NFFT // 2 + 1) / NFFT
 
     # Generate N points that are near-uniformly distributed over S^2
     phi = zeros(N)
@@ -95,7 +100,7 @@ def sinf_3D(P, length, fs=8000, c=340, N=256):
     # Caculate relative positions
     P_rel = zeros((3, M))
     for m in range(M):
-        P_rel[:, m] = P[:, m] - P[:, 0]
+        P_rel[:, m] = positions[:, m] - positions[:, 0]
 
     # Initialize waitbar
     # waitbar(0,'Generating sensor signals...');
@@ -121,11 +126,87 @@ def sinf_3D(P, length, fs=8000, c=340, N=256):
     z = real(ifft(X, NFFT, 1))
 
     # Truncate output signals
-    return z[:, :length]
+    return z[:, :signal_length]
 
     # Close waitbar
     # waitbar;
 
+def _sinf_3D_py(positions, signal_length, sample_rate=8000, c=340, N=256):
+    """
+
+    :param P: position of microphones in cartesian coordinates, shape 3 x #channels
+    :param length: signal length
+    :param sample_rate: sample frequency
+    :param c: sound velocity in m/s
+    :param N: number of cylindrical angles
+    :return:
+
+    Example:
+
+    >>> M = 4 # Number of sensors
+    >>> P = randn(3, M)
+    >>> signal_length = 300
+    >>> _sinf_3D(P, signal_length);
+
+    """
+
+    M = positions.shape[1]  # Number of sensors
+    NFFT = 2 ** ceil(log2(signal_length))  # Number of frequency bins
+    X = zeros((M, NFFT / 2 + 1), dtype=numpy.complex128)
+
+    w = 2 * pi * sample_rate * numpy.arange(0, NFFT // 2 + 1) / NFFT
+
+    # Generate N points that are near-uniformly distributed over S^2
+    phi = zeros(N)
+    theta = zeros(N)
+    for k in range(N):
+        h = -1 + 2 * (k) / (N - 1)
+        phi[k] = acos(h)
+        if k == 0 or k == N - 1:
+            theta[k] = 0
+        else:
+            theta[k] = (theta[k - 1] + 3.6 / sqrt(N * (1 - h ** 2))) % 2 * pi
+
+    # Caculate relative positions
+    P_rel = zeros((3, M))
+    for m in range(M):
+        P_rel[:, m] = positions[:, m] - positions[:, 0]
+
+    # Initialize waitbar
+    # waitbar(0,'Generating sensor signals...');
+
+    # Calculate sensor signals in the frequency domain
+
+    # for idx in range(N):
+    #     #     waitbar(idx/N);
+    #
+    #     X_prime = randn(NFFT // 2 + 1) + 1j * randn(NFFT // 2 + 1)
+    #     X[0, :] += X_prime
+    #     for m in range(1, M):
+    #         v = [cos(theta[idx]) * sin(phi[idx]), sin(theta[idx]) * sin(phi[idx]), cos(phi[idx])]
+    #         # Delta = v @ P_rel[:, m]
+    #         Delta = numpy.sum(v * P_rel[:, m])
+    #         X[m, :] += X_prime * exp(-1j * Delta * w / c)
+    X_prime = randn(N, NFFT // 2 + 1) + 1j * randn(N, NFFT // 2 + 1)
+    v = numpy.stack([numpy.cos(theta) * numpy.sin(phi), numpy.sin(theta) * numpy.sin(phi), numpy.cos(phi)])
+    Delta = P_rel[:, 1:] @ v
+    X[0, :] += sum(X_prime, axis=0)
+    X[1:, :] += numpy.sum(X_prime[None, :, :] * exp(-1j * Delta[:, :, None] * w[None, None, :] / c))
+
+    X /= sqrt(N)
+
+    # Transform to time domain
+    X = [sqrt(NFFT) * real(X[:, 0]), sqrt(NFFT // 2) * X[:, 1:-1],
+         sqrt(NFFT) * real(X[:, -1]), sqrt(NFFT / 2) * conj(X[:, -2:0:-1])]
+    X = [x if x.ndim is 2 else x[:, None] for x in X]
+    X = numpy.concatenate(X, axis=1)
+    z = real(ifft(X, NFFT, 1))
+
+    # Truncate output signals
+    return z[:, :signal_length]
+
+    # Close waitbar
+    # waitbar;
 
 ###############################################################################################
 # function [Cxy, f] = mycohere(varargin)
@@ -172,7 +253,8 @@ def sinf_3D(P, length, fs=8000, c=340, N=256):
 # %   Copyright (c) 1988-98 by The MathWorks, Inc.
 # %   $Revision: 1.1 $  $Date: 1998/06/03 14:42:19 $
 
-def mycohere(x, y, nfft=256, Fs=8000, window=None, noverlap=None, p=.95, dflag='none'):
+# helper function for testcases
+def _mycohere(x, y, nfft=256, sample_rate=8000, window=None, noverlap=None, p=.95, dflag='none'):
 
     #error(nargchk(2,7,nargin))
     #x = varargin{1};
@@ -250,7 +332,7 @@ def mycohere(x, y, nfft=256, Fs=8000, window=None, noverlap=None, p=.95, dflag='
 
     #Coh = (abs(Pxy).^2)./(Pxx.*Pyy);             # coherence function estimate
     Coh = Pxy / numpy.sqrt(Pxx * Pyy)
-    freq_vector = (select - 1) * Fs / nfft
+    freq_vector = (select - 1) * sample_rate / nfft
 
     # set up output parameters
     #if (nargout == 2):
@@ -264,3 +346,4 @@ def mycohere(x, y, nfft=256, Fs=8000, window=None, noverlap=None, p=.95, dflag='
        #newplot;
        #plot(freq_vector,Coh), grid on
        #xlabel('Frequency'), ylabel('Coherence Function Estimate')
+
