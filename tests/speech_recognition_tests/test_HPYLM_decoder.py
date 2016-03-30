@@ -87,7 +87,7 @@ class TestDecoder(unittest.TestCase):
                 'rb') as fid:
             trans_handler = pickle.load(fid)
 
-        utt = "AA BA AC"
+        utt = "<AABA> AC"
         utt_id = "TEST_UTT_1"
         label_seq = "AA_AAAA____B_A____AA__CCCC"
 
