@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 
+renice -n 20 $$
+
 # set a prefix for each cmd
 green='\033[0;32m'
 NC='\033[0m' # No Color
 trap 'echo -e "${green}$ $BASH_COMMAND ${NC}"' DEBUG
-trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
 # Force Exit 0
-trap 'exit 0' EXIT
+trap 'exit 0' EXIT SIGINT SIGTERM EXIT
 
 # Set Paths
 CUDA_PATH=/usr/local/cuda
@@ -30,7 +31,8 @@ pip uninstall --quiet --yes chainer
 pip install --quiet --user -e  ./chainer/
 
 # Unittets
-nosetests --with-xunit --with-coverage --cover-package=nt -v
+nosetests --with-xunit --with-coverage --cover-package=nt -v --processes=-1
+# Use as many prosesses as you have cores: --processes=-1
 
 # Export coverage
 python -m coverage xml --include=nt*
