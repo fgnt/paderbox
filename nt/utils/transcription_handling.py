@@ -235,7 +235,7 @@ class EventLabelHandler(object):
 
     """
 
-    def __init__(self, transcription_list,events, window_length=400,
+    def __init__(self, transcription_list, events, window_length=400,
                  stft_size=512, stft_shift=160):
         self.label_to_int = dict()
         self.int_to_label = dict()
@@ -245,38 +245,39 @@ class EventLabelHandler(object):
 
         # set up mapping dictionaries
         # add a Label for Silence First and fixate the event labels with integers
-        self.label_to_int['Silence'] = 0 # len(self.label_to_int)
-        self.int_to_label[0] = 'Silence' #len(self.label_to_int)
+        self.label_to_int['Silence'] = 0
+        self.int_to_label[0] = 'Silence'
         for i in range(len(events)):
-            self.label_to_int[events[i]]=i+1
-            self.int_to_label[i+1]= events[i]
-
+            self.label_to_int[events[i]] = i + 1
+            self.int_to_label[i + 1] = events[i]
 
     def label_seq_to_int_arr(self, transcription, resampling_factor):
-        # for event detection it is assumed that the transcription is list of
+        # for event detection (polyphonic) it is assumed that the transcription is list of
         # tuples of the scheme (begin, end, 'label'). The last element contains
         # the overall file length, therefore transcription[-1][1] is equal to
         # the sequence length in samples
         assert transcription[-1][2] == 'END'
         transcription_length_in_samples = transcription[-1][1]
-        #transcription_length_in_frames = self.sample_to_frame_idx(
-         #   transcription_length_in_samples)
+        # resamples to a new sampling frequency to adjust the labels to the new sampling frequency.
         transcription_length_in_frames = self.sample_to_frame_idx(
+            self.resample_labels(resampling_factor, transcription_length_in_samples))
         # print(transcription, transcription_length_in_frames)
-            self.resample_labels(resampling_factor,transcription_length_in_samples))
         number_of_events = len(self.label_to_int)
 
         int_arr = numpy.zeros(
             (transcription_length_in_frames, number_of_events),
             dtype=numpy.int32)
         for begin, end, label in transcription[:-1]:
-            #begin_frame, end_frame = [self.sample_to_frame_idx(n)
-            #                         for n in (begin, end)]
-            begin_frame, end_frame = [self.sample_to_frame_idx(self.resample_labels(resampling_factor,n))
+            begin_frame, end_frame = [self.sample_to_frame_idx(self.resample_labels(resampling_factor, n))
                                       for n in (begin, end)]
-            if begin_frame <0:
-                begin_frame =0
+            if begin_frame < 0:
+                begin_frame = 0
             int_arr[begin_frame:end_frame, self.label_to_int[label]] = 1
+        ## Activating silence class where no class is activated.
+        for i in range(int_arr.shape[0]):
+            if not int_arr[i].any():
+                int_arr[i][0] = 1
+
         return int_arr
 
     def label_seq_to_int_arr_samples(self, transcription, resampling_factor):
@@ -303,14 +304,10 @@ class EventLabelHandler(object):
         # Works same as label_seq_to_int_arr but outputs an integer for class label
         # Suited for DCASE2013 monophonic data
 
-    def label_seq_to_int_arr_resampling(self, transcription, resampling_factor):
-        # Works same as label_seq_to_int_arr but resamples to a new sampling
-        # frequency. This is done to adjust the labels to the new sampling frequency.
-
         assert transcription[-1][2] == 'END'
         transcription_length_in_samples = transcription[-1][1]
         transcription_length_in_frames = self.sample_to_frame_idx(
-            self.resample_labels(resampling_factor,transcription_length_in_samples))
+            self.resample_labels(resampling_factor, transcription_length_in_samples))
         number_of_events = len(self.label_to_int)
 
         int_arr = numpy.zeros(
@@ -318,22 +315,20 @@ class EventLabelHandler(object):
             dtype=numpy.int32)
 
         for begin, end, label in transcription[:-1]:
-            begin_frame, end_frame = [int(self.sample_to_frame_idx(self.resample_labels(resampling_factor,n)))
+            begin_frame, end_frame = [int(self.sample_to_frame_idx(self.resample_labels(resampling_factor, n)))
                                       for n in (begin, end)]
             if label == 'alarm':
                 label = 'alert'
-            if begin_frame <0:
-                begin_frame =0
-            int_arr[begin_frame:end_frame,] = self.label_to_int[label]
+            if begin_frame < 0:
+                begin_frame = 0
+            int_arr[begin_frame:end_frame, ] = self.label_to_int[label]
         return int_arr
 
     def int_arr_to_label_seq(self, int_arr):
         raise NotImplementedError('This feature is currently missing!')
 
-
     def resample_labels(self, resampling_factor, sample_num_old):
         return int(numpy.ceil(sample_num_old * resampling_factor))
-
 
     def print_mapping(self):
         for char, i in self.label_to_int.items():
@@ -422,6 +417,10 @@ def argmax_ctc_decode(int_arr, label_handler):
     :param label_handler: label handler
     :type label_handler: CharLabelHandler
     :return: decoded sequence
+
+    Example:
+        >>> int_arr = numpy.random.randint()
+        >>> argmax_ctc_decode()
     """
 
     max_decode = numpy.argmax(int_arr, axis=1)
