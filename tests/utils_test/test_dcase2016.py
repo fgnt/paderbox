@@ -3,7 +3,7 @@ from nt.utils.numpy_utils import reshape
 from nt.utils.dcase2016 import get_train_cv_data_provider
 import nt.utils.json_utils as ju
 
-json_path = '/home/parora/Documents/DCASE/DCASE 2016/json/database_task2.json'
+json_path = '/net/storage/database_jsons/dcase2016.json'
 json_data = ju.load_json(json_path)
 flist = 'train/Complete Set/wav/mono'
 transcription_list = json_data['train']['Complete Set']['annotation']['orth']
