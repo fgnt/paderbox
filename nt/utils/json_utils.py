@@ -1,13 +1,20 @@
 import json
+import os
 
-def load_json(json_file):
+
+def load_json(*path_parts):
     """ Loads a json file and returns it as a dict
 
-    :param json_file: path to the json file
+    :param path_parts: Json file name and possible parts of a path
     :return: dict with contents of the json file
     """
 
-    with open(json_file) as fid:
+    path = os.path.join(*path_parts)
+
+    if not path.endswith('.json'):
+        path += '.json'
+
+    with open(path) as fid:
         return json.load(fid)
 
 
