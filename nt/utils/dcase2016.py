@@ -31,7 +31,7 @@ cv_scripts = ['clearthroat113', 'cough151', 'doorslam022', 'drawer072', 'keyboar
               'keysDrop072', 'knock072', 'laughter144', 'pageturn081', 'phone082', 'speech056']
 
 
-def generate_augmented_training_data(dir_name, stft_size, stft_shift):
+def generate_augmented_training_data(dir_name):
     train_time_signal = list()
     cv_time_signal = list()
     total_lengths = dict()
@@ -79,24 +79,22 @@ def generate_augmented_training_data(dir_name, stft_size, stft_shift):
     return noisy_train_signal, noisy_cv_signal, total_lengths, scripts
 
 
-def make_input_arrays(dir_name, stft_size, stft_shift, **kwargs):
+def make_input_arrays(dir_name, **kwargs):
     """Extract features from the generated time signals """
 
-    noisy_train_signal, noisy_cv_signal, silence_lengths, scripts = generate_augmented_training_data(dir_name,
-                                                                                                     stft_size,
-                                                                                                     stft_shift)
-    #print(noisy_train_signal.shape, noisy_cv_signal.shape)
+    noisy_train_signal, noisy_cv_signal, total_lengths, scripts = generate_augmented_training_data(dir_name)
+    print(noisy_train_signal.shape, noisy_cv_signal.shape)
     transformed_train = transform_features(noisy_train_signal, **kwargs)
     transformed_cv = transform_features(noisy_cv_signal, **kwargs)
-    #print(transformed_train.shape,transformed_cv.shape)
-    return transformed_train, transformed_cv, silence_lengths, scripts
+    print(transformed_train.shape, transformed_cv.shape)
+    return transformed_train, transformed_cv, total_lengths, scripts
 
 def transform_features(data, **kwargs):
     num_fbanks = kwargs.get('num_fbanks', 26)
     delta = kwargs.get('delta', 0)
     delta_delta = kwargs.get('delta_delta', 0)
 
-    logfbank_feat = logfbank(data, number_of_filters=num_fbanks).astype(np.float32)
+    logfbank_feat = logfbank(data, number_of_filters=num_fbanks)
     data = logfbank_feat
     if delta == 1:
         delta_feat = librosa.feature.delta(logfbank_feat, axis=0)  # row-wise in our case
@@ -104,7 +102,7 @@ def transform_features(data, **kwargs):
     if delta_delta == 1:
         delta_delta_feat = librosa.feature.delta(logfbank_feat, axis=0, order=2)
         data = np.concatenate((data, delta_delta_feat), axis=1)
-    return data
+    return data.astype(np.float32)
 
 
 def make_target_arrays(event_label_handler, transcription_list, resampling_factor, scripts, total_lengths, stft_size,
@@ -119,7 +117,7 @@ def make_target_arrays(event_label_handler, transcription_list, resampling_facto
                                                           resampling_factor)
 
         silence_samples = total_lengths[script] - target.shape[0]
-        target_silence = np.zeros((silence_samples, target.shape[1]))
+        target_silence = np.zeros((silence_samples, target.shape[1]), dtype=np.int32)
         target_silence[:, 0] = 1
         if script in cv_scripts:
             cv_target_list.append(np.concatenate((target, target_silence)))
@@ -129,31 +127,28 @@ def make_target_arrays(event_label_handler, transcription_list, resampling_facto
 
     # extend training and cv targets 5 times to match the 5 SNR corrupted input data
 
-    train_target = np.concatenate(train_target_list).astype(np.float32)
+    train_target = np.concatenate(train_target_list)
     train_target = np.tile(train_target, (5, 1))
-    cv_target = np.concatenate(cv_target_list).astype(np.float32)
+    cv_target = np.concatenate(cv_target_list)
     cv_target = np.tile(cv_target, (5, 1))
 
     # convert from samples to frames- activating an event if it's present at least in 50% of the frame
-    # TODO: Implement it more time efficiently
-    frames_arr_train = np.zeros((_samples_to_stft_frames(train_target.shape[0]), train_target.shape[1]))
+    frames_arr_train = list()
     for i in range(train_target.shape[1]):  # i.e. for every event
-        time_signal_seg = segment_axis(train_target[:, i], length=stft_size, overlap=stft_size - stft_shift)
-        for j in range(time_signal_seg.shape[0]):
-            row = time_signal_seg[j, :]
-            frames_arr_train[j, i] = (sum(row) > 0.5 * stft_size).astype(np.int32)
+        time_signal_seg = segment_axis(train_target[:, i], length=stft_size, overlap=stft_size - stft_shift, end='pad')
+        frames_arr_train.append((np.sum(time_signal_seg, axis=1) > 0.5 * stft_size).reshape(-1, 1))
+    frames_arr_train = np.concatenate(frames_arr_train, axis=1)
 
-    frames_arr_cv = np.zeros((_samples_to_stft_frames(cv_target.shape[0]), cv_target.shape[1]))
+    frames_arr_cv = list()
     for i in range(cv_target.shape[1]):  # i.e. for every event
-        time_signal_seg = segment_axis(cv_target[:, i], length=stft_size, overlap=stft_size - stft_shift)
-        for j in range(time_signal_seg.shape[0]):
-            row = time_signal_seg[j, :]
-            frames_arr_cv[j, i] = (sum(row) > 0.5 * stft_size).astype(np.int32)
+        time_signal_seg = segment_axis(cv_target[:, i], length=stft_size, overlap=stft_size - stft_shift, end='pad')
+        frames_arr_cv.append((np.sum(time_signal_seg, axis=1) > 0.5 * stft_size).reshape(-1, 1))
+    frames_arr_cv = np.concatenate(frames_arr_cv, axis=1)
 
-    return frames_arr_train, frames_arr_cv
+    return frames_arr_train.astype(np.float32), frames_arr_cv.astype(np.float32)
 
 
-def get_train_cv_data_provider(dir_name, stft_size, stft_shift, json_data, flist, transcription_list, events,
+def get_train_cv_data_provider(dir_name, stft_size, stft_shift, transcription_list, events,
                                resampling_factor=16 / 44.1, batch_size=32,
                                cnn_features=False, **kwargs):
     left_context = kwargs.get('left_context', 0)
@@ -161,7 +156,7 @@ def get_train_cv_data_provider(dir_name, stft_size, stft_shift, json_data, flist
     step_width = kwargs.get('step_width', 1)
 
     # Load training and CV input data #######
-    train_data, cv_data, silence_lengths, scripts = make_input_arrays(dir_name, stft_size, stft_shift, **kwargs)
+    train_data, cv_data, total_lengths, scripts = make_input_arrays(dir_name, **kwargs)
 
     T, F = train_data.shape
     train_data = add_context(
@@ -177,14 +172,14 @@ def get_train_cv_data_provider(dir_name, stft_size, stft_shift, json_data, flist
     else:
         train_data = train_data.reshape(T, -1)
 
-    print(train_data.shape)
+    print(train_data.shape, type(train_data))
 
     ### Load training and CV targets #######
     event_label_handler = EventLabelHandler(transcription_list, events)
     train_target, cv_target = make_target_arrays(event_label_handler, transcription_list, resampling_factor,
-                                                 scripts, silence_lengths)
+                                                 scripts, total_lengths, stft_size, stft_shift)
 
-    #print(train_target.shape, cv_target.shape)
+    print(train_target.shape, cv_target.shape, type(train_target))
 
     train_data_fetcher = ArrayDataFetcher('x', train_data)
     train_target_fetcher = ArrayDataFetcher('targets', train_target)
@@ -225,7 +220,7 @@ def transform_features_test(data, **kwargs):
     delta_delta = kwargs.get('delta_delta', 0)
     # Amplitude normalize the data before extracting features
     # data['observed'] = data['observed']/np.max(data['observed'])
-    logfbank_feat = logfbank(data['observed'][0], number_of_filters=num_fbanks).astype(np.float32)
+    logfbank_feat = logfbank(data['observed'][0], number_of_filters=num_fbanks)
     data['observed'] = logfbank_feat
     if delta == 1:
         delta_feat = librosa.feature.delta(logfbank_feat, axis=0)  # row-wise in our case

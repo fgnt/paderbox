@@ -432,7 +432,7 @@ def plot_ctc_label_probabilities(net_out, ax=None, label_handler=None, batch=0):
     :param batch: Batch to plot
     """
     x = _get_batch(net_out, batch)
-    x = softmax(x)
+    # x = softmax(x)
     if label_handler is not None:
         ordered_map = OrderedDict(
             sorted(label_handler.int_to_label.items(), key=lambda t: t[1])
@@ -441,10 +441,11 @@ def plot_ctc_label_probabilities(net_out, ax=None, label_handler=None, batch=0):
     else:
         order = list(range(x.shape[1]))
 
-    ax.imshow(
+    image = ax.imshow(
         x[:, order].T,
         cmap='viridis', interpolation='none', aspect='auto'
     )
+    cbar = plt.colorbar(image, ax=ax)
 
     if label_handler is not None:
         plt.yticks(
