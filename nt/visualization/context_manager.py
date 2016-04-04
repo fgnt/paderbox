@@ -6,6 +6,7 @@ from matplotlib.ticker import ScalarFormatter
 import subprocess
 import platform
 import os
+from nt.visualization.new_cm import cmaps
 
 
 mpl_ge_150 = LooseVersion(mpl.__version__) >= '1.5.0'
@@ -17,8 +18,11 @@ class DollarFormatter(ScalarFormatter):
         if len(self.locs) == 0:
             return ''
         else:
-            s = self.pprint_val(x)
-            return '\$' + self.fix_minus(s) + '\$'
+            if not type(x) is str:
+                s = self.pprint_val(x)
+                return '\$' + self.fix_minus(s) + '\$'
+            else:
+                return x
 
 
 class LatexContextManager(object):
@@ -31,7 +35,9 @@ class LatexContextManager(object):
             figure_size=[8.0, 6.0],
             formatter=DollarFormatter,
             format_x=True,
-            format_y=True
+            format_y=True,
+            palette=cmaps['upb'].colors[1:],
+            extra_rc=None
     ):
         assert filename.endswith('.svg')
         self.filename = filename
@@ -39,6 +45,11 @@ class LatexContextManager(object):
         self.figure_size = figure_size
         self.format_x = format_x
         self.format_y = format_y
+        self.palette = palette
+        if extra_rc is None:
+            self.extra_rc = dict()
+        else:
+            self.extra_rc = extra_rc
 
     def __enter__(self):
         extra_rc = {
@@ -47,10 +58,12 @@ class LatexContextManager(object):
             'text.latex.unicode': False,
             'axes.unicode_minus': False
         }
+        extra_rc.update(self.extra_rc)
         return context_manager(
             font_scale=2.5,
             extra_rc=extra_rc,
-            figure_size=self.figure_size
+            figure_size=self.figure_size,
+            palette=self.palette,
         )
 
     def __exit__(self, type, value, tb):
@@ -88,9 +101,9 @@ def context_manager(
     seaborn_plotting_context='notebook',
     font_scale=1.0,
     line_width=3,
-    figure_size=[8.0, 6.0],
+    figure_size=(8.0, 6.0),
     palette='muted',
-    extra_rc={},
+    extra_rc=None,
 ):
     """ Helper to create a plotting style with auto completion.
 
@@ -153,6 +166,8 @@ def context_manager(
         font_scale=font_scale,
     )
 
+    if extra_rc is None:
+        extra_rc = dict()
     rc_parameters.update(extra_rc)
 
     final = dict(axes_style, **plotting_context)
