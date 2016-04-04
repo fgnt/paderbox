@@ -63,9 +63,9 @@ def generate_augmented_training_data(dir_name):
     noisy_train_signal = np.concatenate(noisy_train_signal)
 
     # Normalize the training data
-    training_mean = np.mean(noisy_train_signal)
-    training_var = np.var(noisy_train_signal)
-    noisy_train_signal = (noisy_train_signal - training_mean) / np.sqrt(training_var)
+    # training_mean = np.mean(noisy_train_signal)
+    # training_var = np.var(noisy_train_signal)
+    # noisy_train_signal = (noisy_train_signal - training_mean) / np.sqrt(training_var)
     audiowrite(noisy_train_signal, 'training_events_noise.wav', normalize=True)
 
     noisy_cv_signal = list()
@@ -73,7 +73,7 @@ def generate_augmented_training_data(dir_name):
         snr = np.random.choice([-12, -6, 0, 6, 12])
         noisy_cv_signal.append(cv_time_signal + n_gen.get_noise_for_signal(cv_time_signal, snr=snr))
     noisy_cv_signal = np.concatenate(noisy_cv_signal)
-    noisy_cv_signal = (noisy_cv_signal - training_mean) / np.sqrt(training_var)
+    # noisy_cv_signal = (noisy_cv_signal - training_mean) / np.sqrt(training_var)
     audiowrite(noisy_cv_signal, 'cv_events_noise.wav', normalize=True)
 
     return noisy_train_signal, noisy_cv_signal, total_lengths, scripts
@@ -83,10 +83,10 @@ def make_input_arrays(dir_name, **kwargs):
     """Extract features from the generated time signals """
 
     noisy_train_signal, noisy_cv_signal, total_lengths, scripts = generate_augmented_training_data(dir_name)
-    print(noisy_train_signal.shape, noisy_cv_signal.shape)
+    # print(noisy_train_signal.shape, noisy_cv_signal.shape)
     transformed_train = transform_features(noisy_train_signal, **kwargs)
     transformed_cv = transform_features(noisy_cv_signal, **kwargs)
-    print(transformed_train.shape, transformed_cv.shape)
+    # print(transformed_train.shape, transformed_cv.shape)
     return transformed_train, transformed_cv, total_lengths, scripts
 
 def transform_features(data, **kwargs):
@@ -97,7 +97,7 @@ def transform_features(data, **kwargs):
     logfbank_feat = logfbank(data, number_of_filters=num_fbanks)
     data = logfbank_feat
     if delta == 1:
-        delta_feat = librosa.feature.delta(logfbank_feat, axis=0)  # row-wise in our case
+        delta_feat = librosa.feature.delta(logfbank_feat, axis=0, width=3)  # row-wise in our case
         data = np.concatenate((data, delta_feat), axis=1)
     if delta_delta == 1:
         delta_delta_feat = librosa.feature.delta(logfbank_feat, axis=0, order=2)
@@ -172,14 +172,14 @@ def get_train_cv_data_provider(dir_name, stft_size, stft_shift, transcription_li
     else:
         train_data = train_data.reshape(T, -1)
 
-    print(train_data.shape, type(train_data))
+    # print(train_data.shape, type(train_data))
 
     ### Load training and CV targets #######
     event_label_handler = EventLabelHandler(transcription_list, events)
     train_target, cv_target = make_target_arrays(event_label_handler, transcription_list, resampling_factor,
                                                  scripts, total_lengths, stft_size, stft_shift)
 
-    print(train_target.shape, cv_target.shape, type(train_target))
+    # print(train_target.shape, cv_target.shape, type(train_target))
 
     train_data_fetcher = ArrayDataFetcher('x', train_data)
     train_target_fetcher = ArrayDataFetcher('targets', train_target)
@@ -199,7 +199,7 @@ def get_train_cv_data_provider(dir_name, stft_size, stft_shift, transcription_li
         cv_data = cv_data.reshape((T, C, H, W))
     else:
         cv_data = cv_data.reshape(T, -1)
-    print(cv_data.shape)
+    # print(cv_data.shape)
 
     cv_data_fetcher = ArrayDataFetcher('x', cv_data)
     cv_target_fetcher = ArrayDataFetcher('targets', cv_target)
@@ -346,14 +346,14 @@ def generate_onset_offset_label(decoded_allFrames, event_id, event_label_handler
             i]  ## label_now and label_next are either 1 or 0 indicating the event to be active or inactive
         j = i + 1
         label_next = decoded_allFrames[j]
-        while (label_next == label_now and j < decoded_allFrames.shape[0] - 1):
+        while label_next == label_now and j < decoded_allFrames.shape[0] - 1:
             j += 1
             label_next = decoded_allFrames[j]
         offset = resample_and_convert_frame_to_seconds(
             j)  # To save frame no. [not exceeded by 1 here as it is already greater than the offset index by 1]
         # if the period in question was active for that event, log it's onset and offset.
         # Minimum duration constraint
-        if label_now == 1 and offset - onset > 0.06:
+        if label_now == 1 and offset - onset > 0.06 and class_label != 'Silence':
             file.write(' '.join(('%.2f' % onset, '%.2f' % offset, class_label, '\n')))
             # on_off_label.append((onset, offset, class_label))  # save
         i = j
