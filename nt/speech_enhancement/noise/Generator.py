@@ -54,9 +54,9 @@ class NoiseGeneratorWhite(NoiseGeneratorTemplate):
 class NoiseGeneratorPink(NoiseGeneratorTemplate):
     name = 'pinkNoise'
 
-    def __init__(self, samples, channels):
-        self.n = samples # number of samples
-        self.d = channels # number of channels
+    def __init__(self,  sample_dim=0, channel_dim=1):
+        self.sample_dim = sample_dim
+        self.channel_dim = channel_dim
 
     def _pink_noise_generator(self,n, d):
         """Generates pink noise. You still need to rescale it to your needs.
@@ -76,7 +76,6 @@ class NoiseGeneratorPink(NoiseGeneratorTemplate):
 
         B = [0.049922035, -0.095993537, 0.050612699, -0.004408786]
         A = [1, - 2.494956002, 2.017265875, -0.522189400]
-#        nT60 = numpy.around(numpy.log(1000) / (1 - (abs(numpy.roots(A))).max(0)))  # T60 est.
         nT60 = 1430 #  T60 est.- Original Matlab Code: nT60 = round(log(1000)/(1-max(abs(roots(A)))));
         v = numpy.random.randn(n + nT60, d)  # Gaussian white noise: N(0,1)
         x = lfilter(B, A, v, axis = 0)  # Apply 1/F roll-off to PSD
@@ -88,10 +87,8 @@ class NoiseGeneratorPink(NoiseGeneratorTemplate):
         Example:
 
         >>> import nt.evaluation.sxr as sxr
-        >>> n = 1000
-        >>> d = 5
-        >>> time_signal = numpy.random.randn(n, d)
-        >>> n_gen = NoiseGeneratorPink(n, d)
+        >>> time_signal = numpy.random.randn(1000, 5)
+        >>> n_gen = NoiseGeneratorPink()
         >>> pinknoise = n_gen.get_noise_for_signal(time_signal, 20)
         >>> n = n_gen.get_noise_for_signal(time_signal, 20)
         >>> n.shape
@@ -104,7 +101,12 @@ class NoiseGeneratorPink(NoiseGeneratorTemplate):
 
          """
         numpy.random.seed(seed=seed)
-        noise_signal = self._pink_noise_generator(self.n, self.d)
+        n = time_signal.shape[self.sample_dim]
+        if len(time_signal.shape) > 1:
+            d = time_signal.shape[self.channel_dim]
+        else:
+            d = 1
+        noise_signal = self._pink_noise_generator(n, d)
         set_snr(time_signal, noise_signal, snr)
         return noise_signal
 
