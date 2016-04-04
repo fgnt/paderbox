@@ -1,7 +1,9 @@
 import numpy
+import numpy as np
 from nt.transform.module_fbank import fbank
 import scipy.signal
 from scipy.fftpack import dct
+from librosa.feature import delta
 
 
 def mfcc(time_signal, sample_rate=16000,
@@ -48,6 +50,7 @@ def mfcc(time_signal, sample_rate=16000,
 
     return feat
 
+
 def _lifter(cepstra, L=22):
     """
     Apply a cepstral lifter the the matrix of cepstra. This has the effect of
@@ -71,3 +74,25 @@ def _lifter(cepstra, L=22):
         # values of L <= 0, do nothing
         return cepstra
 
+
+def mfcc_velocity_acceleration(time_signal, *args, **kwargs):
+    """ Calculate MFCC velocity and acceleration.
+
+    The deltas are calculated just as in Kaldi:
+    https://github.com/kaldi-asr/kaldi/blob/master/src/feat/feature-functions.cc#L235
+
+    The ETSI standard frontend goes explains the same on page 39 section 9.2:
+    http://www.etsi.org/deliver/etsi_es%5C202000_202099%5C202050%5C01.01.05_60%5Ces_202050v010105p.pdf
+
+    :param time_signal: Time signal
+    :param args: All parameters for MFCCs
+    :param kwargs: All parameters for MFCCs
+    :return: Stacked features
+    """
+    mfcc_signal = mfcc(time_signal, *args, **kwargs)
+    delta_mfcc_signal = delta(mfcc_signal, order=1)
+    delta_delta_mfcc_signal = delta(mfcc_signal, order=2)
+    return np.concatenate(
+        (mfcc_signal, delta_mfcc_signal, delta_delta_mfcc_signal),
+        axis=1
+    )
