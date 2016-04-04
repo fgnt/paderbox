@@ -14,6 +14,26 @@ def get_data_provider_for_flist(
         callback_fcn=default_transform,
         json_file='/net/storage/database_jsons/timit.json',
         **kwargs):
+    """
+
+    To get a data provider, use this:
+    >>> dp = nt.utils.timit.get_data_provider_for_flist('train')
+    >>> dp.data_info
+
+    To get a test batch:
+    >>> batch = dp.test_run()
+
+    If you want to iterate over all batches:
+    >>> for batch in dp.iterate():
+    >>>     print(batch.keys())
+    >>>     break
+
+    :param flist:
+    :param callback_fcn:
+    :param json_file:
+    :param kwargs:
+    :return:
+    """
     feature_channels = ['observed/ch1']
     enable_cache = kwargs.pop('enable_cache', False)
 
