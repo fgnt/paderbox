@@ -89,7 +89,10 @@ setup(
     },
 
     ext_modules=cythonize(["nt/reverb/CalcRIR_Simple_C.pyx",
-                          'nt/speech_enhancement/cythonized/get_gev_vector.pyx']),
+                          'nt/speech_enhancement/cythonized/get_gev_vector.pyx',
+                           ],
+                          annotate=True,
+                          ),
 
     # If there are data files included in your packages that need to be
     # installed, specify them here.  If using Python 2.6 or less, then these
