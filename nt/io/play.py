@@ -31,4 +31,4 @@ def play(data, channel=0, rate=16000,
     assert np.issubdtype(data.dtype, np.float)
     assert len(data.shape) == 1
 
-    display(Audio(data, rate=16000))
+    display(Audio(data, rate=rate))
