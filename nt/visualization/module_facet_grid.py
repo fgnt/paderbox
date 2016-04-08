@@ -2,10 +2,13 @@ import seaborn as sns
 import itertools
 import numpy as np
 import matplotlib.pyplot as plt
-
+import types
 
 def facet_grid(data_list, function_list, kwargs_list=(), colwrap=2, scale=1,
                title_list=()):
+    if isinstance(function_list, types.FunctionType):
+        function_list = [function_list]
+
     assert len(function_list) == len(data_list) or \
            len(function_list) == 1 or \
            len(data_list) == 1
