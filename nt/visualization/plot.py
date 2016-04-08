@@ -3,11 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from nt.speech_enhancement.beamform_utils import *
 import nt.transform
-from nt.utils.math_ops import softmax
 from warnings import warn
 from collections import OrderedDict
 from functools import wraps
-from nt.visualization.new_cm import viridis_hex
 
 
 def create_subplot(f):
@@ -66,7 +64,7 @@ def _get_batch(signal, batch):
 
 @allow_dict_input_and_colorize
 @create_subplot
-def line(signal, ax=None, ylim=None, label=None, color=None, logx=False,
+def line(*signal, ax=None, ylim=None, label=None, color=None, logx=False,
          logy=False):
     """
     Use together with facet_grid().
@@ -88,10 +86,16 @@ def line(signal, ax=None, ylim=None, label=None, color=None, logx=False,
     else:
         plt_fcn = ax.plot
 
-    if isinstance(signal, tuple):
-        plt_fcn(signal[0], signal[1], label=label, color=color)
+    if len(signal) == 1 and isinstance(signal[0], tuple):
+        signal = signal[0]
+
+    if color is not None:
+        plt_fcn(*signal, label=label, color=color)
     else:
-        plt_fcn(signal, label=label, color=color)
+        plt_fcn(*signal, label=label)
+
+    if label is not None:
+        ax.legend()
 
     if ylim is not None:
         ax.set_ylim(ylim)
@@ -122,7 +126,7 @@ def scatter(signal, ax=None, ylim=None, label=None, color=None):
 
 @allow_dict_input_and_colorize
 @create_subplot
-def time_series(signal, ax=None, ylim=None, label=None, color=None):
+def time_series(*signal, ax=None, ylim=None, label=None, color=None):
     """
     Use together with facet_grid().
 
@@ -131,8 +135,8 @@ def time_series(signal, ax=None, ylim=None, label=None, color=None):
     :param ylim: Tuple with y-axis limits
     :return:
     """
-    ax = line(signal, ax=ax, ylim=ylim, label=label, color=None)
-    if type(signal) is tuple:
+    ax = line(*signal, ax=ax, ylim=ylim, label=label, color=color)
+    if len(signal) == 2:
         ax.set_xlabel('Time / s')
     else:
         ax.set_xlabel('Sample index')
