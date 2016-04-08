@@ -72,6 +72,25 @@ def line(*signal, ax=None, ylim=None, label=None, color=None, logx=False,
     Signal can be a dict with labels and data. Data can then be a tuple or
     a single vector of y-values.
 
+    Example:
+
+        >> x = numpy.random.rand(100)
+        >> y = numpy.random.rand(100)
+        >> plot.line(x, y)
+        >> plot.line(y)
+        >> plot.line((x, y))
+
+    Example with faced grid:
+
+        >> x = numpy.random.rand(100)
+        >> y = numpy.random.rand(100)
+        >> y2 = numpy.random.rand(100)
+        >> facet_grid([y, y2], plot.line)
+        >> facet_grid([y, (x, y2)], plot.line)
+        # second figure with y over x
+        >> facet_grid([y, [2, 1]], plot.line)
+        # second figure with y values 2 and 1
+
     :param signal: Single one-dimensional array or tuple of x and y values.
     :param ax: Axis handle
     :param ylim: Tuple with y-axis limits
@@ -104,22 +123,56 @@ def line(*signal, ax=None, ylim=None, label=None, color=None, logx=False,
 
 @allow_dict_input_and_colorize
 @create_subplot
-def scatter(signal, ax=None, ylim=None, label=None, color=None):
+def scatter(*signal, ax=None, ylim=None, label=None, color=None):
     """
     Use together with facet_grid().
+
+    Signal can be a dict with labels and data. Data can then be a tuple or
+    a single vector of y-values.
+
+    Example:
+
+        >> x = numpy.random.rand(100)
+        >> y = numpy.random.rand(100)
+        >> plot.scatter(x, y)
+        >> plot.scatter(y)
+        >> plot.scatter((x, y))
+
+    Example with faced grid:
+
+        >> x = numpy.random.rand(100)
+        >> y = numpy.random.rand(100)
+        >> y2 = numpy.random.rand(100)
+        >> facet_grid([y, y2], plot.scatter)
+        >> facet_grid([y, (x, y2)], plot.scatter)
+        # second figure with y over x
+        >> facet_grid([y, [2, 1]], plot.scatter)
+        # second figure with y values 2 and 1
 
     :param signal: Single one-dimensional array or tuple of x and y values.
     :param ax: Axis handle
     :param ylim: Tuple with y-axis limits
     :return:
     """
-    if type(signal) is tuple:
-        ax.scatter(signal[0], signal[1], label=label, color=color)
-    else:
-        ax.scatter(range(len(signal)), signal, label=label, color=color)
 
-    if ylim is not None:
-        ax.set_ylim(ylim)
+    if len(signal) == 1 and isinstance(signal[0], tuple):
+        signal = signal[0]
+
+    if len(signal) == 1:
+        signal = (range(len(signal[0])), signal[0])
+
+    if color is not None:
+        ax.scatter(*signal, label=label, color=color)
+    else:
+        ax.scatter(*signal, label=label)
+
+    # if type(signal) is tuple:
+    #     ax.scatter(signal[0], signal[1], label=label, color=color)
+    # else:
+    #     ax.scatter(range(len(signal)), signal, label=label, color=color)
+    #
+    # if ylim is not None:
+    #     ax.set_ylim(ylim)
 
     return ax
 
@@ -129,6 +182,28 @@ def scatter(signal, ax=None, ylim=None, label=None, color=None):
 def time_series(*signal, ax=None, ylim=None, label=None, color=None):
     """
     Use together with facet_grid().
+
+    Signal can be a dict with labels and data. Data can then be a tuple or
+    a single vector of y-values.
+
+    Example:
+
+        >> x = numpy.random.rand(100)
+        >> y = numpy.random.rand(100)
+        >> plot.time_series(x, y)
+        >> plot.time_series(y)
+        >> plot.time_series((x, y))
+
+    Example with faced grid:
+
+        >> x = numpy.random.rand(100)
+        >> y = numpy.random.rand(100)
+        >> y2 = numpy.random.rand(100)
+        >> facet_grid([y, y2], plot.time_series)
+        >> facet_grid([y, (x, y2)], plot.time_series)
+        # second figure with y over x
+        >> facet_grid([y, [2, 1]], plot.time_series)
+        # second figure with y values 2 and 1
 
     :param signal: Single one-dimensional array or tuple of x and y values.
     :param ax: Axis handle
