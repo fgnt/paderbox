@@ -54,11 +54,11 @@ class NoiseGeneratorWhite(NoiseGeneratorTemplate):
 class NoiseGeneratorPink(NoiseGeneratorTemplate):
     name = 'pinkNoise'
 
-    def __init__(self,  sample_dim=0, channel_dim=1):
-        self.sample_dim = sample_dim
-        self.channel_dim = channel_dim
+    def __init__(self, sample_axis=-2, channel_axis=-1):
+        self.sample_dim = sample_axis
+        self.channel_dim = channel_axis
 
-    def _pink_noise_generator(self,n, d):
+    def _pink_noise_generator(self, n, d):
         """Generates pink noise. You still need to rescale it to your needs.
 
             This code was taken from the book
