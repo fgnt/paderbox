@@ -37,7 +37,7 @@ python nt/database/tidigits/JSON_conv_tidigits.py
 cp tidigits.json /net/storage/database_jsons/tidigits.json
 
 echo 'Creating TIMIT json'
-python nt/database/timit/database_timit.py
+python nt/database/timit/create_json.py
 cp TIMIT.json /net/storage/database_jsons/timit.json
 
 echo 'Creating WSJ json'

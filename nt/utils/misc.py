@@ -7,19 +7,19 @@ find something useful if you alter it a little bit.
 
 import os
 
-import numpy as np
 import h5py
+import numpy as np
+from os.database.chime.chime import get_chime_data_provider_for_flist
 
 import nt.speech_enhancement.beamformer as bf
-from nt.utils.math_ops import covariance
-from nt.transform.module_stft import istft
 from nt.evaluation import input_sxr, output_sxr
 from nt.evaluation.pesq import threaded_pesq as pesq
-from nt.utils import Timer, mkdir_p
-from nt.speech_enhancement.noise import get_snr
-from nt.speech_enhancement.mask_estimation import estimate_IBM
-from nt.utils.chime import get_chime_data_provider_for_flist
 from nt.io.audiowrite import audiowrite
+from nt.speech_enhancement.mask_estimation import estimate_IBM
+from nt.speech_enhancement.noise import get_snr
+from nt.transform.module_stft import istft
+from nt.utils import Timer, mkdir_p
+from nt.utils.math_ops import covariance
 
 
 def get_beamform_results(

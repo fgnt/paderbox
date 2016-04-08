@@ -1,14 +1,13 @@
 import unittest
-
 from tempfile import TemporaryDirectory
 
 from chainer.optimizers import Adam
+from os.database.chime.chime import get_chime_data_provider_for_flist
+
 from nt.chainer_models.mask_estimation.chime_paper import ChimePaperModel
 from nt.chainer_models.mask_estimation.cnn_models import BasicCNNChannelModel
 from nt.chainer_models.mask_estimation.cnn_models import BasicCNNModel
-
 from nt.nn import Trainer
-from nt.utils.chime import get_chime_data_provider_for_flist
 
 
 class TestChimePaperModel(unittest.TestCase):
