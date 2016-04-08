@@ -17,6 +17,7 @@ def get_data_provider_for_flist(
     """
 
     To get a data provider, use this:
+    >>> import nt.utils.timit
     >>> dp = nt.utils.timit.get_data_provider_for_flist('train')
     >>> dp.data_info
 
@@ -36,6 +37,7 @@ def get_data_provider_for_flist(
     """
     feature_channels = ['observed/ch1']
     enable_cache = kwargs.pop('enable_cache', False)
+    sample_rate = kwargs.get('sample_rate', 16000)
 
     set_name = 'Complete Set'
 
@@ -46,7 +48,8 @@ def get_data_provider_for_flist(
         callback_fcn=callback_fcn,
         feature_channels=feature_channels,
         transform_kwargs=kwargs,
-        enable_cache=enable_cache
+        enable_cache=enable_cache,
+        sample_rate=sample_rate
     )
     return DataProvider(
         (fetcher,), batch_size=1, shuffle_data=False, max_queue_size=30
