@@ -1,6 +1,7 @@
 from itertools import product
 from copy import deepcopy
 from pprint import pprint
+from operator import itemgetter
 
 
 def generate_setups(base_setup, update_setup=None):
@@ -37,7 +38,7 @@ def generate_setups(base_setup, update_setup=None):
     def _get_list_of_setup_combinations(setup):
         dict_of_lists = _make_each_value_a_list(setup)
         list_of_items = list(dict_of_lists.items())
-        list_of_items.sort(key=lambda x: x[0])
+        list_of_items.sort(key=itemgetter(0))
         keys, values = list(zip(*list_of_items))
         result = product(*values)
         list_of_dicts = [dict(zip(keys, r)) for r in result]
