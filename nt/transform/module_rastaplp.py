@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.signal import lfilter
-from nt.transform import stft_to_spectrogram, stft, istft, mfcc
+from nt.transform import stft_to_spectrogram, stft
 
 def rasta_plp(time_signal, sample_rate=16000, modelorder = 8, do_rasta = True):
     """
@@ -18,7 +18,7 @@ def rasta_plp(time_signal, sample_rate=16000, modelorder = 8, do_rasta = True):
     # transform to bark scale (Critical bandwidth analysis)
     nframes, nfreqs = powerspec.shape
     nfft = (nfreqs - 1)*2
-    fft2bark_matrix = get_fft2bark_matrix(nfft, sample_rate, 23, 1, 0, sample_rate/2)
+    fft2bark_matrix = get_fft2bark_matrix(nfft, sample_rate, 21, 1, 0, sample_rate/2)
     fft2bark_matrix = fft2bark_matrix.T[0:nfreqs] # Second half is all zero and not needed. Transpose Matrix from Matlab
     aspectrum = np.dot(np.sqrt(powerspec), fft2bark_matrix)**2
 
@@ -86,7 +86,11 @@ def get_fft2bark_matrix(nfft, sample_rate = 16000, nfilts=23, width = 1, minfreq
     Hence, Bark spectrum is fft2barkmx(nfft,sampling_rate)*stft(xincols,nfft)
 
 	:param nfft: source FFT size at sampling rate sampling_rate
-	:param sample_rate: sampling rate of the FFT signal
+	:param sample# Hynek's magic equal-loudness-curve formula
+    fsq = bandcfhz**2
+    ftmp = fsq + 1.6e5
+    eql = ((fsq/ftmp)**2) * ((fsq + 1.44e6) / (fsq + 9.61e6))
+    return W_rate: sampling rate of the FFT signal
 	:param nfilts: number of output bands required (default one per bark -> 23)
  	:param width: constant width of each band in Bark
 	:param minfreq: minimum frequency of FFT in hz
@@ -280,7 +284,7 @@ def spec2cep(spec, ncep = 13):
     # Make the DCT matrix
     dctm = np.zeros((ncep, nrow))
     for i in range(ncep):
-        dctm[i,:] = np.cos((i-1)* np.linspace(1, (2*nrow - 1), (2*nrow - 1)/2 + 1)/(2*nrow)*np.pi)* np.sqrt(2/nrow)
+        dctm[i,:] = np.cos(i* np.linspace(1, (2*nrow - 1), (2*nrow - 1)/2 + 1)/(2*nrow)*np.pi)* np.sqrt(2/nrow)
     dctm[0] = dctm[0]/np.sqrt(2)
 
     return np.dot(dctm, np.log(spec)).T
