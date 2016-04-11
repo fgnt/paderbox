@@ -1,8 +1,11 @@
 import unittest
 import numpy as np
-import nt.testing
+import nt.testing as tc
 from nt.speech_enhancement.noise import set_snr
 from nt.speech_enhancement.noise import get_snr
+import nt.evaluation.sxr as sxr
+import nt.speech_enhancement.noise as noise
+from nt.utils.math_ops import sph2cart
 
 
 class TestNoiseMethods(unittest.TestCase):
@@ -19,4 +22,47 @@ class TestNoiseMethods(unittest.TestCase):
 
         print(calculated_snr)
         print(snr)
-        nt.testing.assert_allclose(calculated_snr, snr, atol=1e-3)
+        tc.assert_allclose(calculated_snr, snr, atol=1e-3)
+
+
+class TestNoiseGeneratorWhite(unittest.TestCase):
+    n_gen = noise.NoiseGeneratorWhite()
+
+    def test_single_channel(self):
+        time_signal = np.random.randn(1000)
+        n = self.n_gen.get_noise_for_signal(time_signal, 20)
+        tc.assert_equal(n.shape, (1000,))
+
+        SDR, SIR, SNR = sxr.input_sxr(time_signal[:, None, None], n[:, None])
+        tc.assert_almost_equal(SNR, 20)
+
+
+    def test_multi_channel(self):
+        time_signal = np.random.randn(1000, 3)
+        n = self.n_gen.get_noise_for_signal(time_signal, 20)
+        tc.assert_equal(n.shape, (1000, 3))
+
+        SDR, SIR, SNR = sxr.input_sxr(time_signal[:, :, None], n)
+        tc.assert_almost_equal(SNR, 20)
+
+
+class TestNoiseGeneratorPink(TestNoiseGeneratorWhite):
+    n_gen = noise.NoiseGeneratorPink()
+
+
+class TestNoiseGeneratorNoisex92(TestNoiseGeneratorWhite):
+    n_gen = noise.NoiseGeneratorNoisex92('/net/speechdb/NoiseX_92/WAV_16kHz/destroyerengine_16kHz.wav')
+
+    def test_multi_channel(self):
+        pass # currently only single channel supported
+
+
+class TestNoiseGeneratorSpherical(TestNoiseGeneratorWhite):
+    x1,y1,z1 = sph2cart(0,0,0.1)    # Sensor position 1
+    x2,y2,z2 = sph2cart(0,0,0.2)    # Sensor position 2
+    P = np.array([[0, x1, x2], [0, y1, y2], [0, z1, z2]]) # Construct position matrix
+    n_gen = noise.NoiseGeneratorSpherical(P)
+
+    def test_single_channel(self):
+        pass # makes no sense
+
