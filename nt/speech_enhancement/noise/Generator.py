@@ -3,6 +3,9 @@ from abc import ABCMeta, abstractmethod
 import numpy
 from nt.speech_enhancement.noise.utils import set_snr
 from scipy.signal import lfilter
+from nt.speech_enhancement.noise.spherical_habets import _sinf_3D_py
+import nt.testing as tc
+from functools import wraps
 import nt.io.audioread as ar
 
 
@@ -15,9 +18,25 @@ class NoiseGeneratorTemplate:
         pass
 
 
-class NoiseGeneratorWhite(NoiseGeneratorTemplate):
-    name = 'whiteGaussian'
+def _decorator_noise_generator_set_snr(f):
+    """ This decorator sets the seed and fix the snr.
 
+    :param f: Function to be wrapped
+    :return: noise_signal
+    """
+    @wraps(f)
+    def wrapper(self, time_signal, snr, seed=None, **kwargs):
+        numpy.random.seed(seed=seed)
+        noise_signal = f(self, time_signal, snr, seed, **kwargs)
+        set_snr(time_signal, noise_signal, snr)
+        return noise_signal
+
+    return wrapper
+
+
+class NoiseGeneratorWhite(NoiseGeneratorTemplate):
+
+    @_decorator_noise_generator_set_snr
     def get_noise_for_signal(self, time_signal, snr, seed=None, **kwargs):
         """
         Example:
@@ -44,15 +63,11 @@ class NoiseGeneratorWhite(NoiseGeneratorTemplate):
 
         """
         shape = time_signal.shape
-        numpy.random.seed(seed=seed)
         noise_signal = numpy.random.randn(*shape)
-        set_snr(time_signal, noise_signal, snr)
         return noise_signal
-        # return self._normalize_noise(time_signal,snr,noise_signal)
 
 
 class NoiseGeneratorPink(NoiseGeneratorTemplate):
-    name = 'pinkNoise'
 
     def __init__(self, sample_axis=-2, channel_axis=-1):
         self.sample_dim = sample_axis
@@ -79,12 +94,27 @@ class NoiseGeneratorPink(NoiseGeneratorTemplate):
         nT60 = 1430 #  T60 est.- Original Matlab Code: nT60 = round(log(1000)/(1-max(abs(roots(A)))));
         v = numpy.random.randn(n + nT60, d)  # Gaussian white noise: N(0,1)
         x = lfilter(B, A, v, axis = 0)  # Apply 1/F roll-off to PSD
-        x = x[nT60 :, :]  # Skip transient response
-        return (x)
+        x = x[nT60:, :]  # Skip transient response
+        return x
 
+    @_decorator_noise_generator_set_snr
     def get_noise_for_signal(self, time_signal, snr, seed=None, **kwargs):
         """
         Example:
+
+
+        >>> import nt.evaluation.sxr as sxr
+        >>> time_signal = numpy.random.randn(1000)
+        >>> n_gen = NoiseGeneratorPink()
+        >>> pinknoise = n_gen.get_noise_for_signal(time_signal, 20)
+        >>> n = n_gen.get_noise_for_signal(time_signal, 20)
+        >>> n.shape
+        (1000,)
+        >>> time_signal.shape
+        (1000,)
+        >>> SDR, SIR, SNR = sxr.input_sxr(time_signal[:, None, None], n[:, None])
+        >>> SNR
+        20
 
         >>> import nt.evaluation.sxr as sxr
         >>> time_signal = numpy.random.randn(1000, 5)
@@ -100,14 +130,15 @@ class NoiseGeneratorPink(NoiseGeneratorTemplate):
         20.0
 
          """
-        numpy.random.seed(seed=seed)
-        n = time_signal.shape[self.sample_dim]
         if len(time_signal.shape) > 1:
+            n = time_signal.shape[self.sample_dim]
             d = time_signal.shape[self.channel_dim]
+            noise_signal = self._pink_noise_generator(n, d)
         else:
+            n = time_signal.shape[0]
             d = 1
-        noise_signal = self._pink_noise_generator(n, d)
-        set_snr(time_signal, noise_signal, snr)
+            noise_signal = self._pink_noise_generator(n, d)[:, 0]
+
         return noise_signal
 
 
@@ -117,6 +148,7 @@ class NoiseGeneratorNoisex92(NoiseGeneratorTemplate):
     def __init__(self, path):
         self.path = path
 
+    @_decorator_noise_generator_set_snr
     def get_noise_for_signal(self, time_signal, snr, seed=None, **kwargs):
         """
 
@@ -133,13 +165,68 @@ class NoiseGeneratorNoisex92(NoiseGeneratorTemplate):
         20
 
         """
-        numpy.random.seed(seed=seed)
         params = ar.getparams(self.path) #nchannels, sampwidth, framerate, nframes, comptype, compname
         readin = ar.audioread(self.path,sample_rate = params[2])
         seq = numpy.random.randint(0, readin.shape[0] - time_signal.shape[0])
         noise_signal = readin[seq : seq + time_signal.shape[0]]
-        set_snr(time_signal, noise_signal, snr)
         return noise_signal
+
+class NoiseGeneratorSpherical(NoiseGeneratorTemplate):
+
+    def __init__(self, sensor_positions, *, sample_axis=-2, channel_axis=-1, sample_rate=16000, c = 340, number_of_cylindrical_angels=256):
+
+        assert sensor_positions.shape[0] == 3
+
+        self.sample_axis = sample_axis
+        self.channel_axis = channel_axis
+
+        self.sensor_positions = sensor_positions
+        _, self.number_of_channels = sensor_positions.shape
+
+        self.sample_rate = sample_rate
+        self.sound_velocity = c
+        self.number_of_cylindrical_angels = number_of_cylindrical_angels
+
+    @_decorator_noise_generator_set_snr
+    def get_noise_for_signal(self, time_signal, snr, seed=None, **kwargs):
+        """
+        Example:
+
+        >>> import nt.evaluation.sxr as sxr
+        >>> from nt.utils.math_ops import sph2cart
+        >>> time_signal = numpy.random.randn(1000, 3)
+        >>> x1,y1,z1 = sph2cart(0,0,0.1)    # Sensor position 1
+        >>> x2,y2,z2 = sph2cart(0,0,0.2)    # Sensor position 2
+        >>> P = numpy.array([[0, x1, x2], [0, y1, y2], [0, z1, z2]]) # Construct position matrix
+        >>> n_gen = NoiseGeneratorSpherical(P)
+        >>> n = n_gen.get_noise_for_signal(time_signal, 20)
+        >>> SDR, SIR, SNR = sxr.input_sxr(time_signal[:, :, None], n[:, :, None])
+        >>> SNR
+        20.0
+
+        >>> import nt.evaluation.sxr as sxr
+        >>> from nt.utils.math_ops import sph2cart
+        >>> time_signal = numpy.random.randn(1000, 3)
+        >>> x1,y1,z1 = sph2cart(0,0,0.1)    # Sensor position 1
+        >>> x2,y2,z2 = sph2cart(0,0,0.2)    # Sensor position 2
+        >>> P = numpy.array([[0, x1, x2], [0, y1, y2], [0, z1, z2]]) # Construct position matrix
+        >>> n_gen = NoiseGeneratorSpherical(P)
+        >>> n = n_gen.get_noise_for_signal(time_signal, 20)
+        >>> n.shape
+        (1000, 3)
+        >>> time_signal.shape
+        (1000, 3)
+        >>> SDR, SIR, SNR = sxr.input_sxr(time_signal[:, :, numpy.newaxis], n)
+        >>> SNR
+        20.0
+
+        """
+        tc.assert_equal(time_signal.shape[self.channel_axis], self.number_of_channels)
+
+        # shape = time_signal.shape
+        noise_signal = _sinf_3D_py(self.sensor_positions, time_signal.shape[self.sample_axis])
+        return noise_signal
+        # return self._normalize_noise(time_signal,snr,noise_signal)
 
 
 class NoiseGeneratorMix:

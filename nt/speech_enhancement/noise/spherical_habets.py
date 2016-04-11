@@ -1,4 +1,6 @@
 """
+# Source: https://www.audiolabs-erlangen.de/fau/professor/habets/software/noise-generators
+
 Generating sensor signals for a 1D sensor array in a spherically
 isotropic noise field [1,2]
 
@@ -58,7 +60,6 @@ from numpy.fft import irfft as ifft
 from numpy.fft import fft as fft
 from numpy.random import randn
 from scipy.signal import detrend
-from numba import jit
 
 
 def _sinf_3D(positions, signal_length, sample_rate=8000, c=340, N=256):
@@ -187,11 +188,12 @@ def _sinf_3D_py(positions, signal_length, sample_rate=8000, c=340, N=256):
     #         # Delta = v @ P_rel[:, m]
     #         Delta = numpy.sum(v * P_rel[:, m])
     #         X[m, :] += X_prime * exp(-1j * Delta * w / c)
+    # print(N, NFFT // 2 + 1)
     X_prime = randn(N, NFFT // 2 + 1) + 1j * randn(N, NFFT // 2 + 1)
     v = numpy.stack([numpy.cos(theta) * numpy.sin(phi), numpy.sin(theta) * numpy.sin(phi), numpy.cos(phi)])
-    Delta = P_rel[:, 1:] @ v
-    X[0, :] += sum(X_prime, axis=0)
-    X[1:, :] += numpy.sum(X_prime[None, :, :] * exp(-1j * Delta[:, :, None] * w[None, None, :] / c))
+    Delta = P_rel[:, 1:].T @ v
+    X[0, :] += numpy.sum(X_prime, axis=0)
+    X[1:, :] += numpy.sum(X_prime[None, :, :] * exp((-1j * (Delta[:, :, None] / c)) * w[None, None, :]))
 
     X /= sqrt(N)
 
@@ -203,7 +205,7 @@ def _sinf_3D_py(positions, signal_length, sample_rate=8000, c=340, N=256):
     z = real(ifft(X, NFFT, 1))
 
     # Truncate output signals
-    return z[:, :signal_length]
+    return z[:, :signal_length].T
 
     # Close waitbar
     # waitbar;
