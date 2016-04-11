@@ -1,21 +1,44 @@
 import numpy as np
+import scipy
 from scipy.signal import lfilter
-from nt.transform.module_bark_fbank import bark_fbank
+from nt.transform import bark_fbank
+from nt.transform.module_bark_fbank import bark2hz, hz2bark
 
-
-def rasta_plp(time_signal, sample_rate=16000, modelorder = 8, do_rasta = True):
+def rasta_plp(time_signal, sample_rate=16000, modelorder = 8, do_rasta = True, window_length=400, stft_shift=160,
+              number_of_filters=23, stft_size = 512, lowest_frequency=0, highest_frequency=None, preempnasis_factor = 0,
+              window=scipy.signal.hamming, sum_power=True):
     """
     Compute PLP features from an audio signal with optional RASTA filtering (enabled by default).
 
     Ported from Matlab (Source: http://labrosa.ee.columbia.edu/matlab/rastamat/)
     :param time_signal: the audio signal from which to compute features.
     :param sample_rate: the samplerate of the signal we are working with
+    :param modelorder: Order of the PLP Model
     :param do_rasta: enable RASTA-filtering
+    :param window_length: the length of the analysis window in samples for critical band analysis.
+        Default is 400 (25 milliseconds @ 16kHz)
+    :param stft_shift: the step between successive windows in seconds.
+        Default is 0.01s (10 milliseconds)
+    :param number_of_filters: the number of filters in the filterbank,
+        default 23.
+    :param stft_size: the FFT size. Default is 512.
+    :param lowest_frequency: lowest band edge of mel filters.
+        In Hz, default is 0.
+    :param highest_frequency: highest band edge of mel filters.
+        In Hz, default is samplerate/2
+    :param preemphasis_factor: apply preemphasis filter with preemphasis_factor as coefficient.
+        Default is 0: no filter. (As in Matlab)
     :return: A numpy array containing features. Each row holds 1 feature vektor
     """
 
+    highest_frequency = highest_frequency or sample_rate/2
+
     # Compute Citical Bands
-    aspectrum = bark_fbank(time_signal, preemphasis_factor=0)   # no preemphasis as in Matlab
+    aspectrum = bark_fbank(time_signal, sample_rate = sample_rate, window_length = window_length,
+                           window=window, stft_size=stft_size, stft_shift=stft_shift,
+                           number_of_filters = number_of_filters, lowest_frequency=lowest_frequency,
+                           highest_frequency=highest_frequency,preemphasis_factor=preempnasis_factor,
+                           sum_power=sum_power)
 
     # do optional RASTA filtering
     if do_rasta:
@@ -23,7 +46,7 @@ def rasta_plp(time_signal, sample_rate=16000, modelorder = 8, do_rasta = True):
         aspectrum = np.exp(filter_rasta(np.log(aspectrum)))
 
     # final auditory compressions
-    postspectrum = postaud(aspectrum, sample_rate/2)
+    postspectrum = postaud(aspectrum, highest_frequency)
 
     # Linear predictive coding
     modelorder = 0  # Ensure this doesn't get executed

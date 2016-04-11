@@ -38,7 +38,8 @@ def bark_fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160
     highest_frequency = highest_frequency or sample_rate/2
 
     # Compute power spectrogram
-    stft_signal = stft(time_signal=time_signal, size=stft_size, shift=stft_shift, window=window, window_length=window_length, fading=False)
+    stft_signal = stft(time_signal=time_signal, size=stft_size, shift=stft_shift, window=window,
+                       window_length=window_length, fading=False)
     spectrogram = stft_to_spectrogram(stft_signal)
 
     # Transform to bark scale
