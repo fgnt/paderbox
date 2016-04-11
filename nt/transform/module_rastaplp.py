@@ -12,13 +12,13 @@ def rasta_plp(time_signal, sample_rate=16000, modelorder = 8, do_rasta = True):
     :param do_rasta: enable RASTA-filtering
     :return: A numpy array containing features. Each row holds 1 feature vektor
     """
-    # compute power spectogram
+    # compute power spectrogram
     powerspec = stft_to_spectrogram(stft(time_signal))
 
-    # transform to bark scale
+    # transform to bark scale (Critical bandwidth analysis)
     nframes, nfreqs = powerspec.shape
     nfft = (nfreqs - 1)*2
-    fft2bark_matrix = fft2barkmx(nfft, sample_rate, 23, 1, 0, sample_rate/2)
+    fft2bark_matrix = get_fft2bark_matrix(nfft, sample_rate, 23, 1, 0, sample_rate/2)
     fft2bark_matrix = fft2bark_matrix.T[0:nfreqs] # Second half is all zero and not needed. Transpose Matrix from Matlab
     aspectrum = np.dot(np.sqrt(powerspec), fft2bark_matrix)**2
 
@@ -55,8 +55,11 @@ def filter_rasta(x):
     :param x: the input audio signal to filter.
         default filter is single pole at 0.94
     """
+
+    x = x.T
+
     numerator = np.arange(.2, -.3, -.1)
-    denominator = np.array([1, -0.98])
+    denominator = np.array([1, -0.94])
 
     # Initialize the state.  This avoids a big spike at the beginning
     # resulting from the dc offset level in each band.
@@ -73,11 +76,11 @@ def filter_rasta(x):
     for i in range(y.shape[0]):
         y[i, 4:] = lfilter(numerator, denominator, x[i, 4:], axis=-1, zi=zf[i, :])[0]
 
-    return y
+    return y.T
 
-def fft2barkmx(nfft, sample_rate = 16000, nfilts=23, width = 1, minfreq = 0, maxfreq = 8000):
+def get_fft2bark_matrix(nfft, sample_rate = 16000, nfilts=23, width = 1, minfreq = 0, maxfreq = 8000):
     """
-    Generate a matrix of weights to combine FFT bins into Bark
+    Generate a matrix of weights to combine FFT bins into Bark (Critical Bandwidth Analysis)
 
 	While the matrix has nfft columns, the second half are all zero.
     Hence, Bark spectrum is fft2barkmx(nfft,sampling_rate)*stft(xincols,nfft)
@@ -108,9 +111,9 @@ def fft2barkmx(nfft, sample_rate = 16000, nfilts=23, width = 1, minfreq = 0, max
     for i in range(0, nfilts):
         f_bark_mid = min_bark + (i)*step_barks
         # Linear slopes in log-space (i.e. dB) intersect to trapezoidal window
-        lof = np.add(binbarks, (-1*f_bark_mid - 0.5))
-        hif = np.add(binbarks, (-1*f_bark_mid + 0.5))
-        W[i,0:(nfft/2)+1] = 10**(np.minimum(0, np.minimum(np.divide(hif,width), np.multiply(lof,-2.5/width))))
+        lof = binbarks - f_bark_mid - 0.5
+        hif = binbarks - f_bark_mid + 0.5
+        W[i,0:(nfft/2)+1] = 10**(np.minimum(0, np.minimum(hif/width, lof * (-2.5/width))))
 
     return W
 
@@ -122,7 +125,7 @@ def bark2hz(bark):
 
 def postaud(x, highest_frequency):
     """
-    Do loudness equalization and cube root compression
+    Do loudness equalization and cube root compression.
     :param x: Critical band filters
     :param highest_frequency:
     :return:
