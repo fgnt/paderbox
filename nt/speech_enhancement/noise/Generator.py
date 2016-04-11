@@ -1,9 +1,9 @@
 from abc import ABCMeta, abstractmethod
 
 import numpy
-
 from nt.speech_enhancement.noise.utils import set_snr
 from scipy.signal import lfilter
+import nt.io.audioread as ar
 
 
 class NoiseGeneratorTemplate:
@@ -111,6 +111,37 @@ class NoiseGeneratorPink(NoiseGeneratorTemplate):
         return noise_signal
 
 
+class NoiseGeneratorNoisex92(NoiseGeneratorTemplate):
+    name = 'Noisex92'
+
+    def __init__(self, path):
+        self.path = path
+
+    def get_noise_for_signal(self, time_signal, snr, seed=None, **kwargs):
+        """
+
+        Example:
+
+        >>> import nt.evaluation.sxr as sxr
+        >>> time_signal = numpy.random.randn(1000)
+        >>> path = '/net/speechdb/NoiseX_92/WAV_16kHz/destroyerengine_16kHz.wav'
+        >>> path = '/net/speechdb/NoiseX_92/WAV/destroyerengine.wav'
+        >>> n_gen = NoiseGeneratorNoisex92(path)
+        >>> n = n_gen.get_noise_for_signal(time_signal, 20, seed = 1)
+        >>> SDR, SIR, SNR = sxr.input_sxr(time_signal[:, None, None], n[:, None, None])
+        >>> SNR
+        20
+
+        """
+        numpy.random.seed(seed=seed)
+        params = ar.getparams(self.path) #nchannels, sampwidth, framerate, nframes, comptype, compname
+        readin = ar.audioread(self.path,sample_rate = params[2])
+        seq = numpy.random.randint(0, readin.shape[0] - time_signal.shape[0])
+        noise_signal = readin[seq : seq + time_signal.shape[0]]
+        set_snr(time_signal, noise_signal, snr)
+        return noise_signal
+
+
 class NoiseGeneratorMix:
     """
 
@@ -118,8 +149,8 @@ class NoiseGeneratorMix:
 
     >>> import nt.evaluation.sxr as sxr
     >>> time_signal = numpy.random.randn(1000)
-    >>> n_gens = [NoiseGeneratorWhite() for _ in range(2)] # stupid example, makes no sens
-    >>> n_gen = NoiseGeneratorMix(n_gens)
+    >>> n_gens = [NoiseGeneratorWhite(), NoiseGeneratorPink()]
+    >>> n_gen = NoiseGeneratorMix(n_gens, max_different_types=2)
     >>> n = n_gen.get_noise_for_signal(time_signal, 20)
     >>> SDR, SIR, SNR = sxr.input_sxr(time_signal[:, None, None], n[:, None, None])
     >>> SNR
@@ -147,8 +178,10 @@ class NoiseGeneratorMix:
                                         p=self.probabilities)
 
         noise = numpy.sum(numpy.stack(
-            [self.noise_generators[noise_idx].get_noise_for_signal(time_signal, snr, seed, **kwargs) for i in noise_idx]
+            [self.noise_generators[i].get_noise_for_signal(time_signal, snr, seed, **kwargs) for i in noise_idx]
             , axis=0), axis=0) / len(noise_idx)
+
+        set_snr(time_signal, noise, snr)
 
         return noise
 
