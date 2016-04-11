@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.signal import lfilter
-from nt.transform import stft_to_spectrogram, stft
+from nt.transform.module_bark_fbank import bark_fbank
+
 
 def rasta_plp(time_signal, sample_rate=16000, modelorder = 8, do_rasta = True):
     """
@@ -12,26 +13,20 @@ def rasta_plp(time_signal, sample_rate=16000, modelorder = 8, do_rasta = True):
     :param do_rasta: enable RASTA-filtering
     :return: A numpy array containing features. Each row holds 1 feature vektor
     """
-    # compute power spectrogram
-    powerspec = stft_to_spectrogram(stft(time_signal))
 
-    # transform to bark scale (Critical bandwidth analysis)
-    nframes, nfreqs = powerspec.shape
-    nfft = (nfreqs - 1)*2
-    fft2bark_matrix = get_fft2bark_matrix(nfft, sample_rate, 21, 1, 0, sample_rate/2)
-    fft2bark_matrix = fft2bark_matrix.T[0:nfreqs] # Second half is all zero and not needed. Transpose Matrix from Matlab
-    aspectrum = np.dot(np.sqrt(powerspec), fft2bark_matrix)**2
+    # Compute Citical Bands
+    aspectrum = bark_fbank(time_signal, preemphasis_factor=0)   # no preemphasis as in Matlab
 
     # do optional RASTA filtering
     if do_rasta:
         # in log domain
-        aspectrum = np.where(aspectrum==0, np.finfo(float).eps, aspectrum)
         aspectrum = np.exp(filter_rasta(np.log(aspectrum)))
 
     # final auditory compressions
     postspectrum = postaud(aspectrum, sample_rate/2)
 
     # Linear predictive coding
+    modelorder = 0  # Ensure this doesn't get executed
     if modelorder > 0:  # This does not work yet
         # LPC analysis
         lpcas = linear_predictive_coding(postspectrum, modelorder)
@@ -54,6 +49,7 @@ def filter_rasta(x):
 
     :param x: the input audio signal to filter.
         default filter is single pole at 0.94
+    :return: filtered signal
     """
 
     x = x.T
@@ -78,58 +74,9 @@ def filter_rasta(x):
 
     return y.T
 
-def get_fft2bark_matrix(nfft, sample_rate = 16000, nfilts=23, width = 1, minfreq = 0, maxfreq = 8000):
-    """
-    Generate a matrix of weights to combine FFT bins into Bark (Critical Bandwidth Analysis)
-
-	While the matrix has nfft columns, the second half are all zero.
-    Hence, Bark spectrum is fft2barkmx(nfft,sampling_rate)*stft(xincols,nfft)
-
-	:param nfft: source FFT size at sampling rate sampling_rate
-	:param sample# Hynek's magic equal-loudness-curve formula
-    fsq = bandcfhz**2
-    ftmp = fsq + 1.6e5
-    eql = ((fsq/ftmp)**2) * ((fsq + 1.44e6) / (fsq + 9.61e6))
-    return W_rate: sampling rate of the FFT signal
-	:param nfilts: number of output bands required (default one per bark -> 23)
- 	:param width: constant width of each band in Bark
-	:param minfreq: minimum frequency of FFT in hz
-	:param maxfeq: maximum frequency of FFT in hz
-    """
-
-    min_bark = hz2bark(minfreq)
-    nyqbark = hz2bark(maxfreq) - min_bark
-
-    if (nfilts == 0):
-        nfilts = int(np.ceil(nyqbark))+1
-
-    # initialize matrix
-    W = np.zeros((nfilts, nfft))
-
-    # bark per filt
-    step_barks = nyqbark/(nfilts-1)
-
-    # Frequency of each FFT bin in Bark
-    binbarks = hz2bark(np.linspace(0,(nfft/2),(nfft/2)+1)*sample_rate/nfft)
-
-    for i in range(0, nfilts):
-        f_bark_mid = min_bark + (i)*step_barks
-        # Linear slopes in log-space (i.e. dB) intersect to trapezoidal window
-        lof = binbarks - f_bark_mid - 0.5
-        hif = binbarks - f_bark_mid + 0.5
-        W[i,0:(nfft/2)+1] = 10**(np.minimum(0, np.minimum(hif/width, lof * (-2.5/width))))
-
-    return W
-
-def hz2bark(hz):
-    return 6 * np.arcsinh(hz/600)
-
-def bark2hz(bark):
-    return 600 * np.sinh(bark/6)
-
 def postaud(x, highest_frequency):
     """
-    Do loudness equalization and cube root compression.
+    Do loudness equalization (Hynek) and cube root compression.
     :param x: Critical band filters
     :param highest_frequency:
     :return:
@@ -278,6 +225,13 @@ def lpc2spec(lpcas, nout):
     return features, F, M
 
 def spec2cep(spec, ncep = 13):
+    """
+    Calculate cepstra from spectral samples. This one does type 2 dct.
+
+    :param spec: spectral samples
+    :param ncep: count of cepstral coefficients per frame
+    :return:
+    """
     spec = spec.T   # Because Matlab switched cols/rows
     nrow, ncol = spec.shape
 

@@ -1,6 +1,6 @@
 import numpy as np
 from nt.transform import stft
-from nt.transform.module_rastaplp import get_fft2bark_matrix
+from nt.transform.module_bark_fbank import bark_fbank
 
 
 def ams(time_signal, version = 1):
@@ -10,6 +10,7 @@ def ams(time_signal, version = 1):
     Features are 3-dimensional (time, center-frequency, modulation-frequency).
 
     http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=5947602
+
     :param time_signal:
     :return:
     """
@@ -20,11 +21,7 @@ def ams(time_signal, version = 1):
     stft_signal = stft_signal**2
 
     # Critical Bandwidth Analysis
-    nframes, nfreqs = stft_signal.shape
-    nfft = (nfreqs - 1)*2
-    fft2bark_matrix = get_fft2bark_matrix(nfft)
-    fft2bark_matrix = fft2bark_matrix.T[0:nfreqs] # Second half is all zero and not needed.
-    bark_signal = np.dot(stft_signal, fft2bark_matrix)
+    bark_signal = bark_fbank(time_signal)
 
     # Second STFT
     nframes, nbands = bark_signal.shape
