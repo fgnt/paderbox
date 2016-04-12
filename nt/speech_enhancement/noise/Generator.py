@@ -7,7 +7,7 @@ from nt.speech_enhancement.noise.spherical_habets import _sinf_3D_py
 import nt.testing as tc
 from functools import wraps
 import nt.io.audioread as ar
-
+from nt.database.noisex92 import helper
 
 class NoiseGeneratorTemplate:
     __metaclass__ = ABCMeta
@@ -143,10 +143,23 @@ class NoiseGeneratorPink(NoiseGeneratorTemplate):
 
 
 class NoiseGeneratorNoisex92(NoiseGeneratorTemplate):
-    name = 'Noisex92'
 
-    def __init__(self, path):
-        self.path = path
+    def __init__(self, label=None, sample_rate=16000):
+        labels = helper.get_labels()
+        if label == None:
+            print('getRandom Label')
+            self.label = 'babble'
+        else:
+            if label in labels:
+                self.label = label
+            else:
+                raise KeyError('The label {label} does not exist. '
+                               'Please choose a valid label from following list: '
+                               '{l}'.format(label = label,l=', '.join(labels)))
+
+        self.sample_rate = sample_rate
+        path = helper.get_path_for_label(self.label, sample_rate)
+        self.readin = ar.audioread(path, sample_rate=sample_rate)
 
     @_decorator_noise_generator_set_snr
     def get_noise_for_signal(self, time_signal, snr, seed=None, **kwargs):
@@ -156,20 +169,21 @@ class NoiseGeneratorNoisex92(NoiseGeneratorTemplate):
 
         >>> import nt.evaluation.sxr as sxr
         >>> time_signal = numpy.random.randn(1000)
-        >>> path = '/net/speechdb/NoiseX_92/WAV_16kHz/destroyerengine_16kHz.wav'
-        >>> path = '/net/speechdb/NoiseX_92/WAV/destroyerengine.wav'
-        >>> n_gen = NoiseGeneratorNoisex92(path)
+        >>> label = 'destroyerengin'
+        >>> n_gen = NoiseGeneratorNoisex92(label, sample_rate = 15000)
         >>> n = n_gen.get_noise_for_signal(time_signal, 20, seed = 1)
         >>> SDR, SIR, SNR = sxr.input_sxr(time_signal[:, None, None], n[:, None, None])
         >>> SNR
         20
 
         """
-        params = ar.getparams(self.path) #nchannels, sampwidth, framerate, nframes, comptype, compname
-        readin = ar.audioread(self.path,sample_rate = params[2])
-        seq = numpy.random.randint(0, readin.shape[0] - time_signal.shape[0])
-        noise_signal = readin[seq : seq + time_signal.shape[0]]
+        if time_signal.shape[0] < self.readin.shape[0]:
+            seq = numpy.random.randint(0, self.readin.shape[0] - time_signal.shape[0])
+        else:
+            seq = 0
+        noise_signal = self.readin[seq: seq + time_signal.shape[0]]
         return noise_signal
+
 
 class NoiseGeneratorSpherical(NoiseGeneratorTemplate):
 
