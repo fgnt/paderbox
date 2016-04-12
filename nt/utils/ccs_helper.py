@@ -16,6 +16,7 @@ def ccskill(request_id, host=None):
     :param request_id: Single request id or list of request ids.
     :param host: PC2 ssh host alias.
     """
+    host = 'pc2' if host is None else host
     if isinstance(request_id, str):
         request_id = [request_id]
     print(sh.ssh(host, 'ccskill', request_id))
