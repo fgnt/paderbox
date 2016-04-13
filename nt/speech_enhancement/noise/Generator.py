@@ -9,6 +9,7 @@ from functools import wraps
 import nt.io.audioread as ar
 from nt.database.noisex92 import helper
 
+
 class NoiseGeneratorTemplate:
     __metaclass__ = ABCMeta
     name = 'Unknown'
@@ -143,23 +144,22 @@ class NoiseGeneratorPink(NoiseGeneratorTemplate):
 
 
 class NoiseGeneratorNoisex92(NoiseGeneratorTemplate):
+    # last_label = None
 
     def __init__(self, label=None, sample_rate=16000):
-        labels = helper.get_labels()
-        if label == None:
-            print('getRandom Label')
-            self.label = 'babble'
-        else:
-            if label in labels:
-                self.label = label
-            else:
+
+        self.labels = helper.get_labels()
+        if label is not None:
+            if label not in self.labels:
                 raise KeyError('The label {label} does not exist. '
                                'Please choose a valid label from following list: '
-                               '{l}'.format(label = label,l=', '.join(labels)))
-
+                               '{l}'.format(label=label, l=', '.join(self.labels)))
+            self.labels = [label]
+        self.audio_datas = list()
+        for l in self.labels:
+                path = helper.get_path_for_label(l, sample_rate)
+                self.audio_datas += [ar.audioread(path, sample_rate=sample_rate)]
         self.sample_rate = sample_rate
-        path = helper.get_path_for_label(self.label, sample_rate)
-        self.readin = ar.audioread(path, sample_rate=sample_rate)
 
     @_decorator_noise_generator_set_snr
     def get_noise_for_signal(self, time_signal, snr, seed=None, **kwargs):
@@ -169,25 +169,35 @@ class NoiseGeneratorNoisex92(NoiseGeneratorTemplate):
 
         >>> import nt.evaluation.sxr as sxr
         >>> time_signal = numpy.random.randn(1000)
+        >>> seed = 1
+        >>> label = 'destroyerengine'
         >>> label = 'destroyerengin'
-        >>> n_gen = NoiseGeneratorNoisex92(label, sample_rate = 15000)
-        >>> n = n_gen.get_noise_for_signal(time_signal, 20, seed = 1)
+        >>> n_gen = NoiseGeneratorNoisex92(sample_rate = 16000)
+        >>> n = n_gen.get_noise_for_signal(time_signal, 20, seed=1)
         >>> SDR, SIR, SNR = sxr.input_sxr(time_signal[:, None, None], n[:, None, None])
         >>> SNR
         20
-
+        >>> n = n_gen.get_noise_for_signal(time_signal, 20, seed=2)
+        >>> SDR, SIR, SNR = sxr.input_sxr(time_signal[:, None, None], n[:, None, None])
+        >>> SNR
+        20
         """
-        if time_signal.shape[0] < self.readin.shape[0]:
-            seq = numpy.random.randint(0, self.readin.shape[0] - time_signal.shape[0])
+        idx = numpy.random.choice(len(self.audio_datas))
+        audio_data = self.audio_datas[idx]
+        # self.last_label = self.labels[idx]
+        print(self.labels[idx])
+        if time_signal.shape[0] <= audio_data.shape[0]:
+            seq = numpy.random.randint(0, audio_data.shape[0] - time_signal.shape[0])
         else:
-            seq = 0
-        noise_signal = self.readin[seq: seq + time_signal.shape[0]]
+            raise ValueError('')
+        noise_signal = audio_data[seq: seq + time_signal.shape[0]]
         return noise_signal
 
 
 class NoiseGeneratorSpherical(NoiseGeneratorTemplate):
 
-    def __init__(self, sensor_positions, *, sample_axis=-2, channel_axis=-1, sample_rate=16000, c = 340, number_of_cylindrical_angels=256):
+    def __init__(self, sensor_positions, *, sample_axis=-2, channel_axis=-1, sample_rate=16000, c=340,
+                 number_of_cylindrical_angels=256):
 
         assert sensor_positions.shape[0] == 3
 
@@ -279,8 +289,8 @@ class NoiseGeneratorMix:
                                         p=self.probabilities)
 
         noise = numpy.sum(numpy.stack(
-            [self.noise_generators[i].get_noise_for_signal(time_signal, snr, seed, **kwargs) for i in noise_idx]
-            , axis=0), axis=0) / len(noise_idx)
+            [self.noise_generators[i].get_noise_for_signal(time_signal, snr, seed, **kwargs) for i in noise_idx],
+            axis=0), axis=0) / len(noise_idx)
 
         set_snr(time_signal, noise, snr)
 
