@@ -36,7 +36,6 @@ class TestNoiseGeneratorWhite(unittest.TestCase):
         SDR, SIR, SNR = sxr.input_sxr(time_signal[:, None, None], n[:, None])
         tc.assert_almost_equal(SNR, 20)
 
-
     def test_multi_channel(self):
         time_signal = np.random.randn(1000, 3)
         n = self.n_gen.get_noise_for_signal(time_signal, 20)
@@ -51,18 +50,17 @@ class TestNoiseGeneratorPink(TestNoiseGeneratorWhite):
 
 
 class TestNoiseGeneratorNoisex92(TestNoiseGeneratorWhite):
-    n_gen = noise.NoiseGeneratorNoisex92('/net/speechdb/NoiseX_92/WAV_16kHz/destroyerengine_16kHz.wav')
+    n_gen = noise.NoiseGeneratorNoisex92()
 
     def test_multi_channel(self):
-        pass # currently only single channel supported
+        pass  # currently only single channel supported
 
 
 class TestNoiseGeneratorSpherical(TestNoiseGeneratorWhite):
-    x1,y1,z1 = sph2cart(0,0,0.1)    # Sensor position 1
-    x2,y2,z2 = sph2cart(0,0,0.2)    # Sensor position 2
-    P = np.array([[0, x1, x2], [0, y1, y2], [0, z1, z2]]) # Construct position matrix
+    x1, y1, z1 = sph2cart(0, 0, 0.1)    # Sensor position 1
+    x2, y2, z2 = sph2cart(0, 0, 0.2)    # Sensor position 2
+    P = np.array([[0, x1, x2], [0, y1, y2], [0, z1, z2]])  # Construct position matrix
     n_gen = noise.NoiseGeneratorSpherical(P)
 
     def test_single_channel(self):
-        pass # makes no sense
-
+        pass  # makes no sense
