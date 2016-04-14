@@ -90,11 +90,11 @@ class NoiseGeneratorPink(NoiseGeneratorTemplate):
         :return: Pink noise of dimension number of samples times one
         """
 
-        B = [0.049922035, -0.095993537, 0.050612699, -0.004408786]
-        A = [1, - 2.494956002, 2.017265875, -0.522189400]
-        nT60 = 1430 #  T60 est.- Original Matlab Code: nT60 = round(log(1000)/(1-max(abs(roots(A)))));
+        b = [0.049922035, -0.095993537, 0.050612699, -0.004408786]
+        a = [1, - 2.494956002, 2.017265875, -0.522189400]
+        nT60 = 1430  # T60 est.- Original Matlab Code: nT60 = round(log(1000)/(1-max(abs(roots(A)))));
         v = numpy.random.randn(n + nT60, d)  # Gaussian white noise: N(0,1)
-        x = lfilter(B, A, v, axis = 0)  # Apply 1/F roll-off to PSD
+        x = lfilter(b, a, v, axis=0)  # Apply 1/F roll-off to PSD
         x = x[nT60:, :]  # Skip transient response
         return x
 
@@ -178,7 +178,7 @@ class NoiseGeneratorNoisex92(NoiseGeneratorTemplate):
         >>> SDR, SIR, SNR = sxr.input_sxr(time_signal[:, None, None], n[:, None, None])
         >>> SNR
         20
-        >>> label = 'asdf'
+        >>> label = 'destroyereng'
         >>> n_gen = NoiseGeneratorNoisex92(label, sample_rate = 16000)
         >>> label = 'destroyerengine'
         >>> n_gen = NoiseGeneratorNoisex92(label, sample_rate = 16000)
@@ -186,7 +186,6 @@ class NoiseGeneratorNoisex92(NoiseGeneratorTemplate):
         >>> SDR, SIR, SNR = sxr.input_sxr(time_signal[:, None, None], n[:, None, None])
         >>> SNR
         20
-
         """
         idx = numpy.random.choice(len(self.audio_datas))
         audio_data = self.audio_datas[idx]
