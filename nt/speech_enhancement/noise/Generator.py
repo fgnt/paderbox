@@ -21,6 +21,14 @@ class NoiseGeneratorTemplate:
 
 def _decorator_noise_generator_set_snr(f):
     """ This decorator sets the seed and fix the snr.
+        After the seed gets reset to None(no seed given in argument) after it was set to a given seed before,
+        it continues to choose randomly.
+        If you wish to have seeded outputs for all functions you should call them with different seeds.
+
+        Example:
+        get_noise_for_signal(time_signal, snr, seed=1, **kwargs)
+        get_noise_for_signal(time_signal, snr, seed=2, **kwargs)
+        get_noise_for_signal(time_signal, snr, seed=3, **kwargs)
 
     :param f: Function to be wrapped
     :return: noise_signal
