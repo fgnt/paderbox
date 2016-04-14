@@ -151,7 +151,7 @@ class NoiseGeneratorNoisex92(NoiseGeneratorTemplate):
         self.labels = helper.get_labels()
         if label is not None:
             if label not in self.labels:
-                raise KeyError('The label {label} does not exist. '
+                raise KeyError('The label "{label}" does not exist. '
                                'Please choose a valid label from following list: '
                                '{l}'.format(label=label, l=', '.join(self.labels)))
             self.labels = [label]
@@ -168,28 +168,33 @@ class NoiseGeneratorNoisex92(NoiseGeneratorTemplate):
         Example:
 
         >>> import nt.evaluation.sxr as sxr
-        >>> time_signal = numpy.random.randn(1000)
-        >>> seed = 1
-        >>> label = 'destroyerengine'
-        >>> label = 'destroyerengin'
+        >>> time_signal = numpy.random.randn(16000)
         >>> n_gen = NoiseGeneratorNoisex92(sample_rate = 16000)
         >>> n = n_gen.get_noise_for_signal(time_signal, 20, seed=1)
         >>> SDR, SIR, SNR = sxr.input_sxr(time_signal[:, None, None], n[:, None, None])
         >>> SNR
         20
-        >>> n = n_gen.get_noise_for_signal(time_signal, 20, seed=2)
+        >>> n = n_gen.get_noise_for_signal(time_signal, 20)
         >>> SDR, SIR, SNR = sxr.input_sxr(time_signal[:, None, None], n[:, None, None])
         >>> SNR
         20
+        >>> label = 'asdf'
+        >>> n_gen = NoiseGeneratorNoisex92(label, sample_rate = 16000)
+        >>> label = 'destroyerengine'
+        >>> n_gen = NoiseGeneratorNoisex92(label, sample_rate = 16000)
+        >>> n = n_gen.get_noise_for_signal(time_signal, 20)
+        >>> SDR, SIR, SNR = sxr.input_sxr(time_signal[:, None, None], n[:, None, None])
+        >>> SNR
+        20
+
         """
         idx = numpy.random.choice(len(self.audio_datas))
         audio_data = self.audio_datas[idx]
         # self.last_label = self.labels[idx]
-        print(self.labels[idx])
         if time_signal.shape[0] <= audio_data.shape[0]:
             seq = numpy.random.randint(0, audio_data.shape[0] - time_signal.shape[0])
         else:
-            raise ValueError('')
+            raise ValueError('Length of Time Signal is longer then the length of a possible noisex92 Noise Signal!')
         noise_signal = audio_data[seq: seq + time_signal.shape[0]]
         return noise_signal
 
