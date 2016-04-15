@@ -44,9 +44,12 @@ class TestDecoder(unittest.TestCase):
         with open(trans_handler_path, 'rb') as fid:
             trans_handler = pickle.load(fid)
 
-        #temporary workaround
+        #temporary workarounds
         trans_handler.lexicon = {word: list(labels) for word, labels
                                  in trans_handler.lexicon.items()}
+        trans_handler.sil = None
+        trans_handler.label_handler.special_labels = [None,]
+        trans_handler.word_handler.special_labels = [None,]
 
         nn = BLSTMModel(trans_handler.label_handler, lstm_cells=256,
                         fbank_filters=80)
@@ -139,8 +142,6 @@ class TestDecoder(unittest.TestCase):
     def test_compare_argmax_ctc(self):
 
         nn, trans_handler = self.load_model()
-
-        trans_handler.sil = None  # temporary workaround
 
         json_path = database_jsons_dir('wsj.json')
         flist_test = 'test/flists/wave/official_si_dt_05'
