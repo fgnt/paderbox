@@ -37,7 +37,7 @@ class test_wsj_db(db_test.DatabaseTest):
                          'Warning: expected 213 lines in official_si_et_h1/wsj64k.flist')
         self.assertEqual(len(self.json['test']['flists']['wave']['official_si_et_h2/wsj5k']), 215,
                          'Warning: expected 213 lines in official_si_et_h2/wsj5k.flist')  # Should be 213 not 215 links!
-        self.assertEqual(len(self.json['dev']['flists']['wave']['official_si_dt_20']), 503,
+        self.assertEqual(len(self.json['test']['flists']['wave']['official_si_dt_20']), 503,
                          'Warning: expected 503 lines in official_si_dt_20flist')
         self.assertEqual(len(self.json['dev']['flists']['wave']['official_si_dt_05']), 513,
                          'Warning: expected 513 lines in official_si_dt_05.flist')
@@ -54,7 +54,7 @@ class test_wsj_db(db_test.DatabaseTest):
         self.assertEqual(complete(self.json['test']['flists']['wave']['official_si_et_05'], word), 1)
         self.assertEqual(complete(self.json['test']['flists']['wave']['official_si_et_h1/wsj64k'], word), 1)
         self.assertEqual(complete(self.json['test']['flists']['wave']['official_si_et_h2/wsj5k'], word), 1)
-        self.assertEqual(complete(self.json['dev']['flists']['wave']['official_si_dt_20'], word), 1)
+        self.assertEqual(complete(self.json['test']['flists']['wave']['official_si_dt_20'], word), 1)
         self.assertEqual(complete(self.json['dev']['flists']['wave']['official_si_dt_05'], word), 1)
         self.assertEqual(complete(self.json['dev']['flists']['wave']['official_Dev-set_Hub_1'], word), 1)
         self.assertEqual(complete(self.json['dev']['flists']['wave']['official_Dev-set_Hub_2'], word), 1)
