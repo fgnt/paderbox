@@ -134,7 +134,7 @@ def make_mfcc_features(wav_scp, dst_dir, num_mel_bins, num_ceps, low_freq=20,
 
 
 def make_fbank_features(wav_scp, dst_dir, num_mel_bins, low_freq=20,
-                        high_freq=-400, num_jobs=20, add_deltas=True, use_energy=False):
+                        high_freq=-400, num_jobs=20, add_deltas=True, use_energy=False, use_log_fbank=False):
     wav_scp = read_scp_file(wav_scp)
     split_mod = (len(wav_scp) // num_jobs) + 1
     print('Splitting jobs every {} ark'.format(split_mod))
@@ -156,7 +156,7 @@ def make_fbank_features(wav_scp, dst_dir, num_mel_bins, low_freq=20,
                     cmd = RAW_FBANK_CMD
                 cmds.append(cmd.format(
                     num_mel_bins=num_mel_bins, use_energy=use_energy,
-                    low_freq=low_freq, high_freq=high_freq,
+                    low_freq=low_freq, high_freq=high_freq, use_log_fbank=use_log_fbank,
                     wav_scp=os.path.join(tmp_dir, '{}.scp'.format(scp_idx)),
                     dst_ark=os.path.join(dst_dir, '{}.ark'.format(scp_idx)),
                     dst_scp=os.path.join(dst_dir, '{}.scp'.format(scp_idx)),
@@ -333,6 +333,10 @@ def import_feat_scp(feat_scp):
 
 
 def read_scp_file(scp_file):
+    """ Reads a scp file into a dict
+    :param scp_file:
+    :return:
+    """
     if isinstance(scp_file, dict):
         return scp_file
     scp_feats = dict()
