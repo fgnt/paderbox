@@ -54,7 +54,7 @@ class TestNoiseGeneratorPink(TestNoiseGeneratorWhite):
 
 
 class TestNoiseGeneratorNoisex92(TestNoiseGeneratorWhite):
-    n_gen = noise.NoiseGeneratorNoisex92('/net/speechdb/NoiseX_92/WAV_16kHz/destroyerengine_16kHz.wav')
+    n_gen = noise.NoiseGeneratorNoisex92('destroyerengine')
 
     def test_multi_channel(self):
         pass  # currently only single channel supported
