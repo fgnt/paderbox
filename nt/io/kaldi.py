@@ -10,6 +10,7 @@ import tqdm
 from nt.utils import mkdir_p
 from nt.utils.process_caller import run_processes
 from nt.io.data_dir import kaldi_root
+from nt.io.audioread import audioread
 
 ENABLE_CACHE = True
 
@@ -418,3 +419,36 @@ def import_features_and_alignment(feat_scp, ali_dir, model_file,
             warnings.warn('No alignment found for utterance {}'.format(utt_id))
 
     return features_common, alignments_common
+
+def audioread_scp(scp, utt_ids, offset=0, duration=None, sample_rate=16000):
+    """ Converts audio from scp to wav files with Kaldi tools and reads them with audioread.
+
+    :param scp: .scp file to read audio from
+    :param utt_ids: either list of utterance ids or one utterance id, which should be loaded
+    :param offset: Begin of loaded audio
+    :param duration: Durations of loaded audio
+    :param sample_rate: Sample rate of audio
+    :return: A dict which maps utterance ids to corresponding audio (when utt_ids is given as a list)
+    or an array containing the audio data of one single utterance (when utt_ids is a single id)
+    """
+    scp = read_scp_file(scp)
+    cmds = list()
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # Convert to .wav files into temp_dir
+        if not isinstance(utt_ids, str):
+            for utt_id in utt_ids:
+                cmds.append(scp[utt_id][:len(scp[utt_id]) - 1] + "> " + tmp_dir + "/" + utt_id)
+        else:
+            cmds.append(scp[utt_ids][:len(scp[utt_ids]) - 1] + "> " + tmp_dir + "/" + utt_ids)
+
+        run_processes(cmds, environment=get_kaldi_env())
+
+        # read audio
+        if not isinstance(utt_ids, str):
+            audio = dict()
+            for utt_id in utt_ids:
+                audio[utt_id] = audioread(tmp_dir + "/" + utt_id, offset, duration, sample_rate)
+        else:
+            audio = audioread(tmp_dir + "/" + utt_ids, offset, duration, sample_rate)
+
+        return audio
