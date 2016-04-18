@@ -1,6 +1,6 @@
 import unittest
 
-from os.database.chime.chime import get_chime_data_provider_for_flist
+from nt.database.chime import get_data_provider_for_flist
 
 from nt.chainer_models.mask_estimation.mask_estimation_template import \
     MaskEstimation
@@ -11,7 +11,7 @@ class TestMaskEstimationTemplate(unittest.TestCase):
         self.model = MaskEstimation()
 
     def test_transformation_train(self):
-        dp = get_chime_data_provider_for_flist(
+        dp = get_data_provider_for_flist(
                 'tr05_simu', self.model.transform_features_train)
         batch = dp.test_run()
         for data_name in ['X_masks', 'N_masks', 'Y_psd', 'Y']:
@@ -20,7 +20,7 @@ class TestMaskEstimationTemplate(unittest.TestCase):
             self.assertEqual(batch[data_name].shape[2], 513)
 
     def test_transformation_test_simu(self):
-        dp = get_chime_data_provider_for_flist(
+        dp = get_data_provider_for_flist(
                 'tr05_simu', self.model.transform_features_test_simu)
         batch = dp.test_run()
         for data_name in ['X', 'N', 'X_masks', 'N_masks', 'Y_psd', 'Y']:
@@ -29,7 +29,7 @@ class TestMaskEstimationTemplate(unittest.TestCase):
             self.assertEqual(batch[data_name].shape[2], 513)
 
     def test_transformation_cv(self):
-        dp = get_chime_data_provider_for_flist(
+        dp = get_data_provider_for_flist(
                 'tr05_simu', self.model.transform_features_cv, return_X_N=True)
         batch = dp.test_run()
         for data_name in ['X', 'N', 'X_masks', 'N_masks', 'Y_psd', 'Y']:
@@ -38,7 +38,7 @@ class TestMaskEstimationTemplate(unittest.TestCase):
             self.assertEqual(batch[data_name].shape[2], 513)
 
     def test_transform_features_test_no_context(self):
-        dp = get_chime_data_provider_for_flist(
+        dp = get_data_provider_for_flist(
                 'et05_simu', self.model.transform_features_test)
         batch = dp.test_run()
         for data_name in ['Y_psd', 'Y']:
@@ -47,7 +47,7 @@ class TestMaskEstimationTemplate(unittest.TestCase):
             self.assertEqual(batch[data_name].shape[2], 513)
 
     def test_transform_features_test_context(self):
-        dp = get_chime_data_provider_for_flist(
+        dp = get_data_provider_for_flist(
                 'et05_real', self.model.transform_features_test)
         batch = dp.test_run()
         for data_name in ['Y_psd', 'Y']:

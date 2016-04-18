@@ -2,7 +2,7 @@ import unittest
 from tempfile import TemporaryDirectory
 
 from chainer.optimizers import Adam
-from os.database.chime.chime import get_chime_data_provider_for_flist
+from nt.database.chime import get_data_provider_for_flist
 
 from nt.chainer_models.mask_estimation.chime_paper import ChimePaperModel
 from nt.chainer_models.mask_estimation.cnn_models import BasicCNNChannelModel
@@ -14,9 +14,9 @@ class TestChimePaperModel(unittest.TestCase):
     def setUp(self):
         self.model = ChimePaperModel()
         self.tmp_dir = TemporaryDirectory()
-        self.dp_train = get_chime_data_provider_for_flist(
+        self.dp_train = get_data_provider_for_flist(
                 'tr05_simu', self.model.transform_features_train)
-        self.dp_cv = get_chime_data_provider_for_flist(
+        self.dp_cv = get_data_provider_for_flist(
                 'dt05_simu', self.model.transform_features_cv)
         self.trainer = Trainer(
                 network=self.model,
@@ -65,9 +65,9 @@ class TestBasicCNNChannelModel(TestChimePaperModel):
     def setUp(self):
         self.model = BasicCNNChannelModel()
         self.tmp_dir = TemporaryDirectory()
-        self.dp_train = get_chime_data_provider_for_flist(
+        self.dp_train = get_data_provider_for_flist(
                 'tr05_simu', self.model.transform_features_train)
-        self.dp_cv = get_chime_data_provider_for_flist(
+        self.dp_cv = get_data_provider_for_flist(
                 'dt05_simu', self.model.transform_features_cv)
         self.trainer = Trainer(
                 network=self.model,
@@ -98,9 +98,9 @@ class TestBasicCNNModel(TestChimePaperModel):
     def setUp(self):
         self.model = BasicCNNModel()
         self.tmp_dir = TemporaryDirectory()
-        self.dp_train = get_chime_data_provider_for_flist(
+        self.dp_train = get_data_provider_for_flist(
                 'tr05_simu', self.model.transform_features_train)
-        self.dp_cv = get_chime_data_provider_for_flist(
+        self.dp_cv = get_data_provider_for_flist(
                 'dt05_simu', self.model.transform_features_cv)
         self.trainer = Trainer(
                 network=self.model,

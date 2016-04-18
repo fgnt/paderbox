@@ -3,7 +3,6 @@ import numpy as np
 import nt.testing as tc
 from nt.utils.math_ops import covariance
 
-
 def rand(*shape, data_type=np.float64):
     if not shape:
         shape = (1,)

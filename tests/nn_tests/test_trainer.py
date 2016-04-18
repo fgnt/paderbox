@@ -210,21 +210,15 @@ class TrainerTest(unittest.TestCase):
         self.assertTrue(not self.trainer.is_running)
 
     def test_resume(self):
-        epoch = 1
-        tries = 0
-        while (epoch < 2) and (tries < 10):
-            self.trainer.start_training()
-            time.sleep(tries + 1)
-            self.trainer.stop_training()
-            epoch = self.trainer.training_status.epoch
-            if epoch is None:
-                epoch = 1
-            tries += 1
-        self.assertGreater(10, tries)
+        self.trainer.start_training()
+        while self.trainer.training_status.epoch is None or \
+                        self.trainer.training_status.epoch < 2:
+            time.sleep(1)
+        self.trainer.stop_training()
         self.trainer.resume = True
         self.trainer.start_training()
         self.trainer.stop_training()
-        self.assertGreaterEqual(self.trainer.training_status.epoch, epoch)
+        self.assertGreaterEqual(self.trainer.training_status.epoch, 1)
 
     def test_exception_on_data_dir_exists(self):
         self.trainer.start_training()
