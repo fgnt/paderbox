@@ -144,7 +144,7 @@ class TestDecoder(unittest.TestCase):
         nn, trans_handler = self.load_model()
 
         json_path = database_jsons_dir('wsj.json')
-        flist_test = 'test/flists/wave/official_si_dt_05'
+        flist_test = 'dev/flists/wave/official_si_dt_05'
 
         with open(json_path) as fid:
             json_data = json.load(fid)
