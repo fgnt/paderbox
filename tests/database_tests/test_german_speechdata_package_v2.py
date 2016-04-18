@@ -1,6 +1,7 @@
-import unittest
 import json
-import db_test
+import unittest
+
+from nt.testing import db_test
 
 ger_json = db_test.ROOT + "/german.json"
 #ger_json = "german_speechdata_package_v2.json"
@@ -8,7 +9,7 @@ ger_json = db_test.ROOT + "/german.json"
 class test_ger_db(db_test.DatabaseTest):
 
     def setUp(self):
-        with open(ger_json) as file:
+        with open(ger_json, encoding='utf-8') as file:
             self.json = json.load(file)
 
     def test_annot(self):

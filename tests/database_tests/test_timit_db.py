@@ -1,6 +1,7 @@
-import unittest
 import json
-import db_test
+import unittest
+
+from nt.testing import db_test
 
 timit_json = db_test.ROOT + "/timit.json"
 #timit_json = "TIMIT.json"

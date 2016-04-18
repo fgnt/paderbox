@@ -1,6 +1,7 @@
-import unittest
 import json
-import db_test
+import unittest
+
+from nt.testing import db_test
 
 tidigits_json = db_test.ROOT + "/tidigits.json"
 #tidigits_json = "tidigits.json"
