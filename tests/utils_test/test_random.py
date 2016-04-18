@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import nt.testing as tc
-import nt.utils.random as random
+import nt.utils.random_helper as random
 
 
 class TestRandom(unittest.TestCase):
