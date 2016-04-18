@@ -77,11 +77,13 @@ RAW_MFCC_DELTA_CMD = KALDI_ROOT + '/src/featbin/' + \
 RAW_FBANK_CMD = KALDI_ROOT + '/src/featbin/' + \
                 r"""compute-fbank-feats --num-mel-bins={num_mel_bins} \
                 --low-freq={low_freq} --high-freq={high_freq} --use-energy={use_energy} \
+                --use-log-fbank={use_log_fbank} --window-type={window_type} \
                 scp,p:{wav_scp} ark,scp:{dst_ark},{dst_scp}"""
 
 RAW_FBANK_DELTA_CMD = KALDI_ROOT + '/src/featbin/' + \
                       r"""compute-fbank-feats --num-mel-bins={num_mel_bins} \
-                      --low-freq={low_freq} --high-freq={high_freq} --use-energy={use_energy} \
+                      --low-freq={low_freq} --high-freq={high_freq} --use-energy={use_energy}  \
+                      --use-log-fbank={use_log_fbank} --window-type={window_type} \
                       scp,p:{wav_scp} ark:- | add-deltas ark:- ark,scp:{dst_ark},{dst_scp}"""
 
 
@@ -134,7 +136,8 @@ def make_mfcc_features(wav_scp, dst_dir, num_mel_bins, num_ceps, low_freq=20,
 
 
 def make_fbank_features(wav_scp, dst_dir, num_mel_bins, low_freq=20,
-                        high_freq=-400, num_jobs=20, add_deltas=True, use_energy=False, use_log_fbank=False):
+                        high_freq=-400, num_jobs=20, add_deltas=True, use_energy=False,
+                        use_log_fbank=True, window_type="povey"):
     wav_scp = read_scp_file(wav_scp)
     split_mod = (len(wav_scp) // num_jobs) + 1
     print('Splitting jobs every {} ark'.format(split_mod))
@@ -157,6 +160,7 @@ def make_fbank_features(wav_scp, dst_dir, num_mel_bins, low_freq=20,
                 cmds.append(cmd.format(
                     num_mel_bins=num_mel_bins, use_energy=use_energy,
                     low_freq=low_freq, high_freq=high_freq, use_log_fbank=use_log_fbank,
+                    window_type=window_type,
                     wav_scp=os.path.join(tmp_dir, '{}.scp'.format(scp_idx)),
                     dst_ark=os.path.join(dst_dir, '{}.ark'.format(scp_idx)),
                     dst_scp=os.path.join(dst_dir, '{}.scp'.format(scp_idx)),
