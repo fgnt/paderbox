@@ -1,30 +1,30 @@
 import numpy as np
 
 
-def normalize_angle(angle):
+def wrap(angle):
     """ Normalize angle to be in the range of [-np.pi, np.pi[.
 
     Beware! Every possible method treats the corner case -pi differently.
 
-    >>> normalize_angle(-np.pi)
+    >>> wrap(-np.pi)
     -3.141592653589793
-    >>> normalize_angle(np.pi)
-    -3.141592653589793
+    >>> wrap(np.pi)
+    3.141592653589793
 
     :param angle: Angle as numpy array in radian
     :return: Angle in the range of
     """
-    return normalize_with_modulo(angle)
+    return wrap_with_angle_exp(angle)
 
 
-def normalize_with_modulo(angle):
+def wrap_with_modulo(angle):
     """ Normalize angle to be in the range of [-np.pi, np.pi[.
 
     Beware! Every possible method treats the corner case -pi differently.
 
-    >>> normalize_with_modulo(-np.pi)
+    >>> wrap_with_modulo(-np.pi)
     -3.141592653589793
-    >>> normalize_with_modulo(np.pi)
+    >>> wrap_with_modulo(np.pi)
     -3.141592653589793
 
     :param angle: Angle as numpy array in radian
@@ -33,14 +33,14 @@ def normalize_with_modulo(angle):
     return (angle + np.pi) % (2 * np.pi) - np.pi
 
 
-def normalize_with_angle_exp(angle):
+def wrap_with_angle_exp(angle):
     """ Normalize angle to be in the range of [-np.pi, np.pi[.
 
     Beware! Every possible method treats the corner case -pi differently.
 
-    >>> normalize_with_angle_exp(-np.pi)
+    >>> wrap_with_angle_exp(-np.pi)
     -3.1415926535897931
-    >>> normalize_with_angle_exp(np.pi)
+    >>> wrap_with_angle_exp(np.pi)
     3.1415926535897931
 
     :param angle: Angle as numpy array in radian
@@ -49,14 +49,14 @@ def normalize_with_angle_exp(angle):
     return np.angle(np.exp(1j * angle))
 
 
-def normalize_with_arctan2(angle):
+def wrap_with_arctan2(angle):
     """ Normalize angle to be in the range of [-np.pi, np.pi[.
 
     Beware! Every possible method treats the corner case -pi differently.
 
-    >>> normalize_with_arctan2(-np.pi)
+    >>> wrap_with_arctan2(-np.pi)
     -3.1415926535897931
-    >>> normalize_with_arctan2(np.pi)
+    >>> wrap_with_arctan2(np.pi)
     3.1415926535897931
 
     :param angle: Angle as numpy array in radian
@@ -65,17 +65,74 @@ def normalize_with_arctan2(angle):
     return np.arctan2(np.sin(angle), np.cos(angle))
 
 
-def normalize_with_arctan_tan(angle):
+def wrap_with_arctan_tan(angle):
     """ Normalize angle to be in the range of [-np.pi, np.pi[.
 
     Beware! Every possible method treats the corner case -pi differently.
 
-    >>> normalize_with_arctan_tan(-np.pi)
+    >>> wrap_with_arctan_tan(-np.pi)
     -3.1415926535897931
-    >>> normalize_with_arctan_tan(np.pi)
+    >>> wrap_with_arctan_tan(np.pi)
     3.1415926535897931
 
     :param angle: Angle as numpy array in radian
     :return: Angle in the range of
     """
     return 2 * np.arctan(np.tan(angle/2))
+
+
+def minus(angle1, angle2):
+    """ Calculate angular difference.
+
+    >>> minus(0, np.pi)
+    -3.1415926535897931
+    >>> minus(0, -np.pi)
+    3.1415926535897931
+
+    :param angle1: Minuend
+    :param angle2: Subtrahend
+    :return: Difference of angles in the range [-np.pi, np.pi].
+    """
+    return minus_with_wrap(angle1, angle2)
+
+
+def minus_with_wrap(angle1, angle2):
+    """ Calculate angular difference.
+
+    >>> minus(0, np.pi)
+    -3.1415926535897931
+    >>> minus(0, -np.pi)
+    3.1415926535897931
+
+    :param angle1: Minuend
+    :param angle2: Subtrahend
+    :return: Difference of angles in the range [-np.pi, np.pi].
+    """
+    return wrap(angle1 - angle2)
+
+
+def minus_with_angle_exp(angle1, angle2):
+    """ Calculate angular difference.
+
+    >>> minus(0, np.pi)
+    -3.1415926535897931
+    >>> minus(0, -np.pi)
+    3.1415926535897931
+
+    :param angle1: Minuend
+    :param angle2: Subtrahend
+    :return: Difference of angles in the range [-np.pi, np.pi].
+    """
+    return np.angle(np.exp(1j * angle1) / np.exp(1j * angle2))
+
+
+def plus(angle1, angle2):
+    raise NotImplementedError()
+
+
+def mean(angle, axis=None):
+    raise NotImplementedError()
+
+
+def variance(angle, axis=None):
+    raise NotImplementedError()
