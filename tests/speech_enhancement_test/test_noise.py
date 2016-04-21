@@ -1,13 +1,13 @@
 import unittest
 
 import numpy as np
-
 import nt.evaluation.sxr as sxr
 import nt.speech_enhancement.noise as noise
 import nt.testing as tc
 from nt.speech_enhancement.noise import get_snr
 from nt.speech_enhancement.noise import set_snr
 from nt.utils.math_ops import sph2cart
+import nt.transform as transform
 
 
 class TestNoiseMethods(unittest.TestCase):
@@ -48,9 +48,27 @@ class TestNoiseGeneratorWhite(unittest.TestCase):
         SDR, SIR, SNR = sxr.input_sxr(time_signal[:, :, None], n)
         tc.assert_almost_equal(SNR, 20, decimal=6)
 
+    @tc.retry(3)
+    def test_slope(self):
+        time_signal = np.random.randn(16000,  3)
+        n = self.n_gen.get_noise_for_signal(time_signal, 20)
+        N = transform.stft(n)
+        power_spec = 10*np.log10(noise.get_power(N, axis=(0, 2)))
+        slope_dB = power_spec[10]-power_spec[100]
+        self.assertAlmostEqual(slope_dB, 0, delta=0.5)
+
 
 class TestNoiseGeneratorPink(TestNoiseGeneratorWhite):
     n_gen = noise.NoiseGeneratorPink()
+
+    @tc.retry(3)
+    def test_slope(self):
+        time_signal = np.random.randn(16000, 5)
+        n = self.n_gen.get_noise_for_signal(time_signal, 20)
+        N = transform.stft(n)
+        power_spec = 10*np.log10(noise.get_power(N, axis=(0, 2)))
+        slope_dB = power_spec[10]-power_spec[100]
+        self.assertAlmostEqual(slope_dB, 10, delta=0.5)
 
 
 class TestNoiseGeneratorNoisex92(TestNoiseGeneratorWhite):
@@ -58,6 +76,9 @@ class TestNoiseGeneratorNoisex92(TestNoiseGeneratorWhite):
 
     def test_multi_channel(self):
         pass  # currently only single channel supported
+
+    def test_slope(self):
+        pass  # no consistent slope to test for
 
 
 class TestNoiseGeneratorSpherical(TestNoiseGeneratorWhite):
@@ -68,3 +89,12 @@ class TestNoiseGeneratorSpherical(TestNoiseGeneratorWhite):
 
     def test_single_channel(self):
         pass  # makes no sense
+
+    @tc.retry(3)
+    def test_slope(self):
+        time_signal = np.random.randn(16000,  3)
+        n = self.n_gen.get_noise_for_signal(time_signal, 20)
+        N = transform.stft(n)
+        power_spec = 10*np.log10(noise.get_power(N, axis=(0, 2)))
+        slope_dB = power_spec[10]-power_spec[100]
+        self.assertAlmostEqual(slope_dB, 0, delta=4)
