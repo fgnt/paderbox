@@ -246,6 +246,35 @@ def get_label_assignment(conf_mat, max_type=None, sort_type=None):
     return sorted(assign, key=sort_key, reverse=True)
 
 
+def get_corr_sub_del_ins(result_ctm, ref_ctm):
+    """ get number of correct, substituted, deleted and inserted labels
+    See mark_wrong_mappings to create needed ctms
+
+    :param result_ctm: result ctm with marked wrong mappings
+    :param ref_ctm: reference ctm with marked wron mappeing
+    :return: correct, substitutions, deletions, insertions
+    """
+    correct = 0
+    substitutions = 0
+    deletions = 0
+    insertions = 0
+    for sentence in result_ctm.values():
+        for _, (_, _, _, state) in sentence:
+            if state == 'C':
+                correct += 1
+            if state == 'S':
+                substitutions += 1
+            if state == 'I':
+                insertions += 1
+
+    for sentence in ref_ctm.values():
+        for _, _, _, state in sentence:
+            if state == 'D':
+                deletions += 1
+
+    return correct, substitutions, deletions, insertions
+
+
 def get_max_overlap_sequence(word_entry, phoneme_entries):
     """ find maximum overlapping sequence for word entry in phoneme entries
 
