@@ -12,7 +12,8 @@ dir_name = '/net/speechdb/DCASE2016/dcase2016_task2_train_dev/dcase2016_task2_tr
 
 class TestDcaseTrainAndCvDataProviders(unittest.TestCase):
     def test_no_context(self):
-        dp_train, dp_cv = get_train_cv_data_provider(dir_name, 512, 160, transcription_list, events,
+        dp_train, dp_cv, training_mean, training_var = get_train_cv_data_provider(dir_name, 512, 160,
+                                                                                  transcription_list, events,
                                                      resampling_factor=16 / 44.1, batch_size=128,
                                                      cnn_features=False, num_fbanks=26)
         shapes = dp_train.get_data_shapes()
@@ -22,7 +23,8 @@ class TestDcaseTrainAndCvDataProviders(unittest.TestCase):
     def test_with_context(self):
         left_context = 3
         right_context = 4
-        dp_train, dp_cv = get_train_cv_data_provider(dir_name, 512, 160, transcription_list, events,
+        dp_train, dp_cv, training_mean, training_var = get_train_cv_data_provider(dir_name, 512, 160,
+                                                                                  transcription_list, events,
                                                      resampling_factor=16 / 44.1, batch_size=1500,
                                                      cnn_features=False, num_fbanks=26,
                                                      left_context=left_context, right_context=right_context)
