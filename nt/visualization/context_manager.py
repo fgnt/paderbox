@@ -6,7 +6,9 @@ from matplotlib.ticker import ScalarFormatter
 import subprocess
 import platform
 import os
+from os import path
 from nt.visualization.new_cm import cmaps
+from nt.utils import mkdir_p
 
 
 mpl_ge_150 = LooseVersion(mpl.__version__) >= '1.5.0'
@@ -32,6 +34,8 @@ class LatexContextManager(object):
     def __init__(
             self,
             filename,
+            generate=None,  # eps recomented (alternative pdf), because pdf is in Inkscape 0.91 r not working
+            build_folder='build',
             figure_size=[8.0, 6.0],
             formatter=DollarFormatter,
             format_x=True,
@@ -46,6 +50,8 @@ class LatexContextManager(object):
         self.format_x = format_x
         self.format_y = format_y
         self.palette = palette
+        self.generate = generate
+        self.build_folder = build_folder
         if extra_rc is None:
             self.extra_rc = dict()
         else:
@@ -76,22 +82,35 @@ class LatexContextManager(object):
         if self.filename is not None:
             try:
                 plt.savefig(self.filename)
-                try:
-                    if platform.system() == 'Darwin':  # OS X
-                        inkscape_path = ('/Applications/Inkscape.app/' +
-                                         'Contents/Resources/bin/inkscape')
-                    else:
-                        inkscape_path = 'inkscape'
-                    cmd = [
-                        inkscape_path, '-D', '-z', '--export-area-drawing',
-                        os.path.realpath(self.filename),
-                        '--export-pdf={}.pdf'.format(
-                            os.path.realpath(self.filename)[:-4]),
-                        '--export-latex'
-                    ]
-                    subprocess.run(cmd)
-                except:
-                    print('Could not perform Inkscape export.')
+
+                if platform.system() == 'Darwin':  # OS X
+                    inkscape_path = ('/Applications/Inkscape.app/' +
+                                     'Contents/Resources/bin/inkscape')
+                else:
+                    inkscape_path = 'inkscape'
+
+                if self.generate:
+                    try:
+                        # inkscape --help
+                        # -z, --without-gui  Do not use X server (only process
+                        #                    files from console)
+
+                        # inkscape -z --export-area-page fig.svg --export-eps=fig.eps --export-latex
+                        dst = path.realpath(path.join(self.build_folder, self.filename))
+                        mkdir_p(path.dirname(dst))
+
+                        cmd = [
+                            inkscape_path, '-z', '--export-area-page',  # '--export-area-drawing',
+                            os.path.realpath(self.filename),
+                            '--export-{}={}.{}'.format(
+                                self.generate,
+                                path.splitext(dst)[0],  # remove ext
+                                self.generate),
+                            '--export-latex'
+                        ]
+                        subprocess.run(cmd)
+                    except:
+                        print('Could not perform Inkscape export.')
             except:
                 print('Could not save file.')
 
