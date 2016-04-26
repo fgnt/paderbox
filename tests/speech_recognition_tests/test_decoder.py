@@ -24,18 +24,18 @@ class TestDecoder(unittest.TestCase):
 
     def write_net_out(self, trans_handler, label_seq, cost_along_path=None):
         trans_hat = np.zeros(
-                (len(label_seq), 1, len(trans_handler.label_handler)))
+                (len(label_seq), 1, trans_handler.num_tokens))
         if cost_along_path:
             # net provides some kind of positive loglikelihoods
             # (with some offset)
             for idx in range(len(label_seq)):
                 sym = label_seq[idx]
                 if sym == "_":
-                    sym = trans_handler.blank
+                    sym = trans_handler.int_to_label[0]
                 if sym == " ":
                     sym = "<space>"
                 trans_hat[
-                    idx, 0, trans_handler.label_handler.label_to_int[sym]]\
+                    idx, 0, trans_handler.label_to_int[sym]]\
                     = -cost_along_path/len(label_seq)
         return Variable(trans_hat)
 
@@ -47,9 +47,9 @@ class TestDecoder(unittest.TestCase):
         #temporary workarounds
         trans_handler.lexicon = {word: list(labels) for word, labels
                                  in trans_handler.lexicon.items()}
-        trans_handler.sil = None
-        trans_handler.label_handler.special_labels = [None,]
-        trans_handler.word_handler.special_labels = [None,]
+        trans_handler.eow = None
+        trans_handler.label_handler.special_labels = [None, ]
+        trans_handler.word_handler.special_labels = [None, ]
 
         nn = BLSTMModel(trans_handler.label_handler, lstm_cells=256,
                         fbank_filters=80)
@@ -60,7 +60,9 @@ class TestDecoder(unittest.TestCase):
     def test_ground_truth(self):
 
         lex = get_lexicon_from_arpa(data_dir('speech_recognition', 'tcb05cnp'))
-        trans_handler = TranscriptionHandler(lex)
+        mandatory_tokens = ["<blank>",]
+        trans_handler = TranscriptionHandler(
+            lex, mandatory_tokens=mandatory_tokens)
 
         utt = "THIS SHOULD BE RECOGNIZED"
         utt_id = "TEST_UTT_1"
@@ -90,7 +92,8 @@ class TestDecoder(unittest.TestCase):
 
         lex = get_lexicon_from_arpa(data_dir('speech_recognition', 'tcb05cnp'))
         space = "<space>"
-        trans_handler = TranscriptionHandler(lex, sil=space)
+        trans_handler = TranscriptionHandler(
+            lex, mandatory_tokens=["<blank>", ], eow=space)
 
         utt = "THIS SHOULD BE RECOGNIZED"
         utt_id = "TEST_UTT_1"
@@ -118,7 +121,8 @@ class TestDecoder(unittest.TestCase):
     def test_only_lex(self):
 
         lex = get_lexicon_from_arpa(data_dir('speech_recognition', 'tcb05cnp'))
-        trans_handler = TranscriptionHandler(lex)
+        trans_handler = TranscriptionHandler(
+            lex, mandatory_tokens=["<blank>", ])
 
         utt = "THIS SHOULD BE RECOGNIZED"
         utt_id = "TEST_UTT_1"
@@ -138,7 +142,7 @@ class TestDecoder(unittest.TestCase):
         print(word_decode[utt_id])
         self.assertEqual(utt, word_decode[utt_id])
 
-    # @unittest.skip("")
+    @unittest.skip("deprectated model")
     def test_compare_argmax_ctc(self):
 
         nn, trans_handler = self.load_model()
@@ -172,7 +176,7 @@ class TestDecoder(unittest.TestCase):
             sym_decode_int, word_decode_int = \
                 self.decoder.decode(lm_scale=1, out_type='ints')
             word_decode = \
-                self.decoder.trans_handler.ints2labels(
+                self.decoder.th.ints2labels(
                     word_decode_int["TEST_UTT_1"])
 
         argmax_ctc = argmax_ctc_decode(net_out.num[:, 0, :],
@@ -186,7 +190,8 @@ class TestDecoder(unittest.TestCase):
 
         lex = get_lexicon_from_arpa(data_dir('speech_recognition',
                                              'tcb05cnp'))
-        trans_handler = TranscriptionHandler(lex)
+        trans_handler = TranscriptionHandler(
+            lex, mandatory_tokens=["<blank>", ])
 
         lm_file = data_dir('speech_recognition', "arpa_one_word")
 
@@ -217,7 +222,8 @@ class TestDecoder(unittest.TestCase):
         lm_file = data_dir('speech_recognition', "arpa_two_words_uni")
 
         lex = get_lexicon_from_arpa(lm_file)
-        trans_handler = TranscriptionHandler(lex)
+        trans_handler = TranscriptionHandler(
+            lex, mandatory_tokens=["<blank>", ])
 
         trans_hat = self.write_net_out(trans_handler, word1, -1)
 
@@ -243,9 +249,9 @@ class TestDecoder(unittest.TestCase):
     # @unittest.skip("")
     def test_trigram_grammar(self):
 
-        lex = get_lexicon_from_arpa(data_dir('speech_recognition',
-                                             'tcb05cnp'))
-        trans_handler = TranscriptionHandler(lex)
+        lex = get_lexicon_from_arpa(data_dir('speech_recognition', 'tcb05cnp'))
+        trans_handler = TranscriptionHandler(
+            lex, mandatory_tokens=["<blank>", ])
 
         utt_id = "TEST_UTT_1"
         utt = "SHE SEES"
@@ -281,7 +287,8 @@ class TestDecoder(unittest.TestCase):
                     fid.write(" " + letter)
 
             lex = get_lexicon_from_txt_file(lex_file)
-            trans_handler = TranscriptionHandler(lex)
+            trans_handler = TranscriptionHandler(
+                lex, mandatory_tokens=["<blank>", ])
 
             lm_path_uni = os.path.join(working_dir, 'tcb05cnp')
             arpa.write_unigram(data_dir('speech_recognition', 'tcb05cnp'),
@@ -294,16 +301,15 @@ class TestDecoder(unittest.TestCase):
             utt_id = "TEST_UTT_1"
             utt_length = len(word1)
 
-            trans_hat = np.zeros((utt_length, 1,
-                                  len(trans_handler.label_handler)))
+            trans_hat = np.zeros((utt_length, 1, trans_handler.num_tokens))
             for idx in range(len(word1)):
                 sym1 = word1[idx]
                 sym2 = word2[idx]
                 trans_hat[idx, 0,
-                          trans_handler.label_handler.label_to_int[sym1]]\
+                          trans_handler.label_to_int[sym1]]\
                     += 5
                 trans_hat[idx, 0,
-                          trans_handler.label_handler.label_to_int[sym2]]\
+                          trans_handler.label_to_int[sym2]]\
                     += 10
             trans_hat = Variable(trans_hat)
 
