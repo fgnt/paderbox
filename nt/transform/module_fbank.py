@@ -8,11 +8,12 @@ from nt.transform.module_stft import stft_to_spectrogram
 from nt.transform.module_filter import offset_compensation
 from nt.transform.module_filter import preemphasis
 import scipy.signal
+import librosa
 
 def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
           number_of_filters=23, stft_size=512, lowest_frequency=0,
           highest_frequency=None, preemphasis_factor=0.97,
-          window=scipy.signal.hamming):
+          window=scipy.signal.hamming, use_librosa_mel=True):
     """
     Compute Mel-filterbank energy features from an audio signal.
 
@@ -49,7 +50,11 @@ def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
 
     spectrogram = stft_to_spectrogram(stft_signal)/stft_size
 
-    filterbanks = get_filterbanks(number_of_filters, stft_size, sample_rate,
+    if use_librosa_mel:
+        filterbanks = librosa.filters.mel(sample_rate, stft_size, number_of_filters, fmin=lowest_frequency,
+                                          fmax=highest_frequency)
+    else:
+        filterbanks = get_filterbanks(number_of_filters, stft_size, sample_rate,
                                   lowest_frequency, highest_frequency)
 
     # compute the filterbank energies

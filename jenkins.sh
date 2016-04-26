@@ -18,6 +18,9 @@ export PATH
 export LD_LIBRARY_PATH
 source activate py35
 
+# Refresh files...
+ls /net/ssd/software/anaconda/envs/py35/lib/python3.5/lib-dynload/../../ > /dev/null
+
 # enable matlab tests
 TEST_MATLAB=true
 export TEST_MATLAB

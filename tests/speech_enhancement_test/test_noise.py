@@ -8,7 +8,9 @@ from nt.speech_enhancement.noise import get_snr
 from nt.speech_enhancement.noise import set_snr
 from nt.utils.math_ops import sph2cart
 import nt.transform as transform
-
+from nt.speech_enhancement.noise.spherical_habets import _mycohere,_sinf_3D
+from math import pi
+from numpy.linalg import norm
 
 class TestNoiseMethods(unittest.TestCase):
     def test_set_and_get_single_source_snr(self):
@@ -55,7 +57,7 @@ class TestNoiseGeneratorWhite(unittest.TestCase):
         N = transform.stft(n)
         power_spec = 10*np.log10(noise.get_power(N, axis=(0, 2)))
         slope_dB = power_spec[10]-power_spec[100]
-        self.assertAlmostEqual(slope_dB, 0, delta=0.5)
+        tc.assert_allclose(slope_dB, 0, atol=0.5)
 
 
 class TestNoiseGeneratorPink(TestNoiseGeneratorWhite):
@@ -68,7 +70,7 @@ class TestNoiseGeneratorPink(TestNoiseGeneratorWhite):
         N = transform.stft(n)
         power_spec = 10*np.log10(noise.get_power(N, axis=(0, 2)))
         slope_dB = power_spec[10]-power_spec[100]
-        self.assertAlmostEqual(slope_dB, 10, delta=0.5)
+        tc.assert_allclose(slope_dB, 10, atol=0.5)
 
 
 class TestNoiseGeneratorNoisex92(TestNoiseGeneratorWhite):
@@ -92,9 +94,33 @@ class TestNoiseGeneratorSpherical(TestNoiseGeneratorWhite):
 
     @tc.retry(3)
     def test_slope(self):
+        # test_spatial_coherences delivers more relevnt solutions
         time_signal = np.random.randn(16000,  3)
         n = self.n_gen.get_noise_for_signal(time_signal, 20)
         N = transform.stft(n)
         power_spec = 10*np.log10(noise.get_power(N, axis=(0, 2)))
         slope_dB = power_spec[10]-power_spec[100]
-        self.assertAlmostEqual(slope_dB, 0, delta=4)
+        tc.assert_allclose(slope_dB, 0, atol=4)
+
+    @tc.retry(3)
+    def test_spatial_coherences(self):
+        M = 3  # Number of sensors
+        NFFT = 256  # Number of frequency bins (for analysis)
+        fs = 8000  # Sample frequency
+        L = 2**18  # Data length
+        c = 340  # Speed of sound
+        w = 2*pi*fs*(np.arange(0, NFFT//2+1))/NFFT
+        d = norm(self.P-self.P[:, 0], 2, axis=0)  # Sensor distances w.r.t. sensor 1
+        z = _sinf_3D(self.P, L, sample_rate=fs)
+        sc_sim = np.zeros((M-1, NFFT // 2 + 1))
+        sc_theory = np.zeros((M-1, NFFT // 2 + 1))
+        for m in range(M-1):  # for m = 1:M-1
+            sc, F = _mycohere(z[0, :].T, z[m+1, :].T, NFFT, fs, np.hanning(NFFT), 0.75*NFFT)
+            sc_sim[m, :] = np.real(sc)
+            sc_theory[m, :] = np.sinc(w*d[m+1]/c/pi)
+        delta = [sc_sim[1, :], sc_sim[1, :]]
+        max_delta = 0
+        for m in range(M-1):
+            delta[m] = abs(sc_sim[m, :] - sc_theory[m, :])
+            max_delta = max(max(delta[m]), max_delta)
+        tc.assert_allclose(max_delta, 0, atol=0.1)

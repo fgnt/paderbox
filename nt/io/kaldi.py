@@ -11,6 +11,7 @@ from nt.utils import mkdir_p
 from nt.utils.process_caller import run_processes
 from nt.io.data_dir import kaldi_root
 from nt.io.audioread import audioread
+from nt.io.audiowrite import audiowrite
 
 ENABLE_CACHE = True
 
@@ -350,7 +351,7 @@ def read_scp_file(scp_file):
         scp_feats[line.split()[0]] = ' '.join(line.split()[1:])
     return scp_feats
 
-
+window_type="hamming"
 def read_trans_file(trans_file):
     transcriptions = dict()
     with open(trans_file) as fid:
@@ -460,3 +461,16 @@ def audioread_scp(scp, utt_ids, offset=0, duration=None, sample_rate=16000):
             audio = audioread(tmp_dir + "/" + utt_ids, offset, duration, sample_rate)
 
         return audio
+
+def make_fbank_features_from_time_signal(time_signal, num_mel_bins, low_freq=20,
+                        high_freq=-400, num_jobs=20, add_deltas=True, use_energy=False,
+                        use_log_fbank=True, window_type="povey"):
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        wav_file = "{}/tmp.wav".format(tmp_dir)
+        audiowrite(time_signal, wav_file)
+        make_fbank_features({'a': wav_file}, tmp_dir, num_jobs=num_jobs, num_mel_bins=num_mel_bins,
+                            low_freq=low_freq, high_freq=high_freq, use_energy=use_energy,
+                            use_log_fbank=use_log_fbank, add_deltas=add_deltas, window_type=window_type)
+
+        data = import_feat_scp(tmp_dir + "/feats.scp")
+        return data['a']
