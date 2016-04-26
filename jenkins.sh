@@ -8,7 +8,7 @@ NC='\033[0m' # No Color
 trap 'echo -e "${green}$ $BASH_COMMAND ${NC}"' DEBUG
 
 # Force Exit 0
-trap 'exit 0' EXIT SIGINT SIGTERM EXIT
+trap 'exit 0' EXIT SIGINT SIGTERM
 
 # Set Paths
 CUDA_PATH=/usr/local/cuda
