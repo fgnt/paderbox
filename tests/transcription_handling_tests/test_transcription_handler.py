@@ -95,7 +95,5 @@ class TestTransHandler(unittest.TestCase):
 
         self.assertEqual(words, set(th.lexicon.keys()))
 
-
-
 if __name__ == '__main__':
     unittest.main()
