@@ -35,7 +35,7 @@ class LatexContextManager(object):
             self,
             filename,
             generate=None,  # eps recomented (alternative pdf), because pdf is in Inkscape 0.91 r not working
-            build_folder='build',
+            build_folder=None,
             figure_size=[8.0, 6.0],
             formatter=DollarFormatter,
             format_x=True,
@@ -51,7 +51,7 @@ class LatexContextManager(object):
         self.format_y = format_y
         self.palette = palette
         self.generate = generate
-        self.build_folder = build_folder
+        self.build_folder = build_folder if build_folder is not None else path.dirname(filename)
         if extra_rc is None:
             self.extra_rc = dict()
         else:
@@ -96,23 +96,27 @@ class LatexContextManager(object):
                         #                    files from console)
 
                         # inkscape -z --export-area-page fig.svg --export-eps=fig.eps --export-latex
-                        dst = path.realpath(path.join(self.build_folder, self.filename))
-                        mkdir_p(path.dirname(dst))
+                        build_file = os.path.splitext(path.join(self.build_folder, path.basename(self.filename)))[0]\
+                                     + '.' + self.generate
 
                         cmd = [
                             inkscape_path, '-z', '--export-area-page',  # '--export-area-drawing',
                             os.path.realpath(self.filename),
-                            '--export-{}={}.{}'.format(
+                            '--export-{}={}'.format(
                                 self.generate,
-                                path.splitext(dst)[0],  # remove ext
-                                self.generate),
+                                build_file),
                             '--export-latex'
                         ]
                         subprocess.run(cmd)
                     except:
-                        print('Could not perform Inkscape export.')
+                        print('Could not perform Inkscape export: {}.'.format(' '.join(cmd)))
+            except FileNotFoundError:
+                if not path.exists(path.dirname(self.filename)):
+                    print('The folder {} does not exist.'.format(path.realpath(path.dirname(self.filename))))
+
+                print('Could not save file {}.'.format(self.filename))
             except:
-                print('Could not save file.')
+                print('Could not save file {}.'.format(self.filename))
 
 
 def context_manager(
