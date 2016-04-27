@@ -99,9 +99,9 @@ def minus(angle1, angle2):
 def minus_with_wrap(angle1, angle2):
     """ Calculate angular difference.
 
-    >>> minus(0, np.pi)
+    >>> minus_with_wrap(0, np.pi)
     -3.1415926535897931
-    >>> minus(0, -np.pi)
+    >>> minus_with_wrap(0, -np.pi)
     3.1415926535897931
 
     :param angle1: Minuend
@@ -114,9 +114,9 @@ def minus_with_wrap(angle1, angle2):
 def minus_with_angle_exp(angle1, angle2):
     """ Calculate angular difference.
 
-    >>> minus(0, np.pi)
+    >>> minus_with_angle_exp(0, np.pi)
     -3.1415926535897931
-    >>> minus(0, -np.pi)
+    >>> minus_with_angle_exp(0, -np.pi)
     3.1415926535897931
 
     :param angle1: Minuend
@@ -136,3 +136,11 @@ def mean(angle, axis=None):
 
 def variance(angle, axis=None):
     raise NotImplementedError()
+
+
+def deg_to_rad(a):
+    return a/180*np.pi
+
+
+def rad_to_deg(a):
+    return a/np.pi*180
