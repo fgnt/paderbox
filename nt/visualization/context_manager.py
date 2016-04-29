@@ -34,7 +34,7 @@ class LatexContextManager(object):
     def __init__(
             self,
             filename,
-            generate=None,  # eps recomented (alternative pdf), because pdf is in Inkscape 0.91 r not working
+            export_type=None,  # eps recomented (alternative pdf), because pdf is in Inkscape 0.91 r not working
             build_folder=None,
             figure_size=[8.0, 6.0],
             formatter=DollarFormatter,
@@ -43,6 +43,25 @@ class LatexContextManager(object):
             palette=cmaps['upb'].colors[1:],
             extra_rc=None
     ):
+        """
+
+        Args:
+            filename: Filename of the svg to be exported. I.e. test.svg
+            figure_size: Tuple
+            formatter: Default is a Dollar-formatter which changes the
+                ticks labels from numbers to numbers sourrounded by dollar
+                symbols.
+            format_x: Disable formatter for x axis if False.
+            format_y: Disable formatter for y axis if False.
+            palette: Default color map
+            extra_rc: Extra rc parameters for matplotlib
+            export_type: Default None (only svg export), possibly
+                eps (svg and eps_tex and eps export) and
+                pdf (svg and pdf_tex and pdf export)
+
+        Returns:
+
+        """
         assert filename.endswith('.svg')
         self.filename = filename
         self.formatter = formatter
@@ -50,12 +69,12 @@ class LatexContextManager(object):
         self.format_x = format_x
         self.format_y = format_y
         self.palette = palette
-        self.generate = generate
         self.build_folder = build_folder if build_folder is not None else path.dirname(filename)
         if extra_rc is None:
             self.extra_rc = dict()
         else:
             self.extra_rc = extra_rc
+        self.export_type = export_type
 
     def __enter__(self):
         extra_rc = {
@@ -89,7 +108,7 @@ class LatexContextManager(object):
                 else:
                     inkscape_path = 'inkscape'
 
-                if self.generate:
+                if self.export_type is not None:
                     # try:
                         # inkscape --help
                         # -z, --without-gui  Do not use X server (only process
@@ -97,13 +116,13 @@ class LatexContextManager(object):
 
                         # inkscape -z --export-area-page fig.svg --export-eps=fig.eps --export-latex
                         build_file = os.path.splitext(path.join(self.build_folder, path.basename(self.filename)))[0]\
-                                     + '.' + self.generate
+                                     + '.' + self.export_type
 
                         cmd = [
                             inkscape_path, '-z', '--export-area-page',  # '--export-area-drawing',
                             os.path.realpath(self.filename),
                             '--export-{}={}'.format(
-                                self.generate,
+                                self.export_type,
                                 build_file),
                             '--export-latex'
                         ]
