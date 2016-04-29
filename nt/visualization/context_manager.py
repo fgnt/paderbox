@@ -110,11 +110,11 @@ class LatexContextManager(object):
                         subprocess.run(cmd)
                     # except:
                     #     print('Could not perform Inkscape export: {}.'.format(' '.join(cmd)))
-            except FileNotFoundError:
+            except FileNotFoundError as e:
                 if not path.exists(path.dirname(self.filename)):
                     print('The folder {} does not exist.'.format(path.realpath(path.dirname(self.filename))))
 
-                print('Could not save file {}.'.format(self.filename))
+                print('Could not save file {}. msg: {}'.format(self.filename, str(e)))
             # except:
             #    print('Could not save file {}.'.format(self.filename))
 
