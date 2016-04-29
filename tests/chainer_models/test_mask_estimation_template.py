@@ -12,7 +12,9 @@ class TestMaskEstimationTemplate(unittest.TestCase):
 
     def test_transformation_train(self):
         dp = get_data_provider_for_flist(
-                'tr05_simu', self.model.transform_features_train)
+                'tr05_simu', self.model.transform_features_train,
+                load_images=True
+        )
         batch = dp.test_run()
         for data_name in ['X_masks', 'N_masks', 'Y_psd', 'Y']:
             self.assertIn(data_name, batch)
@@ -21,7 +23,8 @@ class TestMaskEstimationTemplate(unittest.TestCase):
 
     def test_transformation_test_simu(self):
         dp = get_data_provider_for_flist(
-                'tr05_simu', self.model.transform_features_test_simu)
+                'tr05_simu', self.model.transform_features_test_simu,
+            load_images=True)
         batch = dp.test_run()
         for data_name in ['X', 'N', 'X_masks', 'N_masks', 'Y_psd', 'Y']:
             self.assertIn(data_name, batch)
@@ -30,7 +33,9 @@ class TestMaskEstimationTemplate(unittest.TestCase):
 
     def test_transformation_cv(self):
         dp = get_data_provider_for_flist(
-                'tr05_simu', self.model.transform_features_cv, return_X_N=True)
+                'tr05_simu', self.model.transform_features_cv, return_X_N=True,
+            load_images=True
+        )
         batch = dp.test_run()
         for data_name in ['X', 'N', 'X_masks', 'N_masks', 'Y_psd', 'Y']:
             self.assertIn(data_name, batch)

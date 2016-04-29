@@ -90,7 +90,7 @@ class LatexContextManager(object):
                     inkscape_path = 'inkscape'
 
                 if self.generate:
-                    try:
+                    # try:
                         # inkscape --help
                         # -z, --without-gui  Do not use X server (only process
                         #                    files from console)
@@ -108,15 +108,15 @@ class LatexContextManager(object):
                             '--export-latex'
                         ]
                         subprocess.run(cmd)
-                    except:
-                        print('Could not perform Inkscape export: {}.'.format(' '.join(cmd)))
-            except FileNotFoundError:
+                    # except:
+                    #     print('Could not perform Inkscape export: {}.'.format(' '.join(cmd)))
+            except FileNotFoundError as e:
                 if not path.exists(path.dirname(self.filename)):
                     print('The folder {} does not exist.'.format(path.realpath(path.dirname(self.filename))))
 
-                print('Could not save file {}.'.format(self.filename))
-            except:
-                print('Could not save file {}.'.format(self.filename))
+                print('Could not save file {}. msg: {}'.format(self.filename, str(e)))
+            # except:
+            #    print('Could not save file {}.'.format(self.filename))
 
 
 def context_manager(
@@ -177,7 +177,7 @@ def context_manager(
         })
     else:
         rc_parameters.update({
-            'axes.color_cycle': list(colors)
+            'axes.prop_cycle': list(colors)
         })
 
     rc_parameters.update({
