@@ -37,20 +37,6 @@ class TestTransHandler(unittest.TestCase):
              for idx in range(len(mandatory_words))],
             mandatory_words)
 
-    def test_word_offset(self):
-        mandatory_tokens = ["token1", "token2"]
-        mandatory_words = ["word1", "word2"]
-        word_off = 100
-        th = TranscriptionHandler(self.lexicon,
-                                  mandatory_tokens=mandatory_tokens,
-                                  mandatory_words=mandatory_words,
-                                  word_offset=word_off, oov_word="<unk>")
-
-        self.assertEqual([th.label_to_int[token] for token in mandatory_tokens],
-                         [idx for idx in range(len(mandatory_tokens))])
-        self.assertEqual([th.label_to_int[word] for word in mandatory_words],
-                         [idx+word_off for idx in range(len(mandatory_words))])
-
     def test_mapping(self):
         th = TranscriptionHandler(self.lexicon, oov_word="<unk>")
 
@@ -83,8 +69,8 @@ class TestTransHandler(unittest.TestCase):
     def test_disambs(self):
         lexicon = {"test": ["test"], "testcase": ["test", "case"]}
         th = TranscriptionHandler(lexicon)
-        th.add_disambigs()
-
+        disambs = th.add_disambigs()
+        self.assertEqual(disambs, ["#1", ])
         expected = ["test", "#1"]
         self.assertEqual(expected, th.lexicon["test"])
 
