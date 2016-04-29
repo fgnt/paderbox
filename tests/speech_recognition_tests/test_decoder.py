@@ -1,14 +1,13 @@
 import unittest
 import numpy as np
 from nt.speech_recognition.decoder import Decoder
-from nt.speech_recognition.utils.utils import write_lattice_file
+from nt.speech_recognition.utils.utils import write_lattice_file, argmax_decode
 from chainer import Variable
 import sys
 from nt.io.data_dir import testing as data_dir
 
 sys.path.append(data_dir('speech_recognition'))
 from model import BLSTMModel
-from nt.utils.transcription_handling import argmax_ctc_decode
 import os
 import tempfile
 from nt.transcription_handling.lexicon_handling import *
@@ -58,9 +57,9 @@ class TestDecoder(unittest.TestCase):
             self.decoder.create_graphs()
             lattice_file = path.join(working_dir, "net.lat")
             write_lattice_file({utt_id: net_out.num}, lattice_file)
-            self.decoder.create_search_graphs(lattice_file)
+            search_graphs = self.decoder.create_search_graphs(lattice_file)
             sym_decode, word_decode = \
-                self.decoder.decode(lm_scale=1, out_type='string')
+                self.decoder.decode(search_graphs, lm_scale=1, out_type='string')
 
         print(sym_decode)
         print(word_decode)
@@ -89,9 +88,9 @@ class TestDecoder(unittest.TestCase):
             self.decoder.create_graphs()
             lattice_file = path.join(working_dir, "net.lat")
             write_lattice_file({utt_id: net_out.num}, lattice_file)
-            self.decoder.create_search_graphs(lattice_file)
+            search_graphs = self.decoder.create_search_graphs(lattice_file)
             sym_decode, word_decode = \
-                self.decoder.decode(lm_scale=1, out_type='string')
+                self.decoder.decode(search_graphs, lm_scale=1, out_type='string')
 
         print(sym_decode)
         print(word_decode)
@@ -116,9 +115,9 @@ class TestDecoder(unittest.TestCase):
             self.decoder.create_graphs()
             lattice_file = path.join(working_dir, "net.lat")
             write_lattice_file({utt_id: net_out.num}, lattice_file)
-            self.decoder.create_search_graphs(lattice_file)
+            search_graphs = self.decoder.create_search_graphs(lattice_file)
             sym_decode, word_decode = \
-                self.decoder.decode(lm_scale=1, out_type='string')
+                self.decoder.decode(search_graphs, lm_scale=1, out_type='string')
 
         print(sym_decode)
         print(word_decode)
@@ -143,16 +142,16 @@ class TestDecoder(unittest.TestCase):
             self.decoder.decode_graph = self.decoder.ctc_map_fst
             lattice_file = path.join(working_dir, "net.lat")
             write_lattice_file({utt_id: net_out.num}, lattice_file)
-            self.decoder.create_search_graphs(lattice_file)
+            search_graphs = self.decoder.create_search_graphs(lattice_file)
             sym_decode, word_decode = \
-                self.decoder.decode(lm_scale=1)
+                self.decoder.decode(search_graphs, lm_scale=1)
 
-        argmax_decode = trans_handler.ints2labels(
-            argmax_ctc_decode(net_out.num[:, 0, :]))
+        ref_decode, _ = argmax_decode(
+            net_out.num[:, 0, :], transcription_handler=trans_handler)
         print(sym_decode)
         print(word_decode)
-        print(argmax_decode)
-        self.assertEqual(argmax_decode, word_decode[utt_id])
+        print(ref_decode)
+        self.assertEqual(ref_decode, word_decode[utt_id])
 
     # @unittest.skip("")
     def test_one_word_grammar(self):
@@ -175,9 +174,9 @@ class TestDecoder(unittest.TestCase):
             self.decoder.create_graphs()
             lattice_file = path.join(working_dir, "net.lat")
             write_lattice_file({utt_id: net_out.num}, lattice_file)
-            self.decoder.create_search_graphs(lattice_file)
+            search_graphs = self.decoder.create_search_graphs(lattice_file)
             sym_decode, word_decode = \
-                self.decoder.decode(lm_scale=1, out_type='string')
+                self.decoder.decode(search_graphs, lm_scale=1, out_type='string')
 
         print(sym_decode)
         print(word_decode)
@@ -205,11 +204,11 @@ class TestDecoder(unittest.TestCase):
             self.decoder.create_graphs()
             lattice_file = path.join(working_dir, "net.lat")
             write_lattice_file({utt_id: net_out.num}, lattice_file)
-            self.decoder.create_search_graphs(lattice_file)
+            search_graphs = self.decoder.create_search_graphs(lattice_file)
             sym_decode_ac, word_decode_ac = \
-                self.decoder.decode(lm_scale=0.9, out_type='string')
+                self.decoder.decode(search_graphs, lm_scale=0.9, out_type='string')
             sym_decode_lang, word_decode_lang = \
-                self.decoder.decode(lm_scale=1.1, out_type='string')
+                self.decoder.decode(search_graphs, lm_scale=1.1, out_type='string')
 
         print(sym_decode_ac[utt_id])
         print(word_decode_ac[utt_id])
@@ -244,9 +243,9 @@ class TestDecoder(unittest.TestCase):
             lattice_file = path.join(working_dir, "net.lat")
             write_lattice_file({utt1_id: net_out1.num,
                                 utt2_id: net_out2.num}, lattice_file)
-            self.decoder.create_search_graphs(lattice_file)
+            search_graphs = self.decoder.create_search_graphs(lattice_file)
             sym_decode, word_decode = \
-                self.decoder.decode(lm_scale=1, out_type='string')
+                self.decoder.decode(search_graphs, lm_scale=1, out_type='string')
 
         print(sym_decode)
         print(word_decode)
@@ -296,9 +295,9 @@ class TestDecoder(unittest.TestCase):
 
             lattice_file = path.join(working_dir, "net.lat")
             write_lattice_file({utt_id: net_out.num}, lattice_file)
-            self.decoder.create_search_graphs(lattice_file)
+            search_graphs = self.decoder.create_search_graphs(lattice_file)
             sym_decode, word_decode = \
-                self.decoder.decode(lm_scale=1, out_type='string')
+                self.decoder.decode(search_graphs, lm_scale=1, out_type='string')
 
         print(sym_decode)
         print(word_decode)
