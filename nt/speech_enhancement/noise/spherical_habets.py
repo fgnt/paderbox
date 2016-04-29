@@ -83,7 +83,7 @@ def _sinf_3D(positions, signal_length, sample_rate=8000, c=340, N=256):
 
     M = positions.shape[1]  # Number of sensors
     NFFT = 2 ** ceil(log2(signal_length))  # Number of frequency bins
-    X = zeros((M, NFFT / 2 + 1), dtype=numpy.complex128)
+    X = zeros((M, NFFT // 2 + 1), dtype=numpy.complex128)
 
     w = 2 * pi * sample_rate * numpy.arange(0, NFFT // 2 + 1) / NFFT
 
@@ -153,7 +153,7 @@ def _sinf_3D_py(positions, signal_length, sample_rate=8000, c=340, N=256):
 
     M = positions.shape[1]  # Number of sensors
     NFFT = 2 ** ceil(log2(signal_length))  # Number of frequency bins
-    X = zeros((M, NFFT / 2 + 1), dtype=numpy.complex128)
+    X = zeros((M, NFFT // 2 + 1), dtype=numpy.complex128)
 
     w = 2 * pi * sample_rate * numpy.arange(0, NFFT // 2 + 1) / NFFT
 

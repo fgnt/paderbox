@@ -348,10 +348,10 @@ class TestReverbUtils(unittest.TestCase):
 
         if angle == "azimuth":
             azimuth_angle = numpy.arange(0, 2 * numpy.pi, deltaAngle)
-            elevation_angle = numpy.zeros([2 * numpy.pi / deltaAngle])
+            elevation_angle = numpy.zeros([int(2 * numpy.pi / deltaAngle)])
             sensor_orientations = [[sensor_orientation_angle, 0], ]
         elif angle == "elevation":
-            azimuth_angle = numpy.zeros([2 * numpy.pi / deltaAngle])
+            azimuth_angle = numpy.zeros([int(2 * numpy.pi / deltaAngle)])
             elevation_angle = numpy.arange(0, 2 * numpy.pi, deltaAngle)
             sensor_orientations = [[0, sensor_orientation_angle], ]
         else:
@@ -402,7 +402,7 @@ class TestReverbUtils(unittest.TestCase):
         rir_py[cutoff_index - 1:, :, :] = numpy.zeros([
             self.filter_length - cutoff_index + 1,
             rir_py.shape[1],
-            rir_py.shape[2]])
+            int(rir_py.shape[2])])
 
         # calculate squared power for each source
         squared_power = numpy.sum(rir_py * numpy.conjugate(rir_py), axis=0)
