@@ -15,9 +15,13 @@ class TestChimePaperModel(unittest.TestCase):
         self.model = ChimePaperModel()
         self.tmp_dir = TemporaryDirectory()
         self.dp_train = get_data_provider_for_flist(
-                'tr05_simu', self.model.transform_features_train)
+                'tr05_simu', self.model.transform_features_train,
+                load_images=True
+        )
         self.dp_cv = get_data_provider_for_flist(
-                'dt05_simu', self.model.transform_features_cv)
+                'dt05_simu', self.model.transform_features_cv,
+                load_images=True
+        )
         self.trainer = Trainer(
                 network=self.model,
                 data_provider_tr=self.dp_train,
@@ -66,9 +70,13 @@ class TestBasicCNNChannelModel(TestChimePaperModel):
         self.model = BasicCNNChannelModel()
         self.tmp_dir = TemporaryDirectory()
         self.dp_train = get_data_provider_for_flist(
-                'tr05_simu', self.model.transform_features_train)
+                'tr05_simu', self.model.transform_features_train,
+                load_images=True
+        )
         self.dp_cv = get_data_provider_for_flist(
-                'dt05_simu', self.model.transform_features_cv)
+                'dt05_simu', self.model.transform_features_cv,
+                load_images=True
+        )
         self.trainer = Trainer(
                 network=self.model,
                 data_provider_tr=self.dp_train,
@@ -99,9 +107,13 @@ class TestBasicCNNModel(TestChimePaperModel):
         self.model = BasicCNNModel()
         self.tmp_dir = TemporaryDirectory()
         self.dp_train = get_data_provider_for_flist(
-                'tr05_simu', self.model.transform_features_train)
+                'tr05_simu', self.model.transform_features_train,
+                load_images=True
+        )
         self.dp_cv = get_data_provider_for_flist(
-                'dt05_simu', self.model.transform_features_cv)
+                'dt05_simu', self.model.transform_features_cv,
+                load_images=True
+        )
         self.trainer = Trainer(
                 network=self.model,
                 data_provider_tr=self.dp_train,
