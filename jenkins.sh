@@ -32,14 +32,14 @@ export TEST_MATLAB
 pip uninstall --quiet --yes nt
 ls
 pip show nt
-pip install  --quiet --user . #  -e <-- editable, very usefull for users, but makes maybe a problem for a concurrent build on jenkins
+pip install  --quiet --user -e .
 pip show nt
 
 # Update chainer
 pip uninstall --quiet --yes chainer
 ls chainer
 pip show chainer
-pip install --quiet --user ./chainer/ #  -e <-- editable, very usefull for users, but makes maybe a problem for a concurrent build on jenkins
+pip install --quiet --user -e ./chainer/
 pip show chainer
 
 # Unittets
