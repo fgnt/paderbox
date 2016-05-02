@@ -131,13 +131,15 @@ class TestH5DataFetcher(unittest.TestCase):
                 self.assertEqual(d[t, b, 0, 0, 1], d_ref[t, b, 0])
                 self.assertEqual(d[t, b, 0, 1, 1], d_ref[t, b, 1])
 
-    def test_read_frame_value_error(self):
+    def test_add_context_value_error(self):
         with self.assertRaises(AssertionError) as cm:
             HDF5DataFetcher('test', '/tmp/h5_testing_file',
-                          'testing', ['3d'], mode='frames')
+                          'testing', ['3d'], mode='frames',
+                            add_context_to=['3d'])
         self.assertEqual(
                 cm.exception.args[0],
-                'Only 2d data with TxF is allowed in frame mode!')
+                'Only 2d arrays in the TxF format can be used to add context '
+                'in frames mode.')
 
     def test_read_frame_ff(self):
         fetcher = HDF5DataFetcher('test', '/tmp/h5_testing_file', 'testing',
