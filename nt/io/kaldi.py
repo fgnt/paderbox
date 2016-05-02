@@ -201,7 +201,6 @@ def make_fbank_features(wav_scp, dst_dir, num_mel_bins, low_freq=20,
             warnings.warn(
                 'Mismatch between number of wav files and number '
                 'of feature files. Missing the utterances {}'.format(missing))
-        print('Finished successfully')
         if verbose:
             print('Finished successfully')
 
