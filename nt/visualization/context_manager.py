@@ -123,9 +123,10 @@ class LatexContextManager(object):
                             os.path.realpath(self.filename),
                             '--export-{}={}'.format(
                                 self.export_type,
-                                build_file),
+                                os.path.realpath(build_file)),
                             '--export-latex'
                         ]
+                        # print(*cmd)
                         subprocess.run(cmd)
                     # except:
                     #     print('Could not perform Inkscape export: {}.'.format(' '.join(cmd)))
