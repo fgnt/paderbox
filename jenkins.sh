@@ -18,6 +18,9 @@ export PATH
 export LD_LIBRARY_PATH
 source activate py35
 
+mkdir -p venv
+export PYTHONUSERBASE=$(readlink -m venv)
+
 # Refresh files...
 ls /net/ssd/software/anaconda/envs/py35/lib/python3.5/lib-dynload/../../ > /dev/null
 
@@ -29,14 +32,14 @@ export TEST_MATLAB
 pip uninstall --quiet --yes nt
 ls
 pip show nt
-pip install  --quiet --user -e .
+pip install  --quiet --user . #  -e <-- editable, very usefull for users, but makes maybe a problem for a concurrent build on jenkins
 pip show nt
 
 # Update chainer
 pip uninstall --quiet --yes chainer
 ls chainer
 pip show chainer
-pip install --quiet --user -e  ./chainer/
+pip install --quiet --user ./chainer/ #  -e <-- editable, very usefull for users, but makes maybe a problem for a concurrent build on jenkins
 pip show chainer
 
 # Unittets
