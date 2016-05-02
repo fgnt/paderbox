@@ -1,8 +1,9 @@
 import time
 import datetime
-from chainer import cuda
+
 from collections import defaultdict, namedtuple
 from contextlib import contextmanager
+from cached_property import cached_property
 
 class Timer(object):
     """ Time code execution.
@@ -14,6 +15,11 @@ class Timer(object):
         print(t.secs)
 
     """
+    @cached_property
+    def cuda(self):
+        from chainer import cuda
+        return cuda
+
     def __init__(self, cuda_event=False, verbose=False):
         self.verbose = verbose
         self.secs = 0
@@ -24,8 +30,8 @@ class Timer(object):
 
     def __enter__(self):
         if self.cuda_event:
-            self.start = cuda.cupy.cuda.Event()
-            self.end = cuda.cupy.cuda.Event()
+            self.start = self.cuda.cupy.cuda.Event()
+            self.end = self.cuda.cupy.cuda.Event()
             self.start.record()
             return self
         else:
@@ -37,7 +43,7 @@ class Timer(object):
         if self.cuda_event:
             self.end.record()
             self.end.synchronize()
-            self.msecs = cuda.cupy.cuda.get_elapsed_time(self.start, self.end)
+            self.msecs = self.cuda.cupy.cuda.get_elapsed_time(self.start, self.end)
             self.secs = self.msecs / 1000
         else:
             self.end = time.time()
