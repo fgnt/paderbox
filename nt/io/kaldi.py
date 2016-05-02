@@ -160,8 +160,8 @@ def make_fbank_features(wav_scp, dst_dir, num_mel_bins, low_freq=20,
                     cmd = RAW_FBANK_CMD
                 cmds.append(cmd.format(
                     num_mel_bins=num_mel_bins, use_energy=use_energy,
-                    low_freq=low_freq, high_freq=high_freq, use_log_fbank=use_log_fbank,
-                    window_type=window_type,
+                    low_freq=low_freq, high_freq=high_freq,
+                    use_log_fbank=use_log_fbank, window_type=window_type,
                     wav_scp=os.path.join(tmp_dir, '{}.scp'.format(scp_idx)),
                     dst_ark=os.path.join(dst_dir, '{}.ark'.format(scp_idx)),
                     dst_scp=os.path.join(dst_dir, '{}.scp'.format(scp_idx)),
@@ -179,10 +179,9 @@ def make_fbank_features(wav_scp, dst_dir, num_mel_bins, low_freq=20,
         if len(feat_scp) != len(wav_scp):
             missing = np.setdiff1d(np.unique(list(wav_scp.keys())),
                                    np.unique(list(feat_scp.keys())))
-            raise ValueError(
+            warnings.warn(
                 'Mismatch between number of wav files and number '
-                'of feature files. Missing the utterances {}'.
-                    format(missing))
+                'of feature files. Missing the utterances {}'.format(missing))
         print('Finished successfully')
 
 
