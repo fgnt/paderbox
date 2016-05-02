@@ -4,6 +4,7 @@ import numpy
 import numpy.testing
 import unittest
 
+
 class ArrayDataFetcherTest(unittest.TestCase):
 
     def setUp(self):
