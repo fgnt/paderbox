@@ -549,4 +549,4 @@ def make_fbank_features_from_time_signal(time_signal, num_mel_bins,
     p.stdin.write(b'utt ')
     std, stderr = p.communicate(input=audio_data.getvalue())
     kaldi_data = BytesIO(std)
-    return read_ark_buffer(kaldi_data)
+    return read_ark_buffer(kaldi_data)['utt']
