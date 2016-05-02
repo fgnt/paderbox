@@ -3,15 +3,16 @@ import struct
 import subprocess
 import tempfile
 import warnings
+from io import BytesIO
 
 import numpy as np
 import tqdm
 
-from nt.utils import mkdir_p
-from nt.utils.process_caller import run_processes
-from nt.io.data_dir import kaldi_root
 from nt.io.audioread import audioread
 from nt.io.audiowrite import audiowrite
+from nt.io.data_dir import kaldi_root
+from nt.utils import mkdir_p
+from nt.utils.process_caller import run_processes
 
 ENABLE_CACHE = True
 
@@ -88,8 +89,22 @@ RAW_FBANK_DELTA_CMD = KALDI_ROOT + '/src/featbin/' + \
                       scp,p:{wav_scp} ark:- | add-deltas ark:- ark,scp:{dst_ark},{dst_scp}"""
 
 
+RAW_FBANK_PIPE_CMD = KALDI_ROOT + '/src/featbin/' + \
+                r"""compute-fbank-feats --num-mel-bins={num_mel_bins} \
+                --low-freq={low_freq} --high-freq={high_freq} --use-energy={use_energy} \
+                --use-log-fbank={use_log_fbank} --window-type={window_type} \
+                ark:- ark:-"""
+
+RAW_FBANK_DELTA_PIPE_CMD = KALDI_ROOT + '/src/featbin/' + \
+                      r"""compute-fbank-feats --num-mel-bins={num_mel_bins} \
+                      --low-freq={low_freq} --high-freq={high_freq} --use-energy={use_energy}  \
+                      --use-log-fbank={use_log_fbank} --window-type={window_type} \
+                      ark:- ark:- | add-deltas ark:- ark:-"""
+
+
 def make_mfcc_features(wav_scp, dst_dir, num_mel_bins, num_ceps, low_freq=20,
-                       high_freq=-400, num_jobs=20, add_deltas=True, use_energy=False):
+                       high_freq=-400, num_jobs=20, add_deltas=True,
+                       use_energy=False):
     wav_scp = read_scp_file(wav_scp)
     split_mod = (len(wav_scp) // num_jobs) + 1
     print('Splitting jobs every {} ark'.format(split_mod))
@@ -111,7 +126,8 @@ def make_mfcc_features(wav_scp, dst_dir, num_mel_bins, num_ceps, low_freq=20,
                     cmd = RAW_MFCC_CMD
                 cmds.append(cmd.format(
                     num_mel_bins=num_mel_bins, num_ceps=num_ceps,
-                    low_freq=low_freq, high_freq=high_freq, use_energy=use_energy,
+                    low_freq=low_freq, high_freq=high_freq,
+                    use_energy=use_energy,
                     wav_scp=os.path.join(tmp_dir, '{}.scp'.format(scp_idx)),
                     dst_ark=os.path.join(dst_dir, '{}.ark'.format(scp_idx)),
                     dst_scp=os.path.join(dst_dir, '{}.scp'.format(scp_idx)),
@@ -137,11 +153,13 @@ def make_mfcc_features(wav_scp, dst_dir, num_mel_bins, num_ceps, low_freq=20,
 
 
 def make_fbank_features(wav_scp, dst_dir, num_mel_bins, low_freq=20,
-                        high_freq=-400, num_jobs=20, add_deltas=True, use_energy=False,
-                        use_log_fbank=True, window_type="povey"):
+                        high_freq=-400, num_jobs=20, add_deltas=True,
+                        use_energy=False,
+                        use_log_fbank=True, window_type="povey", verbose=False):
     wav_scp = read_scp_file(wav_scp)
     split_mod = (len(wav_scp) // num_jobs) + 1
-    print('Splitting jobs every {} ark'.format(split_mod))
+    if verbose:
+        print('Splitting jobs every {} ark'.format(split_mod))
     scp_idx = 0
     mkdir_p(dst_dir)
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -168,7 +186,8 @@ def make_fbank_features(wav_scp, dst_dir, num_mel_bins, low_freq=20,
                 ))
                 cur_scp = dict()
                 scp_idx += 1
-        print('Starting the feature extraction')
+        if verbose:
+            print('Starting the feature extraction')
         run_processes(cmds, sleep_time=5, environment=get_kaldi_env())
         with open(os.path.join(dst_dir, 'feats.scp'), 'w') as feat_fid:
             for f in os.listdir(dst_dir):
@@ -183,6 +202,8 @@ def make_fbank_features(wav_scp, dst_dir, num_mel_bins, low_freq=20,
                 'Mismatch between number of wav files and number '
                 'of feature files. Missing the utterances {}'.format(missing))
         print('Finished successfully')
+        if verbose:
+            print('Finished successfully')
 
 
 def compute_mean_and_var_stats(feat_scp, dst_dir):
@@ -205,50 +226,58 @@ def import_feature_data(ark_descriptor):
         raise ValueError('Cannot handle ark descriptor {}. Expected a format '
                          '"ark_file" or "ark_file:pos".'.format(ark_descriptor))
     if pos == 0:
-        data = dict()
         with open(ark, 'rb') as ark_read_buffer:
-            while True:
-                utt_id = ''
-                next_char = ark_read_buffer.read(1)
-                if next_char == ''.encode():
-                    break
-                else:
-                    c = struct.unpack('<s', next_char)[0]
-                while c != ' '.encode():
-                    utt_id += c.decode('utf8')
-                    c = struct.unpack('<s', ark_read_buffer.read(1))[0]
-                pos = ark_read_buffer.tell() - 1
-                header = struct.unpack('<xccccbibi', ark_read_buffer.read(15))
-                data[utt_id] = read_ark_mat(ark, pos)
-                rows, colums = header[-3], header[-1]
-                ark_read_buffer.seek(
-                    ark_read_buffer.tell() + (rows * colums * 4))
+            data = read_ark_buffer(ark_read_buffer)
         return data
     else:
         return read_ark_mat(ark, pos)
 
 
+def read_ark_buffer(ark_buffer):
+    data = dict()
+    while True:
+        utt_id = ''
+        next_char = ark_buffer.read(1)
+        if next_char == ''.encode():
+            break
+        else:
+            c = struct.unpack('<s', next_char)[0]
+        while c != ' '.encode():
+            utt_id += c.decode('utf8')
+            c = struct.unpack('<s', ark_buffer.read(1))[0]
+        pos = ark_buffer.tell() - 1
+        header = struct.unpack('<xccccbibi', ark_buffer.read(15))
+        ark_buffer.seek(pos)
+        data[utt_id] = _read_mat_from_buffer(ark_buffer)
+        rows, colums = header[-3], header[-1]
+        ark_buffer.seek(
+            pos + 16 + (rows * colums * 4))
+    return data
+
+
+def _read_mat_from_buffer(buffer):
+    header = struct.unpack('<cxcccc', buffer.read(6))
+    if header[1] != "B".encode():
+        raise ValueError("Input .ark file is not binary")
+
+    if header[2] == b'C':
+        raise ValueError("Input .ark file is compressed. You have to "
+                         "decompress it first using copy-feats.")
+
+    m, rows = struct.unpack('<bi', buffer.read(5))
+    n, cols = struct.unpack('<bi', buffer.read(5))
+
+    tmp_mat = np.frombuffer(
+        buffer.read(rows * cols * 4), dtype=np.float32)
+    utt_mat = np.reshape(tmp_mat, (rows, cols))
+    return utt_mat
+
+
 def read_ark_mat(ark, pos):
     with open(ark, 'rb') as ark_read_buffer:
         ark_read_buffer.seek(pos, 0)
-        header = struct.unpack('<cxcccc', ark_read_buffer.read(6))
-        if header[1] != "B".encode():
-            raise ValueError("Input .ark file {} is not binary".format(ark))
-
-        if header[2] == b'C':
-            raise ValueError("Input .ark file {} is compress. You have to "
-                             "decompress it first using copy-feats.".format(
-                ark))
-
-        m, rows = struct.unpack('<bi', ark_read_buffer.read(5))
-        n, cols = struct.unpack('<bi', ark_read_buffer.read(5))
-
-        tmp_mat = np.frombuffer(
-            ark_read_buffer.read(rows * cols * 4), dtype=np.float32)
-        utt_mat = np.reshape(tmp_mat, (rows, cols))
-
+        utt_mat = _read_mat_from_buffer(ark_read_buffer)
         ark_read_buffer.close()
-
     return utt_mat
 
 
@@ -298,6 +327,25 @@ def import_alignment_data(ark, model_file, is_zipped=True):
     return data
 
 
+def _write_array_for_kaldi(utt_id, array, fid, close_stream=False):
+    utt_mat = np.ascontiguousarray(array, dtype=np.float32)
+    rows, cols = utt_mat.shape
+    fid.write(
+        struct.pack('<%ds' % (len(utt_id)), utt_id.encode()))
+    fid.write(
+        struct.pack('<cxcccc',
+                    ' '.encode(),
+                    'B'.encode(),
+                    'F'.encode(),
+                    'M'.encode(),
+                    ' '.encode()))
+    fid.write(struct.pack('<bi', 4, rows))
+    fid.write(struct.pack('<bi', 4, cols))
+    fid.write(utt_mat)
+    if close_stream:
+        fid.close()
+
+
 class ArkWriter():
     def __init__(self, ark_filename):
         self.ark_path = ark_filename
@@ -307,32 +355,29 @@ class ArkWriter():
         return self
 
     def write_array(self, utt_id, array):
-        utt_mat = np.asarray(array, dtype=np.float32)
-        rows, cols = utt_mat.shape
-        self.ark_file_write.write(
-            struct.pack('<%ds' % (len(utt_id)), utt_id.encode()))
-        self.ark_file_write.write(
-            struct.pack('<cxcccc',
-                        ' '.encode(),
-                        'B'.encode(),
-                        'F'.encode(),
-                        'M'.encode(),
-                        ' '.encode()))
-        self.ark_file_write.write(struct.pack('<bi', 4, rows))
-        self.ark_file_write.write(struct.pack('<bi', 4, cols))
-        self.ark_file_write.write(utt_mat)
+        _write_array_for_kaldi(utt_id, array, self.ark_file_write)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.ark_file_write.close()
 
 
-def import_feat_scp(feat_scp):
+def array_to_kaldi_io_stream(array, utt_id='stream'):
+    stream = BytesIO()
+    _write_array_for_kaldi(utt_id, array, stream)
+    return stream
+
+
+def import_feat_scp(feat_scp, verbose=False):
     feat_scp = read_scp_file(feat_scp)
     utt_ids = list(feat_scp.keys())
     data_dict = dict()
-    print('Reading {} features'.format(len(utt_ids)))
-    for utt_id in tqdm.tqdm(utt_ids):
-        data_dict[utt_id] = import_feature_data(feat_scp[utt_id])
+    if verbose:
+        print('Reading {} features'.format(len(utt_ids)))
+        for utt_id in tqdm.tqdm(utt_ids):
+            data_dict[utt_id] = import_feature_data(feat_scp[utt_id])
+    else:
+        for utt_id in utt_ids:
+            data_dict[utt_id] = import_feature_data(feat_scp[utt_id])
     return data_dict
 
 
@@ -350,7 +395,16 @@ def read_scp_file(scp_file):
         scp_feats[line.split()[0]] = ' '.join(line.split()[1:])
     return scp_feats
 
-window_type="hamming"
+
+def write_scp_file(scp, scp_file):
+    with open(scp_file, 'w') as fid:
+        for utt, val in scp.items():
+            fid.write('{} {}\n'.format(utt, val))
+
+
+window_type = "hamming"
+
+
 def read_trans_file(trans_file):
     transcriptions = dict()
     with open(trans_file) as fid:
@@ -428,6 +482,7 @@ def import_features_and_alignment(feat_scp, ali_dir, model_file,
 
     return features_common, alignments_common
 
+
 def audioread_scp(scp, utt_ids, offset=0, duration=None, sample_rate=16000):
     """ Converts audio from scp to wav files with Kaldi tools and reads them with audioread.
 
@@ -445,9 +500,11 @@ def audioread_scp(scp, utt_ids, offset=0, duration=None, sample_rate=16000):
         # Convert to .wav files into temp_dir
         if not isinstance(utt_ids, str):
             for utt_id in utt_ids:
-                cmds.append(scp[utt_id][:len(scp[utt_id]) - 1] + "> " + tmp_dir + "/" + utt_id)
+                cmds.append(scp[utt_id][:len(
+                    scp[utt_id]) - 1] + "> " + tmp_dir + "/" + utt_id)
         else:
-            cmds.append(scp[utt_ids][:len(scp[utt_ids]) - 1] + "> " + tmp_dir + "/" + utt_ids)
+            cmds.append(scp[utt_ids][:len(
+                scp[utt_ids]) - 1] + "> " + tmp_dir + "/" + utt_ids)
 
         run_processes(cmds, environment=get_kaldi_env())
 
@@ -455,21 +512,42 @@ def audioread_scp(scp, utt_ids, offset=0, duration=None, sample_rate=16000):
         if not isinstance(utt_ids, str):
             audio = dict()
             for utt_id in utt_ids:
-                audio[utt_id] = audioread(tmp_dir + "/" + utt_id, offset, duration, sample_rate)
+                audio[utt_id] = audioread(tmp_dir + "/" + utt_id, offset,
+                                          duration, sample_rate)
         else:
-            audio = audioread(tmp_dir + "/" + utt_ids, offset, duration, sample_rate)
+            audio = audioread(tmp_dir + "/" + utt_ids, offset, duration,
+                              sample_rate)
 
         return audio
 
-def make_fbank_features_from_time_signal(time_signal, num_mel_bins, low_freq=20,
-                        high_freq=-400, num_jobs=20, add_deltas=True, use_energy=False,
-                        use_log_fbank=True, window_type="povey"):
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        wav_file = "{}/tmp.wav".format(tmp_dir)
-        audiowrite(time_signal, wav_file)
-        make_fbank_features({'a': wav_file}, tmp_dir, num_jobs=num_jobs, num_mel_bins=num_mel_bins,
-                            low_freq=low_freq, high_freq=high_freq, use_energy=use_energy,
-                            use_log_fbank=use_log_fbank, add_deltas=add_deltas, window_type=window_type)
 
-        data = import_feat_scp(tmp_dir + "/feats.scp")
-        return data['a']
+def make_fbank_features_from_time_signal(time_signal, num_mel_bins,
+                                         low_freq=20, high_freq=-400,
+                                         add_deltas=True, use_energy=False,
+                                         use_log_fbank=True, window_type="povey"):
+
+    audio_data = BytesIO()
+    audiowrite(time_signal, audio_data, normalize=True, threaded=False)
+
+    if add_deltas:
+        cmd_template = RAW_FBANK_DELTA_PIPE_CMD
+    else:
+        cmd_template = RAW_FBANK_PIPE_CMD
+    cmd = cmd_template.format(
+        num_mel_bins=num_mel_bins,
+        low_freq=low_freq, high_freq=high_freq,
+        use_energy=use_energy, use_log_fbank=use_log_fbank,
+        window_type=window_type
+    )
+
+    p = subprocess.Popen(cmd,
+                         stdin=subprocess.PIPE,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE,
+                         universal_newlines=False, shell=True,
+                         env=get_kaldi_env(), bufsize=0)
+
+    p.stdin.write(b'utt ')
+    std, stderr = p.communicate(input=audio_data.getvalue())
+    kaldi_data = BytesIO(std)
+    return read_ark_buffer(kaldi_data)
