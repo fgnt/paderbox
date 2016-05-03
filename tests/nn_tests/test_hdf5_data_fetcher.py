@@ -210,6 +210,16 @@ class TestH5DataFetcher(unittest.TestCase):
             self.assertIn(n, data)
         self.assertEqual(data['2d'].shape, (3, 1, 2, 7))
 
+    def test_read_frames_cnn_big_context(self):
+        fetcher = HDF5DataFetcher('test', '/tmp/h5_testing_file', 'testing',
+                                  ['2d'], mode='frames', left_context=10,
+                                  right_context=10, add_context_to=['2d'],
+                                  cnn_features=True)
+        data = fetcher.get_data_for_indices((0, 2, 1))
+        for n in ['2d']:
+            self.assertIn(n, data)
+        self.assertEqual(data['2d'].shape, (3, 1, 2, 21))
+
     def test_read_frames_cnn_context_delta(self):
         fetcher = HDF5DataFetcher('test', '/tmp/h5_testing_file', 'testing',
                                   ['2d_delta'], mode='frames', num_deltas=1,
