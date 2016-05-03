@@ -25,6 +25,11 @@ def offset_compensation(time_signal):
     return lfilter([1., -1], [1., -0.999], time_signal)
 
 
+def preemphasis_with_offset_compensation(time_signal, p=0.95):
+
+    return lfilter([1, -(1+p), p], [1, -0.999], time_signal)
+
+
 def median(input, window_size=3):
     """
     Median Filter
