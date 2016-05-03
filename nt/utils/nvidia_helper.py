@@ -91,5 +91,6 @@ def print_processes():
 
 
 if __name__ == "__main__":
-    pprint(get_info())
-    pprint(get_gpu_list())
+    with nvidia():
+        pprint(get_info())
+        pprint(get_gpu_list())

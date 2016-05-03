@@ -2,6 +2,9 @@ import unittest
 import nt.speech_enhancement.merl_masks as mm
 import nt.testing as tc
 import numpy as np
+from chainer.utils.weight_init import uniform
+from chainer import Variable
+from chainer.complex_functions import split_variable
 
 input_data = dict(S=5.0+12.0j, N=3.0+4.0j)
 input_data = {k: np.asarray(v)[None, None, None] for k, v in input_data.items()}
@@ -29,3 +32,20 @@ class SimpleIdealSoftMaskTests(unittest.TestCase):
                 mask, desired_output,
                 err_msg='Test failed for {}'.format(get_mask.__name__)
             )
+
+
+class TestSpectrumApproximation(unittest.TestCase):
+    def test_phase_sensitive(self):
+        S = uniform((10, 12, 14), dtype=np.complex64)
+        Y = uniform((10, 12, 14), dtype=np.complex64)
+        a = uniform((10, 12, 14), dtype=np.float32)
+
+        desired = np.abs(a*Y - S)**2 / a.size
+
+        actual = mm.PhaseSensitiveSpectrumApproximation()(
+            Variable(a),
+            split_variable(Variable(Y)),
+            split_variable(Variable(S))
+        )
+
+        np.testing.assert_almost_equal(actual.num, desired)

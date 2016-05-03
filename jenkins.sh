@@ -18,6 +18,10 @@ export PATH
 export LD_LIBRARY_PATH
 source activate py35
 
+# Use a pseudo virtualenv, http://stackoverflow.com/questions/2915471/install-a-python-package-into-a-different-directory-using-pip
+mkdir -p venv
+export PYTHONUSERBASE=$(readlink -m venv)
+
 # Refresh files...
 ls /net/ssd/software/anaconda/envs/py35/lib/python3.5/lib-dynload/../../ > /dev/null
 
@@ -36,7 +40,7 @@ pip show nt
 pip uninstall --quiet --yes chainer
 ls chainer
 pip show chainer
-pip install --quiet --user -e  ./chainer/
+pip install --quiet --user -e ./chainer/
 pip show chainer
 
 # Unittets

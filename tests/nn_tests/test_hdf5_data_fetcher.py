@@ -13,7 +13,7 @@ def _get_data(dimension, deltas=0):
         data = 0
     elif dimension == 2:
         data = np.arange(4 * 2).reshape(4, 2)
-        # This has 4 time steps with the features are
+        # This has 4 time steps where the features are
         # [0, 1], [2, 3], [4, 5], [6, 7]
     elif dimension == 3:
         data = np.arange(4 * 3 * 2).reshape(
@@ -22,6 +22,9 @@ def _get_data(dimension, deltas=0):
         # 1 are [0, 1], [2, 3], [4, 5], [6, 7]
     elif dimension == 4:
         data = np.arange(2 * 4 * 3 * 2).reshape((2, 4, 3, 2))
+    else:
+        raise NotImplementedError
+
     if deltas > 0:
         data = np.concatenate(deltas*[data], axis=-1)
     return data
