@@ -2,6 +2,7 @@ from pprint import pprint
 from nt.utils.pynvml import *
 import pwd
 from contextlib import contextmanager
+from subprocess import PIPE, run
 
 UID = 1
 EUID = 2
@@ -89,13 +90,44 @@ def get_gpu_list():
     return gpu_list
 
 
+
+def out(command):
+    result = run(command, stdout=PIPE, stderr=PIPE, universal_newlines=True)
+    return result.stdout
+
+def get_user_from_pid(pid):
+    return out(['ps', '-u', '-p', str(pid)]).split('\n')[1].split()[0]
+
+
 def print_processes():
     for gpu in get_gpu_list():
         print('GPU #{}'.format(gpu['minor_number']))
         pprint(gpu['process_info'])
 
 
+def print_annotated_nvidia_smi():
+    my_output = out(['nvidia-smi'])
+    relative_position = 0
+    for line in my_output.split('\n'):
+        print(line, end='')
+        if line.startswith('| Processes:'):
+            relative_position = 1
+            print('')
+        elif relative_position == 1 and line.startswith('|==========='):
+            relative_position = 2
+            print('')
+        elif relative_position == 2 and line.startswith('+-----------'):
+            relative_position = 3
+            print('')
+        elif relative_position == 2:
+            pid = line.split()[2]
+            print('', get_user_from_pid(pid))
+        else:
+            print('')
+
+
 if __name__ == "__main__":
     with nvidia():
-        pprint(get_info())
-        pprint(get_gpu_list())
+        # pprint(get_info())
+        # pprint(get_gpu_list())
+        print_annotated_nvidia_smi()
