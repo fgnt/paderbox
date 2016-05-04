@@ -58,16 +58,3 @@ class TestCallbackFetcher(unittest.TestCase):
     def test_frame_mode_length(self):
         df = AlmostIdentityCallbackFetcher('identity', mode='frames')
         assert len(df) == 100
-
-    def test_frame_mode_wrong_input_dimensions(self):
-        for dimension in (1, 3):
-            with self.assertRaises(AssertionError) as cm:
-                _ = AlmostIdentityCallbackFetcher(
-                    'identity',
-                    mode='frames',
-                    dimension=dimension
-                )
-            self.assertEqual(
-                cm.exception.args[0],
-                'Only 2d data with TxF is allowed in frame mode!'
-            )

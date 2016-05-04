@@ -74,7 +74,7 @@ class LoggerMonitorTest(unittest.TestCase):
                                optimizer_hooks=hooks)
         g = self.trainer.get_computational_graph()
         self.monitor = LoggerMonitor(
-                'TestMon', VariableInspector(('i', 0), g), 'Input', True)
+                'TestMon', VariableInspector(('data_i', 0), g), 'Input', True)
         self.trainer.add_tr_monitor(self.monitor)
 
     def test_logging(self):
@@ -111,7 +111,7 @@ class SnapshotMonitorTest(unittest.TestCase):
                                optimizer_hooks=hooks)
         g = self.trainer.get_computational_graph()
         self.monitor = SnapshotMonitor(
-                'TestMon', VariableInspector(('i', 0), g), 'Input', True)
+                'TestMon', VariableInspector(('data_i', 0), g), 'Input', True)
         self.trainer.add_tr_monitor(self.monitor)
 
     def test_logging(self):
