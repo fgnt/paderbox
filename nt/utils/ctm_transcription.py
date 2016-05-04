@@ -197,7 +197,8 @@ def mark_wrong_mappings(result_ctm, found_to_label_assignements, ref_ctm):
             res = 'C'
             if ref[3]:
                 res = 'I'
-            elif found_to_label[found[0]] != ref[0]:
+            elif (found[0] not in found_to_label) or\
+                    (found_to_label[found[0]] != ref[0]):
                 res = 'S'
 
             sentence[idx] = (found, ref[:3] + (res,))
@@ -211,7 +212,59 @@ def mark_wrong_mappings(result_ctm, found_to_label_assignements, ref_ctm):
                         break
 
 
-def get_label_assignment(conf_mat, max_type=None, sort_type=None):
+def get_unique_label_assigment(found_to_label_assigments, max_type=None,
+                               sort_type=None):
+    """ Get best unique label assignment from label assignment (only keeps
+        unique pairs with maximum overlap)
+
+    :param found_to_label_assigments: list with found to label mapping pairs
+                                      including overlap information
+                                      (see get_label_assignment)
+    :param max_type: criterion do decide for assignment:
+                         'duration' (max accumulative overlap)
+                         'count' (maximum accumulative count)
+    :param sort_type: criterion for sorting the output:
+                          'duration' (accumulative overlap)
+                          'count' (accumulative count)
+                          'count,duration' (count then accumulative overlap)
+    :return: best unique label assignment list with pairs
+             and reverse confusion matrix
+
+    Example:
+    assign = \
+        [('DHAH', 'THE', (2517, 220.42)),
+         ('IHN', 'IN', (807, 105.4)),
+         ...]
+    """
+    max_key = lambda val: val[1][0]
+    if max_type == 'duration':
+        max_key = lambda val: val[1][1]
+
+    sort_key = lambda item: item[2][0]
+    if sort_type == 'duration':
+        sort_key = lambda item: item[2][1]
+    if sort_type == 'count,duration':
+        sort_key = lambda item: (item[2][0], item[2][1])
+
+    reverse_conf_mat = dict()
+    for found, ref, overlap in found_to_label_assigments:
+        if ref not in reverse_conf_mat:
+            reverse_conf_mat[ref] = {found: overlap}
+        else:
+            reverse_conf_mat[ref][found] = overlap
+
+    reverse_assign = ((ref,) + max(found.items(), key=max_key)
+              for ref, found in reverse_conf_mat.items())
+
+    best_unique_assign = ((found, ref, overlap)
+                          for ref, found, overlap in reverse_assign)
+
+    return sorted(best_unique_assign, key=sort_key, reverse=True),\
+           reverse_conf_mat
+
+
+def get_label_assignment(conf_mat, max_type=None, sort_type=None,
+                         map_type=None):
     """ derive label assignment from confusion matrix
 
     :param conf_mat: confusion matrix
@@ -222,6 +275,12 @@ def get_label_assignment(conf_mat, max_type=None, sort_type=None):
                           'duration' (accumulative overlap)
                           'count' (accumulative count)
                           'count,duration' (count then accumulative overlap)
+    :param map_mode: mapping mode:
+                         'Best' (map found label to best overlapping reference
+                                 label, duplicate mappings allowed)
+                         'BestUnique' (map found label to best overlapping
+                                       reference, duplicate mappins removed and
+                                       only the best unique mapping is kept)
     :return: label assignment list with pairs
 
     Example:
@@ -243,7 +302,39 @@ def get_label_assignment(conf_mat, max_type=None, sort_type=None):
     assign = ((found,) + max(ref.items(), key=max_key)
               for found, ref in conf_mat.items())
 
+    if map_type == 'BestUnique':
+        return get_unique_label_assigment(assign, max_type, sort_type)[0]
+
     return sorted(assign, key=sort_key, reverse=True)
+
+
+def get_corr_sub_del_ins(result_ctm, ref_ctm):
+    """ get number of correct, substituted, deleted and inserted labels
+    See mark_wrong_mappings to create needed ctms
+
+    :param result_ctm: result ctm with marked wrong mappings
+    :param ref_ctm: reference ctm with marked wron mappeing
+    :return: correct, substitutions, deletions, insertions
+    """
+    correct = 0
+    substitutions = 0
+    deletions = 0
+    insertions = 0
+    for sentence in result_ctm.values():
+        for _, (_, _, _, state) in sentence:
+            if state == 'C':
+                correct += 1
+            if state == 'S':
+                substitutions += 1
+            if state == 'I':
+                insertions += 1
+
+    for sentence in ref_ctm.values():
+        for _, _, _, state in sentence:
+            if state == 'D':
+                deletions += 1
+
+    return correct, substitutions, deletions, insertions
 
 
 def get_max_overlap_sequence(word_entry, phoneme_entries):

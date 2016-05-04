@@ -2,17 +2,20 @@
 Provides fbank features and the fbank filterbank.
 """
 
+import librosa
 import numpy
+import scipy.signal
+
+from nt.transform.module_filter import preemphasis_with_offset_compensation
 from nt.transform.module_stft import stft
 from nt.transform.module_stft import stft_to_spectrogram
-from nt.transform.module_filter import offset_compensation
-from nt.transform.module_filter import preemphasis
-import scipy.signal
+
 
 def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
           number_of_filters=23, stft_size=512, lowest_frequency=0,
           highest_frequency=None, preemphasis_factor=0.97,
-          window=scipy.signal.hamming):
+          window=scipy.signal.hamming, use_librosa_mel=True,
+          use_htk_mel=False, filter_normalization=True):
     """
     Compute Mel-filterbank energy features from an audio signal.
 
@@ -40,17 +43,26 @@ def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
         0 is no filter. Default is 0.97.
     :returns: Mel filterbank features.
     """
-    highest_frequency = highest_frequency or sample_rate/2
-    time_signal = offset_compensation(time_signal)
-    time_signal = preemphasis(time_signal, preemphasis_factor)
+    highest_frequency = highest_frequency or sample_rate / 2
+    time_signal = preemphasis_with_offset_compensation(
+        time_signal, preemphasis_factor)
 
     stft_signal = stft(time_signal, size=stft_size, shift=stft_shift,
-                      window=window, window_length=window_length, fading=False)
+                       window=window, window_length=window_length, fading=False)
 
-    spectrogram = stft_to_spectrogram(stft_signal)/stft_size
+    spectrogram = stft_to_spectrogram(stft_signal) / stft_size
 
-    filterbanks = get_filterbanks(number_of_filters, stft_size, sample_rate,
-                                  lowest_frequency, highest_frequency)
+    if use_librosa_mel:
+        filterbanks = librosa.filters.mel(sample_rate, stft_size,
+                                          number_of_filters,
+                                          fmin=lowest_frequency,
+                                          fmax=highest_frequency,
+                                          htk=use_htk_mel)
+        if not filter_normalization:
+            filterbanks /= numpy.max(filterbanks, axis=1, keepdims=True)
+    else:
+        filterbanks = get_filterbanks(number_of_filters, stft_size, sample_rate,
+                                      lowest_frequency, highest_frequency)
 
     # compute the filterbank energies
     feature = numpy.dot(spectrogram, filterbanks.T)
@@ -78,23 +90,24 @@ def get_filterbanks(number_of_filters=20, nfft=1024, sample_rate=16000,
     :returns: A numpy array of size nfilt * (nfft/2 + 1) containing filterbank.
         Each row holds 1 filter.
     """
-    highfreq = highfreq or sample_rate/2
-    assert highfreq <= sample_rate/2, "highfreq is greater than samplerate/2"
+    highfreq = highfreq or sample_rate / 2
+    assert highfreq <= sample_rate / 2, "highfreq is greater than samplerate/2"
 
     # compute points evenly spaced in mels
     lowmel = hz2mel(lowfreq)
     highmel = hz2mel(highfreq)
-    melpoints = numpy.linspace(lowmel, highmel, number_of_filters+2)
+    melpoints = numpy.linspace(lowmel, highmel, number_of_filters + 2)
     # our points are in Hz, but we use fft bins, so we have to convert
     #  from Hz to fft bin number
-    bin = numpy.floor((nfft+1)*mel2hz(melpoints)/sample_rate)
+    bin = numpy.floor((nfft + 1) * mel2hz(melpoints) / sample_rate)
 
-    fbank = numpy.zeros([number_of_filters, nfft/2+1])
+    assert numpy.mod(nfft, 2) == 0
+    fbank = numpy.zeros([number_of_filters, nfft//2+1])
     for j in range(0, number_of_filters):
-        for i in range(int(bin[j]),int(bin[j+1])):
-            fbank[j,i] = (i - bin[j])/(bin[j+1]-bin[j])
-        for i in range(int(bin[j+1]),int(bin[j+2])):
-            fbank[j,i] = (bin[j+2]-i)/(bin[j+2]-bin[j+1])
+        for i in range(int(bin[j]), int(bin[j + 1])):
+            fbank[j, i] = (i - bin[j]) / (bin[j + 1] - bin[j])
+        for i in range(int(bin[j + 1]), int(bin[j + 2])):
+            fbank[j, i] = (bin[j + 2] - i) / (bin[j + 2] - bin[j + 1])
     return fbank
 
 
@@ -106,7 +119,7 @@ def hz2mel(hz):
     :returns: a value in Mels. If an array was passed in, an identical sized
         array is returned.
     """
-    return 2595 * numpy.log10(1+hz/700.0)
+    return 2595 * numpy.log10(1 + hz / 700.0)
 
 
 def mel2hz(mel):
@@ -117,13 +130,13 @@ def mel2hz(mel):
     :returns: a value in Hertz. If an array was passed in, an identical sized
         array is returned.
     """
-    return 700*(10**(mel/2595.0)-1)
+    return 700 * (10 ** (mel / 2595.0) - 1)
 
 
 def logfbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
-          number_of_filters=23, stft_size=512, lowest_frequency=0,
-          highest_frequency=None, preemphasis_factor=0.97,
-          window=scipy.signal.hamming):
+             number_of_filters=23, stft_size=512, lowest_frequency=0,
+             highest_frequency=None, preemphasis_factor=0.97,
+             window=scipy.signal.hamming):
     """Generates log fbank features from time signal.
 
     Simply wraps fbank function. See parameters there.

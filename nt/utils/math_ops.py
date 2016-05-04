@@ -107,6 +107,17 @@ def cos_similarity(A, B):
     return similarity
 
 
+def cos_distance(a, b):
+    """
+    cosine distance between vector a and b: 1/2*(1-a*b/|a|*|b|)
+
+    :param a: vector a (1xN or Nx1 numpy array)
+    :param b: vector b (1xN or Nx1 numpy array)
+    :return: distance (scalar)
+    """
+    return 0.5*(1 - sum(a*b)/np.sqrt(sum(a**2)*sum(b**2)))
+
+
 def _calculate_block_boundaries(T, block_size, first_block_size):
     block_boundaries = []
     block_start = 0

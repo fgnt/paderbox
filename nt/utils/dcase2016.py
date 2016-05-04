@@ -56,22 +56,17 @@ def generate_augmented_training_data(dir_name):
 
     n_gen = NoiseGeneratorWhite()
     noisy_train_signal = list()
-    for snr in [-12, -6, 0, 6, 12]:
+    snr_values = np.random.choice([-12, -6, 0, 6, 12], size=5, replace=False)
+    for snr in snr_values:
         noisy_train_signal.append(train_time_signal + n_gen.get_noise_for_signal(train_time_signal, snr=snr))
     noisy_train_signal = np.concatenate(noisy_train_signal)
-
-    # Normalize the training data
-    # training_mean = np.mean(noisy_train_signal)
-    # training_var = np.var(noisy_train_signal)
-    # noisy_train_signal = (noisy_train_signal - training_mean) / np.sqrt(training_var)
     audiowrite(noisy_train_signal, 'training_events_noise.wav', normalize=True)
 
     noisy_cv_signal = list()
-    for i in range(5):
-        snr = np.random.choice([-12, -6, 0, 6, 12])
+    snr_values = np.random.choice([-12, -6, 0, 6, 12], size=5, replace=False)
+    for snr in snr_values:
         noisy_cv_signal.append(cv_time_signal + n_gen.get_noise_for_signal(cv_time_signal, snr=snr))
     noisy_cv_signal = np.concatenate(noisy_cv_signal)
-    # noisy_cv_signal = (noisy_cv_signal - training_mean) / np.sqrt(training_var)
     audiowrite(noisy_cv_signal, 'cv_events_noise.wav', normalize=True)
 
     return noisy_train_signal, noisy_cv_signal, total_lengths, scripts
@@ -96,7 +91,7 @@ def transform_features(data, **kwargs):
         delta_feat = librosa.feature.delta(logfbank_feat, axis=0, width=3)  # row-wise in our case
         data = np.concatenate((data, delta_feat), axis=1)
     if delta_delta == 1:
-        delta_delta_feat = librosa.feature.delta(logfbank_feat, axis=0, order=2)
+        delta_delta_feat = librosa.feature.delta(logfbank_feat, axis=0, order=2, width=3)
         data = np.concatenate((data, delta_delta_feat), axis=1)
     return data.astype(np.float32)
 
@@ -153,6 +148,13 @@ def get_train_cv_data_provider(dir_name, stft_size, stft_shift, transcription_li
     # Load training and CV input data #######
     train_data, cv_data, total_lengths, scripts = make_input_arrays(dir_name, **kwargs)
 
+    # Feature Normalize the training and cv data
+    training_mean = np.mean(train_data, axis=0)
+    training_var = np.var(train_data, axis=0)
+
+    train_data = (train_data - training_mean) / np.sqrt(training_var)
+    cv_data = (cv_data - training_mean) / np.sqrt(training_var)
+
     T, F = train_data.shape
     train_data = add_context(
         train_data.reshape(T, 1, F),
@@ -198,13 +200,7 @@ def get_train_cv_data_provider(dir_name, stft_size, stft_shift, transcription_li
 
     dp_cv = DataProvider((cv_data_fetcher, cv_target_fetcher), batch_size=batch_size, shuffle_data=False)
 
-    return dp_train, dp_cv
-
-def _obtainTrainingParameters(json_data, flist_train, **kwargs):
-    _, _, _, _, training_mean, training_var = make_input_arrays(json_data, flist_train, **kwargs)
-
-    return training_mean, training_var
-
+    return dp_train, dp_cv, training_mean, training_var
 
 def transform_features_test(data, **kwargs):
     num_fbanks = kwargs.get('num_fbanks', 26)
@@ -220,11 +216,14 @@ def transform_features_test(data, **kwargs):
         data['observed'] = np.concatenate((data['observed'], delta_delta_feat), axis=1)
     return data
 
+
 def make_input_test_arrays(json_data, flist, **kwargs):
+    sample_rate = kwargs.get('sample_rate', 16000)
     fetcher = JsonCallbackFetcher('fbank',
                                   json_data,
                                   flist,
                                   transform_features_test,
+                                  sample_rate=sample_rate,
                                   feature_channels=['observed/ch1'],
                                   transform_kwargs=kwargs)
     scripts = list()
@@ -232,6 +231,10 @@ def make_input_test_arrays(json_data, flist, **kwargs):
     for idx in range(len(fetcher)):
         # fetch the transformed data
         data = fetcher.get_data_for_indices((idx,))
+        # Normalize every test sequence with it's own parameters
+        seq_mean = np.mean(data['observed'], axis=0)
+        seq_var = np.var(data['observed'], axis=0)
+        data['observed'] = (data['observed'] - seq_mean) / np.sqrt(seq_var)
         scripts.append(fetcher.utterance_ids[idx])
         dev_data.append(data['observed'])
 
@@ -259,16 +262,6 @@ def get_test_data_provider(json_data, flist_dev, transcription_list, events,
     # Load Test input data
     dev_data, scripts = make_input_test_arrays(json_data, flist_dev, **kwargs)
 
-    # Normalize the test data all at once with parameters of training data
-    # flist_train = 'train/Complete Set/wav/mono'
-    #training_mean, training_var = _obtainTrainingParameters(json_data, flist_train, **kwargs)
-
-    # Normalize the test data
-    # training_mean = np.mean(dev_data, axis=0)
-    # training_var = np.var(dev_data, axis=0)
-
-    #dev_data = (dev_data - training_mean) / np.sqrt(training_var)
-
     T, F = dev_data.shape
 
     dev_data = add_context(
@@ -285,16 +278,17 @@ def get_test_data_provider(json_data, flist_dev, transcription_list, events,
         dev_data = dev_data.reshape((T, C, H, W))
     else:
         dev_data = dev_data.reshape(T, -1)
-    # print(dev_data.shape)
+    print(dev_data.shape)
 
     # Load Test targets
     event_label_handler = EventLabelHandler(transcription_list, events)
-    dev_target = make_target_test_arrays(event_label_handler, transcription_list, resampling_factor, scripts)
+    # dev_target = make_target_test_arrays(event_label_handler, transcription_list, resampling_factor, scripts)
 
     dev_target_scripts = list()
     for script in scripts:
         dev_target_script = make_target_test_arrays(event_label_handler, transcription_list, resampling_factor,
                                                     [script])
+        print(dev_target_script.shape)
         dev_target_scripts.append(dev_target_script)
 
     dp_scripts = list()
@@ -314,7 +308,7 @@ def get_test_data_provider(json_data, flist_dev, transcription_list, events,
         dp_script = DataProvider((dev_data_fetcher, dev_target_fetcher), batch_size=batch_size, shuffle_data=False)
         dp_scripts.append(dp_script)
 
-    return dp_scripts
+    return dp_scripts, scripts
 
 
 def resample_and_convert_frame_to_seconds(frame_num, frame_size=512, frame_shift=160, resampling_factor=44.1 / 16,
@@ -323,14 +317,15 @@ def resample_and_convert_frame_to_seconds(frame_num, frame_size=512, frame_shift
     return sample_num / sampling_rate
 
 
-def generate_onset_offset_label(decoded_allFrames, event_id, event_label_handler, filename):
+def generate_onset_offset_label(decoded_allFrames, event_id, event_label_handler, filename,
+                                resampling_factor=44.1 / 16):
     # on_off_label = list()
     class_label = event_label_handler.int_to_label[event_id]
     i = 0
     file = open(filename, 'a')
     while i < decoded_allFrames.shape[0] - 1:
         onset = resample_and_convert_frame_to_seconds(
-            i + 1)  # To save frame no. which is 1 greater than the array index.
+            i + 1, resampling_factor)  # To save frame no. which is 1 greater than the array index.
         label_now = decoded_allFrames[
             i]  ## label_now and label_next are either 1 or 0 indicating the event to be active or inactive
         j = i + 1
@@ -339,7 +334,8 @@ def generate_onset_offset_label(decoded_allFrames, event_id, event_label_handler
             j += 1
             label_next = decoded_allFrames[j]
         offset = resample_and_convert_frame_to_seconds(
-            j)  # To save frame no. [not exceeded by 1 here as it is already greater than the offset index by 1]
+            j,
+            resampling_factor)  # To save frame no. [not exceeded by 1 here as it is already greater than the offset index by 1]
         # if the period in question was active for that event, log it's onset and offset.
         # Minimum duration constraint
         if label_now == 1 and offset - onset > 0.06 and class_label != 'Silence':

@@ -79,7 +79,7 @@ class CharLabelHandler(object):
             int_arr[idx] = self.label_to_int[char]
         return int_arr
 
-    def int_arr_to_label_seq(self, int_arr):
+    def ints2labels(self, int_arr):
         return ''.join([self.int_to_label[i] for i in int_arr])
 
     def print_mapping(self):
@@ -434,7 +434,7 @@ def argmax_ctc_decode(int_arr, label_handler):
             decode[idx_dec] = n
             idx_dec += 1
     idx_seq = [c for c in decode if c != 0]
-    sequence = label_handler.int_arr_to_label_seq(idx_seq)
+    sequence = label_handler.ints2labels(idx_seq)
     return sequence
 
 
@@ -447,7 +447,7 @@ def argmax_ctc_decode_ler(dec_arr, ref_arr, label_handler):
     :return: decode, ler, wer
     """
     dec_seq = argmax_ctc_decode(dec_arr, label_handler)
-    ref_seq = label_handler.int_arr_to_label_seq(ref_arr)
+    ref_seq = label_handler.ints2labels(ref_arr)
     ler = editdistance.eval(list(dec_seq), list(ref_seq)) / len(list(ref_seq))
     return dec_seq, ler
 
@@ -461,7 +461,7 @@ def argmax_ctc_decode_ler_wer(dec_arr, ref_arr, label_handler):
     :return: decode, ler, wer
     """
     dec_seq = argmax_ctc_decode(dec_arr, label_handler)
-    ref_seq = label_handler.int_arr_to_label_seq(ref_arr)
+    ref_seq = label_handler.ints2labels(ref_arr)
     ler = editdistance.eval(list(dec_seq), list(ref_seq)) / len(list(ref_seq))
     wer = editdistance.eval(dec_seq.split(), ref_seq.split()) \
           / len(ref_seq.split())
@@ -481,7 +481,7 @@ def argmax_ctc_decode_with_stats(dec_arr, ref_arr, label_handler,
     :return: decode, ler, wer, label_errors, word_errors, labels, words
     """
     dec_seq = argmax_ctc_decode(dec_arr, label_handler)
-    ref_seq = label_handler.int_arr_to_label_seq(ref_arr)
+    ref_seq = label_handler.ints2labels(ref_arr)
     if include_space:
         ref_words = ''.join(ref_seq).split()
         dec_words = ''.join(dec_seq).split()

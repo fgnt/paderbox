@@ -8,7 +8,7 @@ NC='\033[0m' # No Color
 trap 'echo -e "${green}$ $BASH_COMMAND ${NC}"' DEBUG
 
 # Force Exit 0
-trap 'exit 0' EXIT SIGINT SIGTERM EXIT
+trap 'exit 0' EXIT SIGINT SIGTERM
 
 # Set Paths
 CUDA_PATH=/usr/local/cuda
@@ -18,17 +18,30 @@ export PATH
 export LD_LIBRARY_PATH
 source activate py35
 
+# Use a pseudo virtualenv, http://stackoverflow.com/questions/2915471/install-a-python-package-into-a-different-directory-using-pip
+mkdir -p venv
+export PYTHONUSERBASE=$(readlink -m venv)
+
+# Refresh files...
+ls /net/ssd/software/anaconda/envs/py35/lib/python3.5/lib-dynload/../../ > /dev/null
+
 # enable matlab tests
 TEST_MATLAB=true
 export TEST_MATLAB
 
 # Refresh toolbox
 pip uninstall --quiet --yes nt
+ls
+pip show nt
 pip install  --quiet --user -e .
+pip show nt
 
 # Update chainer
 pip uninstall --quiet --yes chainer
-pip install --quiet --user -e  ./chainer/
+ls chainer
+pip show chainer
+pip install --quiet --user -e ./chainer/
+pip show chainer
 
 # Unittets
 nosetests --with-xunit --with-coverage --cover-package=nt # --processes=-1

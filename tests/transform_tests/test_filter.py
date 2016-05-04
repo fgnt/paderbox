@@ -32,3 +32,13 @@ class TestSTFTMethods(unittest.TestCase):
         tc.assert_equal(yFilterd.shape, y.shape)
         tc.assert_isreal(yFilterd)
         tc.assert_equal(yFilterd[0], y[0])
+
+    def test_preemphasis_with_offcomp(self):
+        y = self.x
+
+        y_pre = transform.preemphasis(y)
+        y_ref = transform.offset_compensation(y_pre)
+
+        y_both = transform.preemphasis_with_offset_compensation(y)
+
+        tc.assert_almost_equal(y_ref, y_both)

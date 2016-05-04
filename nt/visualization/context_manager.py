@@ -6,7 +6,9 @@ from matplotlib.ticker import ScalarFormatter
 import subprocess
 import platform
 import os
+from os import path
 from nt.visualization.new_cm import cmaps
+from nt.utils import mkdir_p
 
 
 mpl_ge_150 = LooseVersion(mpl.__version__) >= '1.5.0'
@@ -32,6 +34,8 @@ class LatexContextManager(object):
     def __init__(
             self,
             filename,
+            export_type=None,  # eps recomented (alternative pdf), because pdf is in Inkscape 0.91 r not working
+            build_folder=None,
             figure_size=[8.0, 6.0],
             formatter=DollarFormatter,
             format_x=True,
@@ -39,6 +43,25 @@ class LatexContextManager(object):
             palette=cmaps['upb'].colors[1:],
             extra_rc=None
     ):
+        """
+
+        Args:
+            filename: Filename of the svg to be exported. I.e. test.svg
+            figure_size: Tuple
+            formatter: Default is a Dollar-formatter which changes the
+                ticks labels from numbers to numbers sourrounded by dollar
+                symbols.
+            format_x: Disable formatter for x axis if False.
+            format_y: Disable formatter for y axis if False.
+            palette: Default color map
+            extra_rc: Extra rc parameters for matplotlib
+            export_type: Default None (only svg export), possibly
+                eps (svg and eps_tex and eps export) and
+                pdf (svg and pdf_tex and pdf export)
+
+        Returns:
+
+        """
         assert filename.endswith('.svg')
         self.filename = filename
         self.formatter = formatter
@@ -46,10 +69,12 @@ class LatexContextManager(object):
         self.format_x = format_x
         self.format_y = format_y
         self.palette = palette
+        self.build_folder = build_folder if build_folder is not None else path.dirname(filename)
         if extra_rc is None:
             self.extra_rc = dict()
         else:
             self.extra_rc = extra_rc
+        self.export_type = export_type
 
     def __enter__(self):
         extra_rc = {
@@ -76,24 +101,42 @@ class LatexContextManager(object):
         if self.filename is not None:
             try:
                 plt.savefig(self.filename)
-                try:
-                    if platform.system() == 'Darwin':  # OS X
-                        inkscape_path = ('/Applications/Inkscape.app/' +
-                                         'Contents/Resources/bin/inkscape')
-                    else:
-                        inkscape_path = 'inkscape'
-                    cmd = [
-                        inkscape_path, '-D', '-z', '--export-area-drawing',
-                        os.path.realpath(self.filename),
-                        '--export-pdf={}.pdf'.format(
-                            os.path.realpath(self.filename)[:-4]),
-                        '--export-latex'
-                    ]
-                    subprocess.run(cmd)
-                except:
-                    print('Could not perform Inkscape export.')
-            except:
-                print('Could not save file.')
+
+                if platform.system() == 'Darwin':  # OS X
+                    inkscape_path = ('/Applications/Inkscape.app/' +
+                                     'Contents/Resources/bin/inkscape')
+                else:
+                    inkscape_path = 'inkscape'
+
+                if self.export_type is not None:
+                    # try:
+                        # inkscape --help
+                        # -z, --without-gui  Do not use X server (only process
+                        #                    files from console)
+
+                        # inkscape -z --export-area-page fig.svg --export-eps=fig.eps --export-latex
+                        build_file = os.path.splitext(path.join(self.build_folder, path.basename(self.filename)))[0]\
+                                     + '.' + self.export_type
+
+                        cmd = [
+                            inkscape_path, '-z', '--export-area-page',  # '--export-area-drawing',
+                            os.path.realpath(self.filename),
+                            '--export-{}={}'.format(
+                                self.export_type,
+                                os.path.realpath(build_file)),
+                            '--export-latex'
+                        ]
+                        # print(*cmd)
+                        subprocess.run(cmd)
+                    # except:
+                    #     print('Could not perform Inkscape export: {}.'.format(' '.join(cmd)))
+            except FileNotFoundError as e:
+                if not path.exists(path.dirname(self.filename)):
+                    print('The folder {} does not exist.'.format(path.realpath(path.dirname(self.filename))))
+
+                print('Could not save file {}. msg: {}'.format(self.filename, str(e)))
+            # except:
+            #    print('Could not save file {}.'.format(self.filename))
 
 
 def context_manager(
@@ -154,7 +197,7 @@ def context_manager(
         })
     else:
         rc_parameters.update({
-            'axes.color_cycle': list(colors)
+            'axes.prop_cycle': list(colors)
         })
 
     rc_parameters.update({

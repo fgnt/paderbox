@@ -259,8 +259,8 @@ def add_flist(flist, progress_json, scenario, stage='train',
         channel_type_dict[channel] = flist[utt_id]
 
 
-def combine_flists(data, flist_1_path, flist_2_path,
-                   flist_path, delimiter='/'):
+def combine_flists(data, flist_1_path, flist_2_path, flist_path,
+                   postfix_1='', postfix_2='', delimiter='/'):
     """ Combines two file lists into a new file list ``flist_name``
 
     The new file list will only have those channels, which are present in both
@@ -290,12 +290,13 @@ def combine_flists(data, flist_1_path, flist_2_path,
                            if ch in channels_flist_2))
 
     new_flist = dict()
-    for flist in [flist_1, flist_2]:
+    for flist, postfix in zip([flist_1, flist_2], [postfix_1, postfix_2]):
         for id in flist.keys():
-            new_flist[id] = dict()
+            new_id = id if len(postfix) == 0 else id + '_' + postfix
+            new_flist[new_id] = dict()
             for ch in flist[id]:
                 if ch in common_channels:
-                    new_flist[id][ch] = flist[id][ch]
+                    new_flist[new_id][ch] = flist[id][ch]
 
     flist_name = flist_path.split(delimiter)[-1]
     flist_parent_path = delimiter.join(flist_path.split(delimiter)[:-1])
