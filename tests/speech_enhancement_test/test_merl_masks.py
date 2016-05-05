@@ -40,7 +40,7 @@ class TestSpectrumApproximation(unittest.TestCase):
         Y = uniform((10, 12, 14), dtype=np.complex64)
         a = uniform((10, 12, 14), dtype=np.float32)
 
-        desired = np.abs(a*Y - S)**2 / a.size
+        desired = np.sum(np.abs(a*Y - S)**2) / a.size
 
         actual = mm.PhaseSensitiveSpectrumApproximation()(
             Variable(a),
