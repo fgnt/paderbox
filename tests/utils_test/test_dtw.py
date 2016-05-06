@@ -38,4 +38,4 @@ class TestDTW(unittest.TestCase):
 
         assert_equal(path[0], res_path[0])
         assert_equal(path[1], res_path[1])
-        self.assertAlmostEqual(dist_min, 0.027765456925)
+        self.assertAlmostEqual(dist_min, 4.7201276772539877)
