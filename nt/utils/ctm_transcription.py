@@ -1,6 +1,168 @@
 __author__ = 'walter'
 
 import operator
+import numpy as np
+from nt.utils.dtw import dtw
+
+
+class Evaluate:
+    """
+    Evaluation class for ctm
+    """
+    def __init__(self, res, ref, max_type='count'):
+        """ initialize evaluator with result and reference ctm
+
+        :param res: result ctm
+        :param ref: reference ctm
+        :param max_type: criterion do decide for assignment:
+                         'duration' (max accumulative overlap)
+        """
+        self._res = res
+        self._ref = ref
+        self._res_ref = None
+        self._ins_del_valid = None
+        self._ins_del_sub_cor = None
+        self._unique_ins_del_sub_cor = None
+        self._ins_del_sub_cor_p_r_f_sum = None
+        self._unique_ins_del_sub_cor_p_r_f_sum = None
+        self._conf_mat = None
+        self._reverse_conf_mat = None
+        self._label_assignment = None
+        self._unique_label_assignment = None
+        self._max_type = max_type
+
+    @property
+    def res_ref(self):
+        """ return ctm with max overlapping reference added to each entry
+
+        :return: ctm with max overlapping reference added to each entry
+        """
+        if self._res_ref is None:
+            self._res_ref = {file: allign_res_ref(res, self._ref[file])
+                             for file, res in self._res.items()
+                             if file in self._ref}
+
+        return self._res_ref
+
+    @property
+    def ins_del_valid(self):
+        """ Get insertions, deletions and valid pairs
+
+        :return: list with indicators for each pair consisting of 'V' (valid),
+                 'I' insertion and 'D' (deletion)
+        """
+        if self._ins_del_valid is None:
+            self._ins_del_valid = {file: get_ins_del_valid(res_ref)
+                                   for file, res_ref in self.res_ref.items()}
+
+        return self._ins_del_valid
+
+    @property
+    def conf_mat(self):
+        """ Get confusion matrix
+
+        :return: confusion matrix
+        """
+        if self._conf_mat is None:
+            self._conf_mat = get_conf_mat(self.res_ref, self.ins_del_valid)
+
+        return self._conf_mat
+
+    @property
+    def label_assignment(self):
+        """ get label to ref assignment
+
+        :return: label assignment list with pairs
+        """
+        if self._label_assignment is None:
+            self._label_assignment = get_label_assignment(self.conf_mat,
+                                                          self._max_type)
+
+        return self._label_assignment
+
+    @property
+    def unique_label_assignment(self):
+        """ get best unique label to ref assignment
+
+        :return: label assignment list with paris
+        """
+        if self._unique_label_assignment is None:
+            self._unique_label_assignment, self._reverse_conf_mat =\
+                get_unique_label_assignment(self.label_assignment,
+                                            self._max_type)
+
+        return self._unique_label_assignment
+
+    @property
+    def ins_del_sub_cor(self):
+        """ return insertions, deletions, substitutions and correct pairs
+
+        :return: list with indicators for each pair consisting of 'C' (correct),
+                 'I' (insertion), 'D' (deletion) and 'S' (substitution)
+        """
+        if self._ins_del_sub_cor is None:
+            found_to_label = {item[0]: item[1]
+                              for item in self.label_assignment}
+            self._ins_del_sub_cor = {
+                file: get_ins_del_cor_sub(
+                    res_ref,
+                    self.ins_del_valid[file],
+                    found_to_label
+                )
+                for file, res_ref in self.res_ref.items()
+            }
+
+        return self._ins_del_sub_cor
+
+    @property
+    def unique_ins_del_sub_cor(self):
+        """ return insertions, deletions, substitutions and correct pairs
+
+        :return: list with indicators for each pair consisting of 'C' (correct),
+                 'I' (insertion), 'D' (deletion) and 'S' (substitution)
+        """
+        if self._unique_ins_del_sub_cor is None:
+            found_to_label = {item[0]: item[1]
+                              for item in self.unique_label_assignment}
+            self._unique_ins_del_sub_cor = {
+                file: get_ins_del_cor_sub(
+                    res_ref,
+                    self.ins_del_valid[file],
+                    found_to_label
+                )
+                for file, res_ref in self.res_ref.items()
+            }
+
+        return self._unique_ins_del_sub_cor
+
+    @property
+    def ins_del_sub_cor_p_r_f_sum(self):
+        """ get sum of insertions, deletions, substitutions and correct pairs
+            as well as precision, recall and f-score
+
+        :return: correct, substitutions, deletions, insertions
+                 precision, recall, f-score
+        """
+        if self._ins_del_sub_cor_p_r_f_sum is None:
+            self._ins_del_sub_cor_p_r_f_sum = get_ins_del_sub_cor_p_r_f_sum(
+                self.ins_del_sub_cor
+            )
+
+        return self._ins_del_sub_cor_p_r_f_sum
+
+    @property
+    def unique_ins_del_sub_cor_p_r_f_sum(self):
+        """ get sum of insertions, deletions, substitutions and correct pairs
+            as well as precision, recall and f-score
+
+        :return: correct, substitutions, deletions, insertions
+                 precision, recall, f-score
+        """
+        if self._unique_ins_del_sub_cor_p_r_f_sum is None:
+            self._unique_ins_del_sub_cor_p_r_f_sum =\
+                get_ins_del_sub_cor_p_r_f_sum(self.unique_ins_del_sub_cor)
+
+        return self._unique_ins_del_sub_cor_p_r_f_sum
 
 
 def read_ctm(file, pos=(0, 1, 2, 3), has_duration=False, file_transfrom=None,
@@ -59,161 +221,176 @@ def get_overlap(word1, word2):
     return min(word1[2], word2[2]) - max(word1[1], word2[1])
 
 
-def get_max_overlap_ref_for_word_entry(found_entry, ref_entries):
-    """ find maximum overlapping reference for word entry in reference entries
-    This function also modifies ref_entries and sets the boolean to true, if it
-    is present
-
-    :param found_entry: tuple: (word, start, end)
-    :param ref_entries: list of referrnce tuples [(ref, start, end), ...]
-    :return: reference tuple corresponding to word entry
+def overlap_to_cost(D):
     """
-
-    max_key = lambda item: get_overlap(found_entry, item[1])
-    idx, ref_entry = max(enumerate(ref_entries), key=max_key)
-
-    # TODO: Check if overlap is negative --> insertion
-    if len(ref_entry) > 3:
-        ref_entries[idx] = ref_entry[0:3] + (True,)
-
-    return ref_entry
-
-
-def add_max_overlap_ref_to_word_entries(word_entries, ref_entries):
-    """ add maximum overlapping reference to word entries from reference entries
-    This will modify the reference as well to indicate if a reference label was
-    found (if boolen is present in the reference tuple)
-
-    :param word_entries: list of word tuples [(word, start, end), ...]
-    :param ref_entries: list of referrnce tuples [(ref, start, end), ...]
-    :return: list of word entries with corresponding references
-
-    Example for word_entries:
-    word_entries = \
-        [(('MIHSTAH', 0.96, 1.26), ('MR.', 0.91, 1.26, True)),
-         (('MAYKUHD', 1.26, 1.64), ('MAUCHER', 1.26, 1.6, True))]
+    Transform overlap to costmatrix : D = max(D) - D, in place operation
+    :param D: distance matrix
     """
-    return [(word_entry, get_max_overlap_ref_for_word_entry(word_entry,
-                                                            ref_entries))
-            for word_entry in word_entries]
+    D -= np.max(D)
+    D *= -1
 
 
-def mark_longest_duplicate_labels(word_entries):
-    """ mark longest match in duplicate reference labels as false and the
-    remaining ones as true. This function will only consider duplicates, if one
-    of the reference label has already been marked as a duplicate.
-
-    :param word_entries: list of word entries
+def get_ins_del_valid(res_ref):
     """
-    max_key = lambda item: get_overlap(item[1][0], item[1][1])
-    for idx1, pair1 in enumerate(word_entries):
-        if pair1[1][3]:
-            duplicates = [(idx2, pair2)
-                          for idx2, pair2 in enumerate(word_entries)
-                          if pair1[1][:3] == pair2[1][:3]]
-            idx_max_overlap, _ = max(duplicates, key=max_key)
-
-            for idx, pair in duplicates:
-                duplicate = True
-                if idx == idx_max_overlap:
-                    # TODO: Check if overlap is negative --> insertion
-                    duplicate = False
-                word_entries[idx] = (pair[0], pair[1][:3] + (duplicate,))
-    return word_entries
-
-
-def add_max_overlap_ref_to_ctm(ctm_word, ctm_ref):
-    """ Given a word ctm and a reference ctm, add reference words to word ctm.
-    This also modifies the reference ctm to indicate if a refernce
-    label was found (if boolen is present in the reference tuple)
-
-    :param ctm_word: word ctm (dictionary with  list of word tuples)
-    :param ctm_ref: reference ctm (dictionary with list of refernce tuples)
-    :return modified word ctm
-
-    Example for modified result_ctm:
-    result_ctm['c1lc021h'] = \
-        [(('MIHSTAH', 0.96, 1.26), ('MR.', 0.91, 1.26, False)),
-         (('MAYKUHD', 1.26, 1.64), ('MAUCHER', 1.26, 1.6, False))]
+    Get insertions, deletions and valid pairs. A pair is marked as insertion,
+    if a reference labelis assigned to multiple results. A pair is marked as
+    deletion, if a result is assigned to multiple references
+    :param res_ref: ctm with reference added to each entry
+    :return: list with indicators for each pair consisting of 'V' (valid),
+             'I' insertion and 'D' (deletion)
     """
-    return {id: mark_longest_duplicate_labels(
-            add_max_overlap_ref_to_word_entries(ctm_word[id], ctm_ref[id]))
-            for id in ctm_word if id in ctm_ref}
+    ins_del_valid = ['V'] * len(res_ref)
+
+    res_prev = None
+    res_max_overlap_duplicate = 0
+    res_max_overlap_duplicate_idx = -1
+
+    ref_prev = None
+    ref_max_overlap_duplicate = 0
+    ref_max_overlap_duplicate_idx = -1
+
+    for idx, (res, overlap, ref) in enumerate(res_ref):
+        if res != res_prev:
+            res_max_overlap_duplicate = overlap
+            res_max_overlap_duplicate_idx = idx
+        else:
+            if overlap > res_max_overlap_duplicate:
+                assert ins_del_valid[res_max_overlap_duplicate_idx] == 'V'
+                ins_del_valid[res_max_overlap_duplicate_idx] = 'D'
+                res_max_overlap_duplicate_idx = idx
+                res_max_overlap_duplicate = overlap
+            else:
+                assert ins_del_valid[idx] == 'V'
+                ins_del_valid[idx] = 'D'
+
+        res_prev = res
+
+        if ref != ref_prev:
+            ref_max_overlap_duplicate = overlap
+            ref_max_overlap_duplicate_idx = idx
+        else:
+            if overlap > ref_max_overlap_duplicate:
+                assert ins_del_valid[ref_max_overlap_duplicate_idx] == 'V'
+                ins_del_valid[ref_max_overlap_duplicate_idx] = 'I'
+                ref_max_overlap_duplicate_idx = idx
+                ref_max_overlap_duplicate = overlap
+            else:
+                assert ins_del_valid[idx] == 'V'
+                ins_del_valid[idx] = 'I'
+
+        ref_prev = ref
+
+    return ins_del_valid
 
 
-def get_confusion_matrix(result_ctm):
-    """ get confusion matrix from result ctm. The confusion matrix is stored as
-    a dictionary of dictionaries where the first dictionary is the discovered
-    class and the second dictionary the corresponding labels with corresponding
-    occurance count and accumulated overlap
+def allign_res_ref(res, ref):
+    """
+    allign reference to result transcription
+    :param res: list of resulting words
+    :param ref: list of reference words
+    :return: list with result, corresponding reference words and overlap:
+
+    Example:
+        [[('MIHSTAH', 0.95, 1.23), 0.27, ('MR.', 0.92, 1.22)],
+         [('JHEYKAHBZ', 1.23, 1.74), 0.51, ('JACOBS', 1.22, 1.75)]]
+    """
+    c_min, d_pair, c_acc, path = dtw(res, ref, get_overlap, overlap_to_cost)
+    return [[res[idx1], d_pair[idx1][idx2], ref[idx2]]
+            for idx1, idx2 in zip(path[0], path[1])]
+
+
+def get_conf_mat(res_ref, ins_del_valid):
+    """ get confusion matrix from result + reference ctm. The confusion matrix
+    is stored as a dictionary of dictionaries where the first dictionary is the
+    discovered class and the second dictionary the corresponding labels with
+    corresponding occurance count and accumulated overlap
 
     Example:
     conf_mat = \
         'AOTAH': {'OTHER': (1, 0.20), 'TO': (1, 0.14)},
         'GIHZ': {'GIVES': (1, 0.21), 'IS': (1, 0.18)},
 
-    :param result_ctm: result ctm
+    :param res_ref: result + reference ctm
+    :param ins_del_valid: list indicating valid pairs
     :return: confusion matrix
     """
     conf_mat = dict()
-    for sentence in result_ctm.values():
-        for found, ref in sentence:
-            if not ref[3]:
-                if found[0] not in conf_mat:
-                    conf_mat[found[0]] = dict()
+    for file, sentence in res_ref.items():
+        for idx, (res, overlap, ref) in enumerate(sentence):
+            if ins_del_valid is None or ins_del_valid[file][idx] == 'V':
+                if res[0] not in conf_mat:
+                    conf_mat[res[0]] = dict()
 
-                overlap = get_overlap(found, ref)
-
-                if ref[0] in conf_mat[found[0]]:
-                    conf_mat[found[0]][ref[0]] =\
-                        (conf_mat[found[0]][ref[0]][0] + 1,
-                         conf_mat[found[0]][ref[0]][1] + overlap)
+                if ref[0] in conf_mat[res[0]]:
+                    conf_mat[res[0]][ref[0]] =\
+                        (conf_mat[res[0]][ref[0]][0] + 1,
+                         conf_mat[res[0]][ref[0]][1] + overlap)
                 else:
-                    conf_mat[found[0]][ref[0]] = (1, overlap)
+                    conf_mat[res[0]][ref[0]] = (1, overlap)
 
     return conf_mat
 
 
-def mark_wrong_mappings(result_ctm, found_to_label_assignements, ref_ctm):
+def get_ins_del_cor_sub(res_ref, ins_del_valid, found_to_label):
     """ mark wrong mappings in result and reference ctm. Correct mappings will
     be marked as 'C' in reference and result ctm. Results with a duplicate
     reference will be marked as insertions ('I'). Unused references will be
     marked as deletions, wrong mappings will be marked as substitutions.
 
-    :param result_ctm: ctm with result/label pairs and the use of duplicate
-                       references marked
-    :param found_to_label_assignements: list with found to label mapping pairs
-                                        [('hlo', 'Hello'), ...]
-    :param ref_ctm: reference ctm
+    :param res_ref: ctm with result + reference pairs
+    :param ins_del_valid: list with indicators for each pair consisting of
+                          'V' (valid), 'I' insertion and 'D' (deletion)
+    :param found_to_label: dict with found to label mapping pairs
+                               {'hlo': 'Hello', ...}
+    :return: list with indicators for each pair consisting of 'C' (correct),
+             'I' (insertion), 'D' (deletion) and 'S' (substitution)
     """
-    found_to_label = {item[0]: item[1] for item in found_to_label_assignements}
-    for id, sentence in result_ctm.items():
-        # intialize reference label states to deleted
-        for ref_idx, ref_label in enumerate(ref_ctm[id]):
-            ref_ctm[id][ref_idx] = ref_label[:3] + ('D',)
+    ins_del_cor_sub = list(ins_del_valid)
 
-        # find insertions and substitutions in results
-        for idx, (found, ref) in enumerate(sentence):
-            res = 'C'
-            if ref[3]:
-                res = 'I'
-            elif (found[0] not in found_to_label) or\
-                    (found_to_label[found[0]] != ref[0]):
-                res = 'S'
+    # find insertions and substitutions in results
+    for idx, (res, overlap, ref) in enumerate(res_ref):
+        if ins_del_valid[idx] == 'V':
+            if res[0] in found_to_label and found_to_label[res[0]] == ref[0]:
+                ins_del_cor_sub[idx] = 'C'
+            else:
+                ins_del_cor_sub[idx] = 'S'
 
-            sentence[idx] = (found, ref[:3] + (res,))
-
-            # mark reference as correct or substitutions, if result was not an
-            # insertion
-            if res != 'I':
-                for ref_idx, ref_label in enumerate(ref_ctm[id]):
-                    if ref_label[:3] == ref[:3]:
-                        ref_ctm[id][ref_idx] = ref_label[:3] + (res,)
-                        break
+    return ins_del_cor_sub
 
 
-def get_unique_label_assigment(found_to_label_assigments, max_type=None,
-                               sort_type=None):
+def get_ins_del_sub_cor_p_r_f_sum(ins_del_cor_sub):
+    """ get number of correct, substituted, deleted and inserted labels as well
+    precision, recall, f-score
+
+    :param ins_del_cor_sub: list with state markings
+    :return: correct, substitutions, deletions, insertions
+             precision, recall, f-score
+    """
+    correct = 0
+    substitutions = 0
+    deletions = 0
+    insertions = 0
+    for sentence in ins_del_cor_sub.values():
+        for state in sentence:
+            if state == 'C':
+                correct += 1
+            if state == 'S':
+                substitutions += 1
+            if state == 'I':
+                insertions += 1
+            if state == 'D':
+                deletions += 1
+
+    precision = correct/(correct + substitutions + insertions)
+    recall = correct/(correct + substitutions + deletions)
+    fscore = 2*(precision*recall)/(precision+recall)
+
+    return insertions, deletions, substitutions,\
+           correct, precision, recall, fscore
+
+
+def get_unique_label_assignment(found_to_label_assigments, max_type=None,
+                                sort_type=None):
     """ Get best unique label assignment from label assignment (only keeps
         unique pairs with maximum overlap)
 
@@ -263,8 +440,8 @@ def get_unique_label_assigment(found_to_label_assigments, max_type=None,
            reverse_conf_mat
 
 
-def get_label_assignment(conf_mat, max_type=None, sort_type=None,
-                         map_type=None):
+def get_label_assignment(conf_mat, max_type='count', sort_type='count',
+                         map_type='Best'):
     """ derive label assignment from confusion matrix
 
     :param conf_mat: confusion matrix
@@ -303,38 +480,9 @@ def get_label_assignment(conf_mat, max_type=None, sort_type=None,
               for found, ref in conf_mat.items())
 
     if map_type == 'BestUnique':
-        return get_unique_label_assigment(assign, max_type, sort_type)[0]
+        return get_unique_label_assignment(assign, max_type, sort_type)[0]
 
     return sorted(assign, key=sort_key, reverse=True)
-
-
-def get_corr_sub_del_ins(result_ctm, ref_ctm):
-    """ get number of correct, substituted, deleted and inserted labels
-    See mark_wrong_mappings to create needed ctms
-
-    :param result_ctm: result ctm with marked wrong mappings
-    :param ref_ctm: reference ctm with marked wron mappeing
-    :return: correct, substitutions, deletions, insertions
-    """
-    correct = 0
-    substitutions = 0
-    deletions = 0
-    insertions = 0
-    for sentence in result_ctm.values():
-        for _, (_, _, _, state) in sentence:
-            if state == 'C':
-                correct += 1
-            if state == 'S':
-                substitutions += 1
-            if state == 'I':
-                insertions += 1
-
-    for sentence in ref_ctm.values():
-        for _, _, _, state in sentence:
-            if state == 'D':
-                deletions += 1
-
-    return correct, substitutions, deletions, insertions
 
 
 def get_max_overlap_sequence(word_entry, phoneme_entries):
