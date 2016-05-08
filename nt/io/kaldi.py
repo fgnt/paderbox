@@ -415,7 +415,7 @@ def read_trans_file(trans_file):
 
 def read_text_file(text_file):
     transcriptions = dict()
-    with open(text_file) as fid:
+    with open(text_file, encoding='utf-8') as fid:
         for line in fid:
             utt_id = line.split()[0]
             transcriptions[utt_id] = ' '.join(line.split()[1:]).strip()
