@@ -19,7 +19,7 @@ class IdentityFetcher(DataFetcher):
         return {self.name: numpy.asarray(list(indices))}
 
 
-class DataProviderFetcher(unittest.TestCase):
+class TestDataProviderMP(unittest.TestCase):
 
     def setUp(self):
         self.fetcher_1 = IdentityFetcher('X')
@@ -27,7 +27,8 @@ class DataProviderFetcher(unittest.TestCase):
         self.dp = DataProvider((self.fetcher_1, self.fetcher_2),
                                batch_size=2,
                                max_queue_size=5,
-                               shuffle_data=False)
+                               shuffle_data=False,
+                               backend='mp')
 
     def test_setup(self):
         self.assertEqual(len(self.dp), 5)
@@ -98,3 +99,15 @@ class DataProviderFetcher(unittest.TestCase):
         for col in df:
             for row in range(len(df[col])):
                 self.assertEqual(df[col][row], reference_df[col][row])
+
+
+class TestDataProviderT(TestDataProviderMP):
+
+    def setUp(self):
+        self.fetcher_1 = IdentityFetcher('X')
+        self.fetcher_2 = IdentityFetcher('Y')
+        self.dp = DataProvider((self.fetcher_1, self.fetcher_2),
+                               batch_size=2,
+                               max_queue_size=5,
+                               shuffle_data=False,
+                               backend='t')
