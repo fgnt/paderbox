@@ -24,11 +24,13 @@ class TestSTOI(unittest.TestCase):
         mlab = Mlab().process
         mlab.set_variable("x", x)
         mlab.set_variable("y", y)
-        mlab.run_code("xn = x-mean(x);"
-            "xn = xn/sqrt(sum(xn.^2));"
-            "yn = y-mean(y);"
-            "yn = yn/sqrt(sum(yn.^2));"
-            "rho = sum(xn.*yn);")
+        mlab.run_code("""
+            xn    	= x-mean(x);
+            xn  	= xn/sqrt(sum(xn.^2));
+            yn   	= y-mean(y);
+            yn    	= yn/sqrt(sum(yn.^2));
+            rho   	= sum(xn.*yn);
+        """)
         mlab_corr = mlab.get_variable("rho")
 
         # test
@@ -47,32 +49,38 @@ class TestSTOI(unittest.TestCase):
         mlab.set_variable("N_fft", nfft)
         mlab.set_variable("numBands", number_of_bands)
         mlab.set_variable("mn", first_center_frequency)
-        mlab.run_code_print("f = linspace(0, fs, N_fft+1);"
-                    "f = f(1:(N_fft/2+1));"
-                    "k = 0:(numBands-1); "
-                    "cf = 2.^(k/3)*mn;"
-                    "fl = sqrt((2.^(k/3)*mn).*2.^((k-1)/3)*mn);"
-                    "fr = sqrt((2.^(k/3)*mn).*2.^((k+1)/3)*mn);"
-                    "A = zeros(numBands, length(f));"
-                    "for i = 1:(length(cf))"
-                    "    [a b] = min((f-fl(i)).^2);"
-                    "    fl(i) = f(b);"
-                    "    fl_ii = b;"
-                    "    [a b] = min((f-fr(i)).^2);"
-                    "    fr(i) = f(b);"
-                    "    fr_ii = b;"
-                    "    A(i,fl_ii:(fr_ii-1))= 1;"
-                    "end;"
-                    "%rnk = sum(A, 2);"
-                    "%numBands = find((rnk(2:end)>=rnk(1:(end-1))) & (rnk(2:end)~=0)~=0, 1, 'last' )+1;"
-                    "%A = A(1:numBands, :);"
-                    "%cf = cf(1:numBands);")
+        mlab.run_code("""
+            f = linspace(0, fs, N_fft+1);
+            f = f(1:(N_fft/2+1));
+            k = 0:(numBands-1);
+            cf = 2.^(k/3)*mn;
+            fl = sqrt((2.^(k/3)*mn).*2.^((k-1)/3)*mn);
+            fr = sqrt((2.^(k/3)*mn).*2.^((k+1)/3)*mn);
+            A = zeros(numBands, length(f));
+
+            for i = 1:(length(cf))
+                [a b] = min((f-fl(i)).^2);
+                fl(i) = f(b);
+                fl_ii = b;
+
+	            [a b] = min((f-fr(i)).^2);
+                fr(i) = f(b);
+                fr_ii = b;
+                A(i,fl_ii:(fr_ii-1))= 1;
+            end
+
+            rnk         = sum(A, 2);
+            numBands  	= find((rnk(2:end)>=rnk(1:(end-1))) & (rnk(2:end)~=0)~=0, 1, 'last' )+1;
+            A           = A(1:numBands, :);
+            cf          = cf(1:numBands);
+            """)
 
         mlab_A = mlab.get_variable("A")
         mlab_cf = mlab.get_variable("cf")
 
         # python
-        (python_A, python_cf) = thirdoct(sample_rate, nfft, number_of_bands, first_center_frequency)
+        (python_A, python_cf) = thirdoct(sample_rate, nfft, number_of_bands,
+                                         first_center_frequency)
 
         # test
         tc.assert_equal(mlab_cf.flatten().shape, python_cf.shape)
@@ -84,11 +92,13 @@ class TestSTOI(unittest.TestCase):
     def test_stoi(self):
         processed = (self.x + 0.5*np.random.rand(1, self.x.shape[0])).flatten()
         mlab = Mlab().process
+        
         # Matlab
         mlab.set_variable("clean_signal", self.x)
         mlab.set_variable("processed_signal", processed)
         mlab.set_variable("sample_rate", self.sample_rate)
-        mlab.run_code("d = stoi(clean_signal, processed_signal, sample_rate);")
+        mlab.run_code(
+            "d = se.stoi(clean_signal, processed_signal, sample_rate);")
         mlab_d = mlab.get_variable("d")
 
         # Python
