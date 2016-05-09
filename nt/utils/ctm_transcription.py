@@ -601,3 +601,20 @@ def prune_ctm(ctm, min_num_char, min_duration):
                  if len(word_entry[0]) >= min_num_char
                  and word_entry[2] >= min_duration]
             for id, word_entries in ctm.items()}
+
+def write_clusters(ctm, out_file):
+    clusters = dict()
+    for file, sentence in ctm.items():
+        for word in sentence:
+            if word[0] not in clusters:
+                clusters[word[0]] = list()
+
+            clusters[word[0]].append((file, ) + word[1:])
+
+    with open(out_file, 'w') as fid:
+        for idx, words in enumerate(clusters.values()):
+            fid.write('Class {}\n'.format(idx))
+            for word in words:
+                fid.write('{} {} {}\n'.format(*word))
+
+            fid.write('\n')
