@@ -36,8 +36,11 @@ def mfcc(time_signal, sample_rate=16000,
         default is 0.
     :param highest_frequency: highest band edge of mel filters. In Hz,
         default is samplerate/2
-    :param preemphasis: apply preemphasis filter with preemph as coefficient.
-        0 is no filter. Default is 0.97.
+    :param preemphasis_factor: apply preemphasis filter with preemphasis_factor
+        as coefficient. 0 is no filter. Default is 0.97.
+    :param ceplifter: the liftering coefficient to use. Default is 22.
+        ceplifter <= 0 disables lifter.
+    :param window: the window function to use for fbank features
     :returns: A numpy array of size (NUMFRAMES by numcep) containing features.
         Each row holds 1 feature vector.
     """
