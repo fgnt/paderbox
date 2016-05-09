@@ -41,6 +41,12 @@ def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
         In Hz, default is samplerate/2
     :param preemphasis: apply preemphasis filter with preemph as coefficient.
         0 is no filter. Default is 0.97.
+    :param window: window function used for stft
+    :param use_librosa_mel: use the librosa filterbanks or use the own
+        implementations of the filterbanks (True: librosa)
+    :param use_htk_mel: whether to use the htk hz to mel conversion or not
+        (False is Slaney)
+    :param filter_normalization:
     :returns: Mel filterbank features.
     """
     highest_frequency = highest_frequency or sample_rate / 2
@@ -81,7 +87,7 @@ def get_filterbanks(number_of_filters=20, nfft=1024, sample_rate=16000,
 
     Source: https://github.com/jameslyons/python_speech_features
 
-    :param nfilt: the number of filters in the filterbank, default 20.
+    :param number_of_filters: the number of filters in the filterbank, default 20.
     :param nfft: the FFT size. Default is 1024.
     :param sample_rate: the samplerate of the signal we are working with.
         Affects mel spacing.
@@ -136,7 +142,8 @@ def mel2hz(mel):
 def logfbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
              number_of_filters=23, stft_size=512, lowest_frequency=0,
              highest_frequency=None, preemphasis_factor=0.97,
-             window=scipy.signal.hamming):
+             window=scipy.signal.hamming, use_librosa_mel=True,
+             use_htk_mel=False, filter_normalization=True):
     """Generates log fbank features from time signal.
 
     Simply wraps fbank function. See parameters there.
@@ -151,5 +158,8 @@ def logfbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
         lowest_frequency=lowest_frequency,
         highest_frequency=highest_frequency,
         preemphasis_factor=preemphasis_factor,
-        window=window
+        window=window,
+        use_librosa_mel=use_librosa_mel,
+        use_htk_mel=use_htk_mel,
+        filter_normalization=filter_normalization
     ))
