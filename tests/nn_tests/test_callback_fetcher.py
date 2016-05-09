@@ -2,6 +2,7 @@ from nt.nn.data_fetchers.callback_fetcher import CallbackDataFetcher
 import numpy as np
 import numpy.testing
 import unittest
+from nt.nn import data_provider
 
 
 class AlmostIdentityCallbackFetcher(CallbackDataFetcher):
@@ -58,3 +59,12 @@ class TestCallbackFetcher(unittest.TestCase):
     def test_frame_mode_length(self):
         df = AlmostIdentityCallbackFetcher('identity', mode='frames')
         assert len(df) == 100
+
+    def test_frame_mode_iterate(self):
+        df = AlmostIdentityCallbackFetcher('identity', mode='frames')
+        dp = data_provider.DataProvider((df,), 10)
+        for _ in dp.iterate(fork_fetchers=False):
+            pass
+        dp = data_provider.DataProvider((df,), 7)
+        for _ in dp.iterate(fork_fetchers=False):
+            pass
