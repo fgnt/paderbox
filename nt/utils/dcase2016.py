@@ -225,7 +225,7 @@ def make_input_test_arrays(json_data, flist, **kwargs):
                                   transform_features_test,
                                   sample_rate=sample_rate,
                                   feature_channels=['observed/ch1'],
-                                  transform_kwargs=kwargs)
+                                  transformatilon_kwargs=kwargs)
     scripts = list()
     dev_data = list()
     for idx in range(len(fetcher)):

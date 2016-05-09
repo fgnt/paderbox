@@ -9,7 +9,7 @@ import os
 
 import h5py
 import numpy as np
-from os.database.chime.chime import get_chime_data_provider_for_flist
+from nt.database.chime import get_data_provider_for_flist
 
 import nt.speech_enhancement.beamformer as bf
 from nt.evaluation import input_sxr, output_sxr
@@ -332,7 +332,7 @@ def write_result_to_h5_file(batch, utt_id, flist_name, nns, ems, data_dir,
 
 
 def get_result_for_flist_and_utt_id(flist, utt_id, nns, ems):
-    dp = get_chime_data_provider_for_flist(flist)
+    dp = get_data_provider_for_flist(flist)
     batch = get_batch_for_utt_id(dp, utt_id)
     result_dict = dict()
     y_dict = dict()
@@ -341,7 +341,7 @@ def get_result_for_flist_and_utt_id(flist, utt_id, nns, ems):
 
 
 def store_result_for_flist_and_utt_id(flist, utt_id, nns, ems, update=False):
-    dp = get_chime_data_provider_for_flist(flist)
+    dp = get_data_provider_for_flist(flist)
     batch = get_batch_for_utt_id(dp, utt_id)
     write_result_to_h5_file(batch, utt_id, flist, nns, ems, 'results_data',
                             update)
@@ -355,7 +355,7 @@ def collect_results(flist, result_dir,
         res_str = measure + '_'
     else:
         res_str = '{}_{}'.format(measure, beamformer)
-    dp = get_chime_data_provider_for_flist(flist, lambda x: x)
+    dp = get_data_provider_for_flist(flist, lambda x: x)
     utt_ids = get_available_utt_ids(dp)
     results = dict()
     for utt_id in utt_ids:

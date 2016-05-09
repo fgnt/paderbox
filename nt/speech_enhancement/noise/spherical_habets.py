@@ -55,7 +55,7 @@ from math import acos, sqrt
 from math import pi, sin, cos, ceil, floor
 
 import numpy
-from numpy import log2, zeros, real, conj, exp, hanning, fix
+from numpy import log2, zeros, real, conj, exp, hanning
 from numpy.fft import irfft as ifft
 from numpy.fft import fft as fft
 from numpy.random import randn

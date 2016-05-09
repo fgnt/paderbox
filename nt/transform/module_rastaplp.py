@@ -143,12 +143,12 @@ def linear_predictive_coding(x, modelorder = 8):
     r = r[1:nbands]
 
     # Find LPC coefficients by Levinson-Durbin
-    y, e = levinson(r, modelorder)  # does not work..
+    #y, e = levinson(r, modelorder)  # does not work..
 
     # Normalize each poly by gain
-    y = y.T / np.tile(e.T, (modelorder + 1, 1))
+    #y = y.T / np.tile(e.T, (modelorder + 1, 1))
 
-    return y
+    #return y
 
     
 def levinson(r, modelorder=8):
