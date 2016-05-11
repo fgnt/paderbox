@@ -49,6 +49,7 @@ class TestDataProviderMP(unittest.TestCase):
                                        numpy.asarray([idx*2, idx*2+1]))
             numpy.testing.assert_equal(batch_data['Y'],
                                        numpy.asarray([idx*2, idx*2+1]))
+        self.assertGreater(self.dp.t_get_batch, 0)
 
     def test_reset(self):
         self.test_iteration()
@@ -111,3 +112,14 @@ class TestDataProviderT(TestDataProviderMP):
                                max_queue_size=5,
                                shuffle_data=False,
                                backend='t')
+
+class TestDataProviderPyro(TestDataProviderMP):
+
+    def setUp(self):
+        self.fetcher_1 = IdentityFetcher('X')
+        self.fetcher_2 = IdentityFetcher('Y')
+        self.dp = DataProvider((self.fetcher_1, self.fetcher_2),
+                               batch_size=2,
+                               max_queue_size=5,
+                               shuffle_data=False,
+                               backend='pyro')
