@@ -12,6 +12,11 @@ class TestSTOI(unittest.TestCase):
         self.x = audioread(path)
         self.sample_rate = 16000
 
+    def test_stoi_range(self):
+        processed = (self.x + 0.5*np.random.rand(1, self.x.shape[0])).flatten()
+        d = stoi(self.x, processed, self.sample_rate)
+        tc.assert_(0 <= d <= 1, "STOI value has to be in range (0, 1)")
+
     @matlab_test
     def test_taa_corr_matlab(self):
         x = np.random.rand(1, 20)
