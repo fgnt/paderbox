@@ -299,7 +299,7 @@ def _import_alignment(ark, model_file, extract_cmd, is_zipped=True):
         src_param = 'ark:{ark}'.format(ark=ark)
     dest_param = 'ark,t:-'
     copy_process = subprocess.Popen(
-        [copy_cmd, model_file, src_param, dest_param],
+        [extract_cmd, model_file, src_param, dest_param],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE, env=get_kaldi_env())
     out, err = copy_process.communicate()
