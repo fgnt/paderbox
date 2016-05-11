@@ -4,40 +4,60 @@ from scipy.signal import lfilter
 from nt.transform import bark_fbank
 from nt.transform.module_bark_fbank import bark2hz, hz2bark
 
-def rasta_plp(time_signal, sample_rate=16000, modelorder = 8, do_rasta = True, window_length=400, stft_shift=160,
-              number_of_filters=23, stft_size = 512, lowest_frequency=0, highest_frequency=None, preempnasis_factor = 0,
-              window=scipy.signal.hamming, sum_power=True):
+def rasta_plp(time_signal, sample_rate=16000, modelorder = 8, do_rasta = True,
+              window_length=400, stft_shift=160, number_of_filters=23,
+              stft_size = 512, lowest_frequency=0, highest_frequency=None,
+              preempnasis_factor = 0, window=scipy.signal.hamming,
+              sum_power=True):
     """
-    Compute PLP features from an audio signal with optional RASTA filtering (enabled by default).
+    Compute PLP features from an audio signal with optional RASTA
+    (RelAtive SpecTrAl) filtering (enabled by default).
+
+    Currently this code only supports a modelorder of 0 (which means no linear
+    prediction is applied). It computes the bark_fbank features, does some
+    auditory compressions and optional applies RASTA filtering.
 
     Ported from Matlab (Source: http://labrosa.ee.columbia.edu/matlab/rastamat/)
+
     :param time_signal: the audio signal from which to compute features.
-    :param sample_rate: the samplerate of the signal we are working with
-    :param modelorder: Order of the PLP Model
-    :param do_rasta: enable RASTA-filtering
-    :param window_length: the length of the analysis window in samples for critical band analysis.
+    :param sample_rate: the samplerate of the signal we are working with.
+        Default is 16000.
+    :param modelorder: Order of the PLP Model. Currently only modelorder=0
+        supported.
+    :param do_rasta: enable RASTA-filtering. Default is True.
+    :param window_length: the length of the analysis window in samples for
+        critical band analysis.
         Default is 400 (25 milliseconds @ 16kHz)
     :param stft_shift: the step between successive windows in seconds.
-        Default is 0.01s (10 milliseconds)
+        Default is 160 (10 milliseconds @ 16kHz)
     :param number_of_filters: the number of filters in the filterbank,
-        default 23.
+        Default is 23.
     :param stft_size: the FFT size. Default is 512.
-    :param lowest_frequency: lowest band edge of mel filters.
-        In Hz, default is 0.
-    :param highest_frequency: highest band edge of mel filters.
-        In Hz, default is samplerate/2
-    :param preemphasis_factor: apply preemphasis filter with preemphasis_factor as coefficient.
+    :param lowest_frequency: lowest band edge of bark filters.
+        In Hz. Default is 0.
+    :param highest_frequency: highest band edge of bark filters.
+        In Hz. Default is samplerate/2
+    :param preemphasis_factor: apply preemphasis filter with preemphasis_factor
+        as coefficient.
         Default is 0: no filter. (As in Matlab)
-    :return: A numpy array containing features. Each row holds 1 feature vektor
+    :param window: window function used for stft. Default is hamming window.
+    :param sum_power: whether to sqrt the power spectrum prior to calculate the
+        bark features and transform them back with power of 2 or not.
+        Default is True.
+    :return: A numpy array of shape (frames, number_of_filters) containing
+        features. Each row holds 1 feature vektor.
     """
 
     highest_frequency = highest_frequency or sample_rate/2
 
     # Compute Citical Bands
-    aspectrum = bark_fbank(time_signal, sample_rate = sample_rate, window_length = window_length,
-                           window=window, stft_size=stft_size, stft_shift=stft_shift,
-                           number_of_filters = number_of_filters, lowest_frequency=lowest_frequency,
-                           highest_frequency=highest_frequency,preemphasis_factor=preempnasis_factor,
+    aspectrum = bark_fbank(time_signal, sample_rate = sample_rate,
+                           window_length = window_length, window=window,
+                           stft_size=stft_size, stft_shift=stft_shift,
+                           number_of_filters = number_of_filters,
+                           lowest_frequency=lowest_frequency,
+                           highest_frequency=highest_frequency,
+                           preemphasis_factor=preempnasis_factor,
                            sum_power=sum_power)
 
     # do optional RASTA filtering
@@ -68,10 +88,10 @@ def rasta_plp(time_signal, sample_rate=16000, modelorder = 8, do_rasta = True, w
 
 
 def filter_rasta(x):
-    """Apply RASTA filtering to the input signal.
+    """Apply RASTA filtering to the input signal. Default filter is single pole
+    at 0.94
 
     :param x: the input audio signal to filter.
-        default filter is single pole at 0.94
     :return: filtered signal
     """
 
@@ -86,30 +106,35 @@ def filter_rasta(x):
     y = np.zeros(x.shape)
     zf = np.zeros((x.shape[0], 4))
     for i in range(y.shape[0]):
-        y[i, :4], zf[i, :4] = lfilter(numerator, 1, x[i, :4], axis=-1, zi=[0, 0, 0, 0])
+        y[i, :4], zf[i, :4] = lfilter(numerator, 1, x[i, :4],
+                                      axis=-1, zi=[0, 0, 0, 0])
 
     # .. but don't keep any of these values, just output zero at the beginning
     y = np.zeros(x.shape)
 
     # Apply the full filter to the rest of the signal, append it
     for i in range(y.shape[0]):
-        y[i, 4:] = lfilter(numerator, denominator, x[i, 4:], axis=-1, zi=zf[i, :])[0]
+        y[i, 4:] = lfilter(numerator, denominator, x[i, 4:],
+                           axis=-1, zi=zf[i, :])[0]
 
     return y.T
 
 def postaud(x, highest_frequency):
     """
     Do loudness equalization (Hynek) and cube root compression.
-    :param x: Critical band filters
-    :param highest_frequency:
-    :return:
+
+    :param x: bark spectrum to equalize and compress.
+    :param highest_frequency: highest band edge of bark filters.
+    :return: np array of same shape as x containing equalized and compressed
+        bark spectrum.
     """
     nframes, nbands = x.shape
 
     # Include frequency points at extremes, discard later
     number_of_frequency_points = nbands
 
-    bandcfhz = bark2hz(np.linspace(0, hz2bark(highest_frequency), number_of_frequency_points))
+    bandcfhz = bark2hz(np.linspace(0, hz2bark(highest_frequency),
+                                   number_of_frequency_points))
 
     # Hynek's magic equal-loudness-curve formula
     fsq = bandcfhz**2
@@ -149,6 +174,7 @@ def linear_predictive_coding(x, modelorder = 8):
     #y = y.T / np.tile(e.T, (modelorder + 1, 1))
 
     #return y
+    return 0
 
     
 def levinson(r, modelorder=8):

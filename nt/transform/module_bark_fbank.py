@@ -11,24 +11,30 @@ def bark_fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160
 
     Compute Bark-filterbank energy features from an audio signal.
 
-    Source: Source: http://labrosa.ee.columbia.edu/matlab/rastamat/
+    Source: http://labrosa.ee.columbia.edu/matlab/rastamat/
 
-    :param time_signal:
-    :param sample_rate: the sample rate of the time_signal
+    :param time_signal: the audio signal from which to compute the features.
+        Should be a N*1 array.
+    :param sample_rate: the sample rate of the time_signal.
     :param window_length: the length of the analysis window in samples.
-        Default is 400 (25 milliseconds @ 16kHz)
-    :param stft_shift: the step between successive windows in seconds.
-        Default is 0.01s (10 milliseconds)
-    :param number_of_filters: the number of filters in the filterbank,
-        default 23.
+        Default is 400 (25 milliseconds @ 16kHz).
+    :param stft_shift: the step between successive windows in samples.
+        Default is 160 (10 milliseconds @ 16kHz).
+    :param number_of_filters: the number of filters in the bark filterbank,
+        Default is 23 (one per bark).
     :param stft_size: the FFT size. Default is 512.
-    :param lowest_frequency: lowest band edge of mel filters.
-        In Hz, default is 0.
-    :param highest_frequency: highest band edge of mel filters.
-        In Hz, default is samplerate/2
+    :param lowest_frequency: lowest band edge of bark filters.
+        In Hz. Default is 0.
+    :param highest_frequency: highest band edge of bark filters.
+        In Hz. Default is samplerate/2.
     :param preemphasis_factor: apply preemphasis filter with preemphasis_factor
         as coefficient. 0 is no filter. Default is 0.97.
-    :return: Bark features
+    :param window: window function used for stft. Default is hamming window.
+    :param sum_power: whether to sqrt the power spectrum prior to calculate the
+        features and transform them back with power of 2 or not.
+        Default is True.
+    :return: A numpy array with shape (frames by number_of_filters) containing
+        the Bark features. Each row holds one feature vector.
     """
 
     #
@@ -71,13 +77,13 @@ def get_bark_filterbanks(nfft, sample_rate=16000, number_of_filters=23, width=1,
 	While the matrix has nfft columns, the second half are all zero.
     Hence, Bark spectrum is fft2barkmx(nfft,sampling_rate)*stft(xincols,nfft)
 
-	:param nfft: source FFT size at sampling rate sampling_rate
-	:param sample_rate: sample rate of the FFT signal
-	:param number_of_filters: number of output bands required
-	    (default one per bark -> 23)
- 	:param width: constant width of each band in Bark
-	:param lowest_frequency: minimum frequency of FFT in hz
-	:param highest_frequency: maximum frequency of FFT in hz
+	:param nfft: source FFT size at sample rate sampling_rate.
+	:param sample_rate: sample rate of the FFT signal. Default is 16000.
+	:param number_of_filters: number of output bands required.
+	    Default is 23 (one per bark).
+ 	:param width: constant width of each band in Bark. Default is 1.
+	:param lowest_frequency: minimum frequency of FFT in Hz. Default is 0.
+	:param highest_frequency: maximum frequency of FFT in Hz. Default is 8000.
     """
 
     min_bark = hz2bark(lowest_frequency)

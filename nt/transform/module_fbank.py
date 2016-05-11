@@ -27,11 +27,11 @@ def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
 
     :param time_signal: the audio signal from which to compute features.
         Should be an N*1 array
-    :param sample_rate: the samplerate of the signal we are working with.
+    :param sample_rate: the sample rate of the signal we are working with.
     :param window_length: the length of the analysis window in samples.
         Default is 400 (25 milliseconds @ 16kHz)
-    :param stft_shift: the step between successive windows in seconds.
-        Default is 0.01s (10 milliseconds)
+    :param stft_shift: the step between successive windows in samples.
+        Default is 160 (10 milliseconds @ 16kHz)
     :param number_of_filters: the number of filters in the filterbank,
         default 23.
     :param stft_size: the FFT size. Default is 512.
@@ -43,11 +43,12 @@ def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
         0 is no filter. Default is 0.97.
     :param window: window function used for stft
     :param use_librosa_mel: use the librosa filterbanks or use the own
-        implementations of the filterbanks (True: librosa)
+        implementations of the filterbanks. Default is True: use librosa.
     :param use_htk_mel: whether to use the htk hz to mel conversion or not
-        (False is Slaney)
+        (False is Slaney). Default is False.
     :param filter_normalization:
-    :returns: Mel filterbank features.
+    :returns: A numpy array of size (frames by number_of_filters) containing the
+        Mel filterbank features.
     """
     highest_frequency = highest_frequency or sample_rate / 2
     time_signal = preemphasis_with_offset_compensation(
@@ -87,13 +88,14 @@ def get_filterbanks(number_of_filters=20, nfft=1024, sample_rate=16000,
 
     Source: https://github.com/jameslyons/python_speech_features
 
-    :param number_of_filters: the number of filters in the filterbank, default 20.
+    :param number_of_filters: the number of filters in the filterbank.
+        Default is 20.
     :param nfft: the FFT size. Default is 1024.
     :param sample_rate: the samplerate of the signal we are working with.
         Affects mel spacing.
-    :param lowfreq: lowest band edge of mel filters, default 0 Hz
-    :param highfreq: highest band edge of mel filters, default samplerate/2
-    :returns: A numpy array of size nfilt * (nfft/2 + 1) containing filterbank.
+    :param lowfreq: lowest band edge of mel filters, Default 0 Hz.
+    :param highfreq: highest band edge of mel filters, Default is samplerate/2.
+    :returns: A numpy array of size nfilt by (nfft/2 + 1) containing filterbank.
         Each row holds 1 filter.
     """
     highfreq = highfreq or sample_rate / 2
