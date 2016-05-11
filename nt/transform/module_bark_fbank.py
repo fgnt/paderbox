@@ -101,7 +101,7 @@ def get_bark_filterbanks(nfft, sample_rate=16000, number_of_filters=23, width=1,
         # Linear slopes in log-space (i.e. dB) intersect to trapezoidal window
         lof = binbarks - f_bark_mid - 0.5
         hif = binbarks - f_bark_mid + 0.5
-        W[i, 0:(nfft / 2) + 1] = \
+        W[i, 0:(nfft // 2) + 1] = \
             10 ** (np.minimum(0, np.minimum(hif / width, lof * (-2.5 / width))))
 
     return W
