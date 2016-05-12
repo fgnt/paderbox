@@ -274,9 +274,10 @@ def combine_flists(data, flist_1_path, flist_2_path, flist_path,
     flist_1 = traverse_to_dict(data, flist_1_path, delimiter)
     flist_2 = traverse_to_dict(data, flist_2_path, delimiter)
 
-    assert len(set(list(flist_1.keys())+list(flist_2.keys()))) \
-        == len(flist_1) + len(flist_2), \
-        'The ids in the file lists must be unique.'
+    if postfix_1 == '' and postfix_2 == '':
+        assert len(set(list(flist_1.keys())+list(flist_2.keys()))) \
+            == len(flist_1) + len(flist_2), \
+            'The ids in the file lists must be unique.'
 
     channels_flist_1 = get_available_channels(traverse_to_dict(
         data, flist_1_path, delimiter

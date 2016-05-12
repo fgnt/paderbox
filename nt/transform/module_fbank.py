@@ -27,11 +27,11 @@ def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
 
     :param time_signal: the audio signal from which to compute features.
         Should be an N*1 array
-    :param sample_rate: the samplerate of the signal we are working with.
+    :param sample_rate: the sample rate of the signal we are working with.
     :param window_length: the length of the analysis window in samples.
         Default is 400 (25 milliseconds @ 16kHz)
-    :param stft_shift: the step between successive windows in seconds.
-        Default is 0.01s (10 milliseconds)
+    :param stft_shift: the step between successive windows in samples.
+        Default is 160 (10 milliseconds @ 16kHz)
     :param number_of_filters: the number of filters in the filterbank,
         default 23.
     :param stft_size: the FFT size. Default is 512.
@@ -41,7 +41,14 @@ def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
         In Hz, default is samplerate/2
     :param preemphasis: apply preemphasis filter with preemph as coefficient.
         0 is no filter. Default is 0.97.
-    :returns: Mel filterbank features.
+    :param window: window function used for stft
+    :param use_librosa_mel: use the librosa filterbanks or use the own
+        implementations of the filterbanks. Default is True: use librosa.
+    :param use_htk_mel: whether to use the htk hz to mel conversion or not
+        (False is Slaney). Default is False.
+    :param filter_normalization:
+    :returns: A numpy array of size (frames by number_of_filters) containing the
+        Mel filterbank features.
     """
     highest_frequency = highest_frequency or sample_rate / 2
     time_signal = preemphasis_with_offset_compensation(
@@ -81,13 +88,14 @@ def get_filterbanks(number_of_filters=20, nfft=1024, sample_rate=16000,
 
     Source: https://github.com/jameslyons/python_speech_features
 
-    :param nfilt: the number of filters in the filterbank, default 20.
+    :param number_of_filters: the number of filters in the filterbank.
+        Default is 20.
     :param nfft: the FFT size. Default is 1024.
     :param sample_rate: the samplerate of the signal we are working with.
         Affects mel spacing.
-    :param lowfreq: lowest band edge of mel filters, default 0 Hz
-    :param highfreq: highest band edge of mel filters, default samplerate/2
-    :returns: A numpy array of size nfilt * (nfft/2 + 1) containing filterbank.
+    :param lowfreq: lowest band edge of mel filters, Default 0 Hz.
+    :param highfreq: highest band edge of mel filters, Default is samplerate/2.
+    :returns: A numpy array of size nfilt by (nfft/2 + 1) containing filterbank.
         Each row holds 1 filter.
     """
     highfreq = highfreq or sample_rate / 2
@@ -136,7 +144,8 @@ def mel2hz(mel):
 def logfbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
              number_of_filters=23, stft_size=512, lowest_frequency=0,
              highest_frequency=None, preemphasis_factor=0.97,
-             window=scipy.signal.hamming):
+             window=scipy.signal.hamming, use_librosa_mel=True,
+             use_htk_mel=False, filter_normalization=True):
     """Generates log fbank features from time signal.
 
     Simply wraps fbank function. See parameters there.
@@ -151,5 +160,8 @@ def logfbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
         lowest_frequency=lowest_frequency,
         highest_frequency=highest_frequency,
         preemphasis_factor=preemphasis_factor,
-        window=window
+        window=window,
+        use_librosa_mel=use_librosa_mel,
+        use_htk_mel=use_htk_mel,
+        filter_normalization=filter_normalization
     ))

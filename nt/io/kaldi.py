@@ -88,18 +88,17 @@ RAW_FBANK_DELTA_CMD = KALDI_ROOT + '/src/featbin/' + \
                       --use-log-fbank={use_log_fbank} --window-type={window_type} \
                       scp,p:{wav_scp} ark:- | add-deltas ark:- ark,scp:{dst_ark},{dst_scp}"""
 
-
 RAW_FBANK_PIPE_CMD = KALDI_ROOT + '/src/featbin/' + \
-                r"""compute-fbank-feats --num-mel-bins={num_mel_bins} \
-                --low-freq={low_freq} --high-freq={high_freq} --use-energy={use_energy} \
-                --use-log-fbank={use_log_fbank} --window-type={window_type} \
-                ark:- ark:-"""
+                     r"""compute-fbank-feats --num-mel-bins={num_mel_bins} \
+                     --low-freq={low_freq} --high-freq={high_freq} --use-energy={use_energy} \
+                     --use-log-fbank={use_log_fbank} --window-type={window_type} \
+                     ark:- ark:-"""
 
 RAW_FBANK_DELTA_PIPE_CMD = KALDI_ROOT + '/src/featbin/' + \
-                      r"""compute-fbank-feats --num-mel-bins={num_mel_bins} \
-                      --low-freq={low_freq} --high-freq={high_freq} --use-energy={use_energy}  \
-                      --use-log-fbank={use_log_fbank} --window-type={window_type} \
-                      ark:- ark:- | add-deltas ark:- ark:-"""
+                           r"""compute-fbank-feats --num-mel-bins={num_mel_bins} \
+                           --low-freq={low_freq} --high-freq={high_freq} --use-energy={use_energy}  \
+                           --use-log-fbank={use_log_fbank} --window-type={window_type} \
+                           ark:- ark:- | add-deltas ark:- ark:-"""
 
 
 def make_mfcc_features(wav_scp, dst_dir, num_mel_bins, num_ceps, low_freq=20,
@@ -280,21 +279,22 @@ def read_ark_mat(ark, pos):
     return utt_mat
 
 
-def import_alignment_data(ark, model_file, is_zipped=True):
-    """ Read data from a kaldi ark file.
+def _import_alignment(ark, model_file, extract_cmd, extract_cmd_finish,
+                      is_zipped=True):
+    """ Read alignment data file.
 
-    Since the binary form is not documented and may change in future release,
-    a kaldi tool (ali-to-pdf) is used to first create a ark file in text mode.
+        Can read either phones or pdfs depending on the copy_cmd.
 
-    :param ark: The ark file to read
-    :param model_file: Model file used to create the alignments. This is needed
-        to extract the pdf ids
-    :param copy_feats: The location of the kaldi tool `copy-feats`
-    :return: A dictionary with the file ids as keys and their data as values
-    """
-
-    copy_cmd = '/net/ssd/software/kaldi/src/bin/ali-to-pdf'
-
+        :param ark: The ark file to read
+        :param model_file: Model file used to create the alignments. This is needed
+            to extract the pdf ids
+        :param extract_cmd: Command to extract the alignment. Can be either
+            ali-to-pdf or ali-to-phones
+        :param extract_cmd_finish: Success output of the extraction command
+            (i.e. Done or Converted)
+        :param copy_feats: The location of the kaldi tool `copy-feats`
+        :return: A dictionary with the file ids as keys and their data as values
+        """
     data = dict()
     if is_zipped:
         src_param = 'ark:gunzip -c {ark} |'.format(ark=ark)
@@ -302,28 +302,63 @@ def import_alignment_data(ark, model_file, is_zipped=True):
         src_param = 'ark:{ark}'.format(ark=ark)
     dest_param = 'ark,t:-'
     copy_process = subprocess.Popen(
-        [copy_cmd, model_file, src_param, dest_param],
+        [extract_cmd, model_file, src_param, dest_param],
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE)
+        stderr=subprocess.PIPE, env=get_kaldi_env())
     out, err = copy_process.communicate()
-    if copy_process.returncode != 0:
-        raise ValueError("Returncode of ali-to-pdf was != 0. Stderr "
-                         "output is:\n{}".format(err))
-    out = out.decode('utf-8')
-    err = err.decode('utf-8')
-    pos = err.find('Converted') + 1 + len('Converted')
-    matrix_number = int(err[pos:].split()[0])
-    for line in out.split('\n'):
-        split = line.split()
-        if len(split) > 0:
-            utt_id = split[0]
-            ali = np.asarray(split[1:], dtype=np.int32)
-            data[utt_id] = ali
+    try:
+        if copy_process.returncode != 0:
+            raise ValueError("Returncode of{} was != 0. Stderr "
+                             "output is:\n{}".format(extract_cmd, err))
+        out = out.decode('utf-8')
+        err = err.decode('utf-8')
+        pos = err.find(extract_cmd_finish) + 1 + len(extract_cmd_finish)
+        matrix_number = int(err[pos:].split()[0])
+        for line in out.split('\n'):
+            split = line.split()
+            if len(split) > 0:
+                utt_id = split[0]
+                ali = np.asarray(split[1:], dtype=np.int32)
+                data[utt_id] = ali
+    except Exception as e:
+        print('Exception during reading the alignments: {}'.format(e))
+        print('Stderr: {}'.format(err))
     assert len(data) == matrix_number, \
-        'ali-to-pdf converted {num_matrix} alignments, ' \
+        '{cmd} converted {num_matrix} alignments, ' \
         'but we read {num_data}'. \
-            format(num_matrix=matrix_number, num_data=len(data))
+            format(cmd=extract_cmd,
+                   num_matrix=matrix_number, num_data=len(data))
     return data
+
+
+def import_alignment_data(ark, model_file, is_zipped=True):
+    """Import alignments as pdf ids
+
+    Since the binary form is not documented and may change in future release,
+    a kaldi tool (ali-to-pdf) is used to first create a ark file in text mode.
+
+    :param ark: The ark file to read
+    :param model_file: Model file used to create the alignments. This is needed
+        to extract the pdf ids
+    :return: A dictionary with the file ids as keys and their data as values
+    """
+    _cmd = 'ali-to-pdf'
+    return _import_alignment(ark, model_file, _cmd, 'Converted', is_zipped)
+
+
+def import_phone_alignment_data(ark, model_file, is_zipped=True):
+    """Import alignments as phone ids
+
+    Since the binary form is not documented and may change in future release,
+    a kaldi tool (ali-to-pdf) is used to first create a ark file in text mode.
+
+    :param ark: The ark file to read
+    :param model_file: Model file used to create the alignments. This is needed
+        to extract the pdf ids
+    :return: A dictionary with the file ids as keys and their data as values
+    """
+    _cmd = 'ali-to-phones'
+    return _import_alignment(ark, model_file, _cmd, 'Done', is_zipped)
 
 
 def _write_array_for_kaldi(utt_id, array, fid, close_stream=False):
@@ -422,19 +457,41 @@ def read_text_file(text_file):
     return transcriptions
 
 
-def import_alignment(ali_dir, model_file):
+def import_alignment(ali_dir, model_file=None):
     """ Imports an alignments (pdf-ids)
 
     :param ali_dir: Directory containing the ali.* files
     :param model_file: Model used to create the alignments
     :return: Dict with utterances as key and alignments as value
     """
+
+    if model_file is None:
+        model_file = os.path.join(ali_dir, 'final.mdl')
     data_dict = dict()
     print('Importing alignments')
     for file in os.listdir(ali_dir):
         if file.startswith('ali'):
             ali_file = os.path.join(ali_dir, file)
             data_dict.update(import_alignment_data(ali_file, model_file))
+    return data_dict
+
+
+def import_phone_alignment(ali_dir, model_file=None):
+    """ Imports an alignments (phone-ids)
+
+    :param ali_dir: Directory containing the ali.* files
+    :param model_file: Model used to create the alignments
+    :return: Dict with utterances as key and alignments as value
+    """
+
+    if model_file is None:
+        model_file = os.path.join(ali_dir, 'final.mdl')
+    data_dict = dict()
+    print('Importing alignments')
+    for file in os.listdir(ali_dir):
+        if file.startswith('ali'):
+            ali_file = os.path.join(ali_dir, file)
+            data_dict.update(import_phone_alignment_data(ali_file, model_file))
     return data_dict
 
 
@@ -523,8 +580,8 @@ def audioread_scp(scp, utt_ids, offset=0, duration=None, sample_rate=16000):
 def make_fbank_features_from_time_signal(time_signal, num_mel_bins,
                                          low_freq=20, high_freq=-400,
                                          add_deltas=True, use_energy=False,
-                                         use_log_fbank=True, window_type="povey"):
-
+                                         use_log_fbank=True,
+                                         window_type="povey"):
     audio_data = BytesIO()
     audiowrite(time_signal, audio_data, normalize=True, threaded=False)
 

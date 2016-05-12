@@ -121,7 +121,10 @@ def print_annotated_nvidia_smi():
             print('')
         elif relative_position == 2:
             pid = line.split()[2]
-            print('', get_user_from_pid(pid))
+            if 'Not Supported' in line:
+                print('')
+            else:
+                print('', get_user_from_pid(pid))
         else:
             print('')
 

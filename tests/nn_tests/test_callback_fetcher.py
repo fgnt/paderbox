@@ -63,8 +63,19 @@ class TestCallbackFetcher(unittest.TestCase):
     def test_frame_mode_iterate(self):
         df = AlmostIdentityCallbackFetcher('identity', mode='frames')
         dp = data_provider.DataProvider((df,), 10)
-        for _ in dp.iterate(fork_fetchers=False):
-            pass
+        for batch in dp.iterate(fork_fetchers=False):
+            assert 'X' in batch
         dp = data_provider.DataProvider((df,), 7)
-        for _ in dp.iterate(fork_fetchers=False):
-            pass
+        for batch in dp.iterate(fork_fetchers=False):
+            assert 'X' in batch
+
+    def test_frame_mode_iterate_fork(self):
+        df = AlmostIdentityCallbackFetcher('identity', mode='frames')
+        dp = data_provider.DataProvider((df,), 10)
+        for batch in dp.iterate(fork_fetchers=True):
+            assert 'X' in batch
+        dp = data_provider.DataProvider((df,), 7)
+        for batch in dp.iterate(fork_fetchers=True):
+            if not 'X' in batch:
+                print(batch)
+            assert 'X' in batch

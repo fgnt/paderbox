@@ -26,20 +26,22 @@ def ssc(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
     :param time_signal: the audio signal from which to compute features.
         Should be an N*1 array
     :param sample_rate: the samplerate of the signal we are working with.
-    :param window_length: the length of the analysis window in seconds.
-        Default is 0.025s (25 milliseconds)
-    :param winstep: the step between successive windows in seconds.
-        Default is 0.01s (10 milliseconds)
+    :param window_length: the length of the analysis window in samples.
+        Default is 400 (25 milliseconds @ 16kHz)
+    :param stft_shift: the step between successive windows in samples.
+        Default is 160 (10 milliseconds @ 16kHz)
     :param number_of_filters: the number of filters in the filterbank,
-        default 26.
+        Default is 26.
     :param stft_size: the FFT size. Default is 512.
     :param lowest_frequency: lowest band edge of mel filters. In Hz,
-        default is 0.
+        Default is 0.
     :param highest_frequency: highest band edge of mel filters.
-        In Hz, default is samplerate/2
-    :param preemphasis: apply preemphasis filter with preemph as coefficient.
-        0 is no filter. Default is 0.97.
-    :returns: A numpy array of size (NUMFRAMES by nfilt) containing features.
+        In Hz. Default is samplerate/2
+    :param preemphasis_factor: apply preemphasis filter with preemphasis_factor
+        as coefficient. 0 is no filter. Default is 0.97.
+    :param window: The window function used by stft.
+    :returns: A numpy array of size (NUMFRAMES by number_of_filters) containing
+        features.
         Each row holds 1 feature vector.
     """
     highest_frequency = highest_frequency or sample_rate / 2
