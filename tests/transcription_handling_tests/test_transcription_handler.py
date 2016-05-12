@@ -41,7 +41,7 @@ class TestTransHandler(unittest.TestCase):
         th = TranscriptionHandler(self.lexicon, oov_word="<unk>")
 
         word_seq = ["ab", "c", "def", "g"]
-        label_seq = th.words2tokens(word_seq, map_to_int=False)
+        label_seq = th.prepare_target(word_seq, to_int=False)
 
         expected = ["a", "b", "c", "d", "e", "f", "<unk>"]
         self.assertEqual(expected, label_seq)
@@ -50,7 +50,7 @@ class TestTransHandler(unittest.TestCase):
         th = TranscriptionHandler(self.lexicon, mandatory_tokens=["<blank>", ])
 
         word_seq = ["ab", "c", "def"]
-        label_seq = th.words2tokens(word_seq)
+        label_seq = th.prepare_target(word_seq)
 
         expected = range(1, 7)  # expecting a sorted label mapping here
         tc.assert_array_equal(expected, label_seq)
@@ -61,8 +61,8 @@ class TestTransHandler(unittest.TestCase):
         th2.insert_token("<eps>", 0)
 
         word_seq = ["ab", "c", "def"]
-        label_seq_1 = th1.words2tokens(word_seq)
-        label_seq_2 = th2.words2tokens(word_seq)
+        label_seq_1 = th1.prepare_target(word_seq)
+        label_seq_2 = th2.prepare_target(word_seq)
 
         tc.assert_array_equal(label_seq_1 + 1, label_seq_2)
 
@@ -72,7 +72,7 @@ class TestTransHandler(unittest.TestCase):
         disambs = th.add_disambigs()
         self.assertEqual(disambs, ["#1", ])
         expected = ["test", "#1"]
-        self.assertEqual(expected, th.lexicon["test"])
+        self.assertEqual(expected, th.prepare_target(["test"], to_int=False))
 
     def test_clean_up(self):
         th = TranscriptionHandler(self.lexicon)

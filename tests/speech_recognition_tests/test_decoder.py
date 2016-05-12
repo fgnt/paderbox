@@ -126,10 +126,10 @@ class TestDecoder(unittest.TestCase):
     # @unittest.skip("")
     def test_compare_argmax_ctc(self):
 
-        trans_handler = TranscriptionHandler(["a", "b", "c", "d"],
+        trans_handler = TranscriptionHandler(["a", "b"],
                                              mandatory_tokens=["<blank>", ])
 
-        nn = BLSTMModel(10, 5, 2, 32)
+        nn = BLSTMModel(10, 3, 2, 32)
         model_input = \
             np.random.uniform(0, 1, size=(20, 1, 10)).astype(np.float32)
         net_out = nn.propagate(nn.data_to_variable(model_input))
