@@ -71,14 +71,15 @@ def rasta_plp(time_signal, sample_rate=16000, modelorder = 8, do_rasta = True,
     # Linear predictive coding
     modelorder = 0  # Ensure this doesn't get executed
     if modelorder > 0:  # This does not work yet
+        pass
         # LPC analysis
-        lpcas = linear_predictive_coding(postspectrum, modelorder)
+        #lpcas = linear_predictive_coding(postspectrum, modelorder)
 
         # Convert to cepstra
-        cepstra = lpc2cep(lpcas, modelorder + 1)
+        #cepstra = lpc2cep(lpcas, modelorder + 1)
 
         # or to spectra
-        spectra = lpc2spec(lpcas, aspectrum.shape[1])
+        #spectra = lpc2spec(lpcas, aspectrum.shape[1])
     else:
         # No LPC smolthing of spectrum
         spectra = postspectrum
