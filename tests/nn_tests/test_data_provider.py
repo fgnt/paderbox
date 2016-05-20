@@ -16,7 +16,7 @@ class IdentityFetcher(DataFetcher):
         return self.len
 
     def get_data_for_indices(self, indices):
-        return {self.name: numpy.asarray(list(indices))}
+        return {self.name: numpy.asarray(indices)}
 
 
 class TestDataProviderMP(unittest.TestCase):
@@ -83,6 +83,10 @@ class TestDataProviderMP(unittest.TestCase):
         data = self.dp[[(0, 2, 4)]]
         numpy.testing.assert_equal(data['X'], numpy.asarray([0, 2, 4]))
         numpy.testing.assert_equal(data['Y'], numpy.asarray([0, 2, 4]))
+
+    def test_get_item_slice(self):
+        data = self.dp[2:3]
+        numpy.testing.assert_equal(data[0]['X'], numpy.asarray([2]))
 
     def test_data_shapes(self):
         s = self.dp.get_data_shapes()
