@@ -75,7 +75,12 @@ class TestDataProviderMP(unittest.TestCase):
         numpy.testing.assert_equal(data['Y'], numpy.asarray([0]))
 
     def test_get_indices(self):
-        data = self.dp.get_data_for_indices_tuple([(0, 2, 4)])
+        data = self.dp.get_data_for_indices_tuple((0, 2, 4))
+        numpy.testing.assert_equal(data['X'], numpy.asarray([0, 2, 4]))
+        numpy.testing.assert_equal(data['Y'], numpy.asarray([0, 2, 4]))
+
+    def test_get_item(self):
+        data = self.dp[[(0, 2, 4)]]
         numpy.testing.assert_equal(data['X'], numpy.asarray([0, 2, 4]))
         numpy.testing.assert_equal(data['Y'], numpy.asarray([0, 2, 4]))
 
