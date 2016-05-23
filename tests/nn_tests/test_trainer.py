@@ -15,6 +15,7 @@ from chainer.testing import attr
 
 from nt.nn import DataProvider
 from nt.nn import Trainer
+from nt.nn.trainer import Hook
 from nt.nn.data_fetchers import ArrayDataFetcher
 from nt.nn.training_status_utils import status_dict
 
@@ -48,6 +49,28 @@ class DummyNetwork(Chain):
             net=self.forward(**kwargs),
             a=a,
             b=b)
+
+
+class CountingHook(Hook):
+
+    def __init__(self):
+        super().__init__()
+        self.count = 0
+
+    def __call__(self, trainer: Trainer):
+        self.count += 1
+
+
+class BatchCheckHook(Hook):
+
+    def __init__(self):
+        super().__init__()
+        self.tr_batches = 0
+        self.cv_batches = 0
+
+    def __call__(self, trainer: Trainer):
+        self.tr_batches = trainer.training_status.total_training_batches
+        self.cv_batches = trainer.training_status.total_cv_batches
 
 
 class TrainerTest(unittest.TestCase):
@@ -100,6 +123,23 @@ class TrainerTest(unittest.TestCase):
             self.nn.l2.W.data)
         self.trainer._reset_gradients()
         nptest.assert_equal(self.nn.l2.W.grad, np.zeros((5, 3)))
+
+    def test_hooks(self):
+        tr_hook = CountingHook()
+        cv_hook = CountingHook()
+        pre_hook_tr = BatchCheckHook()
+        post_hook_tr = BatchCheckHook()
+        pre_hook_cv = BatchCheckHook()
+        post_hook_cv = BatchCheckHook()
+        self.trainer.add_tr_hooks(tr_hook, pre_hook_tr, post_hook_tr)
+        self.trainer.add_cv_hooks(cv_hook, pre_hook_cv, post_hook_cv)
+        self.trainer.test_run()
+        self.assertEqual(tr_hook.count, 1)
+        self.assertEqual(cv_hook.count, 1)
+        self.assertEqual(pre_hook_tr.tr_batches, 0)
+        self.assertEqual(post_hook_tr.tr_batches, 0)
+        self.assertEqual(pre_hook_cv.cv_batches, 0)
+        self.assertEqual(post_hook_cv.cv_batches, 0)
 
     def test_tr_kwargs_called(self):
         self.trainer.optimizer.setup(self.nn)
