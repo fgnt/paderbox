@@ -66,7 +66,7 @@ class TestDecoder(unittest.TestCase):
         self.assertEqual(utt, word_decode[utt_id])
 
     # @unittest.skip("")
-    def test_ground_truth_with_sil(self):
+    def test_ground_truth_with_eow(self):
 
         lex = get_lexicon_from_arpa(data_dir('speech_recognition', 'tcb05cnp'))
         space = "<space>"

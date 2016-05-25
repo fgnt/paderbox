@@ -10,13 +10,11 @@ class TestTransHandler(unittest.TestCase):
 
     def test_length(self):
         mandatory_tok = ["blank"]
-        mandatory_words = ["test"]
         th = TranscriptionHandler(self.lexicon, mandatory_tokens=mandatory_tok,
-                                  mandatory_words=mandatory_words,
-                                  oov_word="<unk>")
+                                  oov_word="<unk>", add_words_from_lexicon=True)
         tokens = {token for tokens in self.lexicon.values() for token in tokens}
         num_tokens = len(tokens) + len(mandatory_tok) + 1
-        num_words = len(self.lexicon) + len(mandatory_words) + 1
+        num_words = len(self.lexicon) + 1
         self.assertEqual(num_tokens, len(th.tokens))
         self.assertEqual(num_words, len(th.words))
         num_labels = len(set(th.tokens).union(th.words))
@@ -25,17 +23,11 @@ class TestTransHandler(unittest.TestCase):
 
     def test_mandatory(self):
         mandatory_tok = ["eps", "phi", "blank"]
-        mandatory_words = ["word1", "word2"]
         th = TranscriptionHandler(self.lexicon, mandatory_tokens=mandatory_tok,
-                                  mandatory_words=mandatory_words,
                                   oov_word="<unk>")
         self.assertEqual(
             [th.int_to_label[idx] for idx in range(len(mandatory_tok))],
             mandatory_tok)
-        self.assertEqual(
-            [th.int_to_label[idx + th.num_tokens]
-             for idx in range(len(mandatory_words))],
-            mandatory_words)
 
     def test_mapping(self):
         th = TranscriptionHandler(self.lexicon, oov_word="<unk>")
