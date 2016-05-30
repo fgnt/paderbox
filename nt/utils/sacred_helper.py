@@ -37,6 +37,16 @@ def get_config_from_id(_id, database='sacred', prefix='default',
     return experiment['config']
 
 
+def delete_entry_by_id(_id, database='sacred', prefix='default', secret_file=None):
+    uri = get_sacred_uri_from_file(secret_file)
+    uri += '/' if uri[-1] != '/' else ''
+    uri += database
+    client = MongoClient(uri)
+    runs = client[database][prefix].runs
+    delete_result = runs.delete_one({'_id': ObjectId(_id)})
+    print(delete_result.raw_result)
+
+
 def print_overview_table(
         database='sacred', prefix='default', secret_file=None,
         constraints=None, callback_function=None
@@ -85,12 +95,12 @@ def print_overview_table(
                     with tag('td'):
                         doc.asis(json.dumps(
                             row['config'],
-                            indent=True
+                            indent=True, sort_keys=True
                         ).replace('\n', '<br />'))
                     with tag('td'):
                         doc.asis(json.dumps(
                             row['host'],
-                            indent=True
+                            indent=True, sort_keys=True
                         ).replace('\n', '<br />'))
                     if callback_function is not None:
                         with tag('td'):
