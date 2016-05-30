@@ -17,8 +17,9 @@ class TestLexicon(unittest.TestCase):
                                 'eos': '</eos>', 'eoc': '</eoc>'}
         mandatory_tokens = [self.special_symbols['eps'],
                             self.special_symbols['phi'], ]
-        self.th = TranscriptionHandler(self.lexicon,
-                                       mandatory_tokens=mandatory_tokens)
+        self.th = TranscriptionHandler(
+            self.lexicon, mandatory_tokens=mandatory_tokens,
+            add_words_from_lexicon=True)
         self.th.add_tokens(self.special_symbols.values())
         self.th.add_words(
             {self.special_symbols['eos']: [self.special_symbols['eos']]})
