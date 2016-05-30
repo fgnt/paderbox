@@ -2,6 +2,10 @@ import os
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 
+from IPython.core.display import display, HTML
+from yattag import Doc
+import json
+
 
 def get_sacred_uri_from_file(secret_file=None):
     """
@@ -31,3 +35,68 @@ def get_config_from_id(_id, database='sacred', prefix='default',
     runs = client[database][prefix].runs
     experiment = runs.find_one({'_id': ObjectId(_id)})
     return experiment['config']
+
+
+def print_overview_table(
+        database='sacred', prefix='default', secret_file=None,
+        constraints=None, callback_function=None
+):
+    constraints = {} if constraints is None else constraints
+
+    uri = get_sacred_uri_from_file(secret_file)
+    uri += '/' if uri[-1] != '/' else ''
+    uri += database
+    client = MongoClient(uri)
+    runs = client[database][prefix].runs
+
+    list_of_dicts = list(runs.find(constraints))
+
+    doc, tag, text = Doc().tagtext()
+
+    with tag('small'):
+        with tag('table', width='100%'):
+            for row in list_of_dicts:
+                with tag('tr'):
+                    with tag('td'):
+                        text('id: {}'.format(row['_id']))
+                        doc.stag('br')
+                        text('heartbeat: {}'.format(row['heartbeat']))
+                        doc.stag('br')
+                        text('name: {}'.format(row['experiment']['name']))
+                        doc.stag('br')
+                        text('status: {}'.format(row['status']))
+                        doc.stag('br')
+                        text('start_time: {}'.format(
+                            row['start_time'].strftime('%d.%m. %H:%M:%S')
+                        ))
+                        doc.stag('br')
+                        try:
+                            text('stop_time: {}'.format(
+                                row['stop_time'].strftime('%d.%m. %H:%M:%S')
+                            ))
+                            doc.stag('br')
+                            text('difference: {}'.format(
+                                str(
+                                    row['stop_time'] - row['start_time']
+                                ).split('.')[0]
+                            ))
+                        except KeyError:
+                            pass
+                    with tag('td'):
+                        doc.asis(json.dumps(
+                            row['config'],
+                            indent=True
+                        ).replace('\n', '<br />'))
+                    with tag('td'):
+                        doc.asis(json.dumps(
+                            row['host'],
+                            indent=True
+                        ).replace('\n', '<br />'))
+                    if callback_function is not None:
+                        with tag('td'):
+                            try:
+                                doc.asis(callback_function(row))
+                            except KeyError:
+                                pass
+
+    display(HTML(doc.getvalue()))
