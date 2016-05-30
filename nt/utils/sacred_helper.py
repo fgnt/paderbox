@@ -49,7 +49,7 @@ def delete_entry_by_id(_id, database='sacred', prefix='default', secret_file=Non
 
 def print_overview_table(
         database='sacred', prefix='default', secret_file=None,
-        constraints=None, callback_function=None
+        constraints=None, callback_function=None, constraint_callback=None
 ):
     constraints = {} if constraints is None else constraints
 
@@ -66,47 +66,50 @@ def print_overview_table(
     with tag('small'):
         with tag('table', width='100%'):
             for row in list_of_dicts:
-                with tag('tr'):
-                    with tag('td'):
-                        text('id: {}'.format(row['_id']))
-                        doc.stag('br')
-                        text('heartbeat: {}'.format(row['heartbeat']))
-                        doc.stag('br')
-                        text('name: {}'.format(row['experiment']['name']))
-                        doc.stag('br')
-                        text('status: {}'.format(row['status']))
-                        doc.stag('br')
-                        text('start_time: {}'.format(
-                            row['start_time'].strftime('%d.%m. %H:%M:%S')
-                        ))
-                        doc.stag('br')
-                        try:
-                            text('stop_time: {}'.format(
-                                row['stop_time'].strftime('%d.%m. %H:%M:%S')
+                if constraint_callback is None or constraint_callback(row):
+                    with tag('tr'):
+                        with tag('td'):
+                            text('id: {}'.format(row['_id']))
+                            doc.stag('br')
+                            text('heartbeat: {}'.format(
+                                row['heartbeat'].strftime('%d.%m. %H:%M:%S')
                             ))
                             doc.stag('br')
-                            text('difference: {}'.format(
-                                str(
-                                    row['stop_time'] - row['start_time']
-                                ).split('.')[0]
+                            text('name: {}'.format(row['experiment']['name']))
+                            doc.stag('br')
+                            text('status: {}'.format(row['status']))
+                            doc.stag('br')
+                            text('start_time: {}'.format(
+                                row['start_time'].strftime('%d.%m. %H:%M:%S')
                             ))
-                        except KeyError:
-                            pass
-                    with tag('td'):
-                        doc.asis(json.dumps(
-                            row['config'],
-                            indent=True, sort_keys=True
-                        ).replace('\n', '<br />'))
-                    with tag('td'):
-                        doc.asis(json.dumps(
-                            row['host'],
-                            indent=True, sort_keys=True
-                        ).replace('\n', '<br />'))
-                    if callback_function is not None:
-                        with tag('td'):
+                            doc.stag('br')
                             try:
-                                doc.asis(callback_function(row))
+                                text('stop_time: {}'.format(
+                                    row['stop_time'].strftime('%d.%m. %H:%M:%S')
+                                ))
+                                doc.stag('br')
+                                text('difference: {}'.format(
+                                    str(
+                                        row['stop_time'] - row['start_time']
+                                    ).split('.')[0]
+                                ))
                             except KeyError:
                                 pass
+                        with tag('td'):
+                            doc.asis(json.dumps(
+                                row['config'],
+                                indent=True, sort_keys=True
+                            ).replace('\n', '<br />'))
+                        with tag('td'):
+                            doc.asis(json.dumps(
+                                row['host'],
+                                indent=True, sort_keys=True
+                            ).replace('\n', '<br />'))
+                        if callback_function is not None:
+                            with tag('td'):
+                                try:
+                                    doc.asis(callback_function(row))
+                                except KeyError:
+                                    pass
 
     display(HTML(doc.getvalue()))
