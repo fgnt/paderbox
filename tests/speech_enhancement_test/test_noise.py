@@ -1,6 +1,7 @@
 import unittest
 
 import numpy as np
+import scipy
 import nt.evaluation.sxr as sxr
 import nt.speech_enhancement.noise as noise
 import nt.testing as tc
@@ -11,6 +12,7 @@ import nt.transform as transform
 from nt.speech_enhancement.noise.spherical_habets import _mycohere,_sinf_3D
 from math import pi
 from numpy.linalg import norm
+
 
 class TestNoiseMethods(unittest.TestCase):
     def test_set_and_get_single_source_snr(self):
@@ -31,6 +33,8 @@ class TestNoiseMethods(unittest.TestCase):
 
 class TestNoiseGeneratorWhite(unittest.TestCase):
     n_gen = noise.NoiseGeneratorWhite()
+    slope_dB_expected = 0
+    slope_dB_atol = .001
 
     @tc.retry(3)
     def test_single_channel(self):
@@ -50,27 +54,25 @@ class TestNoiseGeneratorWhite(unittest.TestCase):
         SDR, SIR, SNR = sxr.input_sxr(time_signal[:, :, None], n)
         tc.assert_almost_equal(SNR, 20, decimal=6)
 
-    @tc.retry(3)
+    @tc.retry(5)
     def test_slope(self):
         time_signal = np.random.randn(16000,  3)
         n = self.n_gen.get_noise_for_signal(time_signal, 20)
         N = transform.stft(n)
         power_spec = 10*np.log10(noise.get_power(N, axis=(0, 2)))
-        slope_dB = power_spec[10]-power_spec[100]
-        tc.assert_allclose(slope_dB, 0, atol=0.5)
+        # slope_dB = power_spec[10]-power_spec[100]
+        slope_dB, _, _, _, _ = scipy.stats.linregress(10*np.log10(range(1, len(power_spec))), power_spec[1:])
+        print('slope_dB: ', slope_dB)
+        from nt.visualization import plot
+        plot.line(10*np.log10(range(1, len(power_spec))), power_spec[1:])
+
+        tc.assert_allclose(slope_dB, self.slope_dB_expected, atol=self.slope_dB_atol)
 
 
 class TestNoiseGeneratorPink(TestNoiseGeneratorWhite):
     n_gen = noise.NoiseGeneratorPink()
-
-    @tc.retry(3)
-    def test_slope(self):
-        time_signal = np.random.randn(16000, 5)
-        n = self.n_gen.get_noise_for_signal(time_signal, 20)
-        N = transform.stft(n)
-        power_spec = 10*np.log10(noise.get_power(N, axis=(0, 2)))
-        slope_dB = power_spec[10]-power_spec[100]
-        tc.assert_allclose(slope_dB, 10, atol=0.5)
+    slope_dB_atol = .1
+    slope_dB_expected = -1
 
 
 class TestNoiseGeneratorNoisex92(TestNoiseGeneratorWhite):
@@ -88,19 +90,21 @@ class TestNoiseGeneratorSpherical(TestNoiseGeneratorWhite):
     x2, y2, z2 = sph2cart(0, 0, 0.2)  # Sensor position 2
     P = np.array([[0, x1, x2], [0, y1, y2], [0, z1, z2]])  # Construct position matrix
     n_gen = noise.NoiseGeneratorSpherical(P)
+    slope_dB_expected = 0
+    slope_dB_atol = 0.7  # ToDo: analyse, why atol is so high
 
     def test_single_channel(self):
         pass  # makes no sense
 
-    @tc.retry(3)
-    def test_slope(self):
-        # test_spatial_coherences delivers more relevnt solutions
-        time_signal = np.random.randn(16000,  3)
-        n = self.n_gen.get_noise_for_signal(time_signal, 20)
-        N = transform.stft(n)
-        power_spec = 10*np.log10(noise.get_power(N, axis=(0, 2)))
-        slope_dB = power_spec[10]-power_spec[100]
-        tc.assert_allclose(slope_dB, 0, atol=4)
+    # @tc.retry(5)
+    # def test_slope(self):
+    #     # test_spatial_coherences delivers more relevnt solutions
+    #     time_signal = np.random.randn(16000,  3)
+    #     n = self.n_gen.get_noise_for_signal(time_signal, 20)
+    #     N = transform.stft(n)
+    #     power_spec = 10*np.log10(noise.get_power(N, axis=(0, 2)))
+    #     slope_dB = power_spec[10]-power_spec[100]
+    #     tc.assert_allclose(slope_dB, 0, atol=4)
 
     @tc.retry(3)
     def test_spatial_coherences(self):
