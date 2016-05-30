@@ -63,8 +63,8 @@ class TestNoiseGeneratorWhite(unittest.TestCase):
         # slope_dB = power_spec[10]-power_spec[100]
         slope_dB, _, _, _, _ = scipy.stats.linregress(10*np.log10(range(1, len(power_spec))), power_spec[1:])
         print('slope_dB: ', slope_dB)
-        from nt.visualization import plot
-        plot.line(10*np.log10(range(1, len(power_spec))), power_spec[1:])
+        # from nt.visualization import plot
+        # plot.line(10*np.log10(range(1, len(power_spec))), power_spec[1:])
 
         tc.assert_allclose(slope_dB, self.slope_dB_expected, atol=self.slope_dB_atol)
 
