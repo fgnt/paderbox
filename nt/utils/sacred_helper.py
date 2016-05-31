@@ -13,14 +13,8 @@ import json
 
 def get_sacred_uri_from_file(secret_file=None):
     """
-
-<<<<<<< HEAD
-    Store a mongodb uri in a file. I recommend `~/.sacred`. The file should
-    contain i.e. `mongodb://user:password@131.234.222.24:10135`.
-=======
 	Store a mongodb uri in a file. I recommend `~/.sacred`. The file should
 	contain i.e. `mongodb://user:password@131.234.222.24:10135/sacred`.
->>>>>>> Added GPUMongoObserver.
 
 	Args:
 		secret_file: Optional path to your sacred secret.
