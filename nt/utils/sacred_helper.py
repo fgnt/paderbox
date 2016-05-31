@@ -13,15 +13,15 @@ import json
 
 def get_sacred_uri_from_file(secret_file=None):
     """
-	Store a mongodb uri in a file. I recommend `~/.sacred`. The file should
-	contain i.e. `mongodb://user:password@131.234.222.24:10135/sacred`.
+    Store a mongodb uri in a file. I recommend `~/.sacred`. The file should
+    contain i.e. `mongodb://user:password@131.234.222.24:10135/`.
 
-	Args:
-		secret_file: Optional path to your sacred secret.
+    Args:
+        secret_file: Optional path to your sacred secret.
 
-	Returns: Secret uri to connect to your db.
+    Returns: Secret uri to connect to your db.
 
-	"""
+    """
     secret_file = '~/.sacred' if secret_file is None else secret_file
     secret_file = os.path.expanduser(secret_file)
     with open(secret_file, 'r') as f:
