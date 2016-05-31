@@ -134,7 +134,7 @@ class GPUMongoObserver(MongoObserver):
         try:
             gpu_info = nvidia_helper.get_info()
             gpu_list = nvidia_helper.get_gpu_list()
-            host_info['gpu_count'] = gpu_info['device_count']
+            host_info['gpu_count'] = str(gpu_info['device_count'])
             host_info['gpu_info'] = {str(x['minor_number']): {
                 'name': x['name'].decode(),
                 'total_memory': str(x['memory']['total'] / 1048576) + 'Mib',
@@ -144,7 +144,7 @@ class GPUMongoObserver(MongoObserver):
                 'vbios_version': x['vbios_version'].decode()
             } for x in gpu_list}
         except NVMLError as e:
-            host_info['gpu_count'] = 0
+            host_info['gpu_count'] = '0'
             host_info['gpu_info'] = None
 
         host_info['user'] = getpass.getuser()
