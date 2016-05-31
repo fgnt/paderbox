@@ -1,6 +1,10 @@
 import os
 from pymongo import MongoClient
 from bson.objectid import ObjectId
+from sacred.observers import MongoObserver
+from nt.utils import nvidia_helper
+import getpass
+from nt.utils.pynvml import *
 
 from IPython.core.display import display, HTML
 from yattag import Doc
@@ -10,15 +14,20 @@ import json
 def get_sacred_uri_from_file(secret_file=None):
     """
 
+<<<<<<< HEAD
     Store a mongodb uri in a file. I recommend `~/.sacred`. The file should
     contain i.e. `mongodb://user:password@131.234.222.24:10135`.
+=======
+	Store a mongodb uri in a file. I recommend `~/.sacred`. The file should
+	contain i.e. `mongodb://user:password@131.234.222.24:10135/sacred`.
+>>>>>>> Added GPUMongoObserver.
 
-    Args:
-        secret_file: Optional path to your sacred secret.
+	Args:
+		secret_file: Optional path to your sacred secret.
 
-    Returns: Secret uri to connect to your db.
+	Returns: Secret uri to connect to your db.
 
-    """
+	"""
     secret_file = '~/.sacred' if secret_file is None else secret_file
     secret_file = os.path.expanduser(secret_file)
     with open(secret_file, 'r') as f:
@@ -113,3 +122,36 @@ def print_overview_table(
                                     pass
 
     display(HTML(doc.getvalue()))
+
+
+class GPUMongoObserver(MongoObserver):
+    def started_event(self, ex_info, host_info, start_time, config, comment):
+        """
+            This Observer adds info about the GPUs of the Host-Computer to
+            host_info. It's the only solution that works without modifying
+            sacred source code.
+            This should either be moved to get_host_info() in host_info.py or
+            there should be a way to let the user add additional info (e.g.
+            username). This could be achieved by modifying Ingredient and
+            create_run in initialize.py.
+        """
+        try:
+            gpu_info = nvidia_helper.get_info()
+            gpu_list = nvidia_helper.get_gpu_list()
+            host_info['gpu_count'] = gpu_info['device_count']
+            host_info['gpu_info'] = {str(x['minor_number']): {
+                'name': x['name'].decode(),
+                'total_memory': str(x['memory']['total'] / 1048576) + 'Mib',
+                'persistence_mode': str(x['persistence_mode']),
+                'product_brand': str(x['product_brand']),
+                'uuid': x['uuid'].decode(),
+                'vbios_version': x['vbios_version'].decode()
+            } for x in gpu_list}
+        except NVMLError as e:
+            host_info['gpu_count'] = 0
+            host_info['gpu_info'] = None
+
+        host_info['user'] = getpass.getuser()
+        MongoObserver.started_event(self, ex_info, host_info, start_time,
+                                    config,
+                                    comment)
