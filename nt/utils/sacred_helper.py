@@ -31,24 +31,22 @@ def get_sacred_uri_from_file(secret_file=None):
     return uri
 
 
+def _get_runs(database='sacred', prefix='default', secret_file=None):
+    uri = get_sacred_uri_from_file(secret_file)
+    client = MongoClient(uri)
+    return client[database][prefix].runs
+
+
 def get_config_from_id(_id, database='sacred', prefix='default',
                        secret_file=None):
-    uri = get_sacred_uri_from_file(secret_file)
-    uri += '/' if uri[-1] != '/' else ''
-    uri += database
-    client = MongoClient(uri)
-    runs = client[database][prefix].runs
+    runs = _get_runs(database, prefix, secret_file)
     experiment = runs.find_one({'_id': ObjectId(_id)})
     return experiment['config']
 
 
 def delete_entry_by_id(_id, database='sacred', prefix='default',
                        secret_file=None):
-    uri = get_sacred_uri_from_file(secret_file)
-    uri += '/' if uri[-1] != '/' else ''
-    uri += database
-    client = MongoClient(uri)
-    runs = client[database][prefix].runs
+    runs = _get_runs(database, prefix, secret_file)
     delete_result = runs.delete_one({'_id': ObjectId(_id)})
     print(delete_result.raw_result)
 
@@ -60,11 +58,7 @@ def print_overview_table(
 ):
     constraints = {} if constraints is None else constraints
 
-    uri = get_sacred_uri_from_file(secret_file)
-    uri += '/' if uri[-1] != '/' else ''
-    uri += database
-    client = MongoClient(uri)
-    runs = client[database][prefix].runs
+    runs = _get_runs(database, prefix, secret_file)
 
     list_of_dicts = list(runs.find(constraints))
 
