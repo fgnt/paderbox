@@ -1,3 +1,4 @@
+import json
 import os
 from pymongo import MongoClient
 from bson.objectid import ObjectId
@@ -7,14 +8,15 @@ import getpass
 from nt.utils.pynvml import *
 
 from IPython.core.display import display, HTML
+from bson.objectid import ObjectId
+from pymongo import MongoClient
 from yattag import Doc
-import json
 
 
 def get_sacred_uri_from_file(secret_file=None):
     """
     Store a mongodb uri in a file. I recommend `~/.sacred`. The file should
-    contain i.e. `mongodb://user:password@131.234.222.24:10135/`.
+    contain i.e. `mongodb://user:password@131.234.222.24:10135`.
 
     Args:
         secret_file: Optional path to your sacred secret.
@@ -40,7 +42,8 @@ def get_config_from_id(_id, database='sacred', prefix='default',
     return experiment['config']
 
 
-def delete_entry_by_id(_id, database='sacred', prefix='default', secret_file=None):
+def delete_entry_by_id(_id, database='sacred', prefix='default',
+                       secret_file=None):
     uri = get_sacred_uri_from_file(secret_file)
     uri += '/' if uri[-1] != '/' else ''
     uri += database
@@ -52,7 +55,8 @@ def delete_entry_by_id(_id, database='sacred', prefix='default', secret_file=Non
 
 def print_overview_table(
         database='sacred', prefix='default', secret_file=None,
-        constraints=None, callback_function=None, constraint_callback=None
+        constraints=None, callback_function=None, constraint_callback=None,
+        config_blacklist=None, config_whitelist=None
 ):
     constraints = {} if constraints is None else constraints
 
@@ -66,10 +70,20 @@ def print_overview_table(
 
     doc, tag, text = Doc().tagtext()
 
+    def _dict_to_cell(d):
+        return '<br />'.join(
+            json.dumps(d, indent=True, sort_keys=True).split('\n')[1:-1])
+
     with tag('small'):
         with tag('table', width='100%'):
             for row in list_of_dicts:
                 if constraint_callback is None or constraint_callback(row):
+                    if config_blacklist is not None:
+                        row['config'] = {k: v for k, v in row['config'].items()
+                                         if k not in config_blacklist}
+                    if config_whitelist is not None:
+                        row['config'] = {k: v for k, v in row['config'].items()
+                                         if k in config_whitelist}
                     with tag('tr'):
                         with tag('td'):
                             text('id: {}'.format(row['_id']))
@@ -99,15 +113,9 @@ def print_overview_table(
                             except KeyError:
                                 pass
                         with tag('td'):
-                            doc.asis(json.dumps(
-                                row['config'],
-                                indent=True, sort_keys=True
-                            ).replace('\n', '<br />'))
+                            doc.asis(_dict_to_cell(row['config']))
                         with tag('td'):
-                            doc.asis(json.dumps(
-                                row['host'],
-                                indent=True, sort_keys=True
-                            ).replace('\n', '<br />'))
+                            doc.asis(_dict_to_cell(row['host']))
                         if callback_function is not None:
                             with tag('td'):
                                 try:
