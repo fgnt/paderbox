@@ -79,3 +79,119 @@ class TestCallbackFetcher(unittest.TestCase):
             if not 'X' in batch:
                 print(batch)
             assert 'X' in batch
+
+    def test_utterance_mode_iterate(self):
+        df = AlmostIdentityCallbackFetcher('identity')
+        dp = data_provider.DataProvider((df,), 1)
+        for batch in dp.iterate(fork_fetchers=False):
+            self.assertIn('X', batch)
+
+    def test_utterance_mode_iterate_fork(self):
+        df = AlmostIdentityCallbackFetcher('identity')
+        dp = data_provider.DataProvider((df,), 1)
+        for batch in dp.iterate(fork_fetchers=True):
+            self.assertIn('X', batch)
+
+    # Tests format of info and correctness of at least the first item returned
+    # by _get_utterance_list. A test like this should be done for every subclass
+    # of CallbackFetcher.
+    def test_utterance_mode_get_batch_info(self):
+        df = AlmostIdentityCallbackFetcher('identity')
+        info = df.get_batch_info_for_indices((0,))
+        self.assertIn('utt_id', info)
+        self.assertEqual(info['utt_id'][0], 0)
+
+    # can be moved from test_hdf5_data_fetcher; doesn't test content of info
+    # but correct format provided by CallbackFetcher
+    def test_frame_mode_get_batch_info(self):
+        df = AlmostIdentityCallbackFetcher('identity', mode='frames')
+        info=df.get_batch_info_for_indices((0,))
+        self.assertIn('utt_ids', info)
+        self.assertIn('frame_indices', info)
+
+    def test_utterance_mode_get_data_for_indices_callback(self):
+        df = AlmostIdentityCallbackFetcher('identity', length=10,
+                                        transformation_callback=lambda t: t + 1)
+        data = df.get_data_for_indices((0,))
+        self.assertEqual(data['X'].flatten(), np.arange(0, 9)/10 + 1)
+
+    def test_utterance_mode_get_data_context(self):
+        df = AlmostIdentityCallbackFetcher('identity', left_context=1,
+                                           right_context=1, add_context_to=['X']
+                                           )
+        data = df.get_data_for_indices((0,))
+        self.assertIn('X', data)
+        self.assertEqual(data['X'].shape, (1, 3))
+
+    def test_frame_mode_get_data_context(self):
+        df = AlmostIdentityCallbackFetcher('identity', left_context=1,
+                                           right_context=1, add_context_to=['X']
+                                           )
+        data = df.get_data_for_indices((0, 1))
+        self.assertIn('X', data)
+        self.assertEqual(data['X'].shape, (2, 3))
+
+    def test_frame_mode_add_context_value_error(self):
+        with self.assertRaises(AssertionError) as cm:
+            AlmostIdentityCallbackFetcher('identity', dimension=1,
+                                          add_context_to=['X'], mode='frames')
+
+        self.assertEqual(
+            cm.exception.args[0],
+            'Only 2d arrays in the TxF format can be used to add context '
+                'in frames mode.')
+
+    def test_frame_mode_read_cnn(self):
+        df = AlmostIdentityCallbackFetcher('identity', mode='frames',
+                                           cnn_features=True,
+                                           add_context_to=['X'],
+                                           deltas_as_channel=False)
+        data = df.get_data_for_indices((0,))
+        self.assertIn('X', data)
+        self.assertEqual(data['X'].shape, (1, 1, 1, 1))
+
+    def test_frame_mode_read_cnn_multiple(self):
+        df = AlmostIdentityCallbackFetcher('identity', mode='frames',
+                                           cnn_features=True,
+                                           add_context_to=['X'],
+                                           deltas_as_channel=False)
+        data = df.get_data_for_indices((0, 1, 2))
+        self.assertIn('X', data)
+        self.assertEqual(data['X'].shape, (3, 1, 1, 1))
+
+    def test_frame_mode_cnn_channel_delta(self):
+        df = AlmostIdentityCallbackFetcher('identity', mode='frames',
+                                           deltas_as_channel=True,
+                                           add_context_to=['X'],
+                                           cnn_features=True, num_deltas=1)
+        data = df.get_data_for_indices((0, 3, 1))
+        self.assertIn('X', data)
+        self.assertEqual(data['X'].shape, (3, 2, 0, 1))
+
+    def test_frame_mode_cnn_context(self):
+        df = AlmostIdentityCallbackFetcher('identity', mode='frames',
+                                    left_context=3,
+                                    right_context=3, add_context_to=['X'],
+                                    cnn_features=True)
+        data = df.get_data_for_indices((0, 2, 1))
+        self.assertIn('X', data)
+        self.assertEqual(data['X'].shape, (3, 1, 1, 7))
+
+    def test_frame_mode_cnn_big_context(self):
+        df = AlmostIdentityCallbackFetcher('identity', mode='frames',
+                                    left_context=10,
+                                    right_context=10, add_context_to=['X'],
+                                    cnn_features=True)
+        data = df.get_data_for_indices((0, 2, 1))
+        self.assertIn('X', data)
+        self.assertEqual(data['X'].shape, (3, 1, 1, 21))
+
+    def test_frame_mode_cnn_context_delta(self):
+        df = AlmostIdentityCallbackFetcher('identity', mode='frames',
+                                    num_deltas=1, left_context=3,
+                                    deltas_as_channel=True,
+                                    right_context=3, add_context_to=['X'],
+                                    cnn_features=True)
+        data = df.get_data_for_indices((3, 2, 1))
+        self.assertIn('X', data)
+        self.assertEqual(data['X'].shape, (3, 2, 0, 7))
