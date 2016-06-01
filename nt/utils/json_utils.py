@@ -197,7 +197,7 @@ def safe_dump(dict_data, fid):
     """
 
     def _filter(data):
-        if isinstance(data, list):
+        if isinstance(data, (list, set)):
             return [_filter(d) for d in data]
         if isinstance(data, dict):
             return _build_dict(data)
