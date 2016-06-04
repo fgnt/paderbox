@@ -2,7 +2,8 @@ import json
 import os
 from pymongo import MongoClient
 from bson.objectid import ObjectId
-from sacred.observers import MongoObserver
+from sacred.observers.mongo import *
+
 from nt.utils import nvidia_helper
 import getpass
 from nt.utils.pynvml import *
@@ -121,6 +122,19 @@ def print_overview_table(
 
 
 class GPUMongoObserver(MongoObserver):
+    @staticmethod
+    def create(url='loclahost', db_name='sacred', prefix='default', **kwargs):
+        """
+            Does the same as MongoObserver.create but retuns a GPUMongoObserver.
+        """
+        client = pymongo.MongoClient(url, **kwargs)
+        database = client[db_name]
+        for manipulator in SON_MANIPULATORS:
+            database.add_son_manipulator(manipulator)
+        runs_collection = database[prefix + '.runs']
+        fs = gridfs.GridFS(database, collection=prefix)
+        return GPUMongoObserver(runs_collection, fs)
+
     def started_event(self, ex_info, host_info, start_time, config, comment):
         """
             This Observer adds info about the GPUs of the Host-Computer to
@@ -134,17 +148,17 @@ class GPUMongoObserver(MongoObserver):
         try:
             gpu_info = nvidia_helper.get_info()
             gpu_list = nvidia_helper.get_gpu_list()
-            host_info['gpu_count'] = str(gpu_info['device_count'])
+            host_info['gpu_count'] = gpu_info['device_count']
             host_info['gpu_info'] = {str(x['minor_number']): {
                 'name': x['name'].decode(),
                 'total_memory': str(x['memory']['total'] / 1048576) + 'Mib',
-                'persistence_mode': str(x['persistence_mode']),
-                'product_brand': str(x['product_brand']),
+                'persistence_mode': x['persistence_mode'],
+                'product_brand': x['product_brand'],
                 'uuid': x['uuid'].decode(),
                 'vbios_version': x['vbios_version'].decode()
             } for x in gpu_list}
         except NVMLError as e:
-            host_info['gpu_count'] = '0'
+            host_info['gpu_count'] = 0
             host_info['gpu_info'] = None
 
         host_info['user'] = getpass.getuser()
