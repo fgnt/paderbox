@@ -109,22 +109,16 @@ class TestCallbackFetcher(unittest.TestCase):
         self.assertIn('utt_ids', info)
         self.assertIn('frame_indices', info)
 
-    def test_utterance_mode_get_data_for_indices_callback(self):
-        df = AlmostIdentityCallbackFetcher('identity', length=10,
-                                        transformation_callback=lambda t: t + 1)
-        data = df.get_data_for_indices((0,))
-        self.assertEqual(data['X'].flatten(), np.arange(0, 9)/10 + 1)
-
     def test_utterance_mode_get_data_context(self):
         df = AlmostIdentityCallbackFetcher('identity', left_context=1,
                                            right_context=1, add_context_to=['X']
                                            )
         data = df.get_data_for_indices((0,))
         self.assertIn('X', data)
-        self.assertEqual(data['X'].shape, (1, 3))
+        self.assertEqual(data['X'].shape, (10, 3))
 
     def test_frame_mode_get_data_context(self):
-        df = AlmostIdentityCallbackFetcher('identity', left_context=1,
+        df = AlmostIdentityCallbackFetcher('identity', left_context=1, mode='frames',
                                            right_context=1, add_context_to=['X']
                                            )
         data = df.get_data_for_indices((0, 1))
