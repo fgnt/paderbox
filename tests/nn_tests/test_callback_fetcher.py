@@ -16,7 +16,7 @@ class AlmostIdentityCallbackFetcher(CallbackDataFetcher):
             shuffle_frames=True, buffer_size=100,
             transformation_callback=None,
             transformation_kwargs=None, verbose=True,
-            length=10, dimension=2
+            length=8, dimension=2
     ):
         self.length = length
         self.dimension = dimension
@@ -45,7 +45,6 @@ class AlmostIdentityCallbackFetcher(CallbackDataFetcher):
         :param utt:
         :return: dict with data
         """
-
         X = np.arange(0.0, 1.0, 0.1) + utt
         X = np.reshape(X, (-1,) + (self.dimension-1) * (1,))
         return {'X': X}
@@ -54,11 +53,11 @@ class AlmostIdentityCallbackFetcher(CallbackDataFetcher):
 class TestCallbackFetcher(unittest.TestCase):
     def test_utterance_mode_length(self):
         df = AlmostIdentityCallbackFetcher('identity')
-        assert len(df) == 10
+        assert len(df) == 8
 
     def test_frame_mode_length(self):
         df = AlmostIdentityCallbackFetcher('identity', mode='frames')
-        assert len(df) == 100
+        assert len(df) == 80
 
     def test_frame_mode_iterate(self):
         df = AlmostIdentityCallbackFetcher('identity', mode='frames')
@@ -110,18 +109,27 @@ class TestCallbackFetcher(unittest.TestCase):
         self.assertIn('frame_indices', info)
 
     def test_utterance_mode_get_data_for_indices_callback(self):
-        df = AlmostIdentityCallbackFetcher('identity', length=10,
-                                        transformation_callback=lambda t: t + 1)
+        df = AlmostIdentityCallbackFetcher(
+            'identity',
+            length=10,
+            transformation_callback=lambda t, **kwargs: {'X': t['X'] + 1}
+        )
         data = df.get_data_for_indices((0,))
-        self.assertEqual(data['X'].flatten(), np.arange(0, 9)/10 + 1)
+        np.testing.assert_almost_equal(
+            data['X'].flatten(),
+            np.arange(0, 10) / 10 + 1
+        )
 
     def test_utterance_mode_get_data_context(self):
-        df = AlmostIdentityCallbackFetcher('identity', left_context=1,
-                                           right_context=1, add_context_to=['X']
-                                           )
+        df = AlmostIdentityCallbackFetcher(
+            'identity',
+            left_context=1,
+            right_context=1,
+            add_context_to=['X']
+        )
         data = df.get_data_for_indices((0,))
         self.assertIn('X', data)
-        self.assertEqual(data['X'].shape, (1, 3))
+        self.assertEqual(data['X'].shape, (10, 3))
 
     def test_frame_mode_get_data_context(self):
         df = AlmostIdentityCallbackFetcher(
@@ -137,8 +145,12 @@ class TestCallbackFetcher(unittest.TestCase):
 
     def test_frame_mode_add_context_value_error(self):
         with self.assertRaises(AssertionError) as cm:
-            AlmostIdentityCallbackFetcher('identity', dimension=1,
-                                          add_context_to=['X'], mode='frames')
+            AlmostIdentityCallbackFetcher(
+                'identity',
+                dimension=1,
+                add_context_to=['X'],
+                mode='frames'
+            )
 
         self.assertEqual(
             cm.exception.args[0],
@@ -199,3 +211,18 @@ class TestCallbackFetcher(unittest.TestCase):
         data = df.get_data_for_indices((3, 2, 1))
         self.assertIn('X', data)
         self.assertEqual(data['X'].shape, (3, 2, 0, 7))
+
+    def test_frame_buffer_stays_empty_even_after_reset(self):
+        """
+        Callback fetcher used to load the next data matrix in utterance mode.
+        This happened in reset but is only needed for frames mode.
+        """
+        df = AlmostIdentityCallbackFetcher('identity')
+        _ = df.get_data_for_indices((0,))
+
+        with self.assertRaises(AttributeError):
+            print(df.frame_buffer)
+
+        df.reset()
+        with self.assertRaises(AttributeError):
+            print(df.frame_buffer)
