@@ -1,5 +1,6 @@
 import seaborn as sns
 import numpy as np
+import matplotlib.colors
 import matplotlib.pyplot as plt
 from nt.speech_enhancement.beamform_utils import *
 import nt.transform
@@ -223,8 +224,25 @@ def time_series(*signal, ax=None, ylim=None, label=None, color=None):
 def _time_frequency_plot(
         signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
         sample_rate=None, stft_size=None, stft_shift=None,
-        x_label=None, y_label=None, z_label=None
+        x_label=None, y_label=None, z_label=None, z_scale=None
 ):
+    """
+
+    :param signal:
+    :param ax:
+    :param limits: tuple: min, max, linthresh(only for symlog)
+    :param log: transform to log
+    :param colorbar:
+    :param batch:
+    :param sample_rate:
+    :param stft_size:
+    :param stft_shift:
+    :param x_label:
+    :param y_label:
+    :param z_label:
+    :param z_scale: how to scale the values ('linear', 'log', 'symlog' or instance of matplotlib.colors.Normalize)
+    :return:
+    """
     signal = _get_batch(signal, batch)
 
     if np.any(signal < 0) and log:
@@ -239,13 +257,41 @@ def _time_frequency_plot(
     if limits is None:
         limits = (np.min(signal), np.max(signal))
 
+    if z_scale == 'linear' or z_scale == None:
+        norm = None
+    elif z_scale == 'log':
+        norm = matplotlib.colors.LogNorm(
+                    vmin=limits[0],
+                    vmax=limits[1],)
+    elif z_scale == 'symlog':
+        if len(limits) == 2:
+            # assume median is a good log2lin border
+            # have anyone a better idea?
+            limits = (*limits, np.median(np.abs(signal)))
+        norm = matplotlib.colors.SymLogNorm(
+                    linthresh=limits[2],
+                    linscale=1,
+                    vmin=limits[0],
+                    vmax=limits[1],
+                    clip=False,
+                    )
+    elif isinstance(z_scale, matplotlib.colors.Normalize):
+        norm = z_scale
+        if isinstance(z_scale, matplotlib.colors.SymLogNorm):
+            z_scale = 'symlog'
+    else:
+        raise ValueError('z_scale: {} is invalid. '
+                         'Expected: linear, log, symlog or instance of matplotlib.colors.Normalize'
+                         ''.format(z_scale))
+
     image = ax.imshow(
         signal,
         interpolation='nearest',
         vmin=limits[0],
         vmax=limits[1],
         cmap='viridis',
-        origin='lower'
+        origin='lower',
+        norm=norm,
     )
 
     if x_label is None:
@@ -274,7 +320,24 @@ def _time_frequency_plot(
         ax.set_ylabel(y_label)
 
     if colorbar:
-        cbar = plt.colorbar(image, ax=ax)
+        if z_scale == 'symlog':
+            # The default colorbar is not compatible with symlog scale.
+            # Set the ticks to
+            # max, ..., log2lin border, 0, log2lin border, ..., min
+            tick_locations = (norm.vmin,
+                              norm.vmin * 1e-1,
+                              norm.vmin * 1e-2,
+                              norm.vmin * 1e-3,
+                              -norm.linthresh,
+                              0.0,
+                              norm.linthresh,
+                              norm.vmax  * 1e-3,
+                              norm.vmax  * 1e-2,
+                              norm.vmax  * 1e-1,
+                              norm.vmax)
+            cbar = plt.colorbar(image, ax=ax, ticks=tick_locations)
+        else:
+            cbar = plt.colorbar(image, ax=ax)
         if z_label is None:
             if log:
                 cbar.set_label('Energy / dB')
@@ -292,7 +355,7 @@ def _time_frequency_plot(
 def spectrogram(
         signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
         sample_rate=None, stft_size=None, stft_shift=None,
-        x_label=None, y_label=None, z_label=None
+        x_label=None, y_label=None, z_label=None, z_scale=None
 ):
     """
     Plots a spectrogram from a spectrogram (power) as input.
@@ -316,18 +379,14 @@ def spectrogram(
         time
     :return: axes
     """
-    return _time_frequency_plot(
-        signal, ax=ax, limits=limits, log=log, colorbar=colorbar, batch=batch,
-        sample_rate=sample_rate, stft_size=stft_size, stft_shift=stft_shift,
-        x_label=x_label, y_label=y_label, z_label=z_label
-    )
+    return _time_frequency_plot(**locals())
 
 
 @create_subplot
 def stft(
         signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
          sample_rate=None, stft_size=None, stft_shift=None,
-        x_label=None, y_label=None, z_label=None
+        x_label=None, y_label=None, z_label=None, z_scale=None,
 ):
     """
     Plots a spectrogram from an stft signal as input. This is a wrapper of the
@@ -350,19 +409,15 @@ def stft(
         time
     :return: axes
     """
-    return spectrogram(
-        nt.transform.stft_to_spectrogram(signal),
-        ax=ax, limits=limits, log=log, colorbar=colorbar, batch=batch,
-        sample_rate=sample_rate, stft_size=stft_size, stft_shift=stft_shift,
-        x_label=x_label, y_label=y_label, z_label=z_label
-    )
+    signal = nt.transform.stft_to_spectrogram(signal)
+    return spectrogram(**locals())
 
 
 @create_subplot
 def mask(
         signal, ax=None, limits=(0, 1), log=False, colorbar=True, batch=0,
         sample_rate=None, stft_size=None, stft_shift=None,
-        x_label=None, y_label=None, z_label='Mask'
+        x_label=None, y_label=None, z_label='Mask', z_scale=None
 ):
     """
     Plots any mask with values between zero and one.
@@ -375,11 +430,30 @@ def mask(
         Specify the which batch to plot
     :return: axes
     """
-    return _time_frequency_plot(
-        signal, ax=ax, limits=limits, log=log, colorbar=colorbar, batch=batch,
-        sample_rate=sample_rate, stft_size=stft_size, stft_shift=stft_shift,
-        x_label=x_label, y_label=y_label, z_label=z_label
-    )
+    return _time_frequency_plot(**locals())
+
+
+@create_subplot
+def tf_symlog(
+        signal, ax=None, limits=None, log=False, colorbar=True, batch=0,
+        sample_rate=None, stft_size=None, stft_shift=None,
+        x_label=None, y_label=None, z_label='tf_symlog', z_scale='symlog'
+):
+    """
+    Plots any time frequency data. limits will be symetric and z_scale symlog,
+    where symlog means log scale outside the median
+
+    :param signal: Mask with shape (time-frames, frequency-bins)
+    :param ax: Optional figure axis for use with facet_grid()
+    :param limits: Clip the signal to these limits
+    :param colorbar: Show colorbar right to the plot
+    :param batch: If the decode has 3 dimensions:
+        Specify the which batch to plot
+    :return: axes
+    """
+    limits = np.max(np.abs(signal))
+    limits = (-limits, limits, np.median(np.abs(signal)))
+    return _time_frequency_plot(**locals())
 
 
 @create_subplot
