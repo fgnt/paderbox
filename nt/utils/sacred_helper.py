@@ -1,6 +1,6 @@
 import json
 import os
-from pymongo import MongoClient
+from pymongo import MongoClient, ASCENDING
 from bson.objectid import ObjectId
 from sacred.observers.mongo import *
 
@@ -34,6 +34,13 @@ def get_sacred_uri_from_file(secret_file=None):
 
 def _get_runs(database='sacred', prefix='default', secret_file=None):
     uri = get_sacred_uri_from_file(secret_file)
+
+    if not uri.endswith('/'):
+        uri += '/'
+
+    uri += database
+
+    print(uri)
     client = MongoClient(uri)
     return client[database][prefix].runs
 
@@ -62,6 +69,7 @@ def print_overview_table(
     runs = _get_runs(database, prefix, secret_file)
 
     list_of_dicts = list(runs.find(constraints))
+    # list_of_dicts = list(runs.find(constraints).sort('start_time', ASCENDING))
 
     doc, tag, text = Doc().tagtext()
 
