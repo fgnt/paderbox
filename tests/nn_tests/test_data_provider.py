@@ -28,6 +28,7 @@ class TestDataProviderMP(unittest.TestCase):
                                batch_size=2,
                                max_queue_size=5,
                                shuffle_data=False,
+                               shuffle_batches=False,
                                backend='mp')
 
     def test_setup(self):
@@ -36,9 +37,10 @@ class TestDataProviderMP(unittest.TestCase):
     def test_error_on_same_names(self):
         def make_dp():
             return DataProvider((self.fetcher_1, self.fetcher_1),
-                               batch_size=2,
-                               max_queue_size=5,
-                               shuffle_data=False)
+                                batch_size=2,
+                                max_queue_size=5,
+                                shuffle_data=False,
+                                shuffle_batches=False,)
         self.assertRaises(ValueError, make_dp)
 
     def test_iteration(self):
@@ -64,9 +66,10 @@ class TestDataProviderMP(unittest.TestCase):
 
         def create_dp():
             self.dp = DataProvider((self.fetcher_1, self.fetcher_2),
-                               batch_size=2,
-                               max_queue_size=5,
-                               shuffle_data=False)
+                                   batch_size=2,
+                                   max_queue_size=5,
+                                   shuffle_data=False,
+                                   shuffle_batches=False,)
         self.assertRaises(EnvironmentError, create_dp)
 
     def test_test_run(self):
@@ -120,7 +123,9 @@ class TestDataProviderT(TestDataProviderMP):
                                batch_size=2,
                                max_queue_size=5,
                                shuffle_data=False,
+                               shuffle_batches=False,
                                backend='t')
+
 
 class TestDataProviderPyro(TestDataProviderMP):
 
@@ -131,4 +136,5 @@ class TestDataProviderPyro(TestDataProviderMP):
                                batch_size=2,
                                max_queue_size=5,
                                shuffle_data=False,
+                               shuffle_batches=False,
                                backend='pyro')
