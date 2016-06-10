@@ -110,9 +110,9 @@ class LatexContextManager(object):
         figure = plt.gcf()
         for ax in figure.get_axes():
             if self.format_x:
-                ax.xaxis.set_major_formatter(self.formatter())
+                ax.xaxis.set_major_formatter(self.formatter)
             if self.format_y:
-                ax.yaxis.set_major_formatter(self.formatter())
+                ax.yaxis.set_major_formatter(self.formatter)
         if self.filename is not None:
             try:
                 plt.savefig(self.filename)
