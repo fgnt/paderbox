@@ -15,13 +15,26 @@ mpl_ge_150 = LooseVersion(mpl.__version__) >= '1.5.0'
 
 
 class DollarFormatter(ScalarFormatter):
+
+    def __init__(self, *args, formatting, **kwargs):
+        """
+        Example for formatting: '{:.1f}'
+        print with one digit of precision for floating point output
+
+        """
+        super().__init__(*args, **kwargs)
+        self.formatting = formatting
+
     def __call__(self, x, pos=None):
         'Return the format for tick val *x* at position *pos*'
         if len(self.locs) == 0:
             return ''
         else:
             if not type(x) is str:
-                s = self.pprint_val(x)
+                if self.formatting is not None and x % 1:
+                    s = self.formatting.format(x)
+                else:
+                    s = self.pprint_val(x)
                 return '\$' + self.fix_minus(s) + '\$'
             else:
                 return x
@@ -37,11 +50,12 @@ class LatexContextManager(object):
             export_type=None,  # eps recomented (alternative pdf), because pdf is in Inkscape 0.91 r not working
             build_folder=None,
             figure_size=[8.0, 6.0],
-            formatter=DollarFormatter,
+            formatter=None,
             format_x=True,
             format_y=True,
             palette=cmaps['upb'].colors[1:],
-            extra_rc=None
+            extra_rc=None,
+            ticks_formatting=None
     ):
         """
 
@@ -64,7 +78,8 @@ class LatexContextManager(object):
         """
         assert filename.endswith('.svg')
         self.filename = filename
-        self.formatter = formatter
+        self.formatter = DollarFormatter(formatting=ticks_formatting) \
+            if formatter is None else formatter
         self.figure_size = figure_size
         self.format_x = format_x
         self.format_y = format_y
