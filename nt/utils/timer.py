@@ -91,7 +91,7 @@ class TimerAccumulateDict(object):
             if not self.stat:
                 self.timings[index] += t.msecs
             else:
-                self.timings[index].sec += [t.msecs]
+                self.timings[index] += [t.msecs]
 
     @property
     def as_dict(self):
@@ -101,6 +101,10 @@ class TimerAccumulateDict(object):
     def as_yaml(self):
         import yaml
         return yaml.dump(dict(self.timings), default_flow_style=False)
+
+    def print_as_yaml(self):
+        print('Times are in milliseconds ( 0.001s )')
+        print(self.as_yaml)
 
     def __str__(self):
         return str(dict(self.timings))
