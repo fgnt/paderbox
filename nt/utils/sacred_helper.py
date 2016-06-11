@@ -3,7 +3,7 @@ import os
 from pymongo import MongoClient, ASCENDING
 from bson.objectid import ObjectId
 from sacred.observers.mongo import *
-
+import numpy as np
 from nt.utils import nvidia_helper
 import getpass
 from nt.utils.pynvml import *
@@ -127,6 +127,144 @@ def print_overview_table(
                                     pass
 
     display(HTML(doc.getvalue()))
+
+
+def _expand_key(key, length, expansion_key=''):
+    if not type(key) is tuple:
+        key = (key,)
+
+    if len(key) < length:
+        key = key + (expansion_key,) * (length - len(key))
+
+    return key
+
+
+def rename_columns(frame, map):
+    depth = len(frame.columns.levels)
+    for old_key in map.keys():
+        new_key = map[old_key]
+        frame[_expand_key(new_key, depth)] = frame[_expand_key(old_key, depth)]
+        frame.drop(_expand_key(old_key, depth), 1, inplace=True)
+
+
+def get_data_frame(database='sacred', prefix='default', secret_file=None,
+                   depth=2, add_perplexity=True, add_cur_epoch=True,
+                   sort=('perplexity', 'min'),
+                   rename={'start_time': ('time', 'start'),
+                           'stop_time': ('time', 'stop')},
+                   ascending=True):
+    def _make_data_frame(l, depth=2):
+        d = dict()
+
+        def _f(indices, dic, i):
+            for key in dic.keys():
+                val = dic[key]
+                new_indices = indices + (key,)
+                if type(val) is dict and len(new_indices) < depth:
+                    _f(new_indices, val, i)
+                else:
+                    new_indices = _expand_key(new_indices, depth)
+                    if new_indices in d.keys():
+                        d[new_indices][i] = val
+                    else:
+                        d[new_indices] = {i: val}
+
+        for i, e in enumerate(l):
+            _f(tuple(), e, i)
+        return pd.DataFrame(d)
+
+    def _add_perplexity(df):
+        for i, val in df[('info', 'cv_perplexity')].iteritems():
+            if val is not np.nan:
+                min_perplexity = min([x[1] for x in val])
+                last_perplexity = val[-1][1]
+                df.set_value(i, _expand_key(('perplexity', 'min'), depth),
+                             min_perplexity)
+                df.set_value(i, _expand_key(('perplexity', 'last'), depth),
+                             last_perplexity)
+
+    def _add_current_epoch(df):
+        for i, val in df[('info', 'cv_perplexity')].iteritems():
+            if val is not np.nan:
+                df.set_value(i, _expand_key('cur_epoch', depth),
+                             val[-1][0])
+
+    runs = _get_runs(database, prefix, secret_file)
+
+    list_of_dicts = list(runs.find())
+
+    frame = _make_data_frame(list_of_dicts, depth)
+
+    if add_perplexity and depth >= 2:
+        _add_perplexity(frame)
+
+    if add_cur_epoch and depth >= 2:
+        _add_current_epoch(frame)
+
+    if sort is not None:
+        frame = frame.sort_values(sort, ascending=ascending)
+
+    if rename is not None:
+        rename_columns(frame, rename)
+
+    return frame
+
+
+def get_config_frame(frame, config_entries=['last_cv_perplexity',
+                                            'min_cv_perplexity',
+                                            'dropout_lateral',
+                                            'dropout_vertical', 'learning_rate',
+                                            'gradient_clipping',
+                                            'initialization_maximum',
+                                            'lateral_mask_sample_interval',
+                                            'vertical_mask_sample_interval'],
+                     host_entries=['user']):
+    return filter_columns(frame,
+                          {'config': config_entries, 'host': host_entries,
+                           'status': True, 'perplexity': True,
+                           'time': True})
+
+
+def filter_columns(frame, entries={
+    'config': ['hidden_units', 'model', 'learning_rate'],
+    'host': ['user', 'os']}):
+    def _in(lv, l):
+        res = None
+        for k in l:
+            if res is None:
+                res = (lv == k)
+            else:
+                res |= (lv == k)
+        return res
+
+    mask = None
+    lv0 = frame.columns.get_level_values(0)
+    lv1 = frame.columns.get_level_values(1)
+    for k in entries.keys():
+        v = entries[k]
+        if type(v) is list:
+            new_mask = (lv0 == k) & (_in(lv1, v))
+        else:
+            new_mask = (lv0 == k)
+
+        if mask is None:
+            mask = new_mask
+        else:
+            mask |= new_mask
+
+    return frame.loc[:, mask]
+
+
+def filter_rows(frame, entries):
+    mask = None
+    for v in entries:
+        new_mask = frame[v[0]] == v[1]
+        if mask is None:
+            mask = new_mask
+        else:
+            mask &= new_mask
+
+    return frame.loc[mask]
 
 
 class GPUMongoObserver(MongoObserver):
