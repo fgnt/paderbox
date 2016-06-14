@@ -11,40 +11,38 @@ from model import BLSTMModel
 import os
 import tempfile
 from nt.transcription_handling.lexicon_handling import *
-from nt.transcription_handling.transcription_handler import TranscriptionHandler
+from nt.transcription_handling.transcription_handler import \
+    TranscriptionHandler, LabelHandler
 
 
 class TestDecoder(unittest.TestCase):
 
-    def write_net_out(self, trans_handler, label_seq, cost_along_path=None):
-        net_out = np.zeros((len(label_seq), 1, trans_handler.num_tokens))
+    def write_net_out(self, labels, label_seq, cost_along_path=None):
+        net_out = np.zeros((len(label_seq), 1, len(labels)))
         if cost_along_path:
             # net provides some kind of positive loglikelihoods
             # (with some offset)
             for idx in range(len(label_seq)):
                 sym = label_seq[idx]
                 if sym == "_":
-                    sym = trans_handler.int_to_label[0]
+                    sym = labels[0]
                 if sym == " ":
                     sym = "<space>"
-                net_out[
-                    idx, 0, trans_handler.label_to_int[sym]]\
-                    = -cost_along_path/len(label_seq)
+                net_out[idx, 0, labels.index(sym)] = \
+                    -cost_along_path/len(label_seq)
         return Variable(net_out)
 
     # @unittest.skip("")
     def test_ground_truth(self):
 
         lex = get_lexicon_from_arpa(data_dir('speech_recognition', 'tcb05cnp'))
-        mandatory_tokens = ["<blank>", ]
-        trans_handler = TranscriptionHandler(
-            lex, mandatory_tokens=mandatory_tokens)
+        labels = ["<blank>", ] + lex.tokens()
 
         utt = "THIS SHOULD BE RECOGNIZED"
         utt_id = "11111111"
         label_seq = "T_HI__S__SSHOOO_ULDBE___RECO_GNIIZ_ED____"
 
-        net_out = self.write_net_out(trans_handler, label_seq, -1000)
+        net_out = self.write_net_out(labels, label_seq, -1000)
 
         with tempfile.TemporaryDirectory() as working_dir:
 
@@ -52,14 +50,14 @@ class TestDecoder(unittest.TestCase):
             arpa.write_unigram(data_dir('speech_recognition', 'tcb05cnp'),
                                lm_path_uni)
 
-            self.decoder = Decoder(trans_handler, working_dir,
+            self.decoder = Decoder(labels, working_dir, lex,
                                    lm_file=lm_path_uni)
             self.decoder.create_graphs()
             lattice_file = path.join(working_dir, "net.lat")
             write_lattice_file({utt_id: net_out.num}, lattice_file)
             search_graphs = self.decoder.create_search_graphs(lattice_file)
-            sym_decode, word_decode = \
-                self.decoder.decode(search_graphs, lm_scale=1, out_type='string')
+            sym_decode, word_decode = self.decoder.decode(
+                search_graphs, lm_scale=1, out_type='string')
 
         print(sym_decode)
         print(word_decode)
@@ -68,29 +66,28 @@ class TestDecoder(unittest.TestCase):
     # @unittest.skip("")
     def test_ground_truth_with_eow(self):
 
-        lex = get_lexicon_from_arpa(data_dir('speech_recognition', 'tcb05cnp'))
         space = "<space>"
-        trans_handler = TranscriptionHandler(
-            lex, mandatory_tokens=["<blank>", ], eow=space)
+        lex = get_lexicon_from_arpa(data_dir('speech_recognition', 'tcb05cnp'))
+        labels = ["<blank>", space] + lex.tokens()
 
         utt = "THIS SHOULD BE RECOGNIZED"
         utt_id = "11111111"
         label_seq = "T_HI__S__  ___SSHOOO_ULD__  BE___RECO_GNIIZ_ED____"
 
-        net_out = self.write_net_out(trans_handler, label_seq, -1000)
+        net_out = self.write_net_out(labels, label_seq, -1000)
 
         with tempfile.TemporaryDirectory() as working_dir:
             lm_path_uni = os.path.join(working_dir, 'tcb05cnp')
             arpa.write_unigram(data_dir('speech_recognition', 'tcb05cnp'),
                                lm_path_uni)
-            self.decoder = Decoder(trans_handler, working_dir,
-                                   lm_file=lm_path_uni)
+            self.decoder = Decoder(labels, working_dir, lex,
+                                   lm_file=lm_path_uni, silent_tokens=[space])
             self.decoder.create_graphs()
             lattice_file = path.join(working_dir, "net.lat")
             write_lattice_file({utt_id: net_out.num}, lattice_file)
             search_graphs = self.decoder.create_search_graphs(lattice_file)
-            sym_decode, word_decode = \
-                self.decoder.decode(search_graphs, lm_scale=1, out_type='string')
+            sym_decode, word_decode = self.decoder.decode(
+                search_graphs, lm_scale=1, out_type='string')
 
         print(sym_decode)
         print(word_decode)
@@ -100,24 +97,22 @@ class TestDecoder(unittest.TestCase):
     def test_only_lex(self):
 
         lex = get_lexicon_from_arpa(data_dir('speech_recognition', 'tcb05cnp'))
-        trans_handler = TranscriptionHandler(
-            lex, mandatory_tokens=["<blank>", ])
+        labels = ["<blank>"] + lex.tokens()
 
         utt = "THIS SHOULD BE RECOGNIZED"
         utt_id = "11111111"
         label_seq = "T_HI__S__SSHOOO_ULDBE___RECO_GNIIZ_ED____"
 
-        net_out = self.write_net_out(trans_handler, label_seq, -1000)
+        net_out = self.write_net_out(labels, label_seq, -1000)
 
         with tempfile.TemporaryDirectory() as working_dir:
-
-            self.decoder = Decoder(trans_handler, working_dir)
+            self.decoder = Decoder(labels, working_dir, lex)
             self.decoder.create_graphs()
             lattice_file = path.join(working_dir, "net.lat")
             write_lattice_file({utt_id: net_out.num}, lattice_file)
             search_graphs = self.decoder.create_search_graphs(lattice_file)
-            sym_decode, word_decode = \
-                self.decoder.decode(search_graphs, lm_scale=1, out_type='string')
+            sym_decode, word_decode = self.decoder.decode(
+                search_graphs, lm_scale=1, out_type='string')
 
         print(sym_decode)
         print(word_decode)
@@ -126,8 +121,9 @@ class TestDecoder(unittest.TestCase):
     # @unittest.skip("")
     def test_compare_argmax_ctc(self):
 
-        trans_handler = TranscriptionHandler(["a", "b"],
-                                             mandatory_tokens=["<blank>", ])
+        words = ["a", "b"]
+        lex = get_lexicon_from_word_list(words)
+        labels = ["<blank>"] + lex.tokens()
 
         nn = BLSTMModel(10, 3, 2, 32)
         model_input = \
@@ -137,7 +133,7 @@ class TestDecoder(unittest.TestCase):
         utt_id = "11111111"
 
         with tempfile.TemporaryDirectory() as working_dir:
-            self.decoder = Decoder(trans_handler, working_dir)
+            self.decoder = Decoder(labels, working_dir, lex)
             self.decoder.create_graphs()
             self.decoder.decode_graph = self.decoder.ctc_map_fst
             lattice_file = path.join(working_dir, "net.lat")
@@ -147,7 +143,7 @@ class TestDecoder(unittest.TestCase):
                 self.decoder.decode(search_graphs, lm_scale=1)
 
         ref_decode, _ = argmax_decode(
-            net_out.num[:, 0, :], transcription_handler=trans_handler)
+            net_out.num[:, 0, :], transcription_handler=LabelHandler(labels))
         print(sym_decode)
         print(word_decode)
         print(ref_decode)
@@ -155,28 +151,22 @@ class TestDecoder(unittest.TestCase):
 
     # @unittest.skip("")
     def test_one_word_grammar(self):
-
-        lex = get_lexicon_from_arpa(data_dir('speech_recognition',
-                                             'tcb05cnp'))
-        trans_handler = TranscriptionHandler(
-            lex, mandatory_tokens=["<blank>", ])
-
         lm_file = data_dir('speech_recognition', "arpa_one_word")
+        lex = get_lexicon_from_arpa(lm_file)
+        labels = ["<blank>"] + lex.tokens()
 
         word = "TEST"
         utt_id = "11111111"
 
-        net_out = self.write_net_out(trans_handler, word)
-
+        net_out = self.write_net_out(labels, word)
         with tempfile.TemporaryDirectory() as working_dir:
-            self.decoder = Decoder(trans_handler, working_dir,
-                                   lm_file=lm_file)
+            self.decoder = Decoder(labels, working_dir, lex, lm_file=lm_file)
             self.decoder.create_graphs()
             lattice_file = path.join(working_dir, "net.lat")
             write_lattice_file({utt_id: net_out.num}, lattice_file)
             search_graphs = self.decoder.create_search_graphs(lattice_file)
-            sym_decode, word_decode = \
-                self.decoder.decode(search_graphs, lm_scale=1, out_type='string')
+            sym_decode, word_decode = self.decoder.decode(
+                search_graphs, lm_scale=1, out_type='string')
 
         print(sym_decode)
         print(word_decode)
@@ -190,25 +180,22 @@ class TestDecoder(unittest.TestCase):
         utt_id = "11111111"
 
         lm_file = data_dir('speech_recognition', "arpa_two_words_uni")
-
         lex = get_lexicon_from_arpa(lm_file)
-        trans_handler = TranscriptionHandler(
-            lex, mandatory_tokens=["<blank>", ])
+        labels = ["<blank>"] + lex.tokens()
 
-        net_out = self.write_net_out(trans_handler, word1, -1)
+        net_out = self.write_net_out(labels, word1, -1)
 
         with tempfile.TemporaryDirectory() as working_dir:
 
-            self.decoder = Decoder(trans_handler, working_dir,
-                                   lm_file=lm_file)
+            self.decoder = Decoder(labels, working_dir, lex, lm_file=lm_file)
             self.decoder.create_graphs()
             lattice_file = path.join(working_dir, "net.lat")
             write_lattice_file({utt_id: net_out.num}, lattice_file)
             search_graphs = self.decoder.create_search_graphs(lattice_file)
-            sym_decode_ac, word_decode_ac = \
-                self.decoder.decode(search_graphs, lm_scale=0.9, out_type='string')
-            sym_decode_lang, word_decode_lang = \
-                self.decoder.decode(search_graphs, lm_scale=1.1, out_type='string')
+            sym_decode_ac, word_decode_ac = self.decoder.decode(
+                search_graphs, lm_scale=0.9, out_type='string')
+            sym_decode_lang, word_decode_lang = self.decoder.decode(
+                search_graphs, lm_scale=1.1, out_type='string')
 
         print(sym_decode_ac[utt_id])
         print(word_decode_ac[utt_id])
@@ -222,30 +209,28 @@ class TestDecoder(unittest.TestCase):
     def test_trigram_grammar(self):
 
         lm_file = data_dir('speech_recognition', "arpa_three_words_tri")
-        lex = get_lexicon_from_arpa(data_dir('speech_recognition', "tcb05cnp"))
-        trans_handler = TranscriptionHandler(
-            lex, mandatory_tokens=["<blank>", ])
+        lex = get_lexicon_from_arpa(lm_file)
+        labels = ["<blank>"] + lex.tokens()
 
         utt1_id = "11111111"
         utt1 = "SHE SEES"
         symbol_seq1 = "SHE___SE_ES__"
-        net_out1 = self.write_net_out(trans_handler, symbol_seq1, -10)
+        net_out1 = self.write_net_out(labels, symbol_seq1, -10)
         utt2_id = "11111112"
         utt2 = "SHE SEES ME"
         symbol_seq2 = "SHE___SE_ES__MMEEE__"
-        net_out2 = self.write_net_out(trans_handler, symbol_seq2, -10)
+        net_out2 = self.write_net_out(labels, symbol_seq2, -10)
 
         with tempfile.TemporaryDirectory() as working_dir:
 
-            self.decoder = Decoder(trans_handler, working_dir,
-                                   lm_file=lm_file)
+            self.decoder = Decoder(labels, working_dir, lex, lm_file=lm_file)
             self.decoder.create_graphs()
             lattice_file = path.join(working_dir, "net.lat")
             write_lattice_file({utt1_id: net_out1.num,
                                 utt2_id: net_out2.num}, lattice_file)
             search_graphs = self.decoder.create_search_graphs(lattice_file)
-            sym_decode, word_decode = \
-                self.decoder.decode(search_graphs, lm_scale=1, out_type='string')
+            sym_decode, word_decode = self.decoder.decode(
+                search_graphs, lm_scale=1, out_type='string')
 
         print(sym_decode)
         print(word_decode)
@@ -254,9 +239,7 @@ class TestDecoder(unittest.TestCase):
 
     # @unittest.skip("")
     def test_oov(self):
-
         with tempfile.TemporaryDirectory() as working_dir:
-
             word1 = "WORKS"
             word2 = "KORKS"
 
@@ -267,39 +250,63 @@ class TestDecoder(unittest.TestCase):
                     fid.write(" " + letter)
 
             lex = get_lexicon_from_txt_file(lex_file)
-            trans_handler = TranscriptionHandler(
-                lex, mandatory_tokens=["<blank>", ])
+            labels = ["<blank>"] + lex.tokens()
 
             lm_path_uni = os.path.join(working_dir, 'tcb05cnp')
             arpa.write_unigram(data_dir('speech_recognition', 'tcb05cnp'),
                                lm_path_uni)
 
-            self.decoder = Decoder(trans_handler, working_dir,
+            self.decoder = Decoder(labels, working_dir, lex,
                                    lm_file=lm_path_uni)
             self.decoder.create_graphs()
 
             utt_id = "11111111"
             utt_length = len(word1)
 
-            net_out = np.zeros((utt_length, 1, trans_handler.num_tokens))
+            net_out = np.zeros((utt_length, 1, len(labels)))
             for idx in range(len(word1)):
                 sym1 = word1[idx]
                 sym2 = word2[idx]
-                net_out[idx, 0,
-                        trans_handler.label_to_int[sym1]]\
-                    += 5
-                net_out[idx, 0,
-                        trans_handler.label_to_int[sym2]]\
-                    += 10
+                net_out[idx, 0, labels.index(sym1)] += 5
+                net_out[idx, 0, labels.index(sym2)] += 10
             net_out = Variable(net_out)
 
             lattice_file = path.join(working_dir, "net.lat")
             write_lattice_file({utt_id: net_out.num}, lattice_file)
             search_graphs = self.decoder.create_search_graphs(lattice_file)
-            sym_decode, word_decode = \
-                self.decoder.decode(search_graphs, lm_scale=1, out_type='string')
+            sym_decode, word_decode = self.decoder.decode(
+                search_graphs, lm_scale=1, out_type='string')
 
         print(sym_decode)
         print(word_decode)
 
         self.assertEqual(word1, word_decode[utt_id])
+
+    def test_nbest(self):
+        utt_id = "11111111"
+        net_out = Variable(np.zeros((3, 1, 4)))
+        labels = ["<blk>", "a", "b", "c"]
+        lex = {"abc": ["a", "b", "c"],
+               "a": ["a"], }
+        with tempfile.TemporaryDirectory() as working_dir:
+            self.decoder = Decoder(labels, working_dir, lex)
+            self.decoder.create_graphs()
+            lattice_file = path.join(working_dir, "net1.lat")
+            write_lattice_file({utt_id: net_out.num}, lattice_file)
+            search_graphs = self.decoder.create_search_graphs(lattice_file)
+            sym_decodes_1, word_decodes_1 = self.decoder.decode(
+                search_graphs, lm_scale=1, n=10, out_type='string')
+            lattice_file = path.join(working_dir, "net2.lat")
+            write_lattice_file({utt_id: net_out.num}, lattice_file)
+            search_graphs = self.decoder.create_search_graphs(
+                lattice_file, determinize=False)
+            sym_decodes_2, word_decodes_2 = self.decoder.decode(
+                search_graphs, lm_scale=1, n=10, out_type='string')
+
+        print(sym_decodes_1)
+        print(word_decodes_1)
+        self.assertEqual(len(word_decodes_1), 4)
+        self.assertEqual(len(word_decodes_2), 9)
+        for decode in ["", "a", "a a", "abc"]:
+            self.assertIn(decode, word_decodes_1.values())
+            self.assertIn(decode, word_decodes_2.values())

@@ -58,20 +58,5 @@ class TestTransHandler(unittest.TestCase):
 
         tc.assert_array_equal(label_seq_1 + 1, label_seq_2)
 
-    def test_disambs(self):
-        lexicon = {"test": ["test"], "testcase": ["test", "case"]}
-        th = TranscriptionHandler(lexicon)
-        disambs = th.add_disambigs()
-        self.assertEqual(disambs, ["#1", ])
-        expected = ["test", "#1"]
-        self.assertEqual(expected, th.prepare_target(["test"], to_int=False))
-
-    def test_clean_up(self):
-        th = TranscriptionHandler(self.lexicon)
-        words = {"ab", "c"}
-        th.clean_up_lexicon(words)
-
-        self.assertEqual(words, set(th.lexicon.keys()))
-
 if __name__ == '__main__':
     unittest.main()
