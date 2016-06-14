@@ -21,10 +21,18 @@ class KaldiIOTest(unittest.TestCase):
                 writer.write_array('arr1', self.arr1)
                 writer.write_array('arr2', self.arr2)
             data = import_feature_data(f.name)
-            self.assertIn('arr1', data)
-            self.assertIn('arr2', data)
-            np.testing.assert_almost_equal(data['arr1'], self.arr1, decimal=5)
-            np.testing.assert_almost_equal(data['arr2'], self.arr2, decimal=5)
+
+            def _test():
+                self.assertIn('arr1', data)
+                self.assertIn('arr2', data)
+                np.testing.assert_almost_equal(data['arr1'], self.arr1, decimal=5)
+                np.testing.assert_almost_equal(data['arr2'], self.arr2, decimal=5)
+            _test()
+
+            data = import_feat_scp(f.name + '.scp')
+            _test()
+
+
 
     def test_make_mfccs(self):
         with tempfile.TemporaryDirectory() as tmp_dir:

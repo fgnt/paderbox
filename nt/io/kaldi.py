@@ -240,31 +240,10 @@ def read_ark_buffer(ark_buffer):
         while c != ' '.encode():
             utt_id += c.decode('utf8')
             c = struct.unpack('<s', ark_buffer.read(1))[0]
-        pos = ark_buffer.tell()
+        pos = ark_buffer.tell() - 1
         header = struct.unpack('<xccccbibi', ark_buffer.read(15))
         ark_buffer.seek(pos)
         data[utt_id] = _read_mat_from_buffer(ark_buffer)
-        rows, colums = header[-3], header[-1]
-        ark_buffer.seek(
-            pos + 16 + (rows * colums * 4))
-    return data
-
-
-def get_ark_offsets(ark_buffer):
-    data = dict()
-    while True:
-        utt_id = ''
-        next_char = ark_buffer.read(1)
-        if next_char == ''.encode():
-            break
-        else:
-            c = struct.unpack('<s', next_char)[0]
-        while c != ' '.encode():
-            utt_id += c.decode('utf8')
-            c = struct.unpack('<s', ark_buffer.read(1))[0]
-        pos = ark_buffer.tell() - 1
-        data[utt_id] = pos + 1
-        header = struct.unpack('<xccccbibi', ark_buffer.read(15))
         rows, colums = header[-3], header[-1]
         ark_buffer.seek(
             pos + 16 + (rows * colums * 4))
@@ -397,7 +376,7 @@ def _write_array_for_kaldi(utt_id, array, fid, close_stream=False):
     fid.write(utt_mat)
     if close_stream:
         fid.close()
-    return ark_pos
+    return ark_pos + 1
 
 
 class ArkWriter():
@@ -415,7 +394,10 @@ class ArkWriter():
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.ark_fid.close()
-        write_scp_file(self.scp, self.ark_path.replace('.ark', '.scp'))
+        if self.ark_path.endswith('.ark'):
+            write_scp_file(self.scp, self.ark_path.replace('.ark', '.scp'))
+        else:
+            write_scp_file(self.scp, self.ark_path + '.scp')
 
 
 def array_to_kaldi_io_stream(array, utt_id='stream'):
