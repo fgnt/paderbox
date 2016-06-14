@@ -1,8 +1,11 @@
 import json
+from warnings import warn
 import os
 from pymongo import MongoClient, ASCENDING
 from bson.objectid import ObjectId
 from sacred.observers.mongo import *
+import shutil
+
 import numpy as np
 from nt.utils import nvidia_helper
 import getpass
@@ -45,16 +48,31 @@ def _get_runs(database='sacred', prefix='default', secret_file=None):
     return client[database][prefix].runs
 
 
-def get_config_from_id(_id, database='sacred', prefix='default',
-                       secret_file=None):
+def get_experiment_from_id(_id, database='sacred', prefix='default',
+                           secret_file=None):
     runs = _get_runs(database, prefix, secret_file)
     experiment = runs.find_one({'_id': ObjectId(_id)})
-    return experiment['config']
+    return experiment
+
+
+def get_config_from_id(_id, database='sacred', prefix='default',
+                       secret_file=None):
+    return get_experiment_from_id(_id, database, prefix, secret_file)['config']
 
 
 def delete_entry_by_id(_id, database='sacred', prefix='default',
-                       secret_file=None):
+                       secret_file=None, delete_dir=None):
     runs = _get_runs(database, prefix, secret_file)
+    if delete_dir is not None:
+        cfg = get_config_from_id(_id, database, prefix, secret_file)
+        try:
+            data_dir = cfg[delete_dir]
+        except KeyError:
+            warn('{} is not part of the config. Cannot delete data dir.'.format(
+                delete_dir
+            ))
+        else:
+            shutil.rmtree(data_dir)
     delete_result = runs.delete_one({'_id': ObjectId(_id)})
     print(delete_result.raw_result)
 
@@ -62,14 +80,18 @@ def delete_entry_by_id(_id, database='sacred', prefix='default',
 def print_overview_table(
         database='sacred', prefix='default', secret_file=None,
         constraints=None, callback_function=None, constraint_callback=None,
-        config_blacklist=None, config_whitelist=None
-):
+        config_blacklist=None, config_whitelist=None, show_hostinfo=True):
+
     constraints = {} if constraints is None else constraints
 
     runs = _get_runs(database, prefix, secret_file)
 
     list_of_dicts = list(runs.find(constraints))
     # list_of_dicts = list(runs.find(constraints).sort('start_time', ASCENDING))
+
+    if len(list_of_dicts) == 0:
+        print('No entries found for query')
+        return
 
     doc, tag, text = Doc().tagtext()
 
@@ -115,10 +137,12 @@ def print_overview_table(
                                 ))
                             except KeyError:
                                 pass
+
                         with tag('td'):
                             doc.asis(_dict_to_cell(row['config']))
-                        with tag('td'):
-                            doc.asis(_dict_to_cell(row['host']))
+                        if show_hostinfo:
+                            with tag('td'):
+                                doc.asis(_dict_to_cell(row['host']))
                         if callback_function is not None:
                             with tag('td'):
                                 try:
