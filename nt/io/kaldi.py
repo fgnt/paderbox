@@ -69,37 +69,30 @@ KALDI_ROOT = kaldi_root()
 RAW_MFCC_CMD = KALDI_ROOT + '/src/featbin/' + \
                r"""compute-mfcc-feats --num-mel-bins={num_mel_bins} --use-energy={use_energy} \
                --num-ceps={num_ceps} --low-freq={low_freq} --high-freq={high_freq} \
-               scp,p:{wav_scp} ark,scp:{dst_ark},{dst_scp}"""
+               scp,p:{wav_scp} ark:- """
 
-RAW_MFCC_DELTA_CMD = KALDI_ROOT + '/src/featbin/' + \
-                     r"""compute-mfcc-feats --num-mel-bins={num_mel_bins} --use-energy={use_energy} \
-                     --num-ceps={num_ceps} --low-freq={low_freq} --high-freq={high_freq} \
-                     scp,p:{wav_scp} ark:- | add-deltas ark:- ark,scp:{dst_ark},{dst_scp}"""
+ADD_DELTA_CMD = ' add-deltas ark:- ark:- '
+
+COMPUTE_NORMALIZE_CMD = 'compute-cmvn-stats scp:{feat_scp} scp:{cmvn_scp}'
+
+NORMALIZE_CMD = 'apply-cmvn scp:{feat_scp} scp:{cmvn_scp} ark,scp:{dst_ark},{dst_scp}'
+
+STORE_FEATS = ' copy-feats ark:- ark,scp:{dst_ark},{dst_scp}'
 
 RAW_FBANK_CMD = KALDI_ROOT + '/src/featbin/' + \
                 r"""compute-fbank-feats --num-mel-bins={num_mel_bins} \
                 --low-freq={low_freq} --high-freq={high_freq} --use-energy={use_energy} \
                 --use-log-fbank={use_log_fbank} --window-type={window_type} \
-                scp,p:{wav_scp} ark,scp:{dst_ark},{dst_scp}"""
+                scp,p:{wav_scp} ark:- """
 
-RAW_FBANK_DELTA_CMD = KALDI_ROOT + '/src/featbin/' + \
-                      r"""compute-fbank-feats --num-mel-bins={num_mel_bins} \
-                      --low-freq={low_freq} --high-freq={high_freq} --use-energy={use_energy}  \
-                      --use-log-fbank={use_log_fbank} --window-type={window_type} \
-                      scp,p:{wav_scp} ark:- | add-deltas ark:- ark,scp:{dst_ark},{dst_scp}"""
 
-RAW_FBANK_PIPE_CMD = KALDI_ROOT + '/src/featbin/' + \
-                     r"""compute-fbank-feats --num-mel-bins={num_mel_bins} \
-                     --low-freq={low_freq} --high-freq={high_freq} --use-energy={use_energy} \
-                     --use-log-fbank={use_log_fbank} --window-type={window_type} \
-                     ark:- ark:-"""
-
-RAW_FBANK_DELTA_PIPE_CMD = KALDI_ROOT + '/src/featbin/' + \
-                           r"""compute-fbank-feats --num-mel-bins={num_mel_bins} \
-                           --low-freq={low_freq} --high-freq={high_freq} --use-energy={use_energy}  \
-                           --use-log-fbank={use_log_fbank} --window-type={window_type} \
-                           ark:- ark:- | add-deltas ark:- ark:-"""
-
+def _build_cmd(extractor, add_deltas=False, store_feats=False):
+    cmds = [extractor]
+    if add_deltas:
+        cmds.append(ADD_DELTA_CMD)
+    if store_feats:
+        cmds.append(STORE_FEATS)
+    return '|'.join(cmds)
 
 def make_mfcc_features(wav_scp, dst_dir, num_mel_bins, num_ceps, low_freq=20,
                        high_freq=-400, num_jobs=20, add_deltas=True,
@@ -119,10 +112,10 @@ def make_mfcc_features(wav_scp, dst_dir, num_mel_bins, num_ceps, low_freq=20,
                           'w') as fid:
                     for _utt_id, _ark in cur_scp.items():
                         fid.write('{} {}\n'.format(_utt_id, _ark))
-                if add_deltas:
-                    cmd = RAW_MFCC_DELTA_CMD
-                else:
-                    cmd = RAW_MFCC_CMD
+
+                cmd = _build_cmd(RAW_MFCC_CMD, add_deltas=add_deltas,
+                                 store_feats=True)
+
                 cmds.append(cmd.format(
                     num_mel_bins=num_mel_bins, num_ceps=num_ceps,
                     low_freq=low_freq, high_freq=high_freq,
@@ -171,10 +164,10 @@ def make_fbank_features(wav_scp, dst_dir, num_mel_bins, low_freq=20,
                           'w') as fid:
                     for _utt_id, _ark in cur_scp.items():
                         fid.write('{} {}\n'.format(_utt_id, _ark))
-                if add_deltas:
-                    cmd = RAW_FBANK_DELTA_CMD
-                else:
-                    cmd = RAW_FBANK_CMD
+
+                cmd = _build_cmd(RAW_FBANK_CMD, add_deltas=add_deltas,
+                                 store_feats=True)
+
                 cmds.append(cmd.format(
                     num_mel_bins=num_mel_bins, use_energy=use_energy,
                     low_freq=low_freq, high_freq=high_freq,
@@ -204,10 +197,14 @@ def make_fbank_features(wav_scp, dst_dir, num_mel_bins, low_freq=20,
             print('Finished successfully')
 
 
-def compute_mean_and_var_stats(feat_scp, dst_dir):
+def compute_mean_and_var_stats(feat_scp, dst_dir, spk2utt=None):
     mkdir_p(dst_dir)
-    cmd = 'compute-cmvn-stats scp:{0} ark,t,scp:{1}/cmvn.ark,{1}cmvn.scp'.format(
-        feat_scp, dst_dir
+    if spk2utt is not None:
+        spk2utt = '--spk2utt=ark:{} '.format(spk2utt)
+    else:
+        spk2utt = ''
+    cmd = 'compute-cmvn-stats {2}scp:{0} ark,t,scp:{1}/cmvn.ark,{1}cmvn.scp'.format(
+        feat_scp, dst_dir, spk2utt
     )
     run_processes(cmd, environment=get_kaldi_env())
 
@@ -243,10 +240,31 @@ def read_ark_buffer(ark_buffer):
         while c != ' '.encode():
             utt_id += c.decode('utf8')
             c = struct.unpack('<s', ark_buffer.read(1))[0]
-        pos = ark_buffer.tell() - 1
+        pos = ark_buffer.tell()
         header = struct.unpack('<xccccbibi', ark_buffer.read(15))
         ark_buffer.seek(pos)
         data[utt_id] = _read_mat_from_buffer(ark_buffer)
+        rows, colums = header[-3], header[-1]
+        ark_buffer.seek(
+            pos + 16 + (rows * colums * 4))
+    return data
+
+
+def get_ark_offsets(ark_buffer):
+    data = dict()
+    while True:
+        utt_id = ''
+        next_char = ark_buffer.read(1)
+        if next_char == ''.encode():
+            break
+        else:
+            c = struct.unpack('<s', next_char)[0]
+        while c != ' '.encode():
+            utt_id += c.decode('utf8')
+            c = struct.unpack('<s', ark_buffer.read(1))[0]
+        pos = ark_buffer.tell() - 1
+        data[utt_id] = pos + 1
+        header = struct.unpack('<xccccbibi', ark_buffer.read(15))
         rows, colums = header[-3], header[-1]
         ark_buffer.seek(
             pos + 16 + (rows * colums * 4))
@@ -366,6 +384,7 @@ def _write_array_for_kaldi(utt_id, array, fid, close_stream=False):
     rows, cols = utt_mat.shape
     fid.write(
         struct.pack('<%ds' % (len(utt_id)), utt_id.encode()))
+    ark_pos = fid.tell()
     fid.write(
         struct.pack('<cxcccc',
                     ' '.encode(),
@@ -378,6 +397,7 @@ def _write_array_for_kaldi(utt_id, array, fid, close_stream=False):
     fid.write(utt_mat)
     if close_stream:
         fid.close()
+    return ark_pos
 
 
 class ArkWriter():
@@ -385,14 +405,17 @@ class ArkWriter():
         self.ark_path = ark_filename
 
     def __enter__(self):
-        self.ark_file_write = open(self.ark_path, "wb")
+        self.ark_fid = open(self.ark_path, "wb")
+        self.scp = dict()
         return self
 
     def write_array(self, utt_id, array):
-        _write_array_for_kaldi(utt_id, array, self.ark_file_write)
+        ark_pos = _write_array_for_kaldi(utt_id, array, self.ark_fid)
+        self.scp[utt_id] = self.ark_path + ':{}'.format(ark_pos)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.ark_file_write.close()
+        self.ark_fid.close()
+        write_scp_file(self.scp, self.ark_path.replace('.ark', '.scp'))
 
 
 def array_to_kaldi_io_stream(array, utt_id='stream'):
@@ -434,6 +457,20 @@ def write_scp_file(scp, scp_file):
     with open(scp_file, 'w') as fid:
         for utt, val in scp.items():
             fid.write('{} {}\n'.format(utt, val))
+
+
+def merge_scps(scp_1, scp_2, postfix_1=None, postfix_2=None):
+    merged_scp = dict()
+    if postfix_1 is None and postfix_2 is None:
+        assert len(set(list(scp_1.keys()) + list(scp_2.keys()))) == \
+               len(scp_1.keys()) + len(scp_2.keys())
+    if postfix_1 is None:
+        postfix_1 = ''
+    if postfix_2 is None:
+        postfix_2 = ''
+    merged_scp.update({k + postfix_1: v for k, v in scp_1.items()})
+    merged_scp.update({k + postfix_2: v for k, v in scp_2.items()})
+    return merged_scp
 
 
 window_type = "hamming"
@@ -497,7 +534,8 @@ def import_phone_alignment(ali_dir, model_file=None):
 
 def import_features_and_alignment(feat_scp, ali_dir, model_file,
                                   ali_mapper=lambda x: x, cut_alignments=False,
-                                  cut_features=False):
+                                  cut_features=False, ali_type='pdf-ids',
+                                  verbose=False):
     """ Import features and alignments given a scp file and a ali directory
 
     This is basically a wrapper around the other functions
@@ -510,8 +548,14 @@ def import_features_and_alignment(feat_scp, ali_dir, model_file,
     :return: Tuple of (dict, dict) where the first contains the features and
         the second the corresponding alignments
     """
-    features = import_feat_scp(feat_scp)
-    alignments = import_alignment(ali_dir, model_file)
+    features = import_feat_scp(feat_scp, verbose=verbose)
+    if ali_type == 'pdf-ids':
+        alignments = import_alignment(ali_dir, model_file)
+    elif ali_type == 'phones':
+        alignments = import_phone_alignment(ali_dir, model_file)
+    else:
+        raise ValueError('Unknown alignment type {}. Possible are '
+                         'pdf-ids or phones.'.format(ali_type))
 
     features_common = dict()
     alignments_common = dict()
@@ -520,19 +564,24 @@ def import_features_and_alignment(feat_scp, ali_dir, model_file,
             features_common[utt_id] = features[utt_id]
             alignments_common[ali_mapper(utt_id)] = \
                 alignments[ali_mapper(utt_id)]
-            len_features = features_common[utt_id].shape[0]
-            len_ali = alignments_common[ali_mapper(utt_id)].shape[0]
-            if cut_features:
-                features_common[utt_id] = features_common[utt_id][:len_ali]
-            if cut_alignments:
-                alignments_common[ali_mapper(utt_id)] = \
-                    alignments_common[ali_mapper(utt_id)][:len_features]
-            assert features_common[utt_id].shape[0] == \
-                   alignments_common[ali_mapper(utt_id)].shape[0], \
-                'There are {} features for utterance {} but {} alignments'.format(
-                    features_common[utt_id].shape[0], utt_id,
-                    alignments_common[ali_mapper(utt_id)].shape[0]
-                )
+            if ali_type != 'phones':
+                len_features = features_common[utt_id].shape[0]
+                len_ali = alignments_common[ali_mapper(utt_id)].shape[0]
+                if cut_features:
+                    features_common[utt_id] = features_common[utt_id][:len_ali]
+                if cut_alignments:
+                    alignments_common[ali_mapper(utt_id)] = \
+                        alignments_common[ali_mapper(utt_id)][:len_features]
+                if features_common[utt_id].shape[0] != \
+                        alignments_common[ali_mapper(utt_id)].shape[0]:
+                    warnings.warn(
+                        'There are {} features for utterance {} but '
+                        '{} alignments'.format(
+                            features_common[utt_id].shape[0], utt_id,
+                            alignments_common[ali_mapper(utt_id)].shape[0]
+                        ))
+                    features_common.pop(utt_id)
+                    alignments_common.pop(utt_id)
         else:
             warnings.warn('No alignment found for utterance {}'.format(utt_id))
 
@@ -585,10 +634,8 @@ def make_fbank_features_from_time_signal(time_signal, num_mel_bins,
     audio_data = BytesIO()
     audiowrite(time_signal, audio_data, normalize=True, threaded=False)
 
-    if add_deltas:
-        cmd_template = RAW_FBANK_DELTA_PIPE_CMD
-    else:
-        cmd_template = RAW_FBANK_PIPE_CMD
+    cmd_template = _build_cmd(RAW_FBANK_CMD, add_deltas=add_deltas)
+
     cmd = cmd_template.format(
         num_mel_bins=num_mel_bins,
         low_freq=low_freq, high_freq=high_freq,
