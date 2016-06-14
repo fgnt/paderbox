@@ -166,6 +166,8 @@ def scatter(*signal, ax=None, ylim=None, label=None, color=None):
         ax.scatter(*signal, label=label, color=color)
     else:
         ax.scatter(*signal, label=label)
+    if ylim is not None and isinstance(ylim, tuple):
+        ax.set_ylim(ylim)
 
     # if type(signal) is tuple:
     #     ax.scatter(signal[0], signal[1], label=label, color=color)
