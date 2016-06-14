@@ -47,6 +47,16 @@ class TestTransHandler(unittest.TestCase):
         expected = range(1, 7)  # expecting a sorted label mapping here
         tc.assert_array_equal(expected, label_seq)
 
+    def test_case_insensitive(self):
+        th = TranscriptionHandler(self.lexicon, case_sensitive=False)
+        self.assertEqual(
+            th.lexicon, {"AB": ["a", "b"], "C": ["c"], "DEF": ["d", "e", "f"]})
+
+        word_seq = ["AB", "c", "dEf"]
+        label_seq = th.prepare_target(word_seq, to_int=False)
+        expected = ["a", "b", "c", "d", "e", "f"]
+        self.assertEqual(expected, label_seq)
+
     def test_add_eps(self):
         th1 = TranscriptionHandler(self.lexicon, oov_word="<unk>")
         th2 = deepcopy(th1)

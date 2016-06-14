@@ -11,6 +11,11 @@ class TestLexicon(unittest.TestCase):
         tc.assert_equal(lex.words(), ['abc'])
         tc.assert_equal(lex.tokens(), ['a', 'b', 'c'])
 
+    def test_list(self):
+        lex = Lexicon(["a", "bc", "d"])
+        expected = {"a": ["a", ], "bc": ["bc", ], "d": ["d", ]}
+        tc.assert_equal(lex, expected)
+
     def test_rm_variants(self):
         lex = Lexicon({"a": [(["a", ], 1.), (["a", "a"], 0.5)]})
         expected = {"a": ["a", ]}
