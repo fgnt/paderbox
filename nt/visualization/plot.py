@@ -54,6 +54,31 @@ def allow_dict_input_and_colorize(f):
     return wrapper
 
 
+def allow_dict_for_title(f):
+    """ Allow dict input and use keys as labels
+    """
+    @wraps(f)
+    def wrapper(signal, *args, **kwargs):
+        ax = kwargs.pop('ax', None)
+
+        if isinstance(signal, dict):
+            # Scatter does not cycle the colors so we need to do this explicitly
+            if f.__name__ == 'scatter':
+                cyl = plt.rcParams['axes.prop_cycle']
+                assert len(signal) == 1
+                for (label, data), prob_cycle in zip(signal.items(), cyl):
+                    ax = f(data, *args, ax=ax, label=label,
+                           color=prob_cycle['color'], **kwargs)
+            else:
+                for label, data in signal.items():
+                    ax = f(data, *args, ax=ax, title=label, **kwargs)
+            ax.legend()
+        else:
+            ax = f(signal, *args, ax=ax, **kwargs)
+        return ax
+    return wrapper
+
+
 def _get_batch(signal, batch):
     if signal.ndim == 3:
         return signal[:, batch, :]
@@ -415,6 +440,7 @@ def stft(
     return spectrogram(**locals())
 
 
+@allow_dict_for_title
 @create_subplot
 def mask(
         signal, ax=None, limits=(0, 1), log=False, colorbar=True, batch=0,
@@ -435,6 +461,7 @@ def mask(
     return _time_frequency_plot(**locals())
 
 
+@allow_dict_for_title
 @create_subplot
 def tf_symlog(
         signal, ax=None, limits=None, log=False, colorbar=True, batch=0,
@@ -453,8 +480,9 @@ def tf_symlog(
         Specify the which batch to plot
     :return: axes
     """
-    limits = np.max(np.abs(signal))
-    limits = (-limits, limits, np.median(np.abs(signal)))
+    if limits is None:
+        limits = np.max(np.abs(signal))
+        limits = (-limits, limits, np.median(np.abs(signal)))
     return _time_frequency_plot(**locals())
 
 
