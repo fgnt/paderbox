@@ -2,7 +2,7 @@
 import unittest
 import tempfile
 from nt.speech_recognition.lexicon import Linear
-from nt.transcription_handling.transcription_handler import TranscriptionHandler
+from nt.transcription_handling.transcription_handler import LabelHandler
 from nt.speech_recognition import fst
 
 
@@ -17,33 +17,31 @@ class TestLexicon(unittest.TestCase):
                                 'eos': '</eos>', 'eoc': '</eoc>'}
         mandatory_tokens = [self.special_symbols['eps'],
                             self.special_symbols['phi'], ]
-        self.th = TranscriptionHandler(
-            self.lexicon, mandatory_tokens=mandatory_tokens,
-            add_words_from_lexicon=True)
-        self.th.add_tokens(self.special_symbols.values())
-        self.th.add_words(
-            {self.special_symbols['eos']: [self.special_symbols['eos']]})
+        tokens = [t for spelling in self.lexicon.values() for t in spelling]
+        words = list(self.lexicon.keys())
+        self.lh = LabelHandler(mandatory_tokens + tokens +
+                               list(self.special_symbols.values()) + words)
 
-        self.int_lexicon = {self.th.labels2ints(word)[0]:
-                            self.th.labels2ints(labels)
+        self.int_lexicon = {self.lh.labels2ints(word)[0]:
+                            self.lh.labels2ints(labels)
                             for word, labels in self.lexicon.items()}
-        self.int_eos_word = self.th.labels2ints(
+        self.int_eos_word = self.lh.labels2ints(
             self.special_symbols['eos'])[0]
 
-        self.int_eps = self.th.labels2ints(
+        self.int_eps = self.lh.labels2ints(
             self.special_symbols['eps'])[0]
-        self.int_eow = self.th.labels2ints(
+        self.int_eow = self.lh.labels2ints(
             self.special_symbols['eow'])[0]
-        self.int_phi = self.th.labels2ints(
+        self.int_phi = self.lh.labels2ints(
             self.special_symbols['phi'])[0]
-        self.int_sow = self.th.labels2ints(
+        self.int_sow = self.lh.labels2ints(
             self.special_symbols['sow'])[0]
-        self.int_eoc = self.th.labels2ints(
+        self.int_eoc = self.lh.labels2ints(
             self.special_symbols['eoc'])[0]
-        self.int_eos_label = self.th.labels2ints(
+        self.int_eos_label = self.lh.labels2ints(
             self.special_symbols['eos'])[0]
-        self.int_label = [self.th.labels2ints(label)[0]
-                          for label in self.th.tokens
+        self.int_label = [self.lh.labels2ints(label)[0]
+                          for label in self.lh.labels
                           if label not in self.special_symbols.values()]
 
     def _test_write_fst(self, class_type, add_word_mode,
@@ -62,7 +60,7 @@ class TestLexicon(unittest.TestCase):
             sym_filename = fst_filename + '.syms'
             pdf_filename = fst_filename + '.pdf'
             lexicon.write_fst(fst_filename)
-            self.th.write_table(sym_filename)
+            self.lh.write_table(sym_filename)
             fst.draw(sym_filename, sym_filename, fst_filename, pdf_filename)
 
     def test_linear_linear_trie_write_fst(self):
