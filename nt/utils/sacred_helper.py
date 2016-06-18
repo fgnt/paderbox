@@ -10,6 +10,7 @@ import numpy as np
 from nt.utils import nvidia_helper
 import getpass
 from nt.utils.pynvml import *
+import pandas as pd
 
 from IPython.core.display import display, HTML
 from bson.objectid import ObjectId
@@ -85,7 +86,6 @@ def print_overview_table(
         database='sacred', prefix='default', secret_file=None,
         constraints=None, callback_function=None, constraint_callback=None,
         config_blacklist=None, config_whitelist=None, show_hostinfo=True):
-
     constraints = {} if constraints is None else constraints
 
     runs = _get_runs(database, prefix, secret_file)
@@ -175,13 +175,19 @@ def rename_columns(frame, map):
         frame.drop(_expand_key(old_key, depth), 1, inplace=True)
 
 
+def add_values(df, f):
+    depth = len(df.columns.levels)
+    for i in df.index:
+        try:
+            (k, v) = f(df.loc[i].squeeze())
+            df.loc[i, _expand_key(k, depth)] = v
+        except:
+            pass
+
+
 def get_data_frame(database='sacred', prefix='default', secret_file=None,
-                   depth=2, add_perplexity=True, add_cur_epoch=True,
-                   sort=('perplexity', 'min'),
-                   rename={'start_time': ('time', 'start'),
-                           'stop_time': ('time', 'stop')},
-                   ascending=True):
-    def _make_data_frame(l, depth=2):
+                   depth=2):
+    def _make_data_frame(l):
         d = dict()
 
         def _f(indices, dic, i):
@@ -201,61 +207,16 @@ def get_data_frame(database='sacred', prefix='default', secret_file=None,
             _f(tuple(), e, i)
         return pd.DataFrame(d)
 
-    def _add_perplexity(df):
-        for i, val in df[('info', 'cv_perplexity')].iteritems():
-            if val is not np.nan:
-                min_perplexity = min([x[1] for x in val])
-                last_perplexity = val[-1][1]
-                df.set_value(i, _expand_key(('perplexity', 'min'), depth),
-                             min_perplexity)
-                df.set_value(i, _expand_key(('perplexity', 'last'), depth),
-                             last_perplexity)
-
-    def _add_current_epoch(df):
-        for i, val in df[('info', 'cv_perplexity')].iteritems():
-            if val is not np.nan:
-                df.set_value(i, _expand_key('cur_epoch', depth),
-                             val[-1][0])
-
     runs = _get_runs(database, prefix, secret_file)
 
     list_of_dicts = list(runs.find())
 
-    frame = _make_data_frame(list_of_dicts, depth)
-
-    if add_perplexity and depth >= 2:
-        _add_perplexity(frame)
-
-    if add_cur_epoch and depth >= 2:
-        _add_current_epoch(frame)
-
-    if sort is not None:
-        frame = frame.sort_values(sort, ascending=ascending)
-
-    if rename is not None:
-        rename_columns(frame, rename)
+    frame = _make_data_frame(list_of_dicts)
 
     return frame
 
 
-def get_config_frame(frame, config_entries=['last_cv_perplexity',
-                                            'min_cv_perplexity',
-                                            'dropout_lateral',
-                                            'dropout_vertical', 'learning_rate',
-                                            'gradient_clipping',
-                                            'initialization_maximum',
-                                            'lateral_mask_sample_interval',
-                                            'vertical_mask_sample_interval'],
-                     host_entries=['user']):
-    return filter_columns(frame,
-                          {'config': config_entries, 'host': host_entries,
-                           'status': True, 'perplexity': True,
-                           'time': True})
-
-
-def filter_columns(frame, entries={
-    'config': ['hidden_units', 'model', 'learning_rate'],
-    'host': ['user', 'os']}):
+def filter_columns(frame, entries):
     def _in(lv, l):
         res = None
         for k in l:
@@ -299,7 +260,7 @@ class GPUMongoObserver(MongoObserver):
     @staticmethod
     def create(url='loclahost', db_name='sacred', prefix='default', **kwargs):
         """
-            Does the same as MongoObserver.create but retuns a GPUMongoObserver.
+            Does the same as MongoObserver.create but returns a GPUMongoObserver.
         """
         client = pymongo.MongoClient(url, **kwargs)
         database = client[db_name]
