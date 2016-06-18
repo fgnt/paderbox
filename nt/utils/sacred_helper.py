@@ -59,6 +59,10 @@ def get_config_from_id(_id, database='sacred', prefix='default',
                        secret_file=None):
     return get_experiment_from_id(_id, database, prefix, secret_file)['config']
 
+def get_info_from_id(_id, database='sacred', prefix='default',
+                       secret_file=None):
+    return get_experiment_from_id(_id, database, prefix, secret_file)['info']
+
 
 def delete_entry_by_id(_id, database='sacred', prefix='default',
                        secret_file=None, delete_dir=None):
