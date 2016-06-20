@@ -60,14 +60,12 @@ def generate_augmented_training_data(dir_name):
     for snr in snr_values:
         noisy_train_signal.append(train_time_signal + n_gen.get_noise_for_signal(train_time_signal, snr=snr))
     noisy_train_signal = np.concatenate(noisy_train_signal)
-    audiowrite(noisy_train_signal, 'training_events_noise.wav', normalize=True)
 
     noisy_cv_signal = list()
     snr_values = np.random.choice([-12, -6, 0, 6, 12], size=5, replace=False)
     for snr in snr_values:
         noisy_cv_signal.append(cv_time_signal + n_gen.get_noise_for_signal(cv_time_signal, snr=snr))
     noisy_cv_signal = np.concatenate(noisy_cv_signal)
-    audiowrite(noisy_cv_signal, 'cv_events_noise.wav', normalize=True)
 
     return noisy_train_signal, noisy_cv_signal, total_lengths, scripts
 
@@ -276,8 +274,8 @@ def get_test_data_provider(json_data, flist_dev, transcription_list, events,
     if cnn_features:
         T, B, C, H, W = dev_data.shape
         dev_data = dev_data.reshape((T, C, H, W))
-    #else:
-        #dev_data = dev_data.reshape(T, -1) # commenetd out for LSTMs.
+    else:
+        dev_data = dev_data.reshape(T, -1)  # commenet this for LSTMs.
     print(dev_data.shape)
 
     # Load Test targets
@@ -310,7 +308,6 @@ def get_test_data_provider(json_data, flist_dev, transcription_list, events,
 
     return dp_scripts, scripts
 
-
 def resample_and_convert_frame_to_seconds(frame_num, frame_size=512, frame_shift=160, resampling_factor=44.1 / 16,
                                           sampling_rate=44100):
     sample_num = module_stft._stft_frames_to_samples(frame_num, frame_size, frame_shift) # convert into samples corresponding to the frame size and shift
@@ -338,6 +335,6 @@ def generate_onset_offset_label(decoded_allFrames, event_id, event_label_handler
         # if the period in question was active for that event, log it's onset and offset.
         # Minimum duration constraint
         if label_now == 1 and offset - onset > 0.06 and class_label != 'Silence':
-            file.write(' '.join(('%.2f' % onset, '%.2f' % offset, class_label, '\n')))
+            file.write(''.join(('\t'.join(('%.2f' % onset, '%.2f' % offset, class_label)), '\n')))
         i = j
     file.close()
