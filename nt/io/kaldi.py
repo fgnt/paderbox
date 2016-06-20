@@ -85,6 +85,12 @@ RAW_FBANK_CMD = KALDI_ROOT + '/src/featbin/' + \
                 --use-log-fbank={use_log_fbank} --window-type={window_type} \
                 scp,p:{wav_scp} ark:- """
 
+RAW_FBANK_ARK_CMD = KALDI_ROOT + '/src/featbin/' + \
+                r"""compute-fbank-feats --num-mel-bins={num_mel_bins} \
+                --low-freq={low_freq} --high-freq={high_freq} --use-energy={use_energy} \
+                --use-log-fbank={use_log_fbank} --window-type={window_type} \
+                ark:- ark:- """
+
 
 def _build_cmd(extractor, add_deltas=False, store_feats=False):
     cmds = [extractor]
@@ -616,7 +622,7 @@ def make_fbank_features_from_time_signal(time_signal, num_mel_bins,
     audio_data = BytesIO()
     audiowrite(time_signal, audio_data, normalize=True, threaded=False)
 
-    cmd_template = _build_cmd(RAW_FBANK_CMD, add_deltas=add_deltas)
+    cmd_template = _build_cmd(RAW_FBANK_ARK_CMD, add_deltas=add_deltas)
 
     cmd = cmd_template.format(
         num_mel_bins=num_mel_bins,
