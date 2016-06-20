@@ -29,8 +29,9 @@ class Mlab():
         if 'nt' in hostname:
             mlab_process = Matlab(
                 'nice -n 3 ' +
-                '/net/ssd/software/MATLAB/R2015a/bin/matlab ' +
-                '-nodisplay -nosplash'
+                '/net/ssd/software/MATLAB/R2015a/bin/matlab' +
+                ' -c /opt/MATLAB/R2014a_studis/licenses/network.lic'
+                ' -nodisplay -nosplash'
             )
         else:
             mlab_process = Matlab('nice -n 3 matlab -nodisplay -nosplash')
