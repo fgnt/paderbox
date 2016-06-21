@@ -2,7 +2,6 @@ from itertools import product, combinations
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import numpy as np
-import nt.testing as tc
 
 
 class CNNVisu:
@@ -160,7 +159,7 @@ class CNNVisu:
             e = np.array(center)+np.array(e)
             if np.linalg.norm(s-e) == 2*depth[1] or np.linalg.norm(s-e) == 2*width[1] \
                     or np.linalg.norm(s-e) == 2*height[1]:
-                ax.plot3D(*zip(s, e), color="k")
+                ax.plot3D(*zip(s, e), color="k", alpha=0.5)
         self._conv_area(ax, d_out, filter_size, xcenter, center[0])
         d_in = d_out*2
         return d_in, center[0]
@@ -193,7 +192,7 @@ class CNNVisu:
             e = np.array(center)+np.array(e)
             if np.linalg.norm(s-e) == 2*depth[1] or np.linalg.norm(s-e) == 2*width[1] \
                     or np.linalg.norm(s-e) == 2*height[1]:
-                ax.plot3D(*zip(s, e), color="k")
+                ax.plot3D(*zip(s, e), color="k", alpha=0.5)
 
         # create following layers/ convolution- and poolinglayers:
         for module in self.mod_list:
