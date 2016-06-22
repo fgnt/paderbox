@@ -32,7 +32,7 @@ def get_sacred_uri_from_file(secret_file=None):
     secret_file = '~/.sacred' if secret_file is None else secret_file
     secret_file = os.path.expanduser(secret_file)
     with open(secret_file, 'r') as f:
-        uri = f.read().replace('\n', '')
+        uri = f.read().replace('\n', '').strip()
     return uri
 
 
