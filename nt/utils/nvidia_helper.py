@@ -41,7 +41,7 @@ def get_info():
     return info
 
 
-def get_gpu_list():
+def get_gpu_list(print_error = True):
     info = get_info()
     with nvidia():
         gpu_list = []
@@ -84,9 +84,10 @@ def get_gpu_list():
                     process_info=process_info
                 ))
             except NVMLError as e:
-                # ToDo: make a better print.
-                print('ERROR in nt.utils.nvidia_helper.get_gpu_list for '
-                      '{}: {}'.format(str(nvmlDeviceGetName(handle))[2:-1], e))
+                if print_error:
+                    # ToDo: make a better print.
+                    print('ERROR in nt.utils.nvidia_helper.get_gpu_list for '
+                          '{}: {}'.format(str(nvmlDeviceGetName(handle))[2:-1], e))
     return gpu_list
 
 
