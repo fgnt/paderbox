@@ -62,17 +62,8 @@ def allow_dict_for_title(f):
         ax = kwargs.pop('ax', None)
 
         if isinstance(signal, dict):
-            # Scatter does not cycle the colors so we need to do this explicitly
-            if f.__name__ == 'scatter':
-                cyl = plt.rcParams['axes.prop_cycle']
-                assert len(signal) == 1
-                for (label, data), prob_cycle in zip(signal.items(), cyl):
-                    ax = f(data, *args, ax=ax, label=label,
-                           color=prob_cycle['color'], **kwargs)
-            else:
-                for label, data in signal.items():
-                    ax = f(data, *args, ax=ax, title=label, **kwargs)
-            ax.legend()
+            for label, data in signal.items():
+                ax = f(data, *args, ax=ax, title=label, **kwargs)
         else:
             ax = f(signal, *args, ax=ax, **kwargs)
         return ax
