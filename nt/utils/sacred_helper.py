@@ -282,7 +282,7 @@ class GPUMongoObserver(MongoObserver):
         """
         try:
             gpu_info = nvidia_helper.get_info()
-            gpu_list = nvidia_helper.get_gpu_list()
+            gpu_list = nvidia_helper.get_gpu_list(print_error=False)
             host_info['gpu_count'] = gpu_info['device_count']
             host_info['gpu_info'] = {str(x['minor_number']): {
                 'name': x['name'].decode(),
