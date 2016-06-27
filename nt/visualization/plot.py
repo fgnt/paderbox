@@ -140,7 +140,7 @@ def line(*signal, ax=None, ylim=None, label=None, color=None, logx=False,
 
 @allow_dict_input_and_colorize
 @create_subplot
-def scatter(*signal, ax=None, ylim=None, label=None, color=None):
+def scatter(*signal, ax=None, ylim=None, label=None, color=None, **kwargs):
     """
     Use together with facet_grid().
 
@@ -179,9 +179,9 @@ def scatter(*signal, ax=None, ylim=None, label=None, color=None):
         signal = (range(len(signal[0])), signal[0])
 
     if color is not None:
-        ax.scatter(*signal, label=label, color=color)
+        ax.scatter(*signal, label=label, color=color, **kwargs)
     else:
-        ax.scatter(*signal, label=label)
+        ax.scatter(*signal, label=label, **kwargs)
     if ylim is not None and isinstance(ylim, tuple):
         ax.set_ylim(ylim)
 
