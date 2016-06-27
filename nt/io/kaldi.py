@@ -203,16 +203,50 @@ def make_fbank_features(wav_scp, dst_dir, num_mel_bins, low_freq=20,
             print('Finished successfully')
 
 
-def compute_mean_and_var_stats(feat_scp, dst_dir, spk2utt=None):
-    mkdir_p(dst_dir)
-    if spk2utt is not None:
-        spk2utt = '--spk2utt=ark:{} '.format(spk2utt)
-    else:
-        spk2utt = ''
-    cmd = 'compute-cmvn-stats {2}scp:{0} ark,t,scp:{1}/cmvn.ark,{1}cmvn.scp'.format(
-        feat_scp, dst_dir, spk2utt
-    )
-    run_processes(cmd, environment=get_kaldi_env())
+def write_utt2spk(dst_dir, utt2spk):
+    with open(os.path.join(dst_dir, 'utt2spk'), 'w') as fid:
+        for utt, spk in utt2spk.items():
+            fid.write('{} {}\n'.format(utt, spk))
+
+
+def write_spk2utt(dst_dir, utt2spk):
+    with open(os.path.join(dst_dir, 'spk2utt'), 'w') as fid:
+        for spk in set(utt2spk.values()):
+            fid.write('{} '.format(spk))
+            fid.write(' '.join([utt for utt in utt2spk if utt2spk[utt] == spk]))
+            fid.write('\n')
+
+
+def compute_mean_and_var_stats(feat_scp, dst_dir, utt2spk=None):
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        mkdir_p(dst_dir)
+        if utt2spk is not None:
+            write_spk2utt(tmp_dir, utt2spk)
+            spk2utt = '--spk2utt=ark:{} '.format(os.path.join(tmp_dir, 'spk2utt'))
+        else:
+            spk2utt = ''
+        cmd = 'compute-cmvn-stats {2}scp:{0} ark:{1}/cmvn.ark'.format(
+            feat_scp, dst_dir, spk2utt
+        )
+        run_processes(cmd, environment=get_kaldi_env())
+
+
+def apply_mean_and_var_stats(feat_scp, cmvn_ark, utt2spk=None, norm_var=False):
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        if utt2spk is not None:
+            write_utt2spk(tmp_dir, utt2spk)
+            args = '--utt2spk=ark:{} '.format(os.path.join(tmp_dir, 'utt2spk'))
+        else:
+            args = ''
+        if norm_var:
+            args += '--norm-vars '
+        cmd = 'apply-cmvn {args}ark:{cmvn_ark} scp:{src_scp} ark,scp:{dir}/normalized.ark,{dir}/normalized.scp'.format(
+            args=args,
+            cmvn_ark=cmvn_ark,
+            src_scp=feat_scp,
+            dir=os.path.dirname(feat_scp)
+        )
+        run_processes(cmd, environment=get_kaldi_env())
 
 
 def import_feature_data(ark_descriptor):
