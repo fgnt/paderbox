@@ -1,6 +1,7 @@
 import unittest
-from nt.io.kaldi import ArkWriter, import_feature_data, \
-    make_mfcc_features, import_feat_scp, make_fbank_features
+from nt.io.kaldi import (ArkWriter, import_feature_data,
+    make_mfcc_features, import_feat_scp, make_fbank_features,
+    compute_mean_and_var_stats, apply_mean_and_var_stats, read_scp_file)
 import numpy as np
 import tempfile
 
@@ -32,8 +33,6 @@ class KaldiIOTest(unittest.TestCase):
             data = import_feat_scp(f.name + '.scp')
             _test()
 
-
-
     def test_make_mfccs(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             make_mfcc_features(WAV_SCP, tmp_dir, num_mel_bins=23, num_ceps=13)
@@ -58,6 +57,50 @@ class KaldiIOTest(unittest.TestCase):
             self.assertEqual(len(data), 17)
             for d in data.values():
                 self.assertEqual(d.shape[1], 3*23)
+
+    def test_make_fbank_cmvn(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            make_fbank_features(WAV_SCP, tmp_dir, num_mel_bins=23)
+            compute_mean_and_var_stats(tmp_dir + '/feats.scp', tmp_dir)
+            apply_mean_and_var_stats(tmp_dir + '/feats.scp', tmp_dir + '/cmvn.ark')
+            data = import_feat_scp(tmp_dir + '/normalized.scp')
+            self.assertEqual(len(data), 17)
+            for d in data.values():
+                np.testing.assert_almost_equal(np.mean(d, axis=0), 3*23*[0.],
+                                               decimal=5)
+                self.assertEqual(d.shape[1], 3 * 23)
+            apply_mean_and_var_stats(tmp_dir + '/feats.scp',
+                                     tmp_dir + '/cmvn.ark',
+                                     norm_var=True)
+            data = import_feat_scp(tmp_dir + '/normalized.scp')
+            self.assertEqual(len(data), 17)
+            for d in data.values():
+                np.testing.assert_almost_equal(np.mean(d, axis=0),
+                                               3 * 23 * [0.],
+                                               decimal=5)
+                np.testing.assert_almost_equal(np.var(d, axis=0), 3 * 23 * [1.],
+                                               decimal=5)
+                self.assertEqual(d.shape[1], 3 * 23)
+
+    def test_make_fbank_cmvn_utt2spk(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            make_fbank_features(WAV_SCP, tmp_dir, num_mel_bins=23)
+            scp = read_scp_file(WAV_SCP)
+            speaker = ['A', 'B']
+            utt2spk = {utt: speaker[idx%2] for idx, utt in enumerate(scp)}
+
+            compute_mean_and_var_stats(tmp_dir + '/feats.scp', tmp_dir,
+                                       utt2spk=utt2spk)
+            apply_mean_and_var_stats(tmp_dir + '/feats.scp',
+                                     tmp_dir + '/cmvn.ark',
+                                     utt2spk=utt2spk)
+            data = import_feat_scp(tmp_dir + '/normalized.scp')
+            data_org = import_feat_scp(tmp_dir + '/feats.scp')
+            self.assertEqual(len(data), 17)
+            for d, d_org in zip(data.values(), data_org.values()):
+                self.assertLess(np.sum(np.abs(np.mean(d, axis=0))),
+                                np.sum(np.abs(np.mean(d_org, axis=0))))
+                self.assertEqual(d.shape[1], 3 * 23)
 
     def test_make_fbank_no_delta(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
