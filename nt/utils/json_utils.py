@@ -169,9 +169,10 @@ def get_flist_for_channel(flist, ch):
     :return: A dict with the ids and the files for the specific channel
     """
 
-    assert ch in get_available_channels(flist), \
-        'Could not find channel {ch}. Available channels are {chs}' \
-        .format(ch=ch, chs=get_available_channels(flist))
+    if not ch in get_available_channels(flist):
+        raise KeyError(
+            'Could not find channel {ch}. Available channels are {chs}'
+                .format(ch=ch, chs=get_available_channels(flist)))
 
     ret_flist = dict()
     for utt in flist:
@@ -186,6 +187,25 @@ def get_flist_for_channel(flist, ch):
     assert len(ret_flist) > 0, \
         'Could not find any files for channel {c}'.format(c=str(ch))
     return ret_flist
+
+
+def get_channel_for_utt(flist, ch, utt):
+    """ Returns a specific channel for one utterance.
+
+    Raises a KeyError if the channel does not exist
+
+    :param flist: A dict representing a file list, i.e. the keys are the utt ids
+    :param ch: The channel to fetch (i.e. X/CH1). Separator must be `/`
+    :param utt: The utterance to fetch
+    :return: Path to the file
+    """
+    val = flist[utt]
+    for branch in ch.split('/'):
+        if branch in val:
+            val = val[branch]
+        else:
+            raise KeyError('No channel {} for {}'.format(ch, utt))
+    return val
 
 
 def safe_dump(dict_data, fid):
@@ -260,7 +280,8 @@ def add_flist(flist, progress_json, scenario, stage='train',
 
 
 def combine_flists(data, flist_1_path, flist_2_path, flist_path,
-                   postfix_1='', postfix_2='', delimiter='/'):
+                   postfix_1='', postfix_2='', delimiter='/',
+                   only_common_channels=False):
     """ Combines two file lists into a new file list ``flist_name``
 
     The new file list will only have those channels, which are present in both
@@ -286,9 +307,10 @@ def combine_flists(data, flist_1_path, flist_2_path, flist_path,
         data, flist_2_path, delimiter
     ))
 
-    common_channels = set((ch.split('/')[0]
-                           for ch in channels_flist_1
-                           if ch in channels_flist_2))
+    if only_common_channels:
+        common_channels = set((ch.split('/')[0]
+                               for ch in channels_flist_1
+                               if ch in channels_flist_2))
 
     new_flist = dict()
     for flist, postfix in zip([flist_1, flist_2], [postfix_1, postfix_2]):
@@ -296,7 +318,10 @@ def combine_flists(data, flist_1_path, flist_2_path, flist_path,
             new_id = id if len(postfix) == 0 else id + '_' + postfix
             new_flist[new_id] = dict()
             for ch in flist[id]:
-                if ch in common_channels:
+                if only_common_channels:
+                    if ch in common_channels:
+                        new_flist[new_id][ch] = flist[id][ch]
+                else:
                     new_flist[new_id][ch] = flist[id][ch]
 
     flist_name = flist_path.split(delimiter)[-1]
