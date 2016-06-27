@@ -452,6 +452,25 @@ def mask(
     return _time_frequency_plot(**locals())
 
 
+def _get_limits_for_tf_symlog(signal, limits):
+    if limits is None:
+        signal_abs = np.abs(signal)
+        maximum = signal_abs[np.isfinite(signal_abs)].max()
+        if maximum == 0:
+            maximum = 1e-12
+        limits = (-maximum, maximum)
+    if len(limits) == 2:
+        linthresh = np.nanmedian(signal_abs)
+        if linthresh == 0:
+            nonzero = np.nonzero([0, 0])
+            if len(nonzero[0]) > 0:
+                linthresh = np.nanmin(signal_abs[nonzero])
+            else:
+                linthresh = 1e-14
+        limits = (*limits, linthresh)
+    return limits
+
+
 @allow_dict_for_title
 @create_subplot
 def tf_symlog(
@@ -472,8 +491,8 @@ def tf_symlog(
     :return: axes
     """
     if limits is None:
-        limits = np.max(np.abs(signal))
-        limits = (-limits, limits, np.median(np.abs(signal)))
+        limits = _get_limits_for_tf_symlog(signal, limits)
+
     return _time_frequency_plot(**locals())
 
 
