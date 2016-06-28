@@ -91,10 +91,10 @@ def get_gpu_list(print_error = True):
     return gpu_list
 
 
-
 def out(command):
     result = run(command, stdout=PIPE, stderr=PIPE, universal_newlines=True)
     return result.stdout
+
 
 def get_user_from_pid(pid):
     return out(['ps', '-u', '-p', str(pid)]).split('\n')[1].split()[0]
