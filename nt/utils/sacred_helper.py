@@ -3,154 +3,102 @@ from sacred.observers.mongo import *
 import shutil
 from nt.utils.pynvml import *
 import pandas as pd
-
-from IPython.core.display import display, HTML
 from bson.objectid import ObjectId
 from pymongo import MongoClient
-from yattag import Doc
+from cached_property import cached_property
 
 
-def get_sacred_uri_from_file(secret_file=None):
-    """
-    Store a mongodb uri in a file. I recommend `~/.sacred`. The file should
-    contain i.e. `mongodb://user:password@131.234.222.24:10135`.
+class SacredManager:
+    def __init__(self, secret_file=None, uri=None):
+        """ Create a SacredManager which provides info about sacred db.
 
-    Args:
-        secret_file: Optional path to your sacred secret.
-
-    Returns: Secret uri to connect to your db.
-
-    """
-    secret_file = '~/.sacred' if secret_file is None else secret_file
-    secret_file = os.path.expanduser(secret_file)
-    with open(secret_file, 'r') as f:
-        uri = f.read().replace('\n', '').strip()
-    return uri
-
-
-def _get_runs(database='sacred', prefix='default', secret_file=None):
-    uri = get_sacred_uri_from_file(secret_file)
-
-    if not uri.endswith('/'):
-        uri += '/'
-
-    uri += database
-
-    print(uri)
-    client = MongoClient(uri)
-    return client[database][prefix].runs
-
-
-def get_experiment_from_id(_id, database='sacred', prefix='default',
-                           secret_file=None):
-    runs = _get_runs(database, prefix, secret_file)
-    experiment = runs.find_one({'_id': ObjectId(_id)})
-    return experiment
-
-
-def get_config_from_id(_id, database='sacred', prefix='default',
-                       secret_file=None):
-    return get_experiment_from_id(_id, database, prefix, secret_file)['config']
-
-
-def get_info_from_id(_id, database='sacred', prefix='default',
-                       secret_file=None):
-    return get_experiment_from_id(_id, database, prefix, secret_file)['info']
-
-
-def delete_entry_by_id(_id, database='sacred', prefix='default',
-                       secret_file=None, delete_dir=None):
-    runs = _get_runs(database, prefix, secret_file)
-    if delete_dir is not None:
-        cfg = get_config_from_id(_id, database, prefix, secret_file)
-        try:
-            data_dir = cfg[delete_dir]
-        except KeyError:
-            warn('{} is not part of the config. Cannot delete data dir.'.format(
-                delete_dir
-            ))
+        Args:
+            secret_file: Path to your sacred secret, i.e. `~/.sacred`.
+            uri: Alternatively, provide a uri i.e.
+                `mongodb://user:password@131.234.222.24:10135`.
+        """
+        if uri is None:
+            secret_file = '~/.sacred' if secret_file is None else secret_file
+            secret_file = os.path.expanduser(secret_file)
+            with open(secret_file, 'r') as f:
+                self.uri = f.read().replace('\n', '').strip()
         else:
-            shutil.rmtree(data_dir)
-    delete_result = runs.delete_one({'_id': ObjectId(_id)})
-    print(delete_result.raw_result)
+            assert secret_file is None, 'Provide either secret_file or uri.'
+            self.uri = uri
 
+    @cached_property
+    def client(self):
+        return MongoClient(self.uri)
 
-def print_overview_table(
-        database='sacred', prefix='default', secret_file=None,
-        constraints=None, callback_function=None, constraint_callback=None,
-        config_blacklist=None, config_whitelist=None, show_hostinfo=True):
-    constraints = {} if constraints is None else constraints
+    def print_database_and_collection_names(self):
+        """ Print overview about MongoDB server with databases and collections.
 
-    runs = _get_runs(database, prefix, secret_file)
+        Only works, when there is no authentication required.
+        """
+        # TODO: Improve behavior for databases with authentication.
+        for database in self.client.database_names():
+            print(database)
+            for collection in self.client[database].collection_names():
+                print('    ' + collection)
 
-    list_of_dicts = list(runs.find(constraints))
-    # list_of_dicts = list(runs.find(constraints).sort('start_time', ASCENDING))
+    def _get_runs(self, database='sacred', prefix='default'):
+        return self.client[database][prefix].runs
 
-    if len(list_of_dicts) == 0:
-        print('No entries found for query')
-        return
+    def get_experiment_from_id(self, _id, database='sacred', prefix='default'):
+        runs = self._get_runs(database, prefix)
+        return runs.find_one({'_id': ObjectId(_id)})
 
-    doc, tag, text = Doc().tagtext()
+    def get_config_from_id(self, _id, database='sacred', prefix='default'):
+        return self.get_experiment_from_id(_id, database, prefix)['config']
 
-    def _dict_to_cell(d):
-        return '<br />'.join(
-            json.dumps(d, indent=True, sort_keys=True).split('\n')[1:-1])
+    def get_info_from_id(self, _id, database='sacred', prefix='default'):
+        return self.get_experiment_from_id(_id, database, prefix)['info']
 
-    with tag('small'):
-        with tag('table', width='100%'):
-            for row in list_of_dicts:
-                if constraint_callback is None or constraint_callback(row):
-                    if config_blacklist is not None:
-                        row['config'] = {k: v for k, v in row['config'].items()
-                                         if k not in config_blacklist}
-                    if config_whitelist is not None:
-                        row['config'] = {k: v for k, v in row['config'].items()
-                                         if k in config_whitelist}
-                    with tag('tr'):
-                        with tag('td'):
-                            text('id: {}'.format(row['_id']))
-                            doc.stag('br')
-                            text('heartbeat: {}'.format(
-                                row['heartbeat'].strftime('%d.%m. %H:%M:%S')
-                            ))
-                            doc.stag('br')
-                            text('name: {}'.format(row['experiment']['name']))
-                            doc.stag('br')
-                            text('status: {}'.format(row['status']))
-                            doc.stag('br')
-                            text('start_time: {}'.format(
-                                row['start_time'].strftime('%d.%m. %H:%M:%S')
-                            ))
-                            doc.stag('br')
-                            try:
-                                text('stop_time: {}'.format(
-                                    row['stop_time'].strftime('%d.%m. %H:%M:%S')
-                                ))
-                                doc.stag('br')
-                                text('difference: {}'.format(
-                                    str(
-                                        row['stop_time'] - row['start_time']
-                                    ).split('.')[0]
-                                ))
-                            except KeyError:
-                                pass
+    def delete_entry_by_id(
+            self, _id, database='sacred', prefix='default', delete_dir=False
+    ):
+        runs = self._get_runs(database, prefix)
+        if delete_dir:
+            config = self.get_config_from_id(_id, database, prefix)
+            try:
+                data_dir = config[delete_dir]
+            except KeyError:
+                warn('{} is not part of the config. Cannot delete data dir.'.
+                     format(delete_dir))
+            else:
+                shutil.rmtree(data_dir)
+        delete_result = runs.delete_one({'_id': ObjectId(_id)})
+        print(delete_result.raw_result)
 
-                        with tag('td'):
-                            doc.asis(_dict_to_cell(row['config']))
-                        if show_hostinfo:
-                            with tag('td'):
-                                doc.asis(_dict_to_cell(row['host']))
-                        if callback_function is not None:
-                            with tag('td'):
-                                try:
-                                    doc.asis(callback_function(row))
-                                except KeyError:
-                                    pass
+    def get_data_frame(self, database='sacred', prefix='default', depth=2):
+        def _make_data_frame(l):
+            d = dict()
 
-    display(HTML(doc.getvalue()))
+            def _f(indices, dic, i):
+                # TODO: Don' know if this needs to be as cryptic as it is...
+                for key in dic.keys():
+                    val = dic[key]
+                    new_indices = indices + (key,)
+                    if type(val) is dict and len(new_indices) < depth:
+                        _f(new_indices, val, i)
+                    else:
+                        new_indices = _expand_key(new_indices, depth)
+                        if new_indices in d.keys():
+                            d[new_indices][i] = val
+                        else:
+                            d[new_indices] = {i: val}
+
+            for i, e in enumerate(l):
+                _f(tuple(), e, i)
+            return pd.DataFrame(d)
+
+        runs = self._get_runs(database, prefix)
+        list_of_dicts = list(runs.find())
+        return _make_data_frame(list_of_dicts)
 
 
 def _expand_key(key, length, expansion_key=''):
+    # TODO: Please explain better, what this fn does. Parameters?
     if not type(key) is tuple:
         key = (key,)
 
@@ -161,6 +109,8 @@ def _expand_key(key, length, expansion_key=''):
 
 
 def rename_columns(frame, map):
+    # TODO: Please explain better, what this fn does. Parameters?
+    # TODO: Why not df[('time', 'start')] = df['start_time']?
     depth = len(frame.columns.levels)
     for old_key in map.keys():
         new_key = map[old_key]
@@ -169,47 +119,19 @@ def rename_columns(frame, map):
 
 
 def add_values(df, f):
+    # TODO: Please explain better, what this fn does.
     depth = len(df.columns.levels)
     for i in df.index:
         try:
             (k, v) = f(df.loc[i].squeeze())
             df.loc[i, _expand_key(k, depth)] = v
         except:
+            # TODO: Can you be more precise about the exception?
             pass
 
 
-def get_data_frame(database='sacred', prefix='default', secret_file=None,
-                   depth=2):
-    def _make_data_frame(l):
-        d = dict()
-
-        def _f(indices, dic, i):
-            for key in dic.keys():
-                val = dic[key]
-                new_indices = indices + (key,)
-                if type(val) is dict and len(new_indices) < depth:
-                    _f(new_indices, val, i)
-                else:
-                    new_indices = _expand_key(new_indices, depth)
-                    if new_indices in d.keys():
-                        d[new_indices][i] = val
-                    else:
-                        d[new_indices] = {i: val}
-
-        for i, e in enumerate(l):
-            _f(tuple(), e, i)
-        return pd.DataFrame(d)
-
-    runs = _get_runs(database, prefix, secret_file)
-
-    list_of_dicts = list(runs.find())
-
-    frame = _make_data_frame(list_of_dicts)
-
-    return frame
-
-
 def filter_columns(frame, entries):
+    # TODO: Unclear, why this works.
     def _in(lv, l):
         res = None
         for k in l:
@@ -238,6 +160,8 @@ def filter_columns(frame, entries):
 
 
 def filter_rows(frame, entries):
+    # TODO: How should filter_rows be used? Is there a great benefit to regular pandas selection in the notebook?
+    # TODO: Why not fdf = fdf[(fdf['status'] == 'RUNNING')]?
     mask = None
     for v in entries:
         new_mask = frame[v[0]] == v[1]
@@ -247,3 +171,24 @@ def filter_rows(frame, entries):
             mask &= new_mask
 
     return frame.loc[mask]
+
+
+def print_columns(df, indent=0):
+    try:
+        for column in df.columns.levels[0]:
+            print('    ' * indent + column)
+            if not isinstance(df[column], pd.Series):
+                print_columns(df[column], indent=indent+1)
+    except AttributeError:
+        for column in df.columns:
+            print('    ' * indent + column)
+
+
+def make_css_mark(mask, color_str='#FFFFFF'):
+    css = ''
+    for i in range(len(mask)):
+        if mask.iloc[i]:
+            css += 'tbody tr:nth-child(%d) {background-color: %s}\n' % (
+                i+1, color_str
+            )
+    return css
