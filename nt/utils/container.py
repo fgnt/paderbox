@@ -32,3 +32,6 @@ class Container:
 
     def values(self):
         return self.__dict__.values()
+
+    def items(self):
+        return self.__dict__.items()
