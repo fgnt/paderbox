@@ -1,7 +1,8 @@
+import os
 from warnings import warn
-from sacred.observers.mongo import *
+# from sacred.observers.mongo import *
 import shutil
-from nt.utils.pynvml import *
+# from nt.utils.pynvml import *
 import pandas as pd
 from bson.objectid import ObjectId
 from pymongo import MongoClient
