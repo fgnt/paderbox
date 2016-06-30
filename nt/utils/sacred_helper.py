@@ -193,3 +193,45 @@ def make_css_mark(mask, color_str='#FFFFFF'):
                 i+1, color_str
             )
     return css
+
+
+def colorize_and_display_dataframe(df):
+    """ Uses UPB colors to colorize table.
+
+    Generates a unique class name to not overwrite existing CSS code.
+
+    Args:
+        df: Filtered data frame i.e. from `filter_columns()`.
+
+    Returns: None
+
+    """
+    import uuid
+    from IPython.display import HTML
+
+    color_dict = dict(
+        COMPLETED='#84BD00',
+        FAILED='#FFC600',
+        INTERRUPTED='#FF8200',
+        RUNNING='#009FDF'
+    )
+
+    random_class_name = 'tab{}'.format(uuid.uuid1())
+
+    print(random_class_name)
+
+    html = ''
+
+    html += '<style type=text/css>\n'
+    # html += '.tab_' + str(uuid.uuid1()) + '\n'
+    html += '.{}\n'.format(random_class_name)
+
+    for key, value in color_dict.items():
+        html += make_css_mark((df['status'] == key), color_str=value)
+
+    html += 'thead tr {background-color: #C7C9C7}\n'
+    html += '</style>\n'
+
+    html += df.to_html(escape=False, classes=random_class_name)
+
+    return HTML(html)
