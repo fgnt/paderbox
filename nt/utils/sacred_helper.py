@@ -8,7 +8,7 @@ from cached_property import cached_property
 
 
 class SacredManager:
-    def __init__(self, secret_file=None, uri=None):
+    def __init__(self, secret_file=None, uri=None, database=None, prefix=None):
         """ Create a SacredManager which provides info about sacred db.
 
         Args:
@@ -25,6 +25,14 @@ class SacredManager:
             assert secret_file is None, 'Provide either secret_file or uri.'
             self.uri = uri
 
+        # I decided to not set the properties if None to get good error messages
+        if database is not None:
+            self.database = database
+        if prefix is not None:
+            self.prefix = prefix
+
+
+
     @cached_property
     def client(self):
         return MongoClient(self.uri)
@@ -40,25 +48,23 @@ class SacredManager:
             for collection in self.client[database].collection_names():
                 print('    ' + collection)
 
-    def _get_runs(self, database='sacred', prefix='default'):
-        return self.client[database][prefix].runs
+    def _get_runs(self):
+        return self.client[self.database][self.prefix].runs
 
-    def get_experiment_from_id(self, _id, database='sacred', prefix='default'):
-        runs = self._get_runs(database, prefix)
+    def get_experiment_from_id(self, _id):
+        runs = self._get_runs()
         return runs.find_one({'_id': ObjectId(_id)})
 
-    def get_config_from_id(self, _id, database='sacred', prefix='default'):
-        return self.get_experiment_from_id(_id, database, prefix)['config']
+    def get_config_from_id(self, _id):
+        return self.get_experiment_from_id(_id)['config']
 
-    def get_info_from_id(self, _id, database='sacred', prefix='default'):
-        return self.get_experiment_from_id(_id, database, prefix)['info']
+    def get_info_from_id(self, _id):
+        return self.get_experiment_from_id(_id)['info']
 
-    def delete_entry_by_id(
-            self, _id, database='sacred', prefix='default', delete_dir=False
-    ):
-        runs = self._get_runs(database, prefix)
+    def delete_entry_by_id(self, _id, delete_dir=False):
+        runs = self._get_runs()
         if delete_dir:
-            config = self.get_config_from_id(_id, database, prefix)
+            config = self.get_config_from_id(_id)
             try:
                 data_dir = config[delete_dir]
             except KeyError:
@@ -69,7 +75,7 @@ class SacredManager:
         delete_result = runs.delete_one({'_id': ObjectId(_id)})
         print(delete_result.raw_result)
 
-    def get_data_frame(self, database='sacred', prefix='default', depth=2):
+    def get_data_frame(self, depth=2):
         def _make_data_frame(l):
             d = dict()
 
@@ -91,7 +97,7 @@ class SacredManager:
                 _f(tuple(), e, i)
             return pd.DataFrame(d)
 
-        runs = self._get_runs(database, prefix)
+        runs = self._get_runs()
         list_of_dicts = list(runs.find())
         return _make_data_frame(list_of_dicts)
 
@@ -158,21 +164,8 @@ def filter_columns(frame, entries):
     return frame.loc[:, mask]
 
 
-def filter_rows(frame, entries):
-    # TODO: How should filter_rows be used? Is there a great benefit to regular pandas selection in the notebook?
-    # TODO: Why not fdf = fdf[(fdf['status'] == 'RUNNING')]?
-    mask = None
-    for v in entries:
-        new_mask = frame[v[0]] == v[1]
-        if mask is None:
-            mask = new_mask
-        else:
-            mask &= new_mask
-
-    return frame.loc[mask]
-
-
 def print_columns(df, indent=0):
+    # TODO: This does not work reliably yet
     try:
         for column in df.columns.levels[0]:
             print('    ' * indent + column)
@@ -196,7 +189,8 @@ def make_css_mark(mask, color_str='#FFFFFF'):
 def colorize_and_display_dataframe(df):
     """ Uses UPB colors to colorize table.
 
-    Generates a unique class name to not overwrite existing CSS code.
+    Generates a unique class name to not overwrite existing CSS code and then
+    colorizes rows based on experiment status.
 
     Args:
         df: Filtered data frame i.e. from `filter_columns()`.
