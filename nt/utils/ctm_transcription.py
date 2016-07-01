@@ -166,7 +166,7 @@ class Evaluate:
 
 
 def read_ctm(file, pos=(0, 1, 2, 3), has_duration=False, file_transfrom=None,
-             blacklist=(), add_bool=False):
+             blacklist=(), add_bool=False, offset_from_filename=None):
     """ read a ctm file
 
     :param file: ctm file to read from
@@ -175,6 +175,7 @@ def read_ctm(file, pos=(0, 1, 2, 3), has_duration=False, file_transfrom=None,
     :param file_transfrom: transform function to modify filename
     :param blacklist: blacklist of words to skip when reading
     :param add_bool: add boolen to ctm transcription
+    :param offset_from_filename: function to derive time offset from filename
     :return: dict with transcription and timings per file
 
     Example for ctm with add_bool=True
@@ -192,11 +193,16 @@ def read_ctm(file, pos=(0, 1, 2, 3), has_duration=False, file_transfrom=None,
             start = float(split_line[pos[2]])
             end = float(split_line[pos[3]])
 
-            if file_transfrom is not None:
-                filename = file_transfrom(filename)
-
             if has_duration:
                 end += start
+
+            if offset_from_filename is not None:
+                offset = offset_from_filename(filename)
+                start += offset
+                end += offset
+
+            if file_transfrom is not None:
+                filename = file_transfrom(filename)
 
             if word not in blacklist:
                 if add_bool:
