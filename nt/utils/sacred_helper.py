@@ -76,34 +76,55 @@ class SacredManager:
         print(delete_result.raw_result)
 
     def get_data_frame(self, depth=2):
-        def _make_data_frame(l):
-            d = dict()
+        """
+        Creates a pandas DataFrame with a MultiIndex with depth count of levels
+        out of entries found in database with prefix prefix. Keys for the
+        MultiIndex are taken from the keys of nested dicts in the database
+        entries.
 
-            def _f(indices, dic, i):
-                # TODO: Don' know if this needs to be as cryptic as it is...
-                for key in dic.keys():
-                    val = dic[key]
-                    new_indices = indices + (key,)
-                    if type(val) is dict and len(new_indices) < depth:
-                        _f(new_indices, val, i)
-                    else:
-                        new_indices = _expand_key(new_indices, depth)
-                        if new_indices in d.keys():
-                            d[new_indices][i] = val
-                        else:
-                            d[new_indices] = {i: val}
-
-            for i, e in enumerate(l):
-                _f(tuple(), e, i)
-            return pd.DataFrame(d)
-
+        :param database:
+        :param prefix:
+        :param depth: length of the keys of the MultiIndex of the DataFrame
+        :return:
+        """
         runs = self._get_runs()
         list_of_dicts = list(runs.find())
-        return _make_data_frame(list_of_dicts)
+
+        d = dict()
+
+        # TODO: Don't know if this needs to be as cryptic as it is...
+        def _multiindex_key_dict(indices, dic, i):
+            """Creates a dict with Tuples of length depth as keys so that
+            the constructor of DataFrame creates a MultiIndex out of it.
+            For recursive calls, indices specifies a prefix of all keys
+            created in this call. dic is a dictionary (row) whose values
+            should be added to dict d and i is the row index."""
+            for key in dic.keys():
+                val = dic[key]
+                new_indices = indices + (key,)
+                if type(val) is dict and len(new_indices) < depth:
+                    # recursively go deeper into nested dicts
+                    _multiindex_key_dict(new_indices, val, i)
+                else:
+                    # reached end of nested dicts or desired depth.
+                    # create key of given length
+                    new_indices = _expand_key(new_indices, depth)
+
+                    # add value from dict
+                    if new_indices in d.keys():
+                        d[new_indices][i] = val
+                    else:
+                        d[new_indices] = {i: val}
+
+        for i, e in enumerate(list_of_dicts):
+            _multiindex_key_dict(tuple(), e, i)
+        return pd.DataFrame(d)
 
 
 def _expand_key(key, length, expansion_key=''):
-    # TODO: Please explain better, what this fn does. Parameters?
+    """Creates a Key for a MultiIndex (tuple) of length length and fills
+    missing entries with expansion_key. This is needed to create a DataFrame
+    with a MultiIndex of given depth."""
     if not type(key) is tuple:
         key = (key,)
 
@@ -136,8 +157,16 @@ def add_values(df, f):
 
 
 def filter_columns(frame, entries):
+    """
+
+    :param frame:
+    :param entries:
+    :return:
+    """
     # TODO: Unclear, why this works.
     def _in(lv, l):
+        """checks for every level name in l if this level name is in level lv
+        """
         res = None
         for k in l:
             if res is None:
@@ -147,21 +176,24 @@ def filter_columns(frame, entries):
         return res
 
     mask = None
-    lv0 = frame.columns.get_level_values(0)
-    lv1 = frame.columns.get_level_values(1)
+    lv0 = frame.columns.get_level_values(0)  # get column names for level 0
+    lv1 = frame.columns.get_level_values(1)  # get column names for level 1
+
+    # for every column name of level 0, check if in list entries. If so, check
+    # if all values are needed (entries[k] = True) or to filter in level names
+    # of level 1
     for k in entries.keys():
         v = entries[k]
         if type(v) is list:
             new_mask = (lv0 == k) & (_in(lv1, v))
         else:
+            # take columns with first level name = entries[k]
             new_mask = (lv0 == k)
 
-        if mask is None:
-            mask = new_mask
-        else:
-            mask |= new_mask
+        # concatenate masks
+        mask = new_mask if mask is None else mask | new_mask
 
-    return frame.loc[:, mask]
+    return frame.loc[:, mask]  # apply mask
 
 
 def print_columns(df, indent=0):
