@@ -602,7 +602,12 @@ def prune_ctm(ctm, min_num_char, min_duration):
                  and word_entry[2] >= min_duration]
             for id, word_entries in ctm.items()}
 
-def write_clusters(ctm, out_file):
+def write_clusters(ctm, out_filename):
+    """  Write cluster file for evaluation with https://github.com/bootphon/tde
+
+    :param ctm: ctm file
+    :param out_filename: output filename
+    """
     clusters = dict()
     for file, sentence in ctm.items():
         for word in sentence:
@@ -611,7 +616,7 @@ def write_clusters(ctm, out_file):
 
             clusters[word[0]].append((file, ) + word[1:])
 
-    with open(out_file, 'w') as fid:
+    with open(out_filename, 'w') as fid:
         for idx, words in enumerate(clusters.values()):
             fid.write('Class {}\n'.format(idx))
             for word in words:
