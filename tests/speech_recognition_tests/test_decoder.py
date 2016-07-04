@@ -121,9 +121,7 @@ class TestDecoder(unittest.TestCase):
     # @unittest.skip("")
     def test_compare_argmax_ctc(self):
 
-        words = ["a", "b"]
-        lex = get_lexicon_from_word_list(words)
-        labels = ["<blank>"] + lex.tokens()
+        labels = ["<blank>", "a", "b"]
 
         nn = BLSTMModel(10, 3, 2, 32)
         model_input = \
@@ -133,9 +131,8 @@ class TestDecoder(unittest.TestCase):
         utt_id = "11111111"
 
         with tempfile.TemporaryDirectory() as working_dir:
-            self.decoder = Decoder(labels, working_dir, lex)
+            self.decoder = Decoder(labels, working_dir)
             self.decoder.create_graphs()
-            self.decoder.decode_graph = self.decoder.ctc_map_fst
             lattice_file = path.join(working_dir, "net.lat")
             write_lattice_file({utt_id: net_out.num}, lattice_file)
             search_graphs = self.decoder.create_search_graphs(lattice_file)
@@ -305,8 +302,10 @@ class TestDecoder(unittest.TestCase):
 
         print(sym_decodes_1)
         print(word_decodes_1)
+        print(sym_decodes_2)
+        print(word_decodes_2)
         self.assertEqual(len(word_decodes_1), 4)
-        self.assertEqual(len(word_decodes_2), 9)
+        self.assertEqual(len(word_decodes_2), 10)
         for decode in ["", "a", "a a", "abc"]:
             self.assertIn(decode, word_decodes_1.values())
             self.assertIn(decode, word_decodes_2.values())
