@@ -1,6 +1,8 @@
 import unittest
 from nt.transcription_handling.transcription_handler import TranscriptionHandler
 import nt.testing as tc
+import tempfile
+from os import path
 
 
 class TestTransHandler(unittest.TestCase):
@@ -51,6 +53,15 @@ class TestTransHandler(unittest.TestCase):
         label_seq = th.prepare_target(word_seq, to_int=False)
         expected = ["a", "b", "c", "d", "e", "f"]
         self.assertEqual(expected, label_seq)
+
+    def test_save_and_load(self):
+        th_orig = TranscriptionHandler(self.lexicon, eow="<eow>")
+        with tempfile.TemporaryDirectory() as _dir:
+            file = path.join(_dir, "th.json")
+            th_orig.save(file)
+            th_load = TranscriptionHandler.load(file)
+        self.assertEqual(th_orig.__dict__, th_load.__dict__)
+
 
 if __name__ == '__main__':
     unittest.main()
