@@ -313,7 +313,8 @@ def resample_and_convert_frame_to_seconds(frame_num, frame_size=512, frame_shift
     sample_num = module_stft._stft_frames_to_samples(frame_num, frame_size, frame_shift) # convert into samples corresponding to the frame size and shift
     return (resampling_factor * sample_num )/ sampling_rate # convert it into seconds
 
-def generate_onset_offset_label(decoded_allFrames, event_id, event_label_handler, filename,
+
+def generate_onset_offset_label(decoded_allFrames, event_id, event_label_handler, filename, garbage_events,
                                  frame_size=512, frame_shift=160,
                                 resampling_factor=44.1 / 16):
     class_label = event_label_handler.int_to_label[event_id]
@@ -334,7 +335,7 @@ def generate_onset_offset_label(decoded_allFrames, event_id, event_label_handler
             resampling_factor)  # To save frame no. [not exceeded by 1 here as it is already greater than the offset index by 1]
         # if the period in question was active for that event, log it's onset and offset.
         # Minimum duration constraint
-        if label_now == 1 and offset - onset > 0.06 and class_label != 'Silence':
+        if label_now == 1 and offset - onset > 0.06 and class_label != 'Silence':  # and class_label not in garbage_events
             file.write(''.join(('\t'.join(('%.2f' % onset, '%.2f' % offset, class_label)), '\n')))
         i = j
     file.close()
