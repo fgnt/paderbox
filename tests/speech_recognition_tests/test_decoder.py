@@ -305,7 +305,7 @@ class TestDecoder(unittest.TestCase):
         print(sym_decodes_2)
         print(word_decodes_2)
         self.assertEqual(len(word_decodes_1), 4)
-        self.assertEqual(len(word_decodes_2), 10)
+        self.assertEqual(len(word_decodes_2), 9)
         for decode in ["", "a", "a a", "abc"]:
             self.assertIn(decode, word_decodes_1.values())
             self.assertIn(decode, word_decodes_2.values())
