@@ -217,20 +217,14 @@ def safe_dump(dict_data, fid):
     """
 
     def _filter(data):
-        if isinstance(data, (list, set)):
+        if isinstance(data, (list, set, tuple)):
             return [_filter(d) for d in data]
         if isinstance(data, dict):
             return _build_dict(data)
-        if isinstance(data, float):
-            return data
-        if isinstance(data, int):
+        if isinstance(data, (float, int, str, type(None), )):
             return data
         if hasattr(data, 'tolist') and callable(data.tolist):
             return data.tolist()
-        if isinstance(data, str):
-            return data
-        if isinstance(data, tuple):
-            return [_filter(d) for d in data]
         else:
             return 'Datatype {} not supported'.format(type(data))
 
