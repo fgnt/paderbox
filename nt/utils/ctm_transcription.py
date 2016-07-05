@@ -40,7 +40,7 @@ class Evaluate:
         if self._res_ref is None:
             self._res_ref = {file: allign_res_ref(res, self._ref[file])
                              for file, res in self._res.items()
-                             if file in self._ref}
+                             if file in self._ref and len(self._ref[file]) > 0}
 
         return self._res_ref
 
@@ -166,7 +166,8 @@ class Evaluate:
 
 
 def read_ctm(file, pos=(0, 1, 2, 3), has_duration=False, file_transfrom=None,
-             blacklist=(), add_bool=False, offset_from_filename=None):
+             blacklist=(), add_bool=False, offset_from_filename=None,
+             file_segments=None):
     """ read a ctm file
 
     :param file: ctm file to read from
@@ -176,6 +177,8 @@ def read_ctm(file, pos=(0, 1, 2, 3), has_duration=False, file_transfrom=None,
     :param blacklist: blacklist of words to skip when reading
     :param add_bool: add boolen to ctm transcription
     :param offset_from_filename: function to derive time offset from filename
+    :param file_segments: tuples containing (filename, start, end) of segments
+                          ctm will be created with 'filename_start_end' as key
     :return: dict with transcription and timings per file
 
     Example for ctm with add_bool=True
@@ -214,6 +217,21 @@ def read_ctm(file, pos=(0, 1, 2, 3), has_duration=False, file_transfrom=None,
                     ctm[filename].append(entry)
                 else:
                     ctm[filename] = [entry]
+
+    ctm = {filename: sorted(entry, key=operator.itemgetter(1))
+            for filename, entry in ctm.items()}
+
+    if file_segments is not None:
+        segments_ctm = dict()
+        for file, start, end in file_segments:
+            filename = '{}_{:06d}-{:06d}'.format(file,
+                                                 int(round(start*1000)),
+                                                 int(round(end*1000)))
+            segments_ctm[filename] = [entry for entry in ctm[file]
+                                      if entry[1] >= start and entry[2] <= end]
+
+        return segments_ctm
+
     return ctm
 
 
@@ -608,7 +626,7 @@ def prune_ctm(ctm, min_num_char, min_duration):
                  and word_entry[2] >= min_duration]
             for id, word_entries in ctm.items()}
 
-def write_clusters(ctm, out_filename):
+def write_clusters(ctm, out_filename, file_transfrom):
     """  Write cluster file for evaluation with https://github.com/bootphon/tde
 
     :param ctm: ctm file
@@ -620,7 +638,10 @@ def write_clusters(ctm, out_filename):
             if word[0] not in clusters:
                 clusters[word[0]] = list()
 
-            clusters[word[0]].append((file, ) + word[1:])
+            if file_transfrom is not None:
+                clusters[word[0]].append((file_transfrom(file), ) + word[1:])
+            else:
+                clusters[word[0]].append((file, ) + word[1:])
 
     with open(out_filename, 'w') as fid:
         for idx, words in enumerate(clusters.values()):
