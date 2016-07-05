@@ -242,8 +242,6 @@ def colorize_and_display_dataframe(df):
 
     random_class_name = 'tab{}'.format(uuid.uuid1())
 
-    print(random_class_name)
-
     html = ''
 
     html += '<style type=text/css>\n'
