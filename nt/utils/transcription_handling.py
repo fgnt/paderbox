@@ -235,8 +235,7 @@ class EventLabelHandler(object):
 
     """
 
-    def __init__(self, transcription_list, events, window_length=400,
-                 stft_size=512, stft_shift=160):
+    def __init__(self, events, stft_size=512, stft_shift=160):
         self.label_to_int = dict()
         self.int_to_label = dict()
 
