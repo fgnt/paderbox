@@ -1,7 +1,7 @@
 import re
 import types
 from ipywidgets import widgets
-from IPython.display import display
+from IPython.display import display, display_html, HTML
 
 
 # http://matthiaseisen.com/pp/patterns/p0063/
@@ -12,6 +12,26 @@ def callback_button(callback_fcn, description="Click me!"):
         callback_fcn()
     btn.on_click(func)
     display(btn)
+
+
+def toggle_code_button():
+    # This line will hide code by default when the notebook is exported as HTML
+    display_html(
+        '<script>'
+        'jQuery(function() '
+        '{if (jQuery("body.notebook_app").length == 0) '
+        '{ jQuery(".input_area").toggle(); jQuery(".prompt").toggle();}});'
+        '</script>',
+        raw=True)
+    # This line will add a button to toggle visibility of code blocks, for use with the HTML export version
+    display_html(
+        '''<button onclick="jQuery('.input_area').toggle(); jQuery('.prompt').toggle();">Toggle code</button>''',
+        raw=True)
+
+
+def nb_full_width():
+    display(HTML("<style>.container { width:99.5% !important; }</style>"))
+
 
 import ipywidgets as widgets # Loads the Widget framework.
 from IPython.core.magics.namespace import NamespaceMagics # Used to query namespace.
