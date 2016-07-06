@@ -626,7 +626,7 @@ def prune_ctm(ctm, min_num_char, min_duration):
                  and word_entry[2] >= min_duration]
             for id, word_entries in ctm.items()}
 
-def write_clusters(ctm, out_filename, file_transfrom):
+def write_clusters(ctm, out_filename, file_transfrom=None):
     """  Write cluster file for evaluation with https://github.com/bootphon/tde
 
     :param ctm: ctm file
