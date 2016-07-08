@@ -25,16 +25,24 @@ def deprecated(instructions):
         when the function is used."""
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            message = 'Call to deprecated function {}. {}'.format(
+            message = 'Call to deprecated function {} ({}). {}'.format(
                 func.__qualname__,
+                inspect.getfile(func),
                 instructions)
 
-            fileno = func.__code__.co_firstlineno if isinstance(func, types.FunctionType) else -1
+            # fileno = func.__code__.co_firstlineno if isinstance(func, types.FunctionType) else -1
+            #
+            # warnings.warn_explicit(message,
+            #                        category=DeprecatedWarning,
+            #                        filename=inspect.getfile(func),
+            #                        lineno=fileno)
+
+            frame = inspect.currentframe().f_back
 
             warnings.warn_explicit(message,
                                    category=DeprecatedWarning,
-                                   filename=inspect.getfile(func),
-                                   lineno=fileno)
+                                   filename=inspect.getfile(frame.f_code),
+                                   lineno=frame.f_lineno)
 
             return func(*args, **kwargs)
 
