@@ -169,7 +169,7 @@ def get_train_cv_data_provider(dir_name, stft_size, stft_shift, transcription_li
         train_data = train_data.reshape(T, -1)
 
     # Load training and CV targets
-    event_label_handler = EventLabelHandler(transcription_list, events)
+    event_label_handler = EventLabelHandler(events)
     train_target, cv_target = make_target_arrays(event_label_handler, transcription_list, resampling_factor,
                                                  scripts, total_lengths, stft_size, stft_shift)
 
@@ -335,7 +335,7 @@ def generate_onset_offset_label(decoded_allFrames, event_id, event_label_handler
             resampling_factor)  # To save frame no. [not exceeded by 1 here as it is already greater than the offset index by 1]
         # if the period in question was active for that event, log it's onset and offset.
         # Minimum duration constraint
-        if label_now == 1 and offset - onset > 0.06 and class_label != 'Silence':  # and class_label not in garbage_events
+        if label_now == 1 and offset - onset > 0.06 and class_label != 'Silence' and class_label not in garbage_events:
             file.write(''.join(('\t'.join(('%.2f' % onset, '%.2f' % offset, class_label)), '\n')))
         i = j
     file.close()
