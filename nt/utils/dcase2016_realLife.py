@@ -7,7 +7,7 @@ from nt.utils.numpy_utils import segment_axis
 from nt.speech_enhancement.noise import NoiseGeneratorWhite
 
 background = ['washing machine', 'fridge', 'microwave running', 'ironing', 'coffee maker', 'vacuum cleaner',
-              'music playing', 'television']
+              'music playing']
 
 short_events = ['mouse', 'page turning', 'paper rustling', 'mouse rolling', 'mouse clicking', 'adjusting fabric',
                 'adjusting thermostat', 'adjusting sheet', 'lid', 'dispenser drawer', 'switch', 'glass', 'cup',
@@ -18,7 +18,7 @@ short_events = ['mouse', 'page turning', 'paper rustling', 'mouse rolling', 'mou
                 'paper hitting', 'cable', 'bird singing', 'power cord']
 
 human_reflexes = ['person breathing', 'person whistling', 'person clapping', 'person coughing', 'person sneezing',
-                  'person swallowing', 'people speaking']
+                  'person swallowing', 'people speaking', 'television']
 
 water_activities = ['water spraying', 'water pouring', 'pouring drink', 'sink draining', 'soda stream', 'water',
                     'water splashing', 'water dripping']
@@ -75,6 +75,11 @@ def get_targets_from_transcriptions(transcription_file, num_of_samples, events, 
 
 
 def generate_transcription(events):
+    """
+    Generates transcription from the provided events
+    :param events: a list of events
+    :return: a dictionary with labels as keys
+    """
     label_to_int = dict()
     int_to_label = dict()
     label_to_int['Silence'] = 0
@@ -86,18 +91,26 @@ def generate_transcription(events):
 
 
 def convert_to_frames(train_target, stft_size=512, stft_shift=160):
+    """
+    Convert from samples to frames- activating an event if it's present at least in 25% of the frame
+    :param train_target: array of targets with size samples X number of events
+    :param stft_size: window size for stft
+    :param stft_shift: hop size for stft
+    :return: array of targets with size frames X number of events
+    """
     print('Converting target samples to frames... ')
-    # convert from samples to frames- activating an event if it's present at least in 50% of the frame
+
     frames_arr_train = list()
     for i in range(train_target.shape[1]):  # i.e. for every event
         time_signal_seg = segment_axis(train_target[:, i], length=stft_size, overlap=stft_size - stft_shift, end='pad')
-        frames_arr_train.append((np.sum(time_signal_seg, axis=1) > 0.5 * stft_size).reshape(-1, 1))
+        frames_arr_train.append((np.sum(time_signal_seg, axis=1) > 0.25 * stft_size).reshape(-1, 1))
     frames_arr_train = np.concatenate(frames_arr_train, axis=1)
     return frames_arr_train
 
 
 def data_from_hdf5(hdf5_file):
     """ Reads features amd targets from a hdf file
+
     :param hdf5_file: hdf file to be read from
     :return: a tuple of features and targets 
     """
@@ -114,7 +127,7 @@ def data_from_hdf5(hdf5_file):
 
 def _generate_new_targets(targets_block1, targets_block2):
     """
-    Performs an OR operation on two blocks of targets to produce a single block.
+    Adds two blocks of targets to produce a single block.
 
     :param targets_block1: block 1 containing targets
     :param targets_block2: block 2 containing targets
@@ -188,7 +201,7 @@ def simple_addition_1combination(comb, time_signal, targets, thr_samples, noisy=
         print('Adding noise')
         new_signal = add_noise(new_signal, n_gen)
 
-    ## Appending logfbank features and corresponding targets for small utterances to the list
+    # Appending log fbank features and corresponding targets for small utterances to the list
     logfbank_feat_list = list()
     utt_targets_list = list()
     if len(new_signal) > thr_samples:
@@ -202,13 +215,22 @@ def simple_addition_1combination(comb, time_signal, targets, thr_samples, noisy=
                     utt_targets[i][0] = 1
             logfbank_feat_list.append(logfbank_feat)
             utt_targets_list.append(utt_targets)
+        # Adding the last left out part
+        logfbank_feat_list.append(logfbank(new_signal[(ts + 1) * thr_samples:-1], number_of_filters=40))
+        utt_targets = targets[(ts + 1) * thr_samples:-1, :]
+        utt_targets = convert_to_frames(utt_targets)
+        # Activating silence class where no class is activated.
+        for i in range(utt_targets.shape[0]):
+            if not utt_targets[i].any():
+                utt_targets[i][0] = 1
+        utt_targets_list.append(utt_targets)
 
     return logfbank_feat_list, utt_targets_list
 
 
 def add_noise(time_sig, noise_gen):
     noisy_time_signal = list()
-    snr_values = np.random.choice([-6, 0, 6], size=1)
+    snr_values = np.random.choice([0, 10, 20], size=1)
     for snr in snr_values:
         noisy_time_signal.append(time_sig + noise_gen.get_noise_for_signal(time_sig, snr=snr))
     noisy_time_signal = np.concatenate(noisy_time_signal)
