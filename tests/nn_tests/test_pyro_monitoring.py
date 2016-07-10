@@ -9,7 +9,8 @@ from nt.utils import AttrDict
 
 # This is an extension to the ipynb notebook test
 
-class LoggerMonitorTest(unittest.TestCase):
+
+class MonitorWithoutPyroTest(unittest.TestCase):
 
     def setUp(self):
         self.pyro_mon = PyroMonitorServer()
@@ -36,22 +37,32 @@ class LoggerMonitorTest(unittest.TestCase):
         self.pyro_mon.log_data(**self.tr_log_data_args)
         self.pyro_mon.log_data(**self.cv_log_data_args)
 
-    def test_add_observer(self):
+    def main(self, save_callback, load_callback):
         self.pyro_mon.log_data(**self.tr_log_data_args)
         self.pyro_mon.log_data(**self.cv_log_data_args)
 
         with assert_raises_regex(KeyError, 'Wrong signal_identifier'):
             self.pyro_mon.add_observer('y', 'B', logging=True,
-                                       allow_reset=False)
+                                       allow_reset=False,
+                                       save_callback=save_callback,
+                                       load_callback=load_callback)
 
-        self.pyro_mon.add_observer('y', 'O', logging=True, allow_reset=False)
-        self.pyro_mon.add_observer('x', 'B', logging=True)
-        self.pyro_mon.add_observer(('Var', 0), 'V', name='Var')
+        self.pyro_mon.add_observer('y', 'O', logging=True, allow_reset=False,
+                                   save_callback=save_callback,
+                                   load_callback=load_callback)
+        self.pyro_mon.add_observer('x', 'B', logging=True,
+                                   save_callback=save_callback,
+                                   load_callback=load_callback)
+        self.pyro_mon.add_observer(('Var', 0), 'V', name='Var',
+                                   save_callback=save_callback,
+                                   load_callback=load_callback)
 
         with assert_raises_regex(
                 ValueError, "origin_of_signal must be 'B', 'O', 'V' or 'F'"):
             self.pyro_mon.add_observer('y', 'X', logging=True,
-                                       allow_reset=False)
+                                       allow_reset=False,
+                                       save_callback=save_callback,
+                                       load_callback=load_callback)
 
         tc.assert_equal({'tr', 'cv'}, self.pyro_mon.data.keys())
         tc.assert_equal({'x', 'y', 'Var'}, self.pyro_mon.tr.keys())
@@ -141,3 +152,49 @@ class LoggerMonitorTest(unittest.TestCase):
 
         assert 0 == len(self.pyro_mon.tr.keys())
         assert 0 == len(self.pyro_mon.cv.keys())
+
+    def test_main(self):
+        self.main(None, None)
+
+    def test_save_callback(self):
+        def identity(value):
+            return value
+        self.main(identity, None)
+
+    def test_save_callback_2(self):
+        def identity(value, buffer):
+            return value
+        self.main(identity, None)
+
+    def test_save_callback_3(self):
+        def identity(value, buffer, mode):
+            assert mode in ['tr', 'cv']
+            return value
+        self.main(identity, None)
+
+    def test_load_callback(self):
+        def identity(value):
+            return value
+        self.main(None, identity)
+
+    def test_save_load_callback(self):
+        def identity(value):
+            return value
+        self.main(identity, identity)
+
+    def test_save_load_callback_2(self):
+        def identity_load(value):
+            return value
+
+        def identity(value, buffer):
+            return value
+        self.main(identity, identity_load)
+
+    def test_save_load_callback_3(self):
+        def identity_load(value):
+            return value
+
+        def identity(value, buffer, mode):
+            assert mode in ['tr', 'cv']
+            return value
+        self.main(identity, identity_load)
