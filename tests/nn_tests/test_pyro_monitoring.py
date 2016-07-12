@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import assert_raises_regex
 from nt import testing as tc
 from chainer.variable import Variable
-from nt.nn.pyro_monitoring import PyroMonitorServer
+from nt.nn.pyro_monitoring import PyroMonitorServer, MeanLogger
 from nt.utils import AttrDict
 
 # This is an extension to the ipynb notebook test
@@ -32,6 +32,47 @@ class MonitorWithoutPyroTest(unittest.TestCase):
             observation_indices=None,  # ToDo
             in_cv=True,
         )
+
+    def test_mean_logger(self):
+        self.pyro_mon.log_data(**self.tr_log_data_args)
+        self.pyro_mon.add_observer('y', 'O', name='y_mean',
+                                   save_callback=MeanLogger)
+        self.pyro_mon.add_observer('y', 'O', name='y_without_ltm', logging=True)
+        self.pyro_mon.add_observer('y', 'O', logging=True,
+                                   ltm_callback=np.mean)
+        tc.assert_equal(self.pyro_mon.tr.ltm.keys(), {'y'})
+
+        self.pyro_mon.log_data(**self.tr_log_data_args)
+        tc.assert_equal(self.pyro_mon.tr.y_mean, [2.5])
+        tc.assert_equal(self.pyro_mon.tr.ltm.y, [2.5])
+
+        self.tr_log_data_args['net_out']['y'] = np.arange(6) + 2
+        self.pyro_mon.log_data(**self.tr_log_data_args)
+
+        tc.assert_equal(self.pyro_mon.tr.y_mean, [3.5])
+        tc.assert_equal(self.pyro_mon.tr.ltm.y, [3.5])
+
+        self.pyro_mon.next_epoch_tr()
+
+        self.pyro_mon.log_data(**self.tr_log_data_args)
+        tc.assert_equal(self.pyro_mon.tr.y_mean, [3.5, 4.5])
+        tc.assert_equal(self.pyro_mon.tr.ltm.y, [3.5, 4.5])
+        self.pyro_mon.log_data(**self.tr_log_data_args)
+        tc.assert_equal(self.pyro_mon.tr.y_mean, [3.5, 4.5])
+        tc.assert_equal(self.pyro_mon.tr.ltm.y, [3.5, 4.5])
+
+        self.pyro_mon.reset()
+        tc.assert_equal(self.pyro_mon.tr.y_mean, [])
+        tc.assert_equal(self.pyro_mon.tr.ltm.y, [])
+
+        self.pyro_mon.log_data(**self.tr_log_data_args)
+        tc.assert_equal(self.pyro_mon.tr.y_mean, [3.5, 4.5, 4.5])
+        tc.assert_equal(self.pyro_mon.tr.ltm.y, [4.5])
+        self.pyro_mon.log_data(**self.tr_log_data_args)
+        tc.assert_equal(self.pyro_mon.tr.y_mean, [3.5, 4.5, 4.5])
+        tc.assert_equal(self.pyro_mon.tr.ltm.y, [4.5])
+
+        tc.assert_equal(self.pyro_mon.tr.ltm.keys(), {'y'})
 
     def test_log_data(self):
         self.pyro_mon.log_data(**self.tr_log_data_args)
@@ -198,3 +239,15 @@ class MonitorWithoutPyroTest(unittest.TestCase):
             assert mode in ['tr', 'cv']
             return value
         self.main(identity, identity_load)
+
+    def test_class_save_load_callback_3(self):
+        class IdentityLoad:
+            def __call__(self, value):
+                return value
+
+        class Identity:
+            def __call__(self, value, buffer, mode):
+                assert mode in ['tr', 'cv']
+                return value
+
+        self.main(Identity, IdentityLoad)
