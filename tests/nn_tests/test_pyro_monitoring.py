@@ -106,17 +106,17 @@ class MonitorWithoutPyroTest(unittest.TestCase):
                                        load_callback=load_callback)
 
         tc.assert_equal({'tr', 'cv'}, self.pyro_mon.data.keys())
-        tc.assert_equal({'x', 'y', 'Var'}, self.pyro_mon.tr.keys())
-        tc.assert_equal({'x', 'y'}, self.pyro_mon.cv.keys())
+        tc.assert_equal({'ltm', 'x', 'y', 'Var'}, self.pyro_mon.tr.keys())
+        tc.assert_equal({'ltm', 'x', 'y'}, self.pyro_mon.cv.keys())
 
         # Without log
 
         tc.assert_equal(self.pyro_mon.tr, dict(
-            y=[], x=[], Var=[],
+            y=[], x=[], Var=[], ltm={},
         ))
 
         tc.assert_equal(self.pyro_mon.cv, dict(
-            y=[], x=[],
+            y=[], x=[], ltm={},
         ))
 
         # One log
@@ -125,10 +125,10 @@ class MonitorWithoutPyroTest(unittest.TestCase):
         self.pyro_mon.log_data(**self.cv_log_data_args)
 
         tc.assert_equal(self.pyro_mon.tr, dict(
-            y=[np.arange(6)], x=[np.arange(4)], Var=np.arange(5),
+            y=[np.arange(6)], x=[np.arange(4)], Var=np.arange(5), ltm={},
         ))
         tc.assert_equal(self.pyro_mon.cv, dict(
-            y=[np.arange(3)], x=[np.arange(2)],
+            y=[np.arange(3)], x=[np.arange(2)], ltm={},
         ))
 
         # Two logs
@@ -139,9 +139,10 @@ class MonitorWithoutPyroTest(unittest.TestCase):
         tc.assert_equal(self.pyro_mon.data, dict(
             tr=dict(y=[np.arange(6), np.arange(6)],
                     x=[np.arange(4), np.arange(4)],
-                    Var=np.arange(5),),
+                    Var=np.arange(5), ltm={},),
             cv=dict(y=[np.arange(3), np.arange(3)],
-                    x=[np.arange(2), np.arange(2)],),
+                    x=[np.arange(2), np.arange(2)],
+                    ltm={},),
         ))
 
         # Reset tr
@@ -151,9 +152,10 @@ class MonitorWithoutPyroTest(unittest.TestCase):
         tc.assert_equal(self.pyro_mon.data, dict(
             tr=dict(y=[np.arange(6), np.arange(6)],
                     x=[],
-                    Var=[], ),
+                    Var=[], ltm={},),
             cv=dict(y=[np.arange(3), np.arange(3)],
-                    x=[np.arange(2), np.arange(2)], ),
+                    x=[np.arange(2), np.arange(2)],
+                    ltm={},),
         ))
 
         # Reset cv
@@ -163,9 +165,11 @@ class MonitorWithoutPyroTest(unittest.TestCase):
         tc.assert_equal(self.pyro_mon.data, dict(
             tr=dict(y=[np.arange(6), np.arange(6)],
                     x=[],
-                    Var=[], ),
+                    Var=[],
+                    ltm={},),
             cv=dict(y=[np.arange(3), np.arange(3)],
-                    x=[], ),
+                    x=[],
+                    ltm={},),
         ))
 
         # hard reset
@@ -175,24 +179,28 @@ class MonitorWithoutPyroTest(unittest.TestCase):
         tc.assert_equal(self.pyro_mon.data, dict(
             tr=dict(y=[],
                     x=[],
-                    Var=[], ),
+                    Var=[],
+                    ltm={},
+                    ),
             cv=dict(y=[],
-                    x=[], ),
+                    x=[],
+                    ltm={},
+                    ),
         ))
 
         # drop one observer
 
         self.pyro_mon.drop_observer('x')
 
-        tc.assert_equal({'y', 'Var'}, self.pyro_mon.tr.keys())
-        tc.assert_equal({'y'}, self.pyro_mon.cv.keys())
+        tc.assert_equal({'ltm', 'y', 'Var'}, self.pyro_mon.tr.keys())
+        tc.assert_equal({'ltm', 'y'}, self.pyro_mon.cv.keys())
 
         # drop all observer
 
         self.pyro_mon.drop_all_observer()
 
-        assert 0 == len(self.pyro_mon.tr.keys())
-        assert 0 == len(self.pyro_mon.cv.keys())
+        tc.assert_equal(self.pyro_mon.tr, dict(ltm={}))
+        tc.assert_equal(self.pyro_mon.cv, dict(ltm={}))
 
     def test_main(self):
         self.main(None, None)
