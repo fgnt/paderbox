@@ -43,7 +43,7 @@ class TestNoiseGeneratorWhite(unittest.TestCase):
         tc.assert_equal(n.shape, (1000,))
 
         SDR, SIR, SNR = sxr.input_sxr(time_signal[:, None, None], n[:, None])
-        tc.assert_almost_equal(SNR, 20, decimal=6)
+        tc.assert_almost_equal(SNR, 20, decimal=4)
 
     @tc.retry(3)
     def test_multi_channel(self):
