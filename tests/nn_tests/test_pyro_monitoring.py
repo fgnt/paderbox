@@ -78,6 +78,33 @@ class MonitorWithoutPyroTest(unittest.TestCase):
         self.pyro_mon.log_data(**self.tr_log_data_args)
         self.pyro_mon.log_data(**self.cv_log_data_args)
 
+    def test_to_file(self):
+        self.pyro_mon.log_data(**self.tr_log_data_args)
+        self.pyro_mon.log_data(**self.cv_log_data_args)
+
+        self.pyro_mon.add_observer('y', 'O', logging=True, to_file=True)
+        self.pyro_mon.add_observer('x', 'B', logging=True)
+
+        collector = dict()
+        self.pyro_mon.add_to_file(collector)
+
+        tc.assert_equal(collector, dict(
+            tr=dict(y=[], ltm={},),
+            cv=dict(y=[], ltm={},),
+        ))
+
+        self.pyro_mon.log_data(**self.tr_log_data_args)
+        self.pyro_mon.log_data(**self.cv_log_data_args)
+
+        collector = dict()
+        self.pyro_mon.add_to_file(collector)
+
+        tc.assert_equal(collector, dict(
+            tr=dict(y=[np.arange(6)], ltm={}, ),
+            cv=dict(y=[np.arange(3)], ltm={}, ),
+        ))
+
+
     def main(self, save_callback, load_callback):
         self.pyro_mon.log_data(**self.tr_log_data_args)
         self.pyro_mon.log_data(**self.cv_log_data_args)
