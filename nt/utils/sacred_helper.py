@@ -5,6 +5,9 @@ import pandas as pd
 from bson.objectid import ObjectId
 from pymongo import MongoClient
 from cached_property import cached_property
+from nt.utils.pandas_helper import colorize_and_display_dataframe, \
+    filter_columns  # for backward compatibility
+from nt.utils.pandas_helper import set_values
 
 
 class SacredManager:
@@ -30,8 +33,6 @@ class SacredManager:
             self.database = database
         if prefix is not None:
             self.prefix = prefix
-
-
 
     @cached_property
     def client(self):
@@ -74,6 +75,9 @@ class SacredManager:
                 shutil.rmtree(data_dir)
         delete_result = runs.delete_one({'_id': ObjectId(_id)})
         print(delete_result.raw_result)
+
+    def set_db_values(self, _id, values):
+        set_values(self._get_runs(), _id, values)
 
     def get_data_frame(self, depth=2):
         """
@@ -132,128 +136,3 @@ def _expand_key(key, length, expansion_key=''):
         key = key + (expansion_key,) * (length - len(key))
 
     return key
-
-
-def rename_columns(frame, map):
-    # TODO: Please explain better, what this fn does. Parameters?
-    # TODO: Why not df[('time', 'start')] = df['start_time']?
-    depth = len(frame.columns.levels)
-    for old_key in map.keys():
-        new_key = map[old_key]
-        frame[_expand_key(new_key, depth)] = frame[_expand_key(old_key, depth)]
-        frame.drop(_expand_key(old_key, depth), 1, inplace=True)
-
-
-def add_values(df, f):
-    # TODO: Please explain better, what this fn does.
-    depth = len(df.columns.levels)
-    for i in df.index:
-        try:
-            (k, v) = f(df.loc[i].squeeze())
-            df.loc[i, _expand_key(k, depth)] = v
-        except:
-            # TODO: Can you be more precise about the exception?
-            pass
-
-
-def filter_columns(frame, entries):
-    """
-
-    :param frame:
-    :param entries:
-    :return:
-    """
-    # TODO: Unclear, why this works.
-    def _in(lv, l):
-        """checks for every level name in l if this level name is in level lv
-        """
-        res = None
-        for k in l:
-            if res is None:
-                res = (lv == k)
-            else:
-                res |= (lv == k)
-        return res
-
-    mask = None
-    lv0 = frame.columns.get_level_values(0)  # get column names for level 0
-    lv1 = frame.columns.get_level_values(1)  # get column names for level 1
-
-    # for every column name of level 0, check if in list entries. If so, check
-    # if all values are needed (entries[k] = True) or to filter in level names
-    # of level 1
-    for k in entries.keys():
-        v = entries[k]
-        if type(v) is list:
-            new_mask = (lv0 == k) & (_in(lv1, v))
-        else:
-            # take columns with first level name = entries[k]
-            new_mask = (lv0 == k)
-
-        # concatenate masks
-        mask = new_mask if mask is None else mask | new_mask
-
-    return frame.loc[:, mask]  # apply mask
-
-
-def print_columns(df, indent=0):
-    # TODO: This does not work reliably yet
-    try:
-        for column in df.columns.levels[0]:
-            print('    ' * indent + column)
-            if not isinstance(df[column], pd.Series):
-                print_columns(df[column], indent=indent+1)
-    except AttributeError:
-        for column in df.columns:
-            print('    ' * indent + column)
-
-
-def make_css_mark(mask, color_str='#FFFFFF'):
-    css = ''
-    for i in range(len(mask)):
-        if mask.iloc[i]:
-            css += 'tbody tr:nth-child(%d) {background-color: %s}\n' % (
-                i+1, color_str
-            )
-    return css
-
-
-def colorize_and_display_dataframe(df):
-    """ Uses UPB colors to colorize table.
-
-    Generates a unique class name to not overwrite existing CSS code and then
-    colorizes rows based on experiment status.
-
-    Args:
-        df: Filtered data frame i.e. from `filter_columns()`.
-
-    Returns: None
-
-    """
-    import uuid
-    from IPython.display import HTML
-
-    color_dict = dict(
-        COMPLETED='#84BD00',
-        FAILED='#FFC600',
-        INTERRUPTED='#FF8200',
-        RUNNING='#009FDF'
-    )
-
-    random_class_name = 'tab{}'.format(uuid.uuid1())
-
-    html = ''
-
-    html += '<style type=text/css>\n'
-    # html += '.tab_' + str(uuid.uuid1()) + '\n'
-    html += '.{}\n'.format(random_class_name)
-
-    for key, value in color_dict.items():
-        html += make_css_mark((df['status'] == key), color_str=value)
-
-    html += 'thead tr {background-color: #C7C9C7}\n'
-    html += '</style>\n'
-
-    html += df.to_html(escape=False, classes=random_class_name)
-
-    return HTML(html)
