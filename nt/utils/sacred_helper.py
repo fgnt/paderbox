@@ -6,7 +6,7 @@ from bson.objectid import ObjectId
 from pymongo import MongoClient
 from cached_property import cached_property
 from nt.utils.pandas_helper import colorize_and_display_dataframe, \
-    filter_columns, make_css_mark  # for backward compatibility
+    filter_columns, make_css_mark, print_columns  # for backward compatibility
 from nt.utils.pandas_helper import set_values
 
 
