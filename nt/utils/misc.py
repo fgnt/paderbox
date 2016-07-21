@@ -6,7 +6,7 @@ find something useful if you alter it a little bit.
 """
 
 import os
-
+import collections
 import h5py
 import numpy as np
 from nt.database.chime import get_data_provider_for_flist
@@ -372,3 +372,24 @@ def collect_results(flist, result_dir,
         except OSError:
             print('Skipping file {}'.format(file_name))
     return results
+
+
+def update_dict(d, u):
+    """ Recursively update dict d with values from dict u.
+
+    Args:
+        d: Dict to be updated
+        u: Dict with values to use for update
+
+    Returns: Updated dict
+
+    """
+    for k, v in u.items():
+        if isinstance(v, collections.Mapping):
+            default = v.copy()
+            default.clear()
+            r = update_dict(d.get(k, default), v)
+            d[k] = r
+        else:
+            d[k] = v
+    return d
