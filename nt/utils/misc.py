@@ -32,7 +32,9 @@ def get_beamform_results(
         stft_size=1024,
         stft_shift=256,
         calculate_PESQ=True,
-        reference_channel=4
+        reference_channel=4,
+        name = None,
+        oracle = None
 ):
     """ A wrapper, if you want to calculate more than one beamforming result.
 
