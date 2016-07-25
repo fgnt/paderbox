@@ -232,7 +232,7 @@ class FormattedHeaderHTMLFormatter(HTMLFormatter):
                             # if ins_col lies between tags, all col headers get ...
                             if tag + span == ins_col:
                                 recs_new[ins_col] = 1
-                                values = values[:ins_col] + (u('...'),) + \
+                                values = values[:ins_col] + (u'...', ) + \
                                          values[ins_col:]
                         records = recs_new
                         inner_lvl = len(level_lengths) - 1
@@ -247,7 +247,7 @@ class FormattedHeaderHTMLFormatter(HTMLFormatter):
                                 recs_new[tag] = span
                         recs_new[ins_col] = 1
                         records = recs_new
-                        values = values[:ins_col] + [u('...')] + values[
+                        values = values[:ins_col] + [u'...'] + values[
                                                                  ins_col:]
 
                 name = self.columns.names[lnum]
