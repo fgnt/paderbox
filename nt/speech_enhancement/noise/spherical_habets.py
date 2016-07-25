@@ -55,7 +55,7 @@ from math import acos, sqrt
 from math import pi, sin, cos, ceil, floor
 
 import numpy
-from numpy import log2, zeros, real, conj, exp, hanning
+from numpy import zeros
 from numpy.fft import irfft as ifft
 from numpy.fft import fft as fft
 from numpy.random import randn
@@ -82,7 +82,7 @@ def _sinf_3D(positions, signal_length, sample_rate=8000, c=340, N=256):
     """
 
     M = positions.shape[1]  # Number of sensors
-    NFFT = 2 ** ceil(log2(signal_length))  # Number of frequency bins
+    NFFT = 2 ** ceil(numpy.log2(signal_length))  # Number of frequency bins
     X = zeros((M, NFFT // 2 + 1), dtype=numpy.complex128)
 
     w = 2 * pi * sample_rate * numpy.arange(0, NFFT // 2 + 1) / NFFT
@@ -115,16 +115,16 @@ def _sinf_3D(positions, signal_length, sample_rate=8000, c=340, N=256):
         for m in range(1, M):
             v = [cos(theta[idx]) * sin(phi[idx]), sin(theta[idx]) * sin(phi[idx]), cos(phi[idx])]
             Delta = v @ P_rel[:, m]
-            X[m, :] = X[m, :] + X_prime * exp(-1j * Delta * w / c)
+            X[m, :] = X[m, :] + X_prime * numpy.exp(-1j * Delta * w / c)
 
     X = X / sqrt(N)
 
     # Transform to time domain
-    X = [sqrt(NFFT) * real(X[:, 0]), sqrt(NFFT // 2) * X[:, 1:-1],
-         sqrt(NFFT) * real(X[:, -1]), sqrt(NFFT / 2) * conj(X[:, -2:0:-1])]
+    X = [sqrt(NFFT) * numpy.real(X[:, 0]), sqrt(NFFT // 2) * X[:, 1:-1],
+         sqrt(NFFT) * numpy.real(X[:, -1]), sqrt(NFFT / 2) * numpy.conj(X[:, -2:0:-1])]
     X = [x if x.ndim is 2 else x[:, None] for x in X]
     X = numpy.concatenate(X, axis=1)
-    z = real(ifft(X, NFFT, 1))
+    z = numpy.real(ifft(X, NFFT, 1))
 
     # Truncate output signals
     return z[:, :signal_length]
@@ -152,7 +152,7 @@ def _sinf_3D_py(positions, signal_length, sample_rate=8000, c=340, N=256):
     """
 
     M = positions.shape[1]  # Number of sensors
-    NFFT = 2 ** ceil(log2(signal_length))  # Number of frequency bins
+    NFFT = 2 ** ceil(numpy.log2(signal_length))  # Number of frequency bins
     X = zeros((M, NFFT // 2 + 1), dtype=numpy.complex128)
 
     w = 2 * pi * sample_rate * numpy.arange(0, NFFT // 2 + 1) / NFFT
@@ -187,22 +187,22 @@ def _sinf_3D_py(positions, signal_length, sample_rate=8000, c=340, N=256):
     #         v = [cos(theta[idx]) * sin(phi[idx]), sin(theta[idx]) * sin(phi[idx]), cos(phi[idx])]
     #         # Delta = v @ P_rel[:, m]
     #         Delta = numpy.sum(v * P_rel[:, m])
-    #         X[m, :] += X_prime * exp(-1j * Delta * w / c)
+    #         X[m, :] += X_prime * numpy.exp(-1j * Delta * w / c)
     # print(N, NFFT // 2 + 1)
     X_prime = randn(N, NFFT // 2 + 1) + 1j * randn(N, NFFT // 2 + 1)
     v = numpy.stack([numpy.cos(theta) * numpy.sin(phi), numpy.sin(theta) * numpy.sin(phi), numpy.cos(phi)])
     Delta = P_rel[:, 1:].T @ v
     X[0, :] += numpy.sum(X_prime, axis=0)
-    X[1:, :] += numpy.sum(X_prime[None, :, :] * exp((-1j * (Delta[:, :, None] / c)) * w[None, None, :]))
+    X[1:, :] += numpy.sum(X_prime[None, :, :] * numpy.exp((-1j * (Delta[:, :, None] / c)) * w[None, None, :]))
 
     X /= sqrt(N)
 
     # Transform to time domain
-    X = [sqrt(NFFT) * real(X[:, 0]), sqrt(NFFT // 2) * X[:, 1:-1],
-         sqrt(NFFT) * real(X[:, -1]), sqrt(NFFT / 2) * conj(X[:, -2:0:-1])]
+    X = [sqrt(NFFT) * numpy.real(X[:, 0]), sqrt(NFFT // 2) * X[:, 1:-1],
+         sqrt(NFFT) * numpy.real(X[:, -1]), sqrt(NFFT / 2) * numpy.conj(X[:, -2:0:-1])]
     X = [x if x.ndim is 2 else x[:, None] for x in X]
     X = numpy.concatenate(X, axis=1)
-    z = real(ifft(X, NFFT, 1))
+    z = numpy.real(ifft(X, NFFT, 1))
 
     # Truncate output signals
     return z[:, :signal_length].T
@@ -264,7 +264,7 @@ def _mycohere(x, y, nfft=256, sample_rate=8000, window=None, noverlap=None, p=.9
     #[msg,nfft,Fs,window,noverlap,p,dflag]=psdchk(varargin(3:end),x,y);
     #error(msg)
     if window is None:
-        window=hanning(nfft)
+        window = numpy.hanning(nfft)
     if not noverlap:
         noverlap = 0.75*nfft
 
@@ -307,7 +307,7 @@ def _mycohere(x, y, nfft=256, sample_rate=8000, window=None, noverlap=None, p=.9
         Yy = fft(yw,nfft)
         Xx2 = abs(Xx)**2
         Yy2 = abs(Yy)**2
-        Xy2 = Yy * conj(Xx)
+        Xy2 = Yy * numpy.conj(Xx)
         Pxx += Xx2
         Pxx2 += abs(Xx2)**2
         Pyy += Yy2
