@@ -67,56 +67,18 @@ def print_columns(df, indent=0):
             print('    ' * indent + column)
 
 
-def make_css_mark(mask, color_str='#FFFFFF'):
+def make_css_mark(mask, color_str='#FFFFFF', css_class_name=''):
     css = ''
     for i in range(len(mask)):
         if mask.iloc[i]:
-            css += 'tbody tr:nth-child(%d) {background-color: %s}\n' % (
+            css += '%s tbody tr:nth-child(%d) {background-color: %s}\n' % (
+                css_class_name,
                 i + 1, color_str
             )
     return css
 
 
-def colorize_and_display_dataframe(df, column='status', color_dict=None):
-    """ Uses UPB colors to colorize table.
 
-    Generates a unique class name to not overwrite existing CSS code and then
-    colorizes rows based on experiment status.
-
-    Args:
-        df: Filtered data frame i.e. from `filter_columns()`.
-
-    Returns: None
-
-    """
-    import uuid
-    from IPython.display import HTML
-
-    if color_dict is None:
-        color_dict = dict(
-            COMPLETED='#84BD00',
-            FAILED='#FFC600',
-            INTERRUPTED='#FF8200',
-            RUNNING='#009FDF'
-        )
-
-    random_class_name = 'tab{}'.format(uuid.uuid1())
-
-    html = ''
-
-    html += '<style type=text/css>\n'
-    # html += '.tab_' + str(uuid.uuid1()) + '\n'
-    html += '.{}\n'.format(random_class_name)
-
-    for key, value in color_dict.items():
-        html += make_css_mark((df[column] == key), color_str=value)
-
-    html += 'thead tr {background-color: #C7C9C7}\n'
-    html += '</style>\n'
-
-    html += df.to_html(escape=False, classes=random_class_name)
-
-    return HTML(html)
 
 
 def set_values(runs, _id, update_dict):
@@ -421,8 +383,60 @@ span.intact {
   height: %dpx;
 }
 ''' % rotated_cell_height
+
     return format_html(RotatedTHeadHTMLFormatter, df, css_style_string, buf,
                        columns, col_space, header, index, na_rep, formatters,
                        float_format, sparsify, index_names, justify, bold_rows,
                        classes, max_rows, max_cols, show_dimensions, notebook,
                        min_rotation_level=min_rotation_level)
+
+
+def colorize_and_display_dataframe(df, column='status', color_dict=None,
+                                   header_background_color='#c7c9c7',
+                                   min_rotation_level=1,
+                                   rotated_cell_height=120):
+    """ Uses UPB colors to colorize table.
+
+    Generates a unique class name to not overwrite existing CSS code and then
+    colorizes rows based on experiment status.
+
+    Args:
+        df: Filtered data frame i.e. from `filter_columns()`.
+        min_rotation_level: minimum level at which the header fields get
+            rotated. If None, headers won't be rotated.
+
+    Returns: None
+
+    """
+    import uuid
+    from IPython.display import HTML
+
+    if color_dict is None:
+        color_dict = dict(
+            COMPLETED='#84BD00',
+            FAILED='#FFC600',
+            INTERRUPTED='#FF8200',
+            RUNNING='#009FDF'
+        )
+
+    random_class_name = 'tab{}'.format(uuid.uuid1())
+
+    css = ''
+
+    for key, value in color_dict.items():
+        css += make_css_mark((df[column] == key), color_str=value,
+                             css_class_name='table.' + random_class_name)
+
+    css += 'table.' + random_class_name
+    css += ' thead tr {background-color: %s}\n' % header_background_color
+
+    if min_rotation_level is not None:
+        html = format_rotated_headers(df, css_style_string=css,
+                                      classes=random_class_name,
+                                      min_rotation_level=min_rotation_level,
+                                      rotated_cell_height=rotated_cell_height)
+    else:
+        html = format_html(HTMLFormatter, df, css_style_string=css,
+                           classes=random_class_name)
+
+    return HTML(html)
