@@ -16,9 +16,57 @@ from nt.transform.module_stft import get_stft_center_frequencies
 from nt.transform.module_stft import istft
 from nt.transform.module_stft import spectrogram_to_energy_per_frame
 from nt.transform.module_stft import stft
-from nt.transform.module_stft import stft_single_channel
 from nt.transform.module_stft import stft_to_spectrogram
 from nt.utils.matlab import matlab_test, Mlab
+from numpy.fft import rfft
+import numpy
+
+
+def stft_single_channel(time_signal, size=1024, shift=256,
+                        window=signal.blackman,
+                        fading=True, window_length=None):
+    """
+    Calculates the short time Fourier transformation of a single channel time
+    signal. It is able to add additional zeros for fade-in and fade out and
+    should yield an STFT signal which allows perfect reconstruction.
+
+    Up to now, only a single channel time signal is possible.
+
+    :param time_signal: Single channel time signal.
+    :param size: Scalar FFT-size.
+    :param shift: Scalar FFT-shift. Typically shift is a fraction of size.
+    :param window: Window function handle.
+    :param fading: Pads the signal with zeros for better reconstruction.
+    :param window_length: Sometimes one desires to use a shorter window than
+        the fft size. In that case, the window is padded with zeros.
+        The default is to use the fft-size as a window size.
+    :return: Single channel complex STFT signal
+        with dimensions frames times size/2+1.
+    """
+    assert len(time_signal.shape) == 1
+
+    # Pad with zeros to have enough samples for the window function to fade.
+    if fading:
+        time_signal = numpy.pad(time_signal, size - shift, mode='constant')
+
+    # Pad with trailing zeros, to have an integral number of frames.
+    frames = _samples_to_stft_frames(len(time_signal), size, shift)
+    samples = _stft_frames_to_samples(frames, size, shift)
+    time_signal = numpy.pad(time_signal,
+                            (0, samples - len(time_signal)), mode='constant')
+
+    # The range object contains the sample index
+    # of the beginning of each frame.
+    range_object = range(0, len(time_signal) - size + shift, shift)
+
+    if window_length is None:
+        window = window(size)
+    else:
+        window = window(window_length)
+        window = numpy.pad(window, (0, size - window_length), mode='constant')
+    windowed = numpy.array([(window * time_signal[i:i + size])
+                            for i in range_object])
+    return rfft(windowed)
 
 
 class TestSTFTMethods(unittest.TestCase):
@@ -144,8 +192,8 @@ class TestSTFTMethods(unittest.TestCase):
 
         # brute_force is fastest
         # tc.assert_array_greater(timer.as_dict['fastest'] * ..., timer.as_dict['brute_force'])
-        tc.assert_array_less(timer.as_dict['fastest'] * 10, timer.as_dict['normal'])
-        tc.assert_array_less(timer.as_dict['fastest'] * 5, timer.as_dict['loopy'])
+        tc.assert_array_less(timer.as_dict['fastest'] * 5, timer.as_dict['normal'])
+        tc.assert_array_less(timer.as_dict['fastest'] * 2, timer.as_dict['loopy'])
 
     def test_batch_mode(self):
         size = 1024
