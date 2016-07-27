@@ -4,11 +4,11 @@ from bson.objectid import ObjectId
 try:
     # Version lower than 0.18
     from pandas.core.format import HTMLFormatter, DataFrameFormatter, \
-        _get_level_lengths
+        _get_level_lengths, single_column_table
 except ImportError:
     # versions higher than 0.18
     from pandas.formats.format import HTMLFormatter, DataFrameFormatter, \
-        _get_level_lengths
+        _get_level_lengths, single_column_table
 
 import pandas.core.common as com
 from nt.utils.misc import update_dict as _update_dict
