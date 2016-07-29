@@ -272,14 +272,18 @@ class FormattedHeaderHTMLFormatter(HTMLFormatter):
 
 class RotatedTHeadHTMLFormatter(FormattedHeaderHTMLFormatter):
     def __init__(self, formatter, classes=None, max_rows=None, max_cols=None,
-                 notebook=False, min_rotation_level=1):
+                 notebook=False, min_rotation_level=1, th_class='rotate',
+                 span_class='intact'):
         super().__init__(formatter, classes, max_rows, max_cols, notebook)
         self.min_rotation_level = min_rotation_level
+        self.span_class = span_class
+        self.th_class = th_class
 
     def format_header_cell(self, header_text, level_number):
         if level_number >= self.min_rotation_level:
-            return '<span class="intact">' + header_text + '</span>', \
-                   'class="rotate"'
+            return '<span class="%s">' % self.span_class + header_text \
+                   + '</span>', \
+                   'class="%s"' % self.th_class
         else:
             return header_text, ''
 
@@ -363,8 +367,12 @@ def format_rotated_headers(df, min_rotation_level=0, css_style_string='',
         fields with a higher level than this will be displayed rotated.
     :param css_style_string: CSS-Style to be embedded in the html document.
     """
+
+    import uuid
+    random_class_name = '{}'.format(uuid.uuid1())
+
     css_style_string += '''
-th.rotate {
+th.rotate%s {
   white-space: nowrap;
   -webkit-transform-origin: 65px 60px;
   -moz-transform-origin: 65px 60px;
@@ -377,18 +385,20 @@ th.rotate {
   -o-transform: rotate(270deg);
   transform: rotate(270deg);
 }
-span.intact {
+span.intact%s {
   display: inline-block;
   width: 30px;
   height: %dpx;
 }
-''' % rotated_cell_height
+''' % (random_class_name, random_class_name, rotated_cell_height)
 
     return format_html(RotatedTHeadHTMLFormatter, df, css_style_string, buf,
                        columns, col_space, header, index, na_rep, formatters,
                        float_format, sparsify, index_names, justify, bold_rows,
                        classes, max_rows, max_cols, show_dimensions, notebook,
-                       min_rotation_level=min_rotation_level)
+                       min_rotation_level=min_rotation_level,
+                       th_class='rotate' + random_class_name,
+                       span_class='intact' + random_class_name)
 
 
 def colorize_and_display_dataframe(df, column='status', color_dict=None,
