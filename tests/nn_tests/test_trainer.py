@@ -59,6 +59,11 @@ class CountingHook(Hook):
 
     def __call__(self, trainer: Trainer):
         self.count += 1
+        # try:
+        #     raise Exception
+        # except Exception as e:
+        #     import traceback
+        #     traceback.print_stack()
 
 
 class BatchCheckHook(Hook):
