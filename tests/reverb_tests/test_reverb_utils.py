@@ -15,6 +15,47 @@ from nt.utils.matlab import Mlab, matlab_test
 matlab_test = unittest.skipUnless(True, 'matlab-test')
 
 
+def time_convolve(x, impulse_response):
+    """
+    Takes audio signals and the impulse responses according to their position
+    and returns the convolution. The number of audio signals in x are required
+    to correspond to the number of sources in the given RIR.
+    Convolution is conducted through time domain.
+
+    :param x: [number_sources x audio_signal_length - array] the audio signal
+        to convolve
+    :param impulse_response:
+        [filter_length x number_sensors x number_sources - numpy matrix ]
+        The three dimensional impulse response.
+    :return: convolved_signal:
+        [number_sensors x number_sources x signal_length - numpy matrix]
+        The convoluted signal for every sensor and each source
+    """
+    _, sensors, sources = impulse_response.shape
+
+    if not sources == x.shape[0]:
+        raise Exception(
+            "Number audio signals (" +
+            str(x.shape[0]) +
+            ") does not match source positions (" +
+            str(sources) +
+            ") in given impulse response!"
+        )
+    convolved_signal = numpy.zeros(
+        [sensors, sources, x.shape[1] + len(impulse_response) - 1]
+    )
+
+    for i in range(sensors):
+        for j in range(sources):
+            convolved_signal[i, j, :] = numpy.convolve(
+                x[j, :],
+                impulse_response[:, i, j]
+            )
+
+    return convolved_signal
+
+
+
 class TestReverbUtils(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -466,8 +507,8 @@ class TestReverbUtils(unittest.TestCase):
             T60,
             algorithm="TranVu"
         )
-        convolved_signal_fft = rirUtils.fft_convolve(audio, rir_py)
-        convolved_signal_time = rirUtils.time_convolve(audio, rir_py)
+        convolved_signal_fft = rirUtils.convolve(audio, rir_py.T)
+        convolved_signal_time = time_convolve(audio, rir_py)
         tc.assert_allclose(
             convolved_signal_fft,
             convolved_signal_time,
