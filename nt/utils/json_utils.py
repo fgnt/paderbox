@@ -208,7 +208,7 @@ def get_channel_for_utt(flist, ch, utt):
     return val
 
 
-def safe_dump(dict_data, fid):
+def safe_dumps(dict_data):
     """ Writes a dict to a json, ignoring all type which cannot be serialized
 
     :param fid:
@@ -231,7 +231,11 @@ def safe_dump(dict_data, fid):
     def _build_dict(data):
         return {key: _filter(val) for key, val in data.items()}
 
-    json.dump(_build_dict(dict_data), fid, sort_keys=True, indent=2)
+    return _build_dict(dict_data)
+
+
+def safe_dump(dict_data, fid):
+    json.dump(safe_dumps(dict_data), fid, sort_keys=True, indent=2)
 
 
 def add_flist(flist, progress_json, scenario, stage='train',
