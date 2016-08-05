@@ -81,8 +81,8 @@ def _get_batch(signal, batch):
 
 @allow_dict_input_and_colorize
 @create_subplot
-def line(*signal, ax=None, ylim=None, label=None, color=None, logx=False,
-         logy=False):
+def line(*signal, ax=None, xlim=None, ylim=None, label=None, color=None,
+         logx=False, logy=False):
     """
     Use together with facet_grid().
 
@@ -132,6 +132,9 @@ def line(*signal, ax=None, ylim=None, label=None, color=None, logx=False,
 
     if label is not None:
         ax.legend()
+
+    if xlim is not None:
+        ax.set_xlim(xlim)
 
     if ylim is not None:
         ax.set_ylim(ylim)
@@ -268,7 +271,7 @@ def _time_frequency_plot(
              'leads to a wrong visualization and especially colorbar!')
 
     if log:
-        signal = np.log10(np.maximum(signal, np.max(signal)/1e6)).T
+        signal = 10 * np.log10(np.maximum(signal, np.max(signal)/1e6)).T
     else:
         signal = signal.T
 
