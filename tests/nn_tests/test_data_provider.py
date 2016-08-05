@@ -105,8 +105,8 @@ class TestDataProviderMP(unittest.TestCase):
         df = self.dp.data_info
 
         reference_df = pandas.DataFrame([
-            {'Fetcher Name': 'X', 'Output': 'X', 'Shape': (1,), 'Type': 'int64', 'C Contiguous': True},
-            {'Fetcher Name': 'Y', 'Output': 'Y', 'Shape': (1,), 'Type': 'int64', 'C Contiguous': True}
+            {'shape': (1,), 'type': 'int64', 'c_contiguous': True},
+            {'shape': (1,), 'type': 'int64', 'c_contiguous': True}
         ])
         
         for col in df:
