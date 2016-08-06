@@ -15,6 +15,7 @@ class NoiseGeneratorTemplate:
     """
     Make sure, your implementation of get_noise() uses the provided random
     number generator.
+    Setting the random number generator state globally is discouraged.
     """
     __metaclass__ = ABCMeta
 
@@ -138,13 +139,14 @@ class NoiseGeneratorPink(NoiseGeneratorTemplate):
         transient_samples = 1430
 
         samples = shape[-1]
-        v = rng_state.normal(size=(shape[:-1] + [transient_samples + samples]))
+        size = (shape[:-1] + (transient_samples + samples,))
+        v = rng_state.normal(size=size)
 
         # Apply 1/F roll-off to PSD
         noise = lfilter(b, a, v, axis=-1)
 
         # Skip transient response
-        noise = noise[:, transient_samples:]
+        noise = noise[..., transient_samples:]
         return noise
 
 
