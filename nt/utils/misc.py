@@ -395,3 +395,39 @@ def update_dict(d, u):
         else:
             d[k] = v
     return d
+
+
+def interleave(l1, l2):
+    """ Interleave to lists. Input does not need to be of equal length.
+
+    http://stackoverflow.com/a/29566946/911441
+
+    >>> a = [1, 2, 3, 4, 5]
+    >>> b = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+    >>> list(interleave(a, b))
+    [1, 'a', 2, 'b', 3, 'c', 4, 'd', 5, 'e', 'f', 'g']
+    >>> list(interleave(b, a))
+    ['a', 1, 'b', 2, 'c', 3, 'd', 4, 'e', 5, 'f', 'g']
+
+    Args:
+        l1: List
+        l2: List
+
+    Returns: Interleaved list
+
+    """
+    iter1 = iter(l1)
+    iter2 = iter(l2)
+    while True:
+        try:
+            if iter1 != None:
+                yield next(iter1)
+        except StopIteration:
+            iter1 = None
+        try:
+            if iter2 != None:
+                yield next(iter2)
+        except StopIteration:
+            iter2 = None
+        if iter1 == None and iter2 == None:
+            raise StopIteration()
