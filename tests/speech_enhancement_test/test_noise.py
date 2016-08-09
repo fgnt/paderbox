@@ -39,7 +39,7 @@ class TestNoiseGeneratorWhite(unittest.TestCase):
     @tc.retry(3)
     def test_single_channel(self):
         time_signal = np.random.randn(1000)
-        n = self.n_gen.get_noise_for_signal(time_signal, 20)
+        n = self.n_gen.get_noise_for_signal(time_signal, snr=20)
         tc.assert_equal(n.shape, (1000,))
 
         SDR, SIR, SNR = sxr.input_sxr(time_signal[:, None, None], n[:, None])
@@ -47,19 +47,19 @@ class TestNoiseGeneratorWhite(unittest.TestCase):
 
     @tc.retry(3)
     def test_multi_channel(self):
-        time_signal = np.random.randn(1000, 3)
-        n = self.n_gen.get_noise_for_signal(time_signal, 20)
-        tc.assert_equal(n.shape, (1000, 3))
+        time_signal = np.random.randn(3, 1000)
+        n = self.n_gen.get_noise_for_signal(time_signal, snr=20)
+        tc.assert_equal(n.shape, (3, 1000))
 
         SDR, SIR, SNR = sxr.input_sxr(time_signal[:, :, None], n)
         tc.assert_almost_equal(SNR, 20, decimal=6)
 
     @tc.retry(5)
     def test_slope(self):
-        time_signal = np.random.randn(16000,  3)
-        n = self.n_gen.get_noise_for_signal(time_signal, 20)
+        time_signal = np.random.randn(3, 16000)
+        n = self.n_gen.get_noise_for_signal(time_signal, snr=20)
         N = transform.stft(n)
-        power_spec = 10*np.log10(noise.get_power(N, axis=(0, 2)))
+        power_spec = 10*np.log10(noise.get_power(N, axis=(0, 1)))
         # slope_dB = power_spec[10]-power_spec[100]
         slope_dB, _, _, _, _ = scipy.stats.linregress(10*np.log10(range(1, len(power_spec))), power_spec[1:])
         print('slope_dB: ', slope_dB)
