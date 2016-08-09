@@ -19,35 +19,36 @@ class NoiseGeneratorTemplate:
     """
     __metaclass__ = ABCMeta
 
-    def get_noise_for_signal(self, time_signal, *, snr, seed=None,
-                             rng_state=None, **kwargs):
+    def get_noise_for_signal(
+            self,
+            time_signal,
+            *,
+            snr,
+            rng_state: np.random.RandomState=np.random,
+            **kwargs
+    ):
         """
         Args:
             time_signal:
             snr: SNR or single speaker SNR.
-            seed: Seed used to create a new random number generator object.
+            rng_state: A random number generator object or np.random
             **kwargs:
         """
-        if rng_state is None:
-            rng_state = np.random if seed is None \
-                else np.random.RandomState(seed)
         noise_signal = self.get_noise(
             *time_signal.shape,
-            rng_state=self.rng_state,
+            rng_state=rng_state,
             **kwargs
         )
         set_snr(time_signal, noise_signal, snr)
         return noise_signal
 
-    def get_noise(self, *shape, seed=None, rng_state=None, **kwargs):
+    def get_noise(self, *shape, rng_state=np.random, **kwargs):
         if len(shape) == 1 and isinstance(shape[0], Iterable):
             shape = shape[0]
-        if rng_state is None:
-            rng_state = np.random if seed is None else np.random.RandomState(seed)
-        return self._get_noise(shape, rng_state, **kwargs)
+        return self._get_noise(shape=shape, rng_state=rng_state, **kwargs)
 
     @abstractmethod
-    def _get_noise(self, shape, rng_state=None, **kwargs):
+    def _get_noise(self, shape, rng_state=np.random, **kwargs):
         pass
 
 
@@ -58,7 +59,7 @@ class NoiseGeneratorWhite(NoiseGeneratorTemplate):
     >>> from nt.evaluation.sxr import input_sxr
     >>> time_signal = np.random.normal(size=(1000,))
     >>> ng = NoiseGeneratorWhite()
-    >>> n = ng.get_noise_for_signal(time_signal, 20)
+    >>> n = ng.get_noise_for_signal(time_signal, snr=20)
     >>> SDR, SIR, SNR = input_sxr(time_signal[:, None, None], n[:, None, None])
     >>> round(SNR, 1)
     20.0
@@ -66,7 +67,7 @@ class NoiseGeneratorWhite(NoiseGeneratorTemplate):
     >>> from nt.evaluation.sxr import input_sxr
     >>> time_signal = np.random.normal(size=(1000, 2))
     >>> ng = NoiseGeneratorWhite()
-    >>> n = ng.get_noise_for_signal(time_signal, 20)
+    >>> n = ng.get_noise_for_signal(time_signal, snr=20)
     >>> n.shape
     (1000, 2)
 
@@ -77,7 +78,7 @@ class NoiseGeneratorWhite(NoiseGeneratorTemplate):
     >>> round(SNR, 1)
     20.0
     """
-    def _get_noise(self, shape, rng_state, **kwargs):
+    def _get_noise(self, shape, rng_state=np.random, **kwargs):
         noise_signal = rng_state.normal(size=shape)
         return noise_signal
 
@@ -106,7 +107,7 @@ class NoiseGeneratorChimeBackground(NoiseGeneratorTemplate):
         self.flist = database[flist]
         self.utterance_list = sorted(self.flist['wav'].keys())
 
-    def get_noise(self, shape, rng_state, **kwargs):
+    def _get_noise(self, shape, rng_state=np.random, **kwargs):
         D, T = shape[-2:]
 
         channels = rng_state.choice(self.max_channels, D, replace=False)
@@ -129,7 +130,7 @@ class NoiseGeneratorPink(NoiseGeneratorTemplate):
     """
     See example code of ``NoiseGeneratorWhite``.
     """
-    def get_noise(self, shape, rng_state, **kwargs):
+    def _get_noise(self, shape, rng_state=np.random, **kwargs):
         """Generates pink noise. You still need to rescale it to your needs.
 
         This code was taken from the book
