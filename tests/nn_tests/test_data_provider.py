@@ -1,9 +1,11 @@
-from nt.nn.data_provider import DataProvider
-from nt.nn.data_fetchers.data_fetcher import DataFetcher
+import unittest
+import multiprocessing as mp
 import numpy
 import numpy.testing
-import unittest
 import pandas
+
+from nt.nn import DataProvider
+from nt.nn.data_fetchers.data_fetcher import DataFetcher
 
 
 class IdentityFetcher(DataFetcher):
@@ -56,6 +58,11 @@ class TestDataProviderMP(unittest.TestCase):
     def test_reset(self):
         self.test_iteration()
         self.test_iteration()
+
+    def test_no_process_leak(self):
+        self.test_iteration()
+        self.test_iteration()
+        self.assertEqual(len(mp.active_children()), 0)
 
     def test_random(self):
         self.dp.shuffle_data = True
