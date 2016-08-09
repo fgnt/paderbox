@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-
+from collections import Iterable
 import numpy as np
 from nt.speech_enhancement.noise.utils import set_snr
 from scipy.signal import lfilter
@@ -19,7 +19,8 @@ class NoiseGeneratorTemplate:
     """
     __metaclass__ = ABCMeta
 
-    def get_noise_for_signal(self, time_signal, snr, seed=None, **kwargs):
+    def get_noise_for_signal(self, time_signal, *, snr, seed=None,
+                             rng_state=None, **kwargs):
         """
         Args:
             time_signal:
@@ -27,13 +28,26 @@ class NoiseGeneratorTemplate:
             seed: Seed used to create a new random number generator object.
             **kwargs:
         """
-        rng_state = np.random if seed is None else np.random.RandomState(seed)
-        noise_signal = self.get_noise(time_signal.shape, rng_state, **kwargs)
+        if rng_state is None:
+            rng_state = np.random if seed is None \
+                else np.random.RandomState(seed)
+        noise_signal = self.get_noise(
+            *time_signal.shape,
+            rng_state=self.rng_state,
+            **kwargs
+        )
         set_snr(time_signal, noise_signal, snr)
         return noise_signal
 
+    def get_noise(self, *shape, seed=None, rng_state=None, **kwargs):
+        if len(shape) == 1 and isinstance(shape[0], Iterable):
+            shape = shape[0]
+        if rng_state is None:
+            rng_state = np.random if seed is None else np.random.RandomState(seed)
+        return self._get_noise(shape, rng_state, **kwargs)
+
     @abstractmethod
-    def get_noise(self, shape, rng_state, **kwargs):
+    def _get_noise(self, shape, rng_state=None, **kwargs):
         pass
 
 
@@ -63,7 +77,7 @@ class NoiseGeneratorWhite(NoiseGeneratorTemplate):
     >>> round(SNR, 1)
     20.0
     """
-    def get_noise(self, shape, rng_state, **kwargs):
+    def _get_noise(self, shape, rng_state, **kwargs):
         noise_signal = rng_state.normal(size=shape)
         return noise_signal
 
@@ -150,7 +164,7 @@ class NoiseGeneratorPink(NoiseGeneratorTemplate):
         return noise
 
 
-# class NoiseGeneratorNoisex92(NoiseGeneratorTemplate):
+#class NoiseGeneratorNoisex92(NoiseGeneratorTemplate):
 #     def __init__(self, label=None, sample_rate=16000):
 #
 #         self.labels = helper.get_labels()
