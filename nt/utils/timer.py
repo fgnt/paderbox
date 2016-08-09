@@ -53,6 +53,43 @@ class Timer(object):
                 print('elapsed time: %f ms' % self.msecs)
 
 
+class TimeIterator:
+    """
+
+    Measure the execution time of an iterator/generator to produce data.
+
+    >>> from time import sleep
+    >>> def generator():
+    ...    for i in range(3):
+    ...         sleep(0.1)
+    ...         yield i
+    >>> timer = TimeIterator()
+    >>> for i in timer(generator()):
+    ...     sleep(0.05)
+    >>> print("{0:.2f}".format(timer.secs))
+    0.30
+
+
+    """
+    secs = 0
+
+    @property
+    def msecs(self):
+        return self.secs * 1000
+
+    def __call__(self, iterable):
+        # https://github.com/wearpants/measure_it/blob/master/measure_it/__init__.py
+        self.secs = 0
+        it = iter(iterable)
+        while True:
+            t = time.time()
+            try:
+                x = next(it)
+            finally:
+                self.secs += time.time() - t
+            yield x
+
+
 class TimerAccumulateDict(object):
     """
     >>> t = TimerAccumulateDict()
