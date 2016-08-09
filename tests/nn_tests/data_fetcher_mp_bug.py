@@ -16,7 +16,7 @@ if __name__ == '__main__':
 
     This is not a regular test, because it needs many minutes to execute.
 
-    The buggy version of the data_provider broke at i between 20 and 30.
+    The buggy version of the data_provider broke at i between 20 and 1000.
     """
 
     # l = []
@@ -32,8 +32,8 @@ if __name__ == '__main__':
 
     print('Start')
 
-    B = 1
-    A = 1
+    B = 3
+    A = 3
     inputs = np.random.uniform(-1, 1, (B, A)).astype(np.float32)
     targets = inputs.copy()
     t_cv_fetcher = [ArrayDataFetcher('t' + str(i), targets.copy()) for i in
@@ -41,6 +41,8 @@ if __name__ == '__main__':
     cv_provider = DataProvider(t_cv_fetcher, batch_size=1)
 
     for i in range(10000):
+        gen = next(cv_provider.iterate(fork_fetchers=True))
         for _ in cv_provider.iterate(fork_fetchers=True):
-            # if i % 10 == 0:
+            pass
+        if i % 10 == 0:
             print(i, end=' ')
