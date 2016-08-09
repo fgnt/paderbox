@@ -28,7 +28,7 @@ def time_convolve(x, impulse_response):
         [filter_length x number_sensors x number_sources - numpy matrix ]
         The three dimensional impulse response.
     :return: convolved_signal:
-        [number_sensors x number_sources x signal_length - numpy matrix]
+        [number_sources x number_sensors x signal_length - numpy matrix]
         The convoluted signal for every sensor and each source
     """
     _, sensors, sources = impulse_response.shape
@@ -42,12 +42,12 @@ def time_convolve(x, impulse_response):
             ") in given impulse response!"
         )
     convolved_signal = numpy.zeros(
-        [sensors, sources, x.shape[1] + len(impulse_response) - 1]
+        [sources, sensors, x.shape[1] + len(impulse_response) - 1]
     )
 
     for i in range(sensors):
         for j in range(sources):
-            convolved_signal[i, j, :] = numpy.convolve(
+            convolved_signal[j, i, :] = numpy.convolve(
                 x[j, :],
                 impulse_response[:, i, j]
             )
