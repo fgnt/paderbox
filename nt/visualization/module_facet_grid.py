@@ -62,10 +62,12 @@ def facet_grid(data_list, function_list, kwargs_list=(), colwrap=2, scale=1,
     else:
         return figure
 
-def facet_grid_zero_space_time_frequency_plot(data_list, function_list, kwargs_list=(), colwrap=2, scale=1,
-               title_list=(), return_axis=False, wspace=0.01, hspace=0.01):
+
+def facet_grid_zero_space_time_frequency_plot(
+        data_list, function_list, kwargs_list=(), colwrap=2, scale=1,
+        title_list=(), return_axis=False, wspace=0.01, hspace=0.01):
     """
-    This Function is a wrapper around facet_grid. It assums,
+    This Function is a wrapper around facet_grid. It assumes,
     that function_list is a list of one plot function. This
     function has a parameter colorbar, like nt.visualisation.plot.mask.
     All inner xlabel, xticklabel, ylabel, yticklabel and title will be removed.
@@ -73,21 +75,18 @@ def facet_grid_zero_space_time_frequency_plot(data_list, function_list, kwargs_l
     """
 
     number_of_plots = len(data_list)
-    number_of_rows = int(np.ceil(number_of_plots / colwrap))
 
     if len(kwargs_list) == 0:
-        kwargs_list = len(data_list) * [{}]
-    if len(kwargs_list) == 1:
-        kwargs_list = len(data_list) * kwargs_list
-    if len(kwargs_list) == 1:
-        kwargs_list = len(function_list) * kwargs_list
+        kwargs_list = [{}] * len(data_list)
+    elif len(kwargs_list) == 1:
+        kwargs_list *= number_of_plots
 
-    kwargs_list = [{'colorbar':(i % colwrap == colwrap - 1), **kwargs}
+    kwargs_list = [{'colorbar': (i % colwrap == colwrap - 1), **kwargs}
                    for i, kwargs in zip(range(len(data_list)), kwargs_list)]
 
-    figure, axis = facet_grid(data_list, function_list, title_list=title_list,
-                         kwargs_list=kwargs_list, colwrap=colwrap,
-                         return_axis=True)
+    figure, axis = facet_grid(
+        data_list, function_list, title_list=title_list, scale=scale,
+        kwargs_list=kwargs_list, colwrap=colwrap, return_axis=True)
 
     try:
         [ax.xaxis.set_ticklabels([]) for ax in axis[:-1, :].ravel()]
@@ -95,16 +94,12 @@ def facet_grid_zero_space_time_frequency_plot(data_list, function_list, kwargs_l
         [ax.yaxis.set_ticklabels([]) for ax in axis[:, 1:].ravel()]
         [ax.set_ylabel('') for ax in axis[:, 1:].ravel()]
         [ax.set_title('') for ax in axis[1:, :].ravel()]
-    except IndexError as e:
+    except IndexError:
         try:
-            #[ax.xaxis.set_ticklabels([]) for ax in axis[:-1].ravel()]
-            #[ax.set_xlabel('') for ax in axis[:-1].ravel()]
             [ax.yaxis.set_ticklabels([]) for ax in axis[1:].ravel()]
             [ax.set_ylabel('') for ax in axis[1:].ravel()]
-            #[ax.set_title('') for ax in axis[1:, :].ravel()]
-        except IndexError as e:
+        except IndexError:
             pass
-
 
     plt.subplots_adjust(wspace=wspace, hspace=hspace)
 
