@@ -12,5 +12,6 @@ class TestNormalizeObservation(unittest.TestCase):
         with self.assertRaises(ValueError):
             bss.normalize_observation(
                 _random_stft(2, 513, 4),
+                frequency_norm=True,
                 max_sensor_distance=0.2
             )

@@ -13,7 +13,7 @@ from nt.database.chime import get_data_provider_for_flist
 
 import nt.speech_enhancement.beamformer as bf
 from nt.evaluation import input_sxr, output_sxr
-from nt.evaluation.pesq import threaded_pesq as pesq
+from nt.evaluation.pesq import pesq
 from nt.io.audiowrite import audiowrite
 from nt.speech_enhancement.mask_estimation import estimate_IBM
 from nt.speech_enhancement.noise import get_snr
