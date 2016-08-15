@@ -89,6 +89,7 @@ class NoiseGeneratorChimeBackground(NoiseGeneratorTemplate):
     """ Generate random background noise by sampling from Chime background.
 
     Shape of your input signal is assumed to be (channels, samples).
+    Possible leading dimensions have to be singleton.
     You can create the file by running this code:
     ``python -m nt.database.chime.create_background_json``
 
@@ -100,6 +101,14 @@ class NoiseGeneratorChimeBackground(NoiseGeneratorTemplate):
     def __init__(
             self, json_src, flist=None, sampling_rate=16000, max_channels=6
     ):
+        """
+
+        Args:
+            json_src: Path to your chime background data json.
+            flist: Either ``all``, ``train``, or ``cv``.
+            sampling_rate:
+            max_channels: Chose a number of channels from {1, ..., 6}.
+        """
         flist = 'all' if flist is None else flist
         with open(json_src) as f:
             database = json.load(f)
@@ -111,6 +120,7 @@ class NoiseGeneratorChimeBackground(NoiseGeneratorTemplate):
 
     def _get_noise(self, shape, rng_state=np.random):
         D, T = shape[-2:]
+        assert np.prod(shape[:-2]) == 1
 
         channels = rng_state.choice(self.max_channels, D, replace=False)
         utt_id = rng_state.randint(len(self.flist))
@@ -125,7 +135,8 @@ class NoiseGeneratorChimeBackground(NoiseGeneratorTemplate):
                 offset=start/self.sampling_rate, duration=T/self.sampling_rate
             ))
 
-        return np.stack(noise_list)
+        # Reshape to deal with singleton dimensions
+        return np.stack(noise_list).reshape(shape)
 
 
 class NoiseGeneratorPink(NoiseGeneratorTemplate):
