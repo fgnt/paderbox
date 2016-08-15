@@ -1,16 +1,17 @@
 import time
 import datetime
 
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 from contextlib import contextmanager
 from cached_property import cached_property
+
 
 class Timer(object):
     """ Time code execution.
 
     Example usage::
 
-        with Timer as t:
+        with Timer() as t:
             sleep(10)
         print(t.secs)
 
