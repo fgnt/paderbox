@@ -1,11 +1,14 @@
-import seaborn as sns
 import itertools
 import numpy as np
 import matplotlib.pyplot as plt
 import types
 
-def facet_grid(data_list, function_list, kwargs_list=(), colwrap=2, scale=1,
-               title_list=(), return_axis=False):
+
+def facet_grid(
+        data_list, function_list, kwargs_list=(), colwrap=2, scale=1,
+        title_list=(), return_axis=False
+):
+
     if isinstance(function_list, types.FunctionType):
         function_list = [function_list]
 
@@ -15,11 +18,12 @@ def facet_grid(data_list, function_list, kwargs_list=(), colwrap=2, scale=1,
     assert len(kwargs_list) == 0 or \
            len(kwargs_list) == 1 or \
            len(kwargs_list) == len(data_list) or \
-           len(kwargs_list) == len(function_list)
+           len(kwargs_list) == len(function_list) or \
+           len(function_list) == len(data_list)
     assert len(title_list) == len(data_list) or \
            len(title_list) == 0
 
-    number_of_plots = max(len(function_list), len(data_list))
+    number_of_plots = max(len(function_list), len(data_list), len(kwargs_list))
     number_of_rows = int(np.ceil(number_of_plots / colwrap))
 
     if len(kwargs_list) == 0:
@@ -35,10 +39,10 @@ def facet_grid(data_list, function_list, kwargs_list=(), colwrap=2, scale=1,
     figure.set_figheight(figure.get_figheight() * scale * number_of_rows)
 
     if len(data_list) == 1:
-        data_list = list(itertools.repeat(data_list[0], len(function_list)))
+        data_list = list(itertools.repeat(data_list[0], number_of_plots))
     if len(function_list) == 1:
         function_list = list(
-            itertools.repeat(function_list[0], len(data_list)))
+            itertools.repeat(function_list[0], number_of_plots))
 
     for index in range(len(data_list)):
         if data_list[index] is None:
