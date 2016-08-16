@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 import os
 
 
@@ -16,17 +17,23 @@ def mkdir_p(path):
             pass
 
 
-class change_directory:
-    """Context manager for changing the current working directory
+@contextmanager
+def change_directory(new_path):
+    """ Context manager for changing the current working directory.
 
-    http://stackoverflow.com/a/13197763/911441
+    Will return to original directory even on error.
+
+    http://stackoverflow.com/a/24176022/911441
+
+    Args:
+        new_path: Directory to change to.
+
+    Returns:
+
     """
-    def __init__(self, new_path):
-        self.new_path = os.path.expanduser(new_path)
-
-    def __enter__(self):
-        self.saved_path = os.getcwd()
-        os.chdir(self.new_path)
-
-    def __exit__(self, etype, value, traceback):
-        os.chdir(self.saved_path)
+    saved_path = os.getcwd()
+    os.chdir(os.path.expanduser(new_path))
+    try:
+        yield
+    finally:
+        os.chdir(saved_path)
