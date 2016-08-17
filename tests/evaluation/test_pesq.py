@@ -41,14 +41,14 @@ class TestProposedPESQ(unittest.TestCase):
             [self.ref_array],
             [self.deg_array]
         )
-        nptest.assert_equal(scores, numpy.asarray([1.082]))  # Slightly off
+        nptest.assert_equal(scores, numpy.asarray([1.083]))
 
     def test_wb_scores_with_lists_of_arrays_length_two(self):
         scores = pesq(
             [self.ref_array, self.ref_array],
             [self.deg_array, self.ref_array]
         )
-        nptest.assert_equal(scores, numpy.asarray([1.082, 4.644]))
+        nptest.assert_equal(scores, numpy.asarray([1.083, 4.644]))
 
     def test_nb_scores_with_lists_of_paths_length_one(self):
         scores = pesq(
@@ -72,7 +72,7 @@ class TestProposedPESQ(unittest.TestCase):
             [self.deg_array],
             'nb'
         )
-        nptest.assert_equal(scores, numpy.asarray([1.552]))  # Slightly off
+        nptest.assert_equal(scores, numpy.asarray([1.607]))
 
     def test_nb_scores_with_lists_of_arrays_length_two(self):
         scores = pesq(
@@ -80,7 +80,7 @@ class TestProposedPESQ(unittest.TestCase):
             [self.deg_array, self.ref_array],
             'nb'
         )
-        nptest.assert_equal(scores, numpy.asarray([1.552, 4.549]))
+        nptest.assert_equal(scores, numpy.asarray([1.607, 4.549]))
 
     def test_wb_scores_with_paths_directly(self):
         scores = pesq(
