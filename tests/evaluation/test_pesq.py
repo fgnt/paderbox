@@ -3,8 +3,7 @@ from nt.evaluation.pesq import pesq
 import numpy
 import numpy.testing as nptest
 from nt.io.audioread import audioread
-import os
-import inspect
+from nt.io.data_dir import testing as testing_dir
 
 
 class TestProposedPESQ(unittest.TestCase):
@@ -13,11 +12,8 @@ class TestProposedPESQ(unittest.TestCase):
     This is, why it fails.
     """
     def setUp(self):
-        current_dir = os.path.dirname(
-            os.path.abspath(inspect.getfile(inspect.currentframe())))
-
-        self.ref_path = os.path.join(current_dir, 'data/speech.wav')
-        self.deg_path = os.path.join(current_dir, 'data/speech_bab_0dB.wav')
+        self.ref_path = testing_dir('evaluation', 'data', 'speech.wav')
+        self.deg_path = testing_dir('evaluation', 'data', 'speech_bab_0dB.wav')
 
         self.ref_array = audioread(self.ref_path)
         self.deg_array = audioread(self.deg_path)
