@@ -449,4 +449,4 @@ def colorize_and_display_dataframe(df, column='status', color_dict=None,
         html = format_html(HTMLFormatter, df, css_style_string=css,
                            classes=random_class_name)
 
-    return HTML(html)
+    return HTML(html.replace('\\n', '\n'))
