@@ -7,7 +7,6 @@ from io import BytesIO
 
 import numpy as np
 import tqdm
-
 from nt.io.audioread import audioread
 from nt.io.audiowrite import audiowrite
 from nt.io.data_dir import kaldi_root
@@ -86,10 +85,10 @@ RAW_FBANK_CMD = KALDI_ROOT + '/src/featbin/' + \
                 scp,p:{wav_scp} ark:- """
 
 RAW_FBANK_ARK_CMD = KALDI_ROOT + '/src/featbin/' + \
-                r"""compute-fbank-feats --num-mel-bins={num_mel_bins} \
-                --low-freq={low_freq} --high-freq={high_freq} --use-energy={use_energy} \
-                --use-log-fbank={use_log_fbank} --window-type={window_type} \
-                ark:- ark:- """
+                    r"""compute-fbank-feats --num-mel-bins={num_mel_bins} \
+                    --low-freq={low_freq} --high-freq={high_freq} --use-energy={use_energy} \
+                    --use-log-fbank={use_log_fbank} --window-type={window_type} \
+                    ark:- ark:- """
 
 
 def _build_cmd(extractor, add_deltas=False, store_feats=False):
@@ -99,6 +98,7 @@ def _build_cmd(extractor, add_deltas=False, store_feats=False):
     if store_feats:
         cmds.append(STORE_FEATS)
     return '|'.join(cmds)
+
 
 def make_mfcc_features(wav_scp, dst_dir, num_mel_bins, num_ceps, low_freq=20,
                        high_freq=-400, num_jobs=20, add_deltas=True,
@@ -222,7 +222,8 @@ def compute_mean_and_var_stats(feat_scp, dst_dir, utt2spk=None):
         mkdir_p(dst_dir)
         if utt2spk is not None:
             write_spk2utt(tmp_dir, utt2spk)
-            spk2utt = '--spk2utt=ark:{} '.format(os.path.join(tmp_dir, 'spk2utt'))
+            spk2utt = '--spk2utt=ark:{} '.format(
+                os.path.join(tmp_dir, 'spk2utt'))
         else:
             spk2utt = ''
         cmd = 'compute-cmvn-stats {2}scp:{0} ark:{1}/cmvn.ark'.format(
@@ -247,6 +248,28 @@ def apply_mean_and_var_stats(feat_scp, cmvn_ark, utt2spk=None, norm_var=False):
             dir=os.path.dirname(feat_scp)
         )
         run_processes(cmd, environment=get_kaldi_env())
+
+
+def make_fmllr_features(feat_scp, cmvn_ark, utt2spk, transform_dir):
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        write_utt2spk(tmp_dir, utt2spk)
+        utt2spk_cmd = '--utt2spk=ark:{}'.format(
+            os.path.join(tmp_dir, 'utt2spk'))
+        cmvn_cmd = 'apply-cmvn {utt2spk_cmd} ark:{cmvn_ark} scp:{src_scp} ark:-'
+        delta_cmd = 'add-deltas ark:- ark:-'
+        transform_cmd = \
+            'transform-feats {utt2spk_cmd} ' \
+            '"ark:cat {transform_dir}/trans.*|" ' \
+            'ark:- ark,scp:{dir}/fmllr.ark,{dir}/fmllr.scp'
+        final_cmd = ' | '.join([cmvn_cmd, delta_cmd, transform_cmd])
+        final_cmd.format(
+            utt2spk_cmd=utt2spk_cmd,
+            cmvn_ark=cmvn_ark,
+            src_scp=feat_scp,
+            dir=os.path.dirname(feat_scp),
+            transform_dir=transform_dir
+        )
+        run_processes(final_cmd, environment=get_kaldi_env())
 
 
 def import_feature_data(ark_descriptor):
@@ -468,11 +491,14 @@ def read_scp_file(scp_file):
     if isinstance(scp_file, dict):
         return scp_file
     scp_feats = dict()
-    with open(scp_file) as fid:
+    with open(scp_file, encoding='utf-8') as fid:
         lines = fid.readlines()
     for line in lines:
         scp_feats[line.split()[0]] = ' '.join(line.split()[1:])
     return scp_feats
+
+
+read_ark_file = import_feature_data
 
 
 def write_scp_file(scp, scp_file):
@@ -676,3 +702,11 @@ def make_fbank_features_from_time_signal(time_signal, num_mel_bins,
     std, stderr = p.communicate(input=audio_data.getvalue())
     kaldi_data = BytesIO(std)
     return read_ark_buffer(kaldi_data)['utt']
+
+
+def read_words_txt(words_txt):
+    with open(words_txt) as fid:
+        return {line.split(' ')[0]: line.strip().split(' ')[1] for line in fid
+                if len(line.split(' ')) == 2}
+
+

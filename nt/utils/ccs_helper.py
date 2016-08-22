@@ -1,4 +1,6 @@
 import sh
+import pandas as pd
+from io import StringIO
 
 
 def ccsinfo(host=None):
@@ -7,7 +9,12 @@ def ccsinfo(host=None):
     :param host: PC2 ssh host alias.
     """
     host = 'pc2' if host is None else host
-    print(sh.ssh(host, 'ccsinfo', '-s', '--mine', '--fmt="%.R%.60N%.4w%P%D%v"'))
+    ret = sh.ssh(host, 'ccsinfo', '-s', '--mine', '--fmt="%.R%.60N%.4w%P%D%v"',
+                 '--raw')
+    return pd.read_csv(StringIO(ret.stdout.decode('utf-8')),
+                       delim_whitespace=True,
+                       names=['id', 'name', 'status', 'start_time',
+                              'time_limit', 'runtime'])
 
 
 def ccskill(request_id, host=None):
