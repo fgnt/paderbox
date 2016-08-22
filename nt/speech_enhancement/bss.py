@@ -441,6 +441,8 @@ def get_multi_speaker_sxr(
 ):
     """ Calculate multi speaker and multi channel sxr.
 
+    Main difference to nt/evaluation/sxr.py is use of signal_samples.
+
     This may change to take input similar to mask estimation functions.
 
     Args:
