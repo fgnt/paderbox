@@ -468,14 +468,14 @@ def get_multi_speaker_sxr(
 
 def em(
         Y, mixture_components=3, iterations=100,
-        affiliations=None, alignment=True
+        affiliations=None, alignment=True, rng_state=np.random
 ):
     Y_normalized = normalize_observation(Y, frequency_norm=False)
     Y_normalized_for_psd = np.copy(Y_normalized[0], 'C')
     Y_normalized_for_pdf = np.copy(Y_normalized.transpose(0, 2, 3, 1), 'C')
 
     if affiliations is None:
-        affiliations = np.random.dirichlet(
+        affiliations = rng_state.dirichlet(
             mixture_components * [1 / mixture_components], size=(Y.shape[-2:])
         ).transpose((2, 0, 1))
     hypergeometric_ratio_inverse = HypergeometricRatioSolver()
