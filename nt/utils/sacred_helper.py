@@ -57,7 +57,14 @@ class SacredManager:
         return runs.find_one({'_id': ObjectId(_id)})
 
     def get_config_from_id(self, _id):
-        return self.get_experiment_from_id(_id)['config']
+        db = self.get_experiment_from_id(_id)
+        if db is None:
+            print(self.get_data_frame()['_id'])
+            raise ValueError('Could not load experiment with id {}'.format(
+                _id
+            ))
+        else:
+            return db['config']
 
     def get_info_from_id(self, _id):
         return self.get_experiment_from_id(_id)['info']
