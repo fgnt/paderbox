@@ -163,6 +163,7 @@ def make_fbank_features(wav_scp, dst_dir, num_mel_bins, low_freq=20,
     with tempfile.TemporaryDirectory() as tmp_dir:
         cmds = list()
         cur_scp = dict()
+        part_scp_files = list()
         for idx, (utt_id, ark) in enumerate(wav_scp.items()):
             cur_scp[utt_id] = ark
             if (not ((idx + 1) % split_mod)) or (idx == (len(wav_scp) - 1)):
@@ -182,16 +183,17 @@ def make_fbank_features(wav_scp, dst_dir, num_mel_bins, low_freq=20,
                     dst_ark=os.path.join(dst_dir, '{}.ark'.format(scp_idx)),
                     dst_scp=os.path.join(dst_dir, '{}.scp'.format(scp_idx)),
                 ))
+                part_scp_files.append(
+                    os.path.join(dst_dir, '{}.scp'.format(scp_idx)))
                 cur_scp = dict()
                 scp_idx += 1
         if verbose:
             print('Starting the feature extraction')
         run_processes(cmds, sleep_time=5, environment=get_kaldi_env())
         with open(os.path.join(dst_dir, 'feats.scp'), 'w') as feat_fid:
-            for f in os.listdir(dst_dir):
-                if f.endswith('.scp'):
-                    with open(os.path.join(dst_dir, f), 'r') as fid:
-                        feat_fid.writelines(fid.readlines())
+            for f in part_scp_files:
+                with open(f, 'r') as fid:
+                    feat_fid.writelines(fid.readlines())
         feat_scp = read_scp_file(os.path.join(dst_dir, 'feats.scp'))
         if len(feat_scp) != len(wav_scp):
             missing = np.setdiff1d(np.unique(list(wav_scp.keys())),
@@ -708,5 +710,3 @@ def read_words_txt(words_txt):
     with open(words_txt) as fid:
         return {line.split(' ')[0]: line.strip().split(' ')[1] for line in fid
                 if len(line.split(' ')) == 2}
-
-
