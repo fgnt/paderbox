@@ -10,8 +10,8 @@ from nt.speech_enhancement.beamformer import get_lcmv_vector
 from nt.speech_enhancement.beamformer import get_mvdr_vector
 from nt.speech_enhancement.beamformer import get_pca_vector
 from nt.speech_enhancement.beamformer import get_power_spectral_density_matrix
-from nt.speech_enhancement.mask_estimation import estimate_IBM as ideal_binary_mask
-from nt.speech_enhancement.mask_estimation import simple_ideal_soft_mask
+from nt.speech_enhancement.mask_module import biased_binary_mask, \
+    wiener_like_mask
 from nt.utils.math_ops import vector_H_vector
 from nt.utils.matlab import Mlab, matlab_test
 
@@ -55,10 +55,10 @@ class TestBeamformerMethods(unittest.TestCase):
             self.generate_source_file_with_matlab(mlab=self.mlab)
 
         with np.load(datafile) as data:
-            X = data['X']
+            X = data['X']  # DxTxF
             Y = data['Y']
             N = data['N']
-        ibm = ideal_binary_mask(X[4, :, :], N[4, :, :])
+        ibm = biased_binary_mask(np.stack([X[4, :, :], N[4, :, :]]))
         self.Y_bf, self.X_bf, self.N_bf = Y.T.transpose(0, 2, 1), X.T.transpose(0, 2, 1), N.T.transpose(0, 2, 1)
         self.ibm_X_bf = ibm[0].T
         self.ibm_N_bf = ibm[1].T
@@ -77,11 +77,13 @@ class TestBeamformerMethods(unittest.TestCase):
             N = data['N']  # F D T
             self.data_multi_speaker = {'X': data['X'], 'Y': data['Y'], 'N': data['N']}
 
-        X_mask, N_mask = simple_ideal_soft_mask(X, N, source_dim=0, feature_dim=-2, tuple_output=True)
+        masks = wiener_like_mask(np.concatenate([X, N[None, ...]]),
+                                 sensor_axis=-2)
+        X_mask, N_mask = np.split(masks, (X.shape[0],))
         # (K, F, T), (F, T)
 
         Phi_XX = get_power_spectral_density_matrix(Y, X_mask, source_dim=0)  # (K F D D)
-        Phi_NN = get_power_spectral_density_matrix(Y, N_mask)  # (F D D)
+        Phi_NN = get_power_spectral_density_matrix(Y, N_mask[0])  # (F D D)
 
         W_pca = get_pca_vector(Phi_XX)  # (K, F, D)
         W_mvdr = get_mvdr_vector(W_pca, Phi_NN)  # (K, F, D)
