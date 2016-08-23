@@ -205,7 +205,9 @@ class TestBeamformerMethods(unittest.TestCase):
         # Caculate masks
         # X_mask.shape = (2, 513, 316)
         # N_mask.shape = (513, 316)
-        X_mask, N_mask = simple_ideal_soft_mask(X, N, source_dim=0, feature_dim=-2, tuple_output=True)
+        *X_mask, N_mask = wiener_like_mask([*X, N],
+                                           source_axis=0,
+                                           sensor_axis=-2)
 
         # Phi_XX.shape = (2, 513, 6, 6)
         # Phi_NN.shape = (513, 6, 6)
