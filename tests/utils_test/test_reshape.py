@@ -8,6 +8,7 @@ T, B, F = 400, 6, 513
 A = np.random.uniform(size=(T, B, F))
 A2 = np.random.uniform(size=(T, 1, B, F))
 A3 = np.random.uniform(size=(T*B*F,))
+A4 = np.random.uniform(size=(T, 1, 1, B, 1, F))
 
 
 class TestReshape(unittest.TestCase):
@@ -18,7 +19,7 @@ class TestReshape(unittest.TestCase):
         tc.assert_equal(reshape(A, 'T B F->T B F').shape, (T, B, F))
 
     def test_noop_mixed(self):
-        tc.assert_equal(reshape(A, 't b f->t, b f').shape, (T, B, F))
+        tc.assert_equal(reshape(A, 'tbf->t, b f').shape, (T, B, F))
 
     def test_transpose_comma(self):
         tc.assert_equal(reshape(A, 'T,B,F->F,T,B').shape, (F, T, B))
@@ -39,16 +40,21 @@ class TestReshape(unittest.TestCase):
         tc.assert_equal(reshape(A, 'T,B,F->T,B*F').shape, (T, B*F))
 
     def test_reshape_comma_unflatten(self):
-        tc.assert_equal(reshape(A3, 't*b*f->t, b, f').shape, (T, B, F))
+        with tc.assert_raises(NotImplementedError):
+            reshape(A3, 't*b*f->t, b, f')
 
     def test_reshape_comma_unflatten_and_transpose_and_flatten(self):
-        tc.assert_equal(reshape(A3, 't*b*f->f, t*b').shape, (F, T*B))
+        with tc.assert_raises(NotImplementedError):
+            reshape(A3, 't*b*f->f, t*b')
 
     def test_reshape_comma_flat(self):
         tc.assert_equal(reshape(A, 'T,B,F->T*B*F').shape, (T*B*F,))
 
     def test_reshape_comma_with_singleton_input(self):
         tc.assert_equal(reshape(A2, 'T, 1, B, F -> T*B*F').shape, (T*B*F,))
+
+    def test_reshape_comma_with_a_lot_of_singleton_inputs(self):
+        tc.assert_equal(reshape(A4, 'T, 1, 1, B, 1, F -> T*B*F').shape, (T*B*F,))
 
     def test_reshape_and_broadcast(self):
         tc.assert_equal(reshape(A, 'T,B,F->T,1,B*F').shape, (T, 1, B*F))
@@ -66,4 +72,4 @@ class TestReshape(unittest.TestCase):
         tc.assert_equal(reshape(A, 'T,B,F->F,1,B*T').shape, (F, 1, B*T))
 
     def test_all_space(self):
-        tc.assert_equal(reshape(A, 't b f -> f 1 b*t').shape, (F, 1, B*T))
+        tc.assert_equal(reshape(A, 't b f -> f1b*t').shape, (F, 1, B*T))
