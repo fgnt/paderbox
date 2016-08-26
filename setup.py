@@ -77,7 +77,7 @@ setup(
                       'pip', 'IPython', 'sklearn', 'pylab', 'pymatbridge', 'h5py',
                       'line_profiler', 'memory_profiler', 'pycallgraph', 'pymatbridge',
                       'cached_property', 'tabulate', 'editdistance', 'Pyro4', 
-                      'psutil', 'plumbum', 'click',
+                      'psutil', 'plumbum', 'click', 'typecheck-decorator'
                       ],
 
     # List additional groups of dependencies here (e.g. development
