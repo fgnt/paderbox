@@ -1,17 +1,17 @@
 import unittest
 
-import numpy
+import numpy as np
 import scipy
 import scipy.signal
 
 import nt.io.audioread as io
-import nt.reverb.reverb_utils as rirUtils
+import nt.reverb.reverb_utils as reverb_utils
 import nt.reverb.scenario as scenario
 import nt.testing as tc
 from nt.io.data_dir import testing as testing_dir
 from nt.utils.matlab import Mlab, matlab_test
 
-# Uncomment, if you want to test Matlab functions.
+# TODO: Do we need this line?
 matlab_test = unittest.skipUnless(True, 'matlab-test')
 
 
@@ -41,13 +41,13 @@ def time_convolve(x, impulse_response):
             str(sources) +
             ") in given impulse response!"
         )
-    convolved_signal = numpy.zeros(
+    convolved_signal = np.zeros(
         [sources, sensors, x.shape[1] + len(impulse_response) - 1]
     )
 
     for i in range(sensors):
         for j in range(sources):
-            convolved_signal[j, i, :] = numpy.convolve(
+            convolved_signal[j, i, :] = np.convolve(
                 x[j, :],
                 impulse_response[:, i, j]
             )
@@ -55,17 +55,75 @@ def time_convolve(x, impulse_response):
     return convolved_signal
 
 
+# TODO: Rename all tests to conform with PEP8
+# TODO: Change all tests which use generate_RIR to use generate_rir
+# TODO: Move convolution test out of TestRoomImpulseGenerator
+# TODO: Make sure, variable names and parameters conform with generate_rir
+# TODO: Investigate CalcRIR_Simple_C.pyx and check lines 151 following. Directional microphones seem to be broken.
 
-class TestReverbUtils(unittest.TestCase):
+
+class TestRoomImpulseGenerator(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-
+        # TODO: Do we need to create the Mlab object in the class setup?
         self.matlab_session = Mlab()
+        self.room = np.asarray([[10], [10], [4]])  # m
+        self.source_positions = np.asarray([[1], [1], [1.5]])
+        self.sensor_positions = np.asarray([[2.2], [2.4], [1.4]])
         self.sample_rate = 16000  # Hz
-        self.filter_length = 2 ** 13
-        self.room_dimensions = (10, 10, 4)  # meter
-        self.sensor_pos = (5.01, 5, 2)
-        self.soundvelocity = 343
+        self.filter_length = 2 ** 10
+        self.sound_decay_time = 0.5
+        self.sound_velocity = 343
+
+    def test_compare_tran_vu_python_with_tran_vu_cython(self):
+        rir_python = reverb_utils.generate_rir(
+            room_dimensions=self.room,
+            source_positions=self.source_positions,
+            sensor_positions=self.sensor_positions,
+            sample_rate=self.sample_rate,
+            filter_length=self.filter_length,
+            sound_decay_time=self.sound_decay_time,
+            sound_velocity=self.sound_velocity,
+            algorithm='tran_vu_python'
+        )
+        rir_cython = reverb_utils.generate_rir(
+            room_dimensions=self.room,
+            source_positions=self.source_positions,
+            sensor_positions=self.sensor_positions,
+            sample_rate=self.sample_rate,
+            filter_length=self.filter_length,
+            sound_decay_time=self.sound_decay_time,
+            sound_velocity=self.sound_velocity,
+            algorithm='tran_vu_cython'
+        )
+        np.testing.assert_allclose(
+            rir_python, rir_cython, atol=1e-9
+        )
+
+    def test_compare_tran_vu_python_loopy_with_tran_vu_cython(self):
+        rir_python = reverb_utils.generate_rir(
+            room_dimensions=self.room,
+            source_positions=self.source_positions,
+            sensor_positions=self.sensor_positions,
+            sample_rate=self.sample_rate,
+            filter_length=self.filter_length,
+            sound_decay_time=self.sound_decay_time,
+            sound_velocity=self.sound_velocity,
+            algorithm='tran_vu_python_loopy'
+        )
+        rir_cython = reverb_utils.generate_rir(
+            room_dimensions=self.room,
+            source_positions=self.source_positions,
+            sensor_positions=self.sensor_positions,
+            sample_rate=self.sample_rate,
+            filter_length=self.filter_length,
+            sound_decay_time=self.sound_decay_time,
+            sound_velocity=self.sound_velocity,
+            algorithm='tran_vu_cython'
+        )
+        np.testing.assert_allclose(
+            rir_python, rir_cython, atol=1e-9
+        )
 
     # @unittest.skip("")
     @matlab_test
@@ -81,14 +139,14 @@ class TestReverbUtils(unittest.TestCase):
         reverberation_time = 0.1
 
         sources, mics = scenario.generate_uniformly_random_sources_and_sensors(
-            self.room_dimensions,
+            self.room,
             number_of_sources,
             number_of_sensors
         )
 
         matlab_session = self.matlab_session
-        pyRIR = rirUtils.generate_RIR(
-            self.room_dimensions,
+        pyRIR = reverb_utils.generate_RIR(
+            self.room,
             sources,
             mics,
             self.sample_rate,
@@ -97,9 +155,9 @@ class TestReverbUtils(unittest.TestCase):
         )
 
         matlab_session.run_code("roomDim = [{0}; {1}; {2}];".format(
-            self.room_dimensions[0],
-            self.room_dimensions[1],
-            self.room_dimensions[2])
+            self.room[0],
+            self.room[1],
+            self.room[2])
         )
         matlab_session.run_code("src = zeros(3,1); sensors = zeros(3,1);")
         for s in range(number_of_sources):
@@ -143,24 +201,24 @@ class TestReverbUtils(unittest.TestCase):
         T60 = 0
 
         sources, mics = scenario.generate_uniformly_random_sources_and_sensors(
-            self.room_dimensions,
+            self.room,
             numSrcs,
             numMics
         )
-        distance = numpy.linalg.norm(
-            numpy.asarray(sources) - numpy.asarray(mics))
+        distance = np.linalg.norm(
+            np.asarray(sources) - np.asarray(mics))
 
         # Tranvu: first index of returned RIR equals time-index minus 128
         fixedshift = 128
-        RIR = rirUtils.generate_RIR(
-            self.room_dimensions,
+        RIR = reverb_utils.generate_RIR(
+            self.room,
             sources,
             mics,
             self.sample_rate,
             self.filter_length,
             T60
         )
-        peak = numpy.argmax(RIR) - fixedshift
+        peak = np.argmax(RIR) - fixedshift
         actual = peak / self.sample_rate
         expected = distance / 343
         tc.assert_allclose(actual, expected, atol=1e-4)
@@ -179,22 +237,22 @@ class TestReverbUtils(unittest.TestCase):
         T60 = 0.2
 
         sources, mics = scenario.generate_uniformly_random_sources_and_sensors(
-            self.room_dimensions,
+            self.room,
             number_of_sources,
             number_of_sensors
         )
         # By using TranVu the first index of returned RIR equals time-index -128
         fixedshift = 128
 
-        rir = rirUtils.generate_RIR(self.room_dimensions,
-                                    sources,
-                                    mics,
-                                    self.sample_rate,
-                                    self.filter_length,
-                                    T60)
+        rir = reverb_utils.generate_RIR(self.room,
+                                        sources,
+                                        mics,
+                                        self.sample_rate,
+                                        self.filter_length,
+                                        T60)
 
         if number_of_sources == 1:
-            rir = numpy.reshape(rir, (self.filter_length, 1))
+            rir = np.reshape(rir, (self.filter_length, 1))
             assert rir.shape == (self.filter_length, 1)
 
         matlab_session = self.matlab_session
@@ -254,7 +312,7 @@ class TestReverbUtils(unittest.TestCase):
         algorithm from cardioid directivity and pi over 4 sensor orientation
         with expected characteristic.
         """
-        sensor_orientation = numpy.pi / 4
+        sensor_orientation = np.pi / 4
         algorithm = "TranVu"
         sensor_directivity = "cardioid"
 
@@ -270,7 +328,7 @@ class TestReverbUtils(unittest.TestCase):
         algorithm from subcardioid directivity and pi over 4 sensor orientation
         with expected characteristic.
         """
-        sensor_orientation = numpy.pi / 4
+        sensor_orientation = np.pi / 4
         algorithm = "TranVu"
         sensor_directivity = "subcardioid"
 
@@ -286,7 +344,7 @@ class TestReverbUtils(unittest.TestCase):
         algorithm from cardioid directivity and pi over 2 sensor orientation
         with expected characteristic.
         """
-        sensor_orientation = numpy.pi / 2
+        sensor_orientation = np.pi / 2
         algorithm = "TranVu"
         sensor_directivity = "cardioid"
 
@@ -302,7 +360,7 @@ class TestReverbUtils(unittest.TestCase):
         algorithm from subcardioid directivity and pi over 2 sensor orientation
         with expected characteristic.
         """
-        sensor_orientation = numpy.pi / 2
+        sensor_orientation = np.pi / 2
         algorithm = "TranVu"
         sensor_directivity = "subcardioid"
 
@@ -326,10 +384,10 @@ class TestReverbUtils(unittest.TestCase):
         T = 2  # lasting 5 seconds
 
         # Create test signal and STFT.
-        t = numpy.linspace(0, T, T * fs, endpoint=False)
-        x = numpy.sin(2 * scipy.pi * f0 * t)
-        b = numpy.random.rand(250)
-        y_hat = numpy.convolve(x, b, "full")
+        t = np.linspace(0, T, T * fs, endpoint=False)
+        x = np.sin(2 * scipy.pi * f0 * t)
+        b = np.random.rand(250)
+        y_hat = np.convolve(x, b, "full")
         # y_overlap_save = rirUtils.conv_overlap_save(x,b)
         y_convolved = scipy.signal.fftconvolve(x, b, "full")
 
@@ -385,15 +443,15 @@ class TestReverbUtils(unittest.TestCase):
         else:
             fixedShift = 0
             T60 = 0
-        deltaAngle = numpy.pi / 16
+        deltaAngle = np.pi / 16
 
         if angle == "azimuth":
-            azimuth_angle = numpy.arange(0, 2 * numpy.pi, deltaAngle)
-            elevation_angle = numpy.zeros([int(2 * numpy.pi / deltaAngle)])
+            azimuth_angle = np.arange(0, 2 * np.pi, deltaAngle)
+            elevation_angle = np.zeros([int(2 * np.pi / deltaAngle)])
             sensor_orientations = [[sensor_orientation_angle, 0], ]
         elif angle == "elevation":
-            azimuth_angle = numpy.zeros([int(2 * numpy.pi / deltaAngle)])
-            elevation_angle = numpy.arange(0, 2 * numpy.pi, deltaAngle)
+            azimuth_angle = np.zeros([int(2 * np.pi / deltaAngle)])
+            elevation_angle = np.arange(0, 2 * np.pi, deltaAngle)
             sensor_orientations = [[0, sensor_orientation_angle], ]
         else:
             raise NotImplementedError("Given angle not implemented!"
@@ -409,53 +467,53 @@ class TestReverbUtils(unittest.TestCase):
                 dims=3
             )
 
-        rir_py = rirUtils.generate_RIR(self.room_dimensions,
-                                       sources_position,
-                                       [self.sensor_pos, ],
-                                       self.sample_rate,
-                                       self.filter_length,
-                                       T60,
-                                       algorithm="TranVu",
-                                       sensorDirectivity=directivity,
-                                       sensorOrientations=sensor_orientations
-                                       )
+        rir_py = reverb_utils.generate_RIR(self.room,
+                                           sources_position,
+                                           [self.sensor_pos, ],
+                                           self.sample_rate,
+                                           self.filter_length,
+                                           T60,
+                                           algorithm="TranVu",
+                                           sensorDirectivity=directivity,
+                                           sensorOrientations=sensor_orientations
+                                           )
         # set RIR to 0 as of the point in time where we're receiving echoes
-        image_distance = numpy.array(self.room_dimensions * 6).reshape((3, 6))
-        filter = numpy.array([[1, 0, 0, -1, 0, 0],
-                              [0, 1, 0, 0, -1, 0],
-                              [0, 0, 1, 0, 0, -1]]
-                             )
+        image_distance = np.array(self.room * 6).reshape((3, 6))
+        filter = np.array([[1, 0, 0, -1, 0, 0],
+                           [0, 1, 0, 0, -1, 0],
+                           [0, 0, 1, 0, 0, -1]]
+                          )
         image_distance *= filter
         first_source_images = sources_position.transpose().reshape(
             [3, 1, -1, 1]) + \
                               image_distance.reshape([3, 1, 1, -1])
-        distance_sensor_images = numpy.sqrt(((numpy.asarray(
+        distance_sensor_images = np.sqrt(((np.asarray(
             self.sensor_pos).reshape([3, 1, 1, 1]) - first_source_images) ** 2)
-                                            .sum(axis=0))
+                                         .sum(axis=0))
 
-        minimum_distance_sensor_image = numpy.min(distance_sensor_images)
+        minimum_distance_sensor_image = np.min(distance_sensor_images)
         minimum_echo_time_delay = \
-            minimum_distance_sensor_image / self.soundvelocity
-        minimum_echo_time_index = numpy.floor(
+            minimum_distance_sensor_image / self.sound_velocity
+        minimum_echo_time_index = np.floor(
             minimum_echo_time_delay * self.sample_rate + fixedShift)
         cutoff_index = minimum_echo_time_index
 
-        rir_py[cutoff_index - 1:, :, :] = numpy.zeros([
+        rir_py[cutoff_index - 1:, :, :] = np.zeros([
             self.filter_length - cutoff_index + 1,
             rir_py.shape[1],
             int(rir_py.shape[2])])
 
         # calculate squared power for each source
-        squared_power = numpy.sum(rir_py * numpy.conjugate(rir_py), axis=0)
-        squared_power = numpy.reshape(squared_power, [len(azimuth_angle), 1])
+        squared_power = np.sum(rir_py * np.conjugate(rir_py), axis=0)
+        squared_power = np.reshape(squared_power, [len(azimuth_angle), 1])
 
-        max_index = numpy.argmax(squared_power)
-        min_index = numpy.argmin(squared_power)
-        actual = numpy.array([(max_index) * deltaAngle,
-                              (min_index) * deltaAngle])
+        max_index = np.argmax(squared_power)
+        min_index = np.argmin(squared_power)
+        actual = np.array([(max_index) * deltaAngle,
+                           (min_index) * deltaAngle])
         if directivity == "cardioid" or directivity == "subcardioid":
-            expected = numpy.array([sensor_orientation_angle,
-                                    sensor_orientation_angle + numpy.pi])
+            expected = np.array([sensor_orientation_angle,
+                                 sensor_orientation_angle + np.pi])
         else:
             raise NotImplementedError(
                 "Test is not runnable for directivities " +
@@ -474,32 +532,32 @@ class TestReverbUtils(unittest.TestCase):
         testsignal3 = io.audioread(
             testing_dir('timit', 'data', 'sample_1.wav'))
         # pad all audiosignals with zeros such they have equal lengths
-        maxlen = numpy.amax((len(testsignal1),
-                             len(testsignal2),
-                             len(testsignal3)
-                             ))
-        testsignal1 = numpy.pad(testsignal1,
-                                (0, maxlen - len(testsignal1)),
+        maxlen = np.amax((len(testsignal1),
+                          len(testsignal2),
+                          len(testsignal3)
+                          ))
+        testsignal1 = np.pad(testsignal1,
+                             (0, maxlen - len(testsignal1)),
                                 'constant')
-        testsignal2 = numpy.pad(testsignal2,
-                                (0, maxlen - len(testsignal2)),
+        testsignal2 = np.pad(testsignal2,
+                             (0, maxlen - len(testsignal2)),
                                 'constant')
-        testsignal3 = numpy.pad(testsignal3,
-                                (0, maxlen - len(testsignal3)),
+        testsignal3 = np.pad(testsignal3,
+                             (0, maxlen - len(testsignal3)),
                                 'constant')
-        audio = numpy.vstack([testsignal1,
-                              testsignal2,
-                              testsignal3]
-                             )
+        audio = np.vstack([testsignal1,
+                           testsignal2,
+                           testsignal3]
+                          )
         [sources_positions, mic_positions] = scenario. \
             generate_uniformly_random_sources_and_sensors(
-            self.room_dimensions,
+            self.room,
             3,
             8
         )
         T60 = 0.3
-        rir_py = rirUtils.generate_RIR(
-            self.room_dimensions,
+        rir_py = reverb_utils.generate_RIR(
+            self.room,
             sources_positions,
             mic_positions,
             self.sample_rate,
@@ -507,7 +565,7 @@ class TestReverbUtils(unittest.TestCase):
             T60,
             algorithm="TranVu"
         )
-        convolved_signal_fft = rirUtils.convolve(audio, rir_py.T)
+        convolved_signal_fft = reverb_utils.convolve(audio, rir_py.T)
         convolved_signal_time = time_convolve(audio, rir_py)
         tc.assert_allclose(
             convolved_signal_fft,
