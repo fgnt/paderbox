@@ -468,7 +468,8 @@ def get_multi_speaker_sxr(
 
 def em(
         Y, mixture_components=3, iterations=100,
-        affiliations=None, alignment=True, rng_state=np.random
+        affiliations=None, alignment=True, rng_state=np.random,
+        spatially_white_noise_assumption=False, max_concentration=100
 ):
     Y_normalized = normalize_observation(Y, frequency_norm=False)
     Y_normalized_for_psd = np.copy(Y_normalized[0], 'C')
@@ -478,7 +479,9 @@ def em(
         affiliations = rng_state.dirichlet(
             mixture_components * [1 / mixture_components], size=(Y.shape[-2:])
         ).transpose((2, 0, 1))
-    hypergeometric_ratio_inverse = HypergeometricRatioSolver()
+    hypergeometric_ratio_inverse = HypergeometricRatioSolver(
+        max_concentration=max_concentration
+    )
 
     for i in range(iterations):
         pi = affiliations.mean(axis=-1)
@@ -490,6 +493,9 @@ def em(
         )
         W, eigenvalues = get_pca(Phi)
         kappa = hypergeometric_ratio_inverse(eigenvalues, W.shape[-1])
+
+        if spatially_white_noise_assumption:
+            kappa[-1, ...] = 0
 
         affiliations = pi[..., None] * ComplexWatson.pdf(
             Y_normalized_for_pdf,
