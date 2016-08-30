@@ -68,8 +68,8 @@ class TestRoomImpulseGenerator(unittest.TestCase):
         # TODO: Do we need to create the Mlab object in the class setup?
         self.matlab_session = Mlab()
         self.room = np.asarray([[10], [10], [4]])  # m
-        self.source_positions = np.asarray([[1], [1], [1.5]])
-        self.sensor_positions = np.asarray([[2.2], [2.4], [1.4]])
+        self.source_positions = np.asarray([[1, 1.1], [1, 1.1], [1.5, 1.5]])
+        self.sensor_positions = np.asarray([[2.2, 2.3], [2.4, 2.5], [1.4, 1.5]])
         self.sample_rate = 16000  # Hz
         self.filter_length = 2 ** 10
         self.sound_decay_time = 0.5
