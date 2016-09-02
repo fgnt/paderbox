@@ -11,9 +11,6 @@ import nt.testing as tc
 from nt.io.data_dir import testing as testing_dir
 from nt.utils.matlab import Mlab, matlab_test
 
-# TODO: Do we need this line?
-# matlab_test = unittest.skipUnless(True, 'matlab-test')
-
 
 def time_convolve(x, impulse_response):
     """
@@ -55,18 +52,13 @@ def time_convolve(x, impulse_response):
     return convolved_signal
 
 
-# TODO: Rename all tests to conform with PEP8
-# TODO: Change all tests which use generate_RIR to use generate_rir
 # TODO: Move convolution test out of TestRoomImpulseGenerator
-# TODO: Make sure, variable names and parameters conform with generate_rir
 # TODO: Investigate CalcRIR_Simple_C.pyx and check lines 151 following. Directional microphones seem to be broken.
 
 
 class TestRoomImpulseGenerator(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        # TODO: Do we need to create the Mlab object in the class setup?
-        # self.matlab_session = Mlab()
         self.room = np.asarray([[10], [10], [4]])  # m
         self.source_positions = np.asarray([[1, 1.1], [1, 1.1], [1.5, 1.5]])
         self.sensor_positions = np.asarray([[2.2, 2.3], [2.4, 2.5], [1.4, 1.5]])
@@ -173,53 +165,46 @@ class TestRoomImpulseGenerator(unittest.TestCase):
         self._test_compare_tran_vu_minimum_time_delay_with_sound_velocity(
             'tran_vu_python_loopy')
 
-    # @unittest.skip("")
     @matlab_test
-    def test_comparePythonTranVuRirWithExpectedUsingMatlabTwoSensorTwoSrc(self):
+    def _test_compare_rir_with_matlab(self,
+                                      reverberation_time=0.1,
+                                      algorithm='tran_vu_python'):
         """
         Compare RIR calculated by Matlabs reverb.generate(..) "Tranvu"
         algorithm with RIR calculated by Python reverb_utils.generate_RIR(..)
         "Tranvu" algorithm.
         Here: 2 randomly placed sensors and sources each
         """
-        number_of_sources = 2
-        number_of_sensors = 2
-        reverberation_time = 0.1
+        number_of_sources = self.source_positions.shape[1]
+        number_of_sensors = self.sensor_positions.shape[1]
 
-        sources, mics = scenario.generate_uniformly_random_sources_and_sensors(
-            self.room,
-            number_of_sources,
-            number_of_sensors
+        matlab_session = Mlab().process
+        py_rir = reverb_utils.generate_rir(
+            room_dimensions=self.room,
+            source_positions=self.source_positions,
+            sensor_positions=self.sensor_positions,
+            sample_rate=self.sample_rate,
+            filter_length=self.filter_length,
+            sound_decay_time=reverberation_time,
+            algorithm=algorithm
         )
 
-        matlab_session = self.matlab_session
-        pyRIR = reverb_utils.generate_RIR(
-            self.room,
-            sources,
-            mics,
-            self.sample_rate,
-            self.filter_length,
-            reverberation_time
-        )
-
-        matlab_session.run_code("roomDim = [{0}; {1}; {2}];".format(
-            self.room[0],
-            self.room[1],
-            self.room[2])
+        matlab_session.run_code("roomDim = [{0[0]}; {0[1]}; {0[2]}];".format(
+            self.room)
         )
         matlab_session.run_code("src = zeros(3,1); sensors = zeros(3,1);")
         for s in range(number_of_sources):
             matlab_session.run_code("srctemp = [{0};{1};{2}];".format(
-                sources[s][0],
-                sources[s][1],
-                sources[s][2])
+                self.source_positions[0][s],
+                self.source_positions[1][s],
+                self.source_positions[2][s])
             )
             matlab_session.run_code("src = [src srctemp];")
         for m in range(number_of_sensors):
             matlab_session.run_code("sensorstemp = [{0};{1};{2}];".format(
-                mics[m][0],
-                mics[m][1],
-                mics[m][2])
+                self.sensor_positions[0][m],
+                self.sensor_positions[1][m],
+                self.sensor_positions[2][m])
             )
             matlab_session.run_code("sensors = [sensors sensorstemp];")
 
@@ -235,9 +220,20 @@ class TestRoomImpulseGenerator(unittest.TestCase):
             "filterLength, T60, 'algorithm', 'TranVu');"
         )
 
-        matlabRIR = matlab_session.get_variable('rir')
-        tc.assert_allclose(matlabRIR, pyRIR, atol=1e-4)
+        mlab_rir = matlab_session.get_variable('rir')
+        tc.assert_allclose(mlab_rir, py_rir.T, atol=1e-4)
 
+    @matlab_test
+    def test_compare_tran_vu_python_with_matlab(self):
+        self._test_compare_rir_with_matlab(algorithm='tran_vu_python')
+
+    @matlab_test
+    def test_compare_tran_vu_cython_with_matlab(self):
+        self._test_compare_rir_with_matlab(algorithm='tran_vu_cython')
+
+    @matlab_test
+    def test_compare_tran_vu_python_loopy_with_matplab(self):
+        self._test_compare_rir_with_matlab(algorithm='tran_vu_python_loopy')
 
     @matlab_test
     def test_compare_tran_vu_expected_T60_with_schroeder_method(self):
@@ -248,30 +244,29 @@ class TestRoomImpulseGenerator(unittest.TestCase):
         Similarity ranges between 0.1 and 0.2 difference depending on given
         T60.
         """
-        number_of_sources = 1
-        number_of_sensors = 1
+
+        # get positions for one source and one sensor
+        source_positions = self.source_positions[:, 0:1]
+        sensor_positions = self.sensor_positions[:, 0:1]
+        number_of_sources = source_positions.shape[1]
+        number_of_sensors = sensor_positions.shape[1]
         T60 = 0.2
 
-        sources, mics = scenario.generate_uniformly_random_sources_and_sensors(
-            self.room,
-            number_of_sources,
-            number_of_sensors
-        )
         # By using TranVu the first index of returned RIR equals time-index -128
         fixedshift = 128
 
-        rir = reverb_utils.generate_RIR(self.room,
-                                        sources,
-                                        mics,
-                                        self.sample_rate,
-                                        self.filter_length,
-                                        T60)
+        rir = reverb_utils.generate_rir(room_dimensions=self.room,
+                                        source_positions=source_positions,
+                                        sensor_positions=sensor_positions,
+                                        sample_rate=self.sample_rate,
+                                        filter_length=self.filter_length,
+                                        sound_decay_time=T60)
 
         if number_of_sources == 1:
             rir = np.reshape(rir, (self.filter_length, 1))
             assert rir.shape == (self.filter_length, 1)
 
-        matlab_session = self.matlab_session
+        matlab_session = Mlab().process
         matlab_session.run_code("sampleRate = {0};".format(self.sample_rate))
         matlab_session.run_code("fixedShift = {0};".format(fixedshift))
         matlab_session.run_code("rir = zeros({0},{1},{2});".format(
@@ -290,7 +285,6 @@ class TestRoomImpulseGenerator(unittest.TestCase):
         tc.assert_allclose(matlabRIR, rir, atol=1e-4)
         tc.assert_allclose(actualT60, T60, atol=0.14)
 
-    # @unittest.skip("")
     @matlab_test
     def test_compare_mlab_conv_pyOverlap_Save(self):
         """
@@ -311,7 +305,7 @@ class TestRoomImpulseGenerator(unittest.TestCase):
         # y_overlap_save = rirUtils.conv_overlap_save(x,b)
         y_convolved = scipy.signal.fftconvolve(x, b, "full")
 
-        matlab_session = self.matlab_session
+        matlab_session = Mlab().process
         codeblock = ""
         for m in b:
             codeblock += "{0};".format(m)
@@ -329,9 +323,11 @@ class TestRoomImpulseGenerator(unittest.TestCase):
         # test compare conv in time domain with conv_overlapSave
         tc.assert_allclose(y_convolved, y_hat, atol=1e-4)
 
-    def test_convolution(self):
+    def test_convolution(self, algorithm='tran_vu_python'):
         # Check whether convolution through frequency domain via fft yields the
         # same as through time domain.
+
+        # get audio data
         testsignal1 = io.audioread(
             testing_dir('timit', 'data', 'sample_1.wav'))
         testsignal2 = io.audioread(
@@ -356,24 +352,30 @@ class TestRoomImpulseGenerator(unittest.TestCase):
                            testsignal2,
                            testsignal3]
                           )
-        [sources_positions, mic_positions] = scenario. \
+
+        # get source positions for three audio sources and mic positions for
+        # 8 mics
+        [source_positions, sensor_positions] = scenario. \
             generate_uniformly_random_sources_and_sensors(
             self.room,
             3,
             8
         )
+        source_positions = np.asarray(source_positions).T[0]
+        sensor_positions = np.asarray(sensor_positions).T[0]
+
         T60 = 0.3
-        rir_py = reverb_utils.generate_RIR(
-            self.room,
-            sources_positions,
-            mic_positions,
-            self.sample_rate,
-            self.filter_length,
-            T60,
-            algorithm="TranVu"
+        rir_py = reverb_utils.generate_rir(
+            room_dimensions=self.room,
+            source_positions=source_positions,
+            sensor_positions=sensor_positions,
+            sample_rate=self.sample_rate,
+            filter_length=self.filter_length,
+            sound_decay_time=T60,
+            algorithm=algorithm
         )
-        convolved_signal_fft = reverb_utils.convolve(audio, rir_py.T)
-        convolved_signal_time = time_convolve(audio, rir_py)
+        convolved_signal_fft = reverb_utils.convolve(audio, rir_py)
+        convolved_signal_time = time_convolve(audio, rir_py.T)
         tc.assert_allclose(
             convolved_signal_fft,
             convolved_signal_time,
