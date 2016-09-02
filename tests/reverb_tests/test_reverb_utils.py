@@ -3,6 +3,7 @@ import unittest
 import numpy as np
 import scipy
 import scipy.signal
+from nose_parameterized import parameterized
 
 import nt.io.audioread as io
 import nt.reverb.reverb_utils as reverb_utils
@@ -117,8 +118,8 @@ class TestRoomImpulseGenerator(unittest.TestCase):
             rir_python, rir_cython, atol=1e-9
         )
 
-    def _test_compare_tran_vu_minimum_time_delay_with_sound_velocity(self,
-                                                                     algorithm):
+    @parameterized.expand(reverb_utils.available_rir_algorithms)
+    def test_compare_time_delay_with_sound_velocity(self, algorithm):
         """
                 Compare theoretical TimeDelay from distance and soundvelocity with
                 timedelay found via index of maximum value in calculated RIR.
@@ -150,22 +151,6 @@ class TestRoomImpulseGenerator(unittest.TestCase):
         expected = distance / self.sound_velocity
         tc.assert_allclose(actual, expected, atol=1e-4)
 
-    def test_compare_tran_vu_python_minimum_time_delay_with_sound_velocity(
-            self):
-        self._test_compare_tran_vu_minimum_time_delay_with_sound_velocity(
-            'tran_vu_python')
-
-    def test_compare_tran_vu_cython_minimum_time_delay_with_sound_velocity(
-            self):
-        self._test_compare_tran_vu_minimum_time_delay_with_sound_velocity(
-            'tran_vu_cython')
-
-    def test_compare_tran_vu_python_loopy_minimum_time_delay_with_sound_velocity(
-            self):
-        self._test_compare_tran_vu_minimum_time_delay_with_sound_velocity(
-            'tran_vu_python_loopy')
-
-    @matlab_test
     def _test_compare_rir_with_matlab(self,
                                       reverberation_time=0.1,
                                       algorithm='tran_vu_python'):
@@ -223,20 +208,17 @@ class TestRoomImpulseGenerator(unittest.TestCase):
         mlab_rir = matlab_session.get_variable('rir')
         tc.assert_allclose(mlab_rir, py_rir.T, atol=1e-4)
 
+    @parameterized.expand(reverb_utils.available_rir_algorithms,
+                          lambda f, num, p: '{}_{}'.format(f.__name__,
+                                                           str(p.args[0])))
     @matlab_test
-    def test_compare_tran_vu_python_with_matlab(self):
-        self._test_compare_rir_with_matlab(algorithm='tran_vu_python')
+    def test_compare_matlab_with(self, algorithm):
+        print(algorithm)
+        self._test_compare_rir_with_matlab(algorithm=algorithm)
 
+    @parameterized.expand(reverb_utils.available_rir_algorithms)
     @matlab_test
-    def test_compare_tran_vu_cython_with_matlab(self):
-        self._test_compare_rir_with_matlab(algorithm='tran_vu_cython')
-
-    @matlab_test
-    def test_compare_tran_vu_python_loopy_with_matplab(self):
-        self._test_compare_rir_with_matlab(algorithm='tran_vu_python_loopy')
-
-    @matlab_test
-    def test_compare_tran_vu_expected_T60_with_schroeder_method(self):
+    def test_compare_expected_T60_with_schroeder_method(self, algorithm):
         """
         Compare minimal time-delay of RIR calculated by TranVu's algorithm
         with expected propagation-time by given distance and soundvelocity.
@@ -260,7 +242,8 @@ class TestRoomImpulseGenerator(unittest.TestCase):
                                         sensor_positions=sensor_positions,
                                         sample_rate=self.sample_rate,
                                         filter_length=self.filter_length,
-                                        sound_decay_time=T60)
+                                        sound_decay_time=T60,
+                                        algorithm=algorithm)
 
         if number_of_sources == 1:
             rir = np.reshape(rir, (self.filter_length, 1))
@@ -286,7 +269,7 @@ class TestRoomImpulseGenerator(unittest.TestCase):
         tc.assert_allclose(actualT60, T60, atol=0.14)
 
     @matlab_test
-    def test_compare_mlab_conv_pyOverlap_Save(self):
+    def test_compare_mlab_conv_pyOverlap_save(self):
         """
         based on original from
         http://stackoverflow.com/questions/2459295/invertible-stft-and-istft-in-python
