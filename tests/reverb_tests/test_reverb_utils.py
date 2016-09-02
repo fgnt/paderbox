@@ -12,7 +12,7 @@ from nt.io.data_dir import testing as testing_dir
 from nt.utils.matlab import Mlab, matlab_test
 
 # TODO: Do we need this line?
-matlab_test = unittest.skipUnless(True, 'matlab-test')
+# matlab_test = unittest.skipUnless(True, 'matlab-test')
 
 
 def time_convolve(x, impulse_response):
@@ -66,7 +66,7 @@ class TestRoomImpulseGenerator(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         # TODO: Do we need to create the Mlab object in the class setup?
-        self.matlab_session = Mlab()
+        # self.matlab_session = Mlab()
         self.room = np.asarray([[10], [10], [4]])  # m
         self.source_positions = np.asarray([[1, 1.1], [1, 1.1], [1.5, 1.5]])
         self.sensor_positions = np.asarray([[2.2, 2.3], [2.4, 2.5], [1.4, 1.5]])
@@ -123,6 +123,70 @@ class TestRoomImpulseGenerator(unittest.TestCase):
         )
         np.testing.assert_allclose(
             rir_python, rir_cython, atol=1e-9
+        )
+
+    def _test_compare_tran_vu_minimum_time_delay_with_sound_velocity(self,
+                                                                     algorithm):
+        """
+                Compare theoretical TimeDelay from distance and soundvelocity with
+                timedelay found via index of maximum value in calculated RIR.
+                Here: 1 Source, 1 Sensor, no reflections, that is, T60 = 0
+                """
+        T60 = 0
+
+        # one source and one sensor
+        source_positions = self.source_positions[:, 0:1]
+        sensor_positions = self.sensor_positions[:, 0:1]
+
+        distance = np.linalg.norm(
+            source_positions - sensor_positions)
+
+        # Tranvu: first index of returned RIR equals time-index minus 128
+        fixedshift = 128
+        rir = reverb_utils.generate_rir(
+            room_dimensions=self.room,
+            source_positions=source_positions,
+            sensor_positions=sensor_positions,
+            sample_rate=self.sample_rate,
+            filter_length=self.filter_length,
+            sound_decay_time=T60,
+            sound_velocity=self.sound_velocity,
+            algorithm=algorithm
+        )
+        peak = np.argmax(rir) - fixedshift
+        actual = peak / self.sample_rate
+        expected = distance / self.sound_velocity
+        tc.assert_allclose(actual, expected, atol=1e-4)
+
+    def test_compare_tran_vu_python_minimum_time_delay_with_sound_velocity(
+            self):
+        self._test_compare_tran_vu_minimum_time_delay_with_sound_velocity(
+            'tran_vu_python')
+
+    def test_compare_tran_vu_cython_minimum_time_delay_with_sound_velocity(
+            self):
+        self._test_compare_tran_vu_minimum_time_delay_with_sound_velocity(
+            'tran_vu_cython')
+
+    def test_compare_tran_vu_python_loopy_minimum_time_delay_with_sound_velocity(
+            self):
+        self._test_compare_tran_vu_minimum_time_delay_with_sound_velocity(
+            'tran_vu_python_loopy')
+
+    def test_compare_tran_vu_cardioid_sensororient_zero(self):
+        """
+        Compare signal-power's max and min of RIR calculated by TranVu's
+        algorithm from cardioid directivity and zero sensor orientation with
+        expected characteristic.
+        """
+        sensor_orientation = 0
+        algorithm = "tran_vu"
+        sensor_directivity = "cardioid"
+
+        self.process_with_directivity_characteristic(
+            algorithm=algorithm,
+            sensor_orientation_angle=sensor_orientation,
+            sensor_directivity=sensor_directivity
         )
 
     # @unittest.skip("")
@@ -190,38 +254,6 @@ class TestRoomImpulseGenerator(unittest.TestCase):
         matlabRIR = matlab_session.get_variable('rir')
         tc.assert_allclose(matlabRIR, pyRIR, atol=1e-4)
 
-    def test_compareTranVuMinimumTimeDelayWithSoundVelocity(self):
-        """
-        Compare theoretical TimeDelay from distance and soundvelocity with
-        timedelay found via index of maximum value in calculated RIR.
-        Here: 1 Source, 1 Sensor, no reflections, that is, T60 = 0
-        """
-        numSrcs = 1
-        numMics = 1
-        T60 = 0
-
-        sources, mics = scenario.generate_uniformly_random_sources_and_sensors(
-            self.room,
-            numSrcs,
-            numMics
-        )
-        distance = np.linalg.norm(
-            np.asarray(sources) - np.asarray(mics))
-
-        # Tranvu: first index of returned RIR equals time-index minus 128
-        fixedshift = 128
-        RIR = reverb_utils.generate_RIR(
-            self.room,
-            sources,
-            mics,
-            self.sample_rate,
-            self.filter_length,
-            T60
-        )
-        peak = np.argmax(RIR) - fixedshift
-        actual = peak / self.sample_rate
-        expected = distance / 343
-        tc.assert_allclose(actual, expected, atol=1e-4)
 
     @matlab_test
     def test_compare_tran_vu_expected_T60_with_schroeder_method(self):
