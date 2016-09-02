@@ -53,7 +53,6 @@ def time_convolve(x, impulse_response):
     return convolved_signal
 
 
-# TODO: Move convolution test out of TestRoomImpulseGenerator
 # TODO: Investigate CalcRIR_Simple_C.pyx and check lines 151 following. Directional microphones seem to be broken.
 
 
@@ -268,6 +267,18 @@ class TestRoomImpulseGenerator(unittest.TestCase):
         tc.assert_allclose(matlabRIR, rir, atol=1e-4)
         tc.assert_allclose(actualT60, T60, atol=0.14)
 
+
+class TestConvolution(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.room = np.asarray([[10], [10], [4]])  # m
+        self.source_positions = np.asarray([[1, 1.1], [1, 1.1], [1.5, 1.5]])
+        self.sensor_positions = np.asarray([[2.2, 2.3], [2.4, 2.5], [1.4, 1.5]])
+        self.sample_rate = 16000  # Hz
+        self.filter_length = 2 ** 10
+        self.sound_decay_time = 0.5
+        self.sound_velocity = 343
+
     @matlab_test
     def test_compare_mlab_conv_pyOverlap_save(self):
         """
@@ -306,7 +317,8 @@ class TestRoomImpulseGenerator(unittest.TestCase):
         # test compare conv in time domain with conv_overlapSave
         tc.assert_allclose(y_convolved, y_hat, atol=1e-4)
 
-    def test_convolution(self, algorithm='tran_vu_python'):
+    @parameterized.expand(reverb_utils.available_rir_algorithms)
+    def test_convolution(self, algorithm):
         # Check whether convolution through frequency domain via fft yields the
         # same as through time domain.
 
@@ -324,13 +336,13 @@ class TestRoomImpulseGenerator(unittest.TestCase):
                           ))
         testsignal1 = np.pad(testsignal1,
                              (0, maxlen - len(testsignal1)),
-                                'constant')
+                             'constant')
         testsignal2 = np.pad(testsignal2,
                              (0, maxlen - len(testsignal2)),
-                                'constant')
+                             'constant')
         testsignal3 = np.pad(testsignal3,
                              (0, maxlen - len(testsignal3)),
-                                'constant')
+                             'constant')
         audio = np.vstack([testsignal1,
                            testsignal2,
                            testsignal3]
