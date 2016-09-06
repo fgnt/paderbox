@@ -1,6 +1,7 @@
 import unittest
 import numpy as np
 from nt.speech_enhancement import bss
+from nt.speech_enhancement import complex_watson_mixture_model
 
 
 def _random_stft(*shape):
@@ -10,7 +11,7 @@ def _random_stft(*shape):
 class TestNormalizeObservation(unittest.TestCase):
     def test_forbidden_list_input(self):
         with self.assertRaises(ValueError):
-            bss.normalize_observation(
+            complex_watson_mixture_model.normalize_observation(
                 _random_stft(2, 513, 4),
                 frequency_norm=True,
                 max_sensor_distance=0.2
