@@ -33,6 +33,9 @@ def play(data, channel=0, rate=16000,
             data = data[:, channel, :]
 
         data = istft(data, size=size, shift=shift, window=window)
+    elif np.issubdtype(data.dtype, np.float):
+        if len(data.shape) == 2:
+            data = data[channel, :]
 
     assert np.issubdtype(data.dtype, np.float)
     assert len(data.shape) == 1
