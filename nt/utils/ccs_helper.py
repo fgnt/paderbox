@@ -58,6 +58,7 @@ def get_job_id(allocation_result):
 
 def _test_finished(job_ids, host):
     """ Expects list of job ids as strings. """
+    job_ids = [str(_id) for _id in job_ids]
     df = ccsinfo(host=host)
     jobs = df[df['id'].apply(lambda x: str(x) in job_ids)]
     next_ids = []
