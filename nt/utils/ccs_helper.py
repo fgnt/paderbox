@@ -4,6 +4,7 @@ from io import StringIO
 import re
 import time
 import numpy as np
+from tqdm import tqdm
 
 
 def ccsinfo(host=None):
@@ -41,15 +42,50 @@ def get_job_id(allocation_result):
     Returns:
 
     """
-    regex_job_id = re.compile(r'PM:Array\s([0-9]*)')
-    return re.search(
-        regex_job_id,
-        allocation_result.stdout.decode('utf-8')
-    ).groups()[0]
+    try:
+        regex_job_id = re.compile(r'PM:Array\s([0-9]*)')
+        return re.search(
+            regex_job_id,
+            allocation_result.stdout.decode('utf-8')
+        ).groups()[0]
+    except AttributeError:
+        regex_job_id = re.compile(r'Request\s\(([0-9]*)')
+        return re.search(
+            regex_job_id,
+            allocation_result.stdout.decode('utf-8')
+        ).groups()[0]
+
+
+def _test_finished(job_ids, host):
+    """ Expects list of job ids as strings. """
+    df = ccsinfo(host=host)
+    jobs = df[df['id'].apply(lambda x: str(x) in job_ids)]
+    next_ids = []
+    new_finished_jobs = 0
+    for idx, job in jobs.iterrows():
+        if not job['status'] == 'STOPPED':
+            next_ids.append(job['name'])
+        else:
+            new_finished_jobs += 1
+            job_ids = next_ids
+    return job_ids, new_finished_jobs
 
 
 def idle_while_jobs_are_running(
-    job_ids, sleep_time=300, host='pc2'
+        job_ids, sleep_time=300, host='pc2'
+):
+    """ Expects list of job ids as strings. """
+    total_jobs = len(job_ids)
+    p = tqdm(total=total_jobs, desc='Cluster jobs')
+    while len(job_ids):
+        time.sleep(sleep_time)
+        job_ids, new_finished_jobs = _test_finished(job_ids, host)
+        if new_finished_jobs:
+            p.update(new_finished_jobs)
+
+
+def idle_while_array_jobs_are_running(
+        job_ids, sleep_time=300, host='pc2'
 ):
     """ Idle after job array allocation to wait for remaining jobs.
 
