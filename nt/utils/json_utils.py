@@ -1,5 +1,48 @@
 import json
 import os
+import numpy
+
+
+# http://stackoverflow.com/a/27050186
+class _NpEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, numpy.integer):
+            return int(obj)
+        elif isinstance(obj, numpy.floating):
+            return float(obj)
+        # elif isinstance(obj, numpy.complex):
+        #     # ToDo: json serilize complex numbers in a better way
+        #     # return {"Complex": [obj.real, obj.imag]}
+        #     return '{: .3g} + j {:.3g}'.format(obj.real, obj.imag)
+        #     #return str(obj) #{'complex': (obj.real, obj.imag)}
+        elif isinstance(obj, numpy.ndarray):
+            return obj.tolist()
+        # elif isinstance(obj, h5py._hl.files.File):
+        #     return hdf5_to_dict(obj)
+        else:
+            return super().default(obj)
+
+
+def json_np_dump(obj, fp, *, indent=2, **kwargs):
+    """
+    Numpy types will be converted to the equivalent python type for dumping the
+    obj.
+
+    :param obj: arbitary object that is json serializable, where numpy is
+                allowed
+    :param fp: file pointer, path or list of path parts
+    :param indent: see json.dump
+    :param kwargs: see json.dump
+
+    """
+    if isinstance(fp, (tuple, list)) and isinstance(fp[0], str):
+        fp = os.path.join(fp)
+
+    if isinstance(fp, str):
+        with open(fp, 'w') as f:
+            json.dump(obj, f, cls=_NpEncoder, indent=indent, **kwargs)
+    else:
+        json.dump(obj, fp, cls=_NpEncoder, indent=indent, **kwargs)
 
 
 def load_json(*path_parts):
