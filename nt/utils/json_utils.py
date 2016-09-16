@@ -45,11 +45,12 @@ def json_np_dump(obj, fp, *, indent=2, **kwargs):
         json.dump(obj, fp, cls=_NpEncoder, indent=indent, **kwargs)
 
 
-def load_json(*path_parts):
+def load_json(*path_parts, **kwargs):
     """ Loads a json file and returns it as a dict
 
     :param path_parts: Json file name and possible parts of a path
-    :return: dict with contents of the json file
+    :param kwargs: see json.load
+    :return: content of the json file
     """
 
     path = os.path.join(*path_parts)
@@ -57,8 +58,10 @@ def load_json(*path_parts):
     if not path.endswith('.json'):
         path += '.json'
 
+    path = os.path.expanduser(path)
+
     with open(path) as fid:
-        return json.load(fid)
+        return json.load(fid, **kwargs)
 
 
 def print_template():
