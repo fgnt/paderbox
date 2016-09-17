@@ -74,9 +74,11 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=['numpy', 'bokeh', 'tabulate',
                       'chainer', 'scipy', 'librosa', 'seaborn', 'tqdm', 'dill',
-                      'pip', 'IPython', 'sklearn', 'pylab', 'pymatbridge', 'h5py',
-                      'line_profiler', 'memory_profiler', 'pycallgraph', 'pymatbridge',
-                      'cached_property', 'tabulate', 'editdistance', 'Pyro4', 
+                      'pip', 'IPython', 'sklearn', 'pylab', 'pymatbridge',
+                      'h5py',
+                      'line_profiler', 'memory_profiler', 'pycallgraph',
+                      'pymatbridge',
+                      'cached_property', 'tabulate', 'editdistance', 'Pyro4',
                       'psutil', 'plumbum', 'click', 'typecheck-decorator'
                       ],
 
@@ -90,7 +92,8 @@ setup(
     },
 
     ext_modules=cythonize(["nt/reverb/CalcRIR_Simple_C.pyx",
-                          'nt/speech_enhancement/cythonized/get_gev_vector.pyx',
+                           'nt/speech_enhancement/cythonized/get_gev_vector.pyx',
+                           'nt/speech_enhancement/cythonized/c_eig.pyx'
                            ],
                           annotate=True,
                           ),
