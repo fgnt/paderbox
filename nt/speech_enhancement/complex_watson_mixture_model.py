@@ -1,4 +1,5 @@
 import math
+import functools
 
 import numpy as np
 from nt.speech_enhancement import bss
@@ -260,6 +261,8 @@ class HypergeometricRatioSolver:
 
     >>> a = np.logspace(-3, 2.5, 100)
     >>> hypergeometric_ratio_inverse = HypergeometricRatioSolver()
+    >>> hypergeometric_ratio_inverse([1/3, 0.5, 0.8, 1], 3)
+    array([   0.        ,    2.68801168,    9.97621264,  100.        ])
     >>> hypergeometric_ratio_inverse(a, 3)
     """
 
@@ -267,20 +270,23 @@ class HypergeometricRatioSolver:
     # TODO: Possibly reduce number of markers, if speedup is necessary at all.
     # TODO: Improve handling for very high and very low values.
 
-    def __init__(self, max_concentration=100):
-        x = np.logspace(-3, np.log10(max_concentration), 100)
-        self.list_of_splines = 11 * [None]
-        for d in range(2, 11):
-            y = hyp1f1(2, d + 1, x) / (d * hyp1f1(1, d, x))
-            self.list_of_splines[d] = interp1d(
-                y, x, kind='quadratic',
-                assume_sorted=True,
-                bounds_error=False,
-                fill_value=(0, max_concentration)
-            )
+    def __init__(self, max_concentration=100, markers=100):
+        x = np.logspace(-3, np.log10(max_concentration), markers)
+        self.x = x
+        self.max_concentration = max_concentration
+
+    @functools.lru_cache(maxsize=3)
+    def _get_spline(self, D):
+        y = hyp1f1(2, D + 1, self.x) / (D * hyp1f1(1, D, self.x))
+        return interp1d(
+            y, self.x, kind='quadratic',
+            assume_sorted=True,
+            bounds_error=False,
+            fill_value=(0, self.max_concentration)
+        )
 
     def __call__(self, a, D):
-        return self.list_of_splines[D](a)
+        return self._get_spline(D)(a)
 
 
 def em(
