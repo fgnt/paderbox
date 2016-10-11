@@ -26,7 +26,8 @@ export PYTHONUSERBASE=$(readlink -m venv)
 ls /net/ssd/software/anaconda/envs/py35/lib/python3.5/lib-dynload/../../ > /dev/null
 
 # enable matlab tests
-TEST_MATLAB=true
+# It seems, that jenkins currentliy does not work with matlab: Error: Segmentation violation
+TEST_MATLAB=False
 export TEST_MATLAB
 
 # Refresh toolbox
