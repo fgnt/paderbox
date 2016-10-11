@@ -17,6 +17,7 @@ class TestWPEWrapper(unittest.TestCase):
         self.audiofiles_path = DataDir(data_dir.join('speech_enhancement', 'data'))
         self.sample_rate = 16000
 
+    @testing.attr.matlab
     def test_dereverb_one_channel(self):
         input_file_paths =\
             {self.audiofiles_path('sample_ch1.wav'): 1, }
@@ -30,6 +31,7 @@ class TestWPEWrapper(unittest.TestCase):
                     os.path.isfile(
                         utt.replace('ch1', 'ch'+str(cha+1)+'_derev')))
 
+    @testing.attr.matlab
     def test_dereverb_eight_channels(self):
         input_file_paths =\
             {self.audiofiles_path('sample_ch1.wav'): 8, }
@@ -44,6 +46,9 @@ class TestWPEWrapper(unittest.TestCase):
                 self.assertTrue(os.path.isfile(utt_to_check))
 
     def process_dereverbing_framework(self, input_file_paths):
+        """
+        Require MATLAB
+        """
         file_no = 0
         for utt, num_channels in input_file_paths.items():
             file_no += 1

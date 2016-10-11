@@ -1,23 +1,24 @@
 import unittest
-from nt.utils.matlab import matlab_test, Mlab
+from nt.utils.matlab import Mlab
 import nt.testing as tc
 from nt.evaluation.stoi import *
 from nt.io.audioread import audioread
 from nt.io.data_dir import testing as testing_dir
 
+
 class TestSTOI(unittest.TestCase):
     @classmethod
-    def setUpClass(self):
+    def setUpClass(cls):
         path = testing_dir('timit', 'data', 'sample_1.wav')
-        self.x = audioread(path)
-        self.sample_rate = 16000
+        cls.x = audioread(path)
+        cls.sample_rate = 16000
 
     def test_stoi_range(self):
         processed = (self.x + 0.5*np.random.rand(1, self.x.shape[0])).flatten()
         d = stoi(self.x, processed, self.sample_rate)
         tc.assert_(0 <= d <= 1, "STOI value has to be in range (0, 1)")
 
-    @matlab_test
+    @tc.attr.matlab
     def test_taa_corr_matlab(self):
         x = np.random.rand(1, 20)
         y = np.random.rand(1, 20)
@@ -41,7 +42,7 @@ class TestSTOI(unittest.TestCase):
         # test
         tc.assert_almost_equal(python_corr, mlab_corr)
 
-    @matlab_test
+    @tc.attr.matlab
     def test_thirdoct_matlab(self):
         sample_rate = 10000
         nfft = 1024
@@ -68,7 +69,7 @@ class TestSTOI(unittest.TestCase):
                 fl(i) = f(b);
                 fl_ii = b;
 
-	            [a b] = min((f-fr(i)).^2);
+                [a b] = min((f-fr(i)).^2);
                 fr(i) = f(b);
                 fr_ii = b;
                 A(i,fl_ii:(fr_ii-1))= 1;
@@ -93,7 +94,7 @@ class TestSTOI(unittest.TestCase):
         tc.assert_almost_equal(mlab_cf.flatten(), python_cf)
         tc.assert_almost_equal(mlab_A, python_A)
 
-    @matlab_test
+    @tc.attr.matlab
     def test_stoi(self):
         processed = (self.x + 0.5*np.random.rand(1, self.x.shape[0])).flatten()
         mlab = Mlab().process
