@@ -17,7 +17,7 @@ from nt.transform.module_stft import istft
 from nt.transform.module_stft import spectrogram_to_energy_per_frame
 from nt.transform.module_stft import stft
 from nt.transform.module_stft import stft_to_spectrogram
-from nt.utils.matlab import matlab_test, Mlab
+from nt.utils.matlab import Mlab
 from numpy.fft import rfft
 import numpy
 
@@ -236,7 +236,7 @@ class TestSTFTMethods(unittest.TestCase):
     def test_center_frequencies(self):
         tc.assert_allclose(get_stft_center_frequencies(size=1024, sample_rate=16000)[0], 0)
 
-    @matlab_test
+    @tc.attr.matlab
     def test_compare_with_matlab(self):
         y = self.x
         Y_python = stft(y)

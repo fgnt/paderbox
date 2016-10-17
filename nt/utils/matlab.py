@@ -1,13 +1,11 @@
 from pymatbridge import Matlab
-from os import environ
 from cached_property import cached_property
-import unittest
 import socket
 import warnings
 import os.path
 
 
-class Mlab():
+class Mlab:
     def __init__(self, matlab_startup_path=None):
 
         home_startup = os.path.expanduser('~/startup.m')
@@ -67,6 +65,3 @@ class Mlab():
 
     def set_variable(self, code, var):
         return self.process.set_variable(code, var)
-
-# Define decorator to skip matlab_tests
-matlab_test = unittest.skipUnless(environ.get('TEST_MATLAB'), 'matlab-test')

@@ -10,7 +10,7 @@ import nt.reverb.reverb_utils as reverb_utils
 import nt.reverb.scenario as scenario
 import nt.testing as tc
 from nt.io.data_dir import testing as testing_dir
-from nt.utils.matlab import Mlab, matlab_test
+from nt.utils.matlab import Mlab
 
 
 def time_convolve(x, impulse_response):
@@ -53,19 +53,20 @@ def time_convolve(x, impulse_response):
     return convolved_signal
 
 
-# TODO: Investigate CalcRIR_Simple_C.pyx and check lines 151 following. Directional microphones seem to be broken.
+# TODO: Investigate CalcRIR_Simple_C.pyx and check lines 151 following.
+#       Directional microphones seem to be broken.
 
 
 class TestRoomImpulseGenerator(unittest.TestCase):
     @classmethod
-    def setUpClass(self):
-        self.room = np.asarray([[10], [10], [4]])  # m
-        self.source_positions = np.asarray([[1, 1.1], [1, 1.1], [1.5, 1.5]])
-        self.sensor_positions = np.asarray([[2.2, 2.3], [2.4, 2.5], [1.4, 1.5]])
-        self.sample_rate = 16000  # Hz
-        self.filter_length = 2 ** 10
-        self.sound_decay_time = 0.5
-        self.sound_velocity = 343
+    def setUpClass(cls):
+        cls.room = np.asarray([[10], [10], [4]])  # m
+        cls.source_positions = np.asarray([[1, 1.1], [1, 1.1], [1.5, 1.5]])
+        cls.sensor_positions = np.asarray([[2.2, 2.3], [2.4, 2.5], [1.4, 1.5]])
+        cls.sample_rate = 16000  # Hz
+        cls.filter_length = 2 ** 10
+        cls.sound_decay_time = 0.5
+        cls.sound_velocity = 343
 
     def test_compare_tran_vu_python_with_tran_vu_cython(self):
         rir_python = reverb_utils.generate_rir(
@@ -120,8 +121,9 @@ class TestRoomImpulseGenerator(unittest.TestCase):
     @parameterized.expand(reverb_utils.available_rir_algorithms)
     def test_compare_time_delay_with_sound_velocity(self, algorithm):
         """
-                Compare theoretical TimeDelay from distance and soundvelocity with
-                timedelay found via index of maximum value in calculated RIR.
+                Compare theoretical TimeDelay from distance and soundvelocity
+                with timedelay found via index of maximum value in calculated
+                RIR.
                 Here: 1 Source, 1 Sensor, no reflections, that is, T60 = 0
                 """
         T60 = 0
@@ -196,7 +198,8 @@ class TestRoomImpulseGenerator(unittest.TestCase):
         matlab_session.run_code("sensors = sensors(:, 2:end);")
 
         matlab_session.run_code("sampleRate = {0};".format(self.sample_rate))
-        matlab_session.run_code("filterLength = {0};".format(self.filter_length))
+        matlab_session.run_code(
+            "filterLength = {0};".format(self.filter_length))
         matlab_session.run_code("T60 = {0};".format(reverberation_time))
 
         matlab_session.run_code(
@@ -210,13 +213,13 @@ class TestRoomImpulseGenerator(unittest.TestCase):
     @parameterized.expand(reverb_utils.available_rir_algorithms,
                           lambda f, num, p: '{}_{}'.format(f.__name__,
                                                            str(p.args[0])))
-    @matlab_test
+    @tc.attr.matlab
     def test_compare_matlab_with(self, algorithm):
         print(algorithm)
         self._test_compare_rir_with_matlab(algorithm=algorithm)
 
     @parameterized.expand(reverb_utils.available_rir_algorithms)
-    @matlab_test
+    @tc.attr.matlab
     def test_compare_expected_T60_with_schroeder_method(self, algorithm):
         """
         Compare minimal time-delay of RIR calculated by TranVu's algorithm
@@ -270,16 +273,16 @@ class TestRoomImpulseGenerator(unittest.TestCase):
 
 class TestConvolution(unittest.TestCase):
     @classmethod
-    def setUpClass(self):
-        self.room = np.asarray([[10], [10], [4]])  # m
-        self.source_positions = np.asarray([[1, 1.1], [1, 1.1], [1.5, 1.5]])
-        self.sensor_positions = np.asarray([[2.2, 2.3], [2.4, 2.5], [1.4, 1.5]])
-        self.sample_rate = 16000  # Hz
-        self.filter_length = 2 ** 10
-        self.sound_decay_time = 0.5
-        self.sound_velocity = 343
+    def setUpClass(cls):
+        cls.room = np.asarray([[10], [10], [4]])  # m
+        cls.source_positions = np.asarray([[1, 1.1], [1, 1.1], [1.5, 1.5]])
+        cls.sensor_positions = np.asarray([[2.2, 2.3], [2.4, 2.5], [1.4, 1.5]])
+        cls.sample_rate = 16000  # Hz
+        cls.filter_length = 2 ** 10
+        cls.sound_decay_time = 0.5
+        cls.sound_velocity = 343
 
-    @matlab_test
+    @tc.attr.matlab
     def test_compare_mlab_conv_pyOverlap_save(self):
         """
         based on original from

@@ -245,7 +245,7 @@ def time_series(*signal, ax=None, ylim=None, label=None, color=None):
 def _time_frequency_plot(
         signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
         sample_rate=None, stft_size=None, stft_shift=None,
-        x_label=None, y_label=None, z_label=None, z_scale=None
+        x_label=None, y_label=None, z_label=None, z_scale=None, cmap=None
 ):
     """
 
@@ -277,6 +277,9 @@ def _time_frequency_plot(
 
     if limits is None:
         limits = (np.min(signal), np.max(signal))
+
+    if cmap is None:
+        cmap = 'viridis'
 
     if z_scale == 'linear' or z_scale == None:
         norm = None
@@ -310,7 +313,7 @@ def _time_frequency_plot(
         interpolation='nearest',
         vmin=limits[0],
         vmax=limits[1],
-        cmap='viridis',
+        cmap=cmap,
         origin='lower',
         norm=norm,
     )
@@ -376,7 +379,7 @@ def _time_frequency_plot(
 def spectrogram(
         signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
         sample_rate=None, stft_size=None, stft_shift=None,
-        x_label=None, y_label=None, z_label=None, z_scale=None
+        x_label=None, y_label=None, z_label=None, z_scale=None, cmap=None
 ):
     """
     Plots a spectrogram from a spectrogram (power) as input.
