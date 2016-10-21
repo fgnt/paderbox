@@ -74,7 +74,7 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=['numpy', 'bokeh', 'tabulate',
                       'chainer', 'scipy', 'librosa', 'seaborn', 'tqdm', 'dill',
-                      'pip', 'IPython', 'sklearn', 'pylab', 'pymatbridge',
+                      'pip', 'IPython', 'scikit-learn', 'pymatbridge',
                       'h5py',
                       'line_profiler', 'memory_profiler', 'pycallgraph',
                       'pymatbridge',
