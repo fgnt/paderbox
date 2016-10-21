@@ -144,3 +144,19 @@ def deg_to_rad(a):
 
 def rad_to_deg(a):
     return a/np.pi*180
+
+
+def direction_vector_to_angle(vector):
+    """ Takes a 2D direction vector and creates a single direction angle.
+
+    >>> direction_vector_to_angle(np.asarray([[0], [0]]))
+    0.0
+
+    >>> direction_vector_to_angle(np.asarray([[1], [1]]))
+    0.78539816339744828
+
+    >>> direction_vector_to_angle(np.asarray([[0], [1]]))
+    1.5707963267948966
+    """
+    assert vector.shape == (2, 1)
+    return np.arctan2(vector[1, 0], vector[0, 0])
