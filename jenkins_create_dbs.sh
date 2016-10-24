@@ -49,6 +49,8 @@ python -m nt.database.timit.create_json
 
 python -m nt.database.wsj.database_wsj
 
+python -m nt.database.merl_mixtures.merl_speaker_mixtures
+
 python -m nt.database.reverb.gen_config
 python -m nt.database.reverb.process_db
 
