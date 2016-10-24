@@ -60,6 +60,9 @@ python -m nt.database.noisex_92.database_NoiseX_92
 
 python -m nt.database.chime.create_background_json
 
+python -m nt.database.chime.gen_config
+python -m nt.database.chime.process_db
+
 # Uninstall packages
 pip uninstall --quiet --yes nt
 
