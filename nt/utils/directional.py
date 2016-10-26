@@ -144,3 +144,10 @@ def deg_to_rad(a):
 
 def rad_to_deg(a):
     return a/np.pi*180
+
+def unwrap(angle):
+    #Normalize angle to be in the range of [0, 2*np.pi[.
+
+    if angle<0 :
+        angle = 2*np.pi + angle
+    return angle
