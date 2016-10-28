@@ -3,6 +3,7 @@ from nt.utils.file_handling import mkdir_p, change_directory
 from nt.utils.timer import Timer, timeStamped
 from nt.utils.container import Container, AttrDict
 from nt.utils.json_utils import *
+from nt.utils.hdf5_utils import *
 
 
 mkdir_p = mkdir_p
