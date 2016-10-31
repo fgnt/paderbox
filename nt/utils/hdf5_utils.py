@@ -19,6 +19,7 @@ def hdf5_dump(obj, filename, force=True):
     ...    'fav_numbers2': [2,4,4.3],
     ...    'fav_numbers3': (2,4,4.3),
     ...    # 'fav_numbers4': {2,4,4.3}, # currently not supported
+    ...    # 'fav_numbers5': [[2], 1], # currently not supported
     ...    'fav_tensors': {
     ...        'levi_civita3d': np.array([
     ...            [[0,0,0],[0,0,1],[0,-1,0]],
@@ -32,6 +33,59 @@ def hdf5_dump(obj, filename, force=True):
 
     """
     _ReportInterface.__save_dict_to_hdf5__(obj, filename, force=force)
+
+
+def hdf5_load(filename):
+    """
+
+    >>> ex = {
+    ...    'name': 'stefan',
+    ...    'age':  np.int64(24),
+    ...    'age2':  25,
+    ...    'age3':  25j,
+    ...    'fav_numbers': np.array([2,4,4.3]),
+    ...    'fav_numbers2': [2,4,4.3],
+    ...    'fav_numbers3': (2,4,4.3),
+    ...    # 'fav_numbers4': {2,4,4.3}, # currently not supported
+    ...    # 'fav_numbers5': [[2], 1], # currently not supported
+    ...    'fav_tensors': {
+    ...        'levi_civita3d': np.array([
+    ...            [[0,0,0],[0,0,1],[0,-1,0]],
+    ...            [[0,0,-1],[0,0,0],[1,0,0]],
+    ...            [[0,1,0],[-1,0,0],[0,0,0]]
+    ...        ]),
+    ...        'kronecker2d': np.identity(3)
+    ...    }
+    ... }
+    >>> hdf5_dump(ex, 'tmp_foo.hdf5', True)
+    >>> ex_load = hdf5_load('tmp_foo.hdf5', True)
+    >>> from pprint import pprint
+    >>> ex_load.fav_tensors.kronecker2d[0, 0]
+    1.0
+    >>> pprint(ex_load)
+    {'age': 24,
+     'age2': 25,
+     'age3': 25j,
+     'fav_numbers': array([ 2. ,  4. ,  4.3]),
+     'fav_numbers2': array([ 2. ,  4. ,  4.3]),
+     'fav_numbers3': array([ 2. ,  4. ,  4.3]),
+     'fav_tensors': {'kronecker2d': array([[ 1.,  0.,  0.],
+           [ 0.,  1.,  0.],
+           [ 0.,  0.,  1.]]),
+                     'levi_civita3d': array([[[ 0,  0,  0],
+            [ 0,  0,  1],
+            [ 0, -1,  0]],
+    <BLANKLINE>
+           [[ 0,  0, -1],
+            [ 0,  0,  0],
+            [ 1,  0,  0]],
+    <BLANKLINE>
+           [[ 0,  1,  0],
+            [-1,  0,  0],
+            [ 0,  0,  0]]])},
+     'name': 'stefan'}
+    """
+    return _ReportInterface.__load_dict_from_hdf5__(filename)
 
 
 # http://codereview.stackexchange.com/a/121314
