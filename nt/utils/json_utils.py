@@ -11,7 +11,7 @@ class _NpEncoder(json.JSONEncoder):
         elif isinstance(obj, numpy.floating):
             return float(obj)
         # elif isinstance(obj, numpy.complex):
-        #     # ToDo: json serilize complex numbers in a better way
+        #     # ToDo: json serialize complex numbers in a better way
         #     # return {"Complex": [obj.real, obj.imag]}
         #     return '{: .3g} + j {:.3g}'.format(obj.real, obj.imag)
         #     #return str(obj) #{'complex': (obj.real, obj.imag)}
