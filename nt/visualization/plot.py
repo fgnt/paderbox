@@ -7,6 +7,14 @@ import nt.transform
 from warnings import warn
 from collections import OrderedDict
 from functools import wraps
+from chainer import Variable
+import warnings
+import inspect
+from nt.visualization import module_facet_grid
+
+
+class _ChainerVariableWarning(UserWarning):
+    pass
 
 
 def create_subplot(f):
@@ -72,6 +80,10 @@ def allow_dict_for_title(f):
 
 def _get_batch(signal, batch):
     if signal.ndim == 3:
+        assert signal.shape[1] < 20, 'Normally the batch size is smaller ' \
+                                     'than 20, therefore a value above 20 ' \
+                                     'seems to be wrong. Shape: ' \
+                                     '{}'.format(signal.shape)
         return signal[:, batch, :]
     elif signal.ndim == 2:
         return signal
@@ -264,6 +276,25 @@ def _time_frequency_plot(
     :param z_scale: how to scale the values ('linear', 'log', 'symlog' or instance of matplotlib.colors.Normalize)
     :return:
     """
+    if isinstance(signal, Variable):
+        frame = inspect.currentframe()
+        frame_origin = frame
+        for i in range(6):
+            if inspect.getfile(frame_origin.f_code) == __file__:
+                frame_origin = frame_origin.f_back
+            elif inspect.getfile(frame_origin.f_code) ==  module_facet_grid.__file__:
+                frame_origin = frame_origin.f_back
+            else:
+                break
+        warnings.warn_explicit('signal is a chainer.Variable. This is not '
+                               'supported, fallback to numpy. Source {}:{}'
+                               ''.format(inspect.getfile(frame_origin.f_code),
+                                         frame_origin.f_lineno),
+                               category=_ChainerVariableWarning,
+                               filename=inspect.getfile(frame.f_code),
+                               lineno=frame.f_lineno)
+        signal = signal.num
+
     signal = _get_batch(signal, batch)
 
     if np.any(signal < 0) and log:
