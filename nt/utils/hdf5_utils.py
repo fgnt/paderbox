@@ -1,20 +1,26 @@
 import numpy as np
 import h5py
 import os
+import warnings
+import io
 
 from nt.utils import AttrDict
 
-__all__ = ['hdf5_dump']
+__all__ = ['hdf5_dump', 'hdf5_update']
 
 
 def hdf5_dump(obj, filename, force=True):
     """
 
+    >>> from contextlib import redirect_stderr
+    >>> import sys
     >>> ex = {
     ...    'name': 'stefan',
     ...    'age':  np.int64(24),
     ...    'age2':  25,
     ...    'age3':  25j,
+    ...    'age4':  np.float32(24.2),
+    ...    'age5':  np.float64(24.2),
     ...    'fav_numbers': np.array([2,4,4.3]),
     ...    'fav_numbers2': [2,4,4.3],
     ...    'fav_numbers3': (2,4,4.3),
@@ -29,10 +35,26 @@ def hdf5_dump(obj, filename, force=True):
     ...        'kronecker2d': np.identity(3)
     ...    }
     ... }
-    >>> hdf5_dump(ex, 'tmp_foo.hdf5', True)
-
+    >>> with redirect_stderr(sys.stdout):
+    ...     hdf5_dump(ex, 'tmp_foo.hdf5', True)
+    >>> ex = {
+    ...    'fav_numbers4': {2,4,4.3}, # currently not supported
+    ...    'fav_numbers5': [[2], 1], # currently not supported
+    ... }
+    >>> with io.StringIO() as buf, redirect_stderr(buf):
+    ...     hdf5_dump(ex, 'tmp_foo.hdf5', True)
+    ...     s = buf.getvalue()
+    ...     assert 'Hdf5DumpWarning' in s
+    ...     assert 'fav_numbers4' in s
+    ...     assert 'fav_numbers5' in s
     """
     _ReportInterface.__save_dict_to_hdf5__(obj, filename, force=force)
+
+
+def hdf5_update(obj, filename):
+    """
+    """
+    _ReportInterface.__update_hdf5_from_dict__(obj, filename)
 
 
 def hdf5_load(filename):
@@ -88,6 +110,10 @@ def hdf5_load(filename):
     return _ReportInterface.__load_dict_from_hdf5__(filename)
 
 
+class Hdf5DumpWarning(UserWarning):
+    pass
+
+
 # http://codereview.stackexchange.com/a/121314
 class _ReportInterface(object):
 
@@ -98,6 +124,16 @@ class _ReportInterface(object):
             raise ValueError('File %s exists, will not overwrite.' % filename)
         with h5py.File(filename, 'w') as h5file:
             cls.__recursively_save_dict_contents_to_group__(h5file, '/', dic)
+
+    @classmethod
+    def __update_hdf5_from_dict__(cls, dic, filename):
+        """..."""
+        with h5py.File(filename, 'a') as h5file:
+            cls.__recursively_save_dict_contents_to_group__(h5file, '/', dic)
+
+    @classmethod
+    def _dump_warning(cls, msg):
+        warnings.warn(msg, Hdf5DumpWarning, stacklevel=2)
 
     @classmethod
     def __recursively_save_dict_contents_to_group__(cls, h5file, path, dic):
@@ -113,9 +149,14 @@ class _ReportInterface(object):
         for key, item in dic.items():
             cur_path = os.path.join(path, key)
             if not isinstance(key, str):
-                raise ValueError("dict keys must be strings to save to hdf5")
+                cls._dump_warning(
+                    "dict keys must be strings (and not {}) to save to hdf5. "
+                    "Skip this item."
+                    "".format(key)
+                )
+                continue
             # save strings, numpy.int64, and numpy.float64 types
-            if isinstance(item, (np.int64, np.float64,
+            if isinstance(item, (np.int64, np.float64, np.float32,
                                  str, complex, int, float)):
                 h5file[cur_path] = item
                 if not h5file[cur_path].value == item:
@@ -123,7 +164,16 @@ class _ReportInterface(object):
                                      'file does not match the original dict.')
             # save numpy arrays
             elif isinstance(item, (np.ndarray, list, tuple)):
-                h5file[cur_path] = item
+                try:
+                    h5file[cur_path] = item
+                except TypeError as e:
+                    cls._dump_warning(
+                        'Cannot save {} type for key {}. Error msg: {}. '
+                        'Skip this item.'
+                        ''.format(type(item), key, ' '.join(e.args))
+                    )
+                    continue
+
                 if not np.array_equal(h5file[cur_path].value, item):
                     raise ValueError('The data representation in the HDF5 '
                                      'file does not match the original dict.')
@@ -133,7 +183,11 @@ class _ReportInterface(object):
                     h5file, cur_path, item)
             # other types cannot be saved and will result in an error
             else:
-                raise ValueError('Cannot save %s type.' % type(item))
+                cls._dump_warning(
+                    'Cannot save {} type for key {}. Skip this item.'
+                    ''.format(type(item), key)
+                )
+                continue
 
     @classmethod
     def __load_dict_from_hdf5__(cls, filename):
