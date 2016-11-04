@@ -7,8 +7,30 @@ import os
 from nt.io.audioread import audioread
 
 
+class NamedAudio(Audio):
+    name = None
+
+    def _repr_html_(self):
+        autio_html = super()._repr_html_()
+
+        assert self.name is not None
+
+        return """
+        <table style="width:100%">
+            <tr>
+                <td>
+                    {}
+                </td>
+                <td>
+                    {}
+                </td>
+            </tr>
+        </table>
+        """.format(self.name, autio_html)
+
+
 def play(data, channel=0, rate=16000,
-         size=1024, shift=256, window=signal.blackman):
+         size=1024, shift=256, window=signal.blackman, *, name=None):
     """ Tries to guess, what the input data is. Plays time series and stft.
 
     Provides an easy to use interface to play back sound in an IPython Notebook.
@@ -21,8 +43,12 @@ def play(data, channel=0, rate=16000,
     :param size: STFT window size
     :param shift: STFT shift
     :param window: STFT analysis window
+    :param name: if name is set, then in ipynb table with name and audio is
+                 displayed
     :return:
     """
+    assert isinstance(channel, int)
+
     if isinstance(data, str):
         assert os.path.exists(data), 'File does not exist.'
         data = audioread(data, sample_rate=rate)
@@ -40,4 +66,11 @@ def play(data, channel=0, rate=16000,
     assert np.issubdtype(data.dtype, np.float)
     assert len(data.shape) == 1
 
-    display(Audio(data, rate=rate))
+    if name is None:
+        display(Audio(data, rate=rate))
+    else:
+        na = NamedAudio(data, rate=rate)
+        na.name = name
+        display(na)
+
+
