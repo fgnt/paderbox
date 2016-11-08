@@ -163,7 +163,7 @@ class _ReportInterface(object):
                     raise ValueError('The data representation in the HDF5 '
                                      'file does not match the original dict.')
             # save numpy arrays
-            elif isinstance(item, (np.ndarray, list, tuple)):
+            elif isinstance(item, (np.ndarray, tuple)):
                 try:
                     h5file[cur_path] = item
                 except TypeError as e:
@@ -181,6 +181,12 @@ class _ReportInterface(object):
             elif isinstance(item, dict):
                 cls.__recursively_save_dict_contents_to_group__(
                     h5file, cur_path, item)
+            # save lists
+            elif isinstance(item, list):
+                cls.__recursively_save_dict_contents_to_group__(
+                    h5file, cur_path + '_list',
+                    {'__{}'.format(k): v for k, v in enumerate(item)}
+                )
             # other types cannot be saved and will result in an error
             else:
                 cls._dump_warning(
