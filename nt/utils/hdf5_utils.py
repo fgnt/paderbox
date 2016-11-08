@@ -177,6 +177,11 @@ class _ReportInterface(object):
                 if not np.array_equal(h5file[cur_path].value, item):
                     raise ValueError('The data representation in the HDF5 '
                                      'file does not match the original dict.')
+            elif isinstance(item, h5py.SoftLink):
+                # allow SoftLink to be overwritten
+                if cur_path in h5file.keys():
+                    del h5file[cur_path]
+                h5file[cur_path] = item
             # save dictionaries
             elif isinstance(item, dict):
                 cls.__recursively_save_dict_contents_to_group__(
