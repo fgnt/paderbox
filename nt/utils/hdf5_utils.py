@@ -144,6 +144,7 @@ class _ReportInterface(object):
         if not isinstance(path, str):
             raise ValueError("path must be a string")
         if not isinstance(h5file, h5py._hl.files.File):
+            # TODO: This is true for closed h5 files, too.
             raise ValueError("must be an open h5py file")
         # save items to the hdf5 file
         for key, item in dic.items():
@@ -159,7 +160,9 @@ class _ReportInterface(object):
             if isinstance(item, (np.int64, np.float64, np.float32,
                                  str, complex, int, float)):
                 h5file[cur_path] = item
-                if not h5file[cur_path].value == item:
+
+                # NaN compares negative in Python.
+                if not h5file[cur_path].value == item and not np.isnan(item):
                     raise ValueError('The data representation in the HDF5 '
                                      'file does not match the original dict.')
             # save numpy arrays
