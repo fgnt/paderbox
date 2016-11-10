@@ -140,7 +140,8 @@ class _ReportInterface(object):
         """..."""
         # argument type checking
         if not isinstance(dic, dict):
-            raise ValueError("must provide a dictionary")
+            raise ValueError("must provide a dictionary, not "
+                             "{}".format(type(dict)))
         if not isinstance(path, str):
             raise ValueError("path must be a string")
         if not isinstance(h5file, h5py._hl.files.File):
@@ -158,11 +159,14 @@ class _ReportInterface(object):
                 continue
             # save strings, numpy.int64, and numpy.float64 types
             if isinstance(item, (np.int64, np.float64, np.float32,
+                                 np.complex64, np.complex128,
                                  str, complex, int, float)):
                 h5file[cur_path] = item
 
                 # NaN compares negative in Python.
-                if not h5file[cur_path].value == item and not np.isnan(item):
+                if not h5file[cur_path].value == item and \
+                        not np.isnan(item) and \
+                        not np.isnan(h5file[cur_path].value):
                     raise ValueError('The data representation in the HDF5 '
                                      'file does not match the original dict.')
             # save numpy arrays
@@ -176,8 +180,9 @@ class _ReportInterface(object):
                         ''.format(type(item), key, ' '.join(e.args))
                     )
                     continue
-
-                if not np.array_equal(h5file[cur_path].value, item):
+                try:
+                    np.testing.assert_equal(h5file[cur_path].value, item)
+                except AssertionError:
                     raise ValueError('The data representation in the HDF5 '
                                      'file does not match the original dict.')
             elif isinstance(item, h5py.SoftLink):
@@ -198,7 +203,7 @@ class _ReportInterface(object):
             # other types cannot be saved and will result in an error
             else:
                 cls._dump_warning(
-                    'Cannot save {} type for key {}. Skip this item.'
+                    'Cannot save {} type for key "{}". Skip this item.'
                     ''.format(type(item), key)
                 )
                 continue
