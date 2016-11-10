@@ -40,9 +40,10 @@ class TestHdf5:
         ('np inf', {'key': np.inf}, np.float64(np.inf)),
         ('np array nan inf', {'key': np.asarray([0, 1, np.nan, np.inf])},
          np.asarray([0, 1, np.nan, np.inf])),
-        ('list', {'key': [1.2, [3, 4]]}, [1.2, [3, 4]]),  # Note type is list
+        ('heterogenous list', {'key': [1.2, [3, 4]]},
+         [1.2, [3, 4]]),  # Note type is list
     ])
-    def test_noop_comma(self, name, data, expect):
+    def test_dump_load(self, name, data, expect):
         hdf5_dump(data, os.path.join(self.dir, 'test.hdf5'))
         data_load = hdf5_load(os.path.join(self.dir, 'test.hdf5'))
 
