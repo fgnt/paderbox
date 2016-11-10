@@ -9,6 +9,8 @@ from nt.utils import AttrDict
 __all__ = ['hdf5_dump', 'hdf5_update']
 
 
+
+
 def hdf5_dump(obj, filename, force=True):
     """
 
@@ -25,7 +27,7 @@ def hdf5_dump(obj, filename, force=True):
     ...    'fav_numbers2': [2,4,4.3],
     ...    'fav_numbers3': (2,4,4.3),
     ...    # 'fav_numbers4': {2,4,4.3}, # currently not supported
-    ...    # 'fav_numbers5': [[2], 1], # currently not supported
+    ...    'fav_numbers5': [[2], 1],
     ...    'fav_tensors': {
     ...        'levi_civita3d': np.array([
     ...            [[0,0,0],[0,0,1],[0,-1,0]],
@@ -39,14 +41,12 @@ def hdf5_dump(obj, filename, force=True):
     ...     hdf5_dump(ex, 'tmp_foo.hdf5', True)
     >>> ex = {
     ...    'fav_numbers4': {2,4,4.3}, # currently not supported
-    ...    'fav_numbers5': [[2], 1], # currently not supported
     ... }
     >>> with io.StringIO() as buf, redirect_stderr(buf):
     ...     hdf5_dump(ex, 'tmp_foo.hdf5', True)
     ...     s = buf.getvalue()
     ...     assert 'Hdf5DumpWarning' in s
     ...     assert 'fav_numbers4' in s
-    ...     assert 'fav_numbers5' in s
     """
     _ReportInterface.__save_dict_to_hdf5__(obj, filename, force=force)
 
@@ -69,7 +69,7 @@ def hdf5_load(filename):
     ...    'fav_numbers2': [2,4,4.3],
     ...    'fav_numbers3': (2,4,4.3),
     ...    # 'fav_numbers4': {2,4,4.3}, # currently not supported
-    ...    # 'fav_numbers5': [[2], 1], # currently not supported
+    ...    'fav_numbers5': [[2], 1], # currently not supported
     ...    'fav_tensors': {
     ...        'levi_civita3d': np.array([
     ...            [[0,0,0],[0,0,1],[0,-1,0]],
@@ -197,8 +197,8 @@ class _ReportInterface(object):
             # save lists
             elif isinstance(item, list):
                 cls.__recursively_save_dict_contents_to_group__(
-                    h5file, cur_path + '_list',
-                    {'__{}'.format(k): v for k, v in enumerate(item)}
+                    h5file, cur_path + "_<class 'list'>",
+                    {'{}'.format(k): v for k, v in enumerate(item)}
                 )
             # other types cannot be saved and will result in an error
             else:
@@ -217,10 +217,22 @@ class _ReportInterface(object):
 
     @classmethod
     def __recursively_load_dict_contents_from_group__(cls, h5file, path):
-        """..."""
+        """
+
+        >>> ex = {'key': [1, 2, 3]}
+        >>> hdf5_dump(ex, 'tmp_foo.hdf5', True)
+        >>> ex_load = hdf5_load('tmp_foo.hdf5')
+        >>> ex_load
+        {'key': [1, 2, 3]}
+        """
         ans = AttrDict()
         for key, item in h5file[path].items():
-            if isinstance(item, h5py._hl.dataset.Dataset):
+            if key.endswith("_<class 'list'>"):
+                tmp = cls.__recursively_load_dict_contents_from_group__(
+                    h5file, path + key + '/')
+                ans[key.rstrip("_<class 'list'>")] = \
+                    [value for (key, value) in sorted(tmp.items())]
+            elif isinstance(item, h5py._hl.dataset.Dataset):
                 ans[key] = item.value
             elif isinstance(item, h5py._hl.group.Group):
                 ans[key] = cls.__recursively_load_dict_contents_from_group__(
