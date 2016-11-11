@@ -18,7 +18,6 @@ class TestHdf5:
         self.dir = self._dir.__enter__()
         warnings.filterwarnings('error')
 
-
     def tearDown(self):
         self.dir = self._dir.__exit__(None, None, None)
 
@@ -33,7 +32,7 @@ class TestHdf5:
         ('np complex64', {'key': np.complex64(1.1j)}, np.complex64(1.1j)),
         ('np complex128', {'key': np.complex128(1.1j)}, np.complex128(1.1j)),
         ('np float64', {'key': np.float64(1.1)}, np.float64(1.1)),
-        # ('list', {'key': [1, 2, 3]}, np.array([1, 2, 3])),
+        ('list', {'key': [1, 2, 3]}, [1, 2, 3]),  # Note type is list
         ('tuple', {'key': (1, 2, 3)}, np.array([1, 2, 3])),
         # ('set', {'key': {1, 2, 3}}, {1, 2, 3}),
         ('array', {'key': np.array([1, 2, 3])}, np.array([1, 2, 3])),
@@ -41,8 +40,10 @@ class TestHdf5:
         ('np inf', {'key': np.inf}, np.float64(np.inf)),
         ('np array nan inf', {'key': np.asarray([0, 1, np.nan, np.inf])},
          np.asarray([0, 1, np.nan, np.inf])),
+        ('heterogenous list', {'key': [1.2, [3, 4]]},
+         [1.2, [3, 4]]),  # Note type is list
     ])
-    def test_noop_comma(self, name, data, expect):
+    def test_dump_load(self, name, data, expect):
         hdf5_dump(data, os.path.join(self.dir, 'test.hdf5'))
         data_load = hdf5_load(os.path.join(self.dir, 'test.hdf5'))
 
