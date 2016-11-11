@@ -72,5 +72,3 @@ def play(data, channel=0, rate=16000,
         na = NamedAudio(data, rate=rate)
         na.name = name
         display(na)
-
-
