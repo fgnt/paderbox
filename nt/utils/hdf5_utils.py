@@ -9,8 +9,6 @@ from nt.utils import AttrDict
 __all__ = ['hdf5_dump', 'hdf5_update']
 
 
-
-
 def hdf5_dump(obj, filename, force=True):
     """
 
@@ -230,7 +228,7 @@ class _ReportInterface(object):
             if key.endswith("_<class 'list'>"):
                 tmp = cls.__recursively_load_dict_contents_from_group__(
                     h5file, path + key + '/')
-                ans[key.rstrip("_<class 'list'>")] = \
+                ans[key[:-len("_<class 'list'>")]] = \
                     [value for (key, value) in sorted(tmp.items())]
             elif isinstance(item, h5py._hl.dataset.Dataset):
                 ans[key] = item.value
