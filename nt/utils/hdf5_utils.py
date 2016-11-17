@@ -6,7 +6,7 @@ import io
 
 from nt.utils import AttrDict
 
-__all__ = ['hdf5_dump', 'hdf5_update']
+__all__ = ['hdf5_dump', 'hdf5_update', 'hdf5_load']
 
 
 def hdf5_dump(obj, filename, force=True):
@@ -55,7 +55,7 @@ def hdf5_update(obj, filename):
     _ReportInterface.__update_hdf5_from_dict__(obj, filename)
 
 
-def hdf5_load(filename):
+def hdf5_load(filename, path='/'):
     """
 
     >>> ex = {
@@ -105,7 +105,12 @@ def hdf5_load(filename):
             [ 0,  0,  0]]])},
      'name': 'stefan'}
     """
-    return _ReportInterface.__load_dict_from_hdf5__(filename)
+    return _ReportInterface.__load_dict_from_hdf5__(filename, path=path)
+
+
+load_hdf5 = hdf5_load
+update_hdf5 = hdf5_update
+dump_hdf5 = hdf5_dump
 
 
 class Hdf5DumpWarning(UserWarning):
@@ -207,11 +212,11 @@ class _ReportInterface(object):
                 continue
 
     @classmethod
-    def __load_dict_from_hdf5__(cls, filename):
+    def __load_dict_from_hdf5__(cls, filename, path='/'):
         """..."""
         with h5py.File(filename, 'r') as h5file:
             return cls.__recursively_load_dict_contents_from_group__(
-                h5file, '/')
+                h5file, path)
 
     @classmethod
     def __recursively_load_dict_contents_from_group__(cls, h5file, path):
