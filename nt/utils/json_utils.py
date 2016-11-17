@@ -52,12 +52,7 @@ def load_json(*path_parts, **kwargs):
     :param kwargs: see json.load
     :return: content of the json file
     """
-
     path = os.path.join(*path_parts)
-
-    if not path.endswith('.json'):
-        path += '.json'
-
     path = os.path.expanduser(path)
 
     with open(path) as fid:
