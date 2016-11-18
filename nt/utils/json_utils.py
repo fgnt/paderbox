@@ -3,6 +3,7 @@ import os
 import numpy
 
 
+# TODO: Can be replaced by nt.io._Encoder?
 # http://stackoverflow.com/a/27050186
 class _NpEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -23,6 +24,7 @@ class _NpEncoder(json.JSONEncoder):
             return super().default(obj)
 
 
+# TODO: Can be replaced by nt.io.load_json
 def json_np_dump(obj, fp, *, indent=2, **kwargs):
     """
     Numpy types will be converted to the equivalent python type for dumping the
@@ -45,6 +47,7 @@ def json_np_dump(obj, fp, *, indent=2, **kwargs):
         json.dump(obj, fp, cls=_NpEncoder, indent=indent, **kwargs)
 
 
+# TODO: Can be replaced by nt.io.load_json
 def load_json(*path_parts, **kwargs):
     """ Loads a json file and returns it as a dict
 
@@ -159,6 +162,7 @@ def print_old_template():
           '....Flist_2\n')
 
 
+# TODO: May be removed or moved to nt.io
 def traverse_to_dict(data, path, delimiter='/'):
     """ Returns the dictionary at the end of the path defined by `path`
 
@@ -249,6 +253,7 @@ def get_channel_for_utt(flist, ch, utt):
     return val
 
 
+# TODO: Can be removed, because this is unused?
 def safe_dumps(dict_data):
     """ Writes a dict to a json, ignoring all type which cannot be serialized
 
@@ -275,6 +280,7 @@ def safe_dumps(dict_data):
     return _build_dict(dict_data)
 
 
+# TODO: Can be replaced by nt.io.dump_json
 def safe_dump(dict_data, fid):
     json.dump(safe_dumps(dict_data), fid, sort_keys=True, indent=2)
 

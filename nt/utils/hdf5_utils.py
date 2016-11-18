@@ -9,6 +9,7 @@ from nt.utils import AttrDict
 __all__ = ['hdf5_dump', 'hdf5_update', 'hdf5_load']
 
 
+# TODO: Can be moved to nt.io?
 def hdf5_dump(obj, filename, force=True):
     """
 
@@ -49,12 +50,14 @@ def hdf5_dump(obj, filename, force=True):
     _ReportInterface.__save_dict_to_hdf5__(obj, filename, force=force)
 
 
+# TODO: Can be moved to nt.io?
 def hdf5_update(obj, filename):
     """
     """
     _ReportInterface.__update_hdf5_from_dict__(obj, filename)
 
 
+# TODO: Can be moved to nt.io?
 def hdf5_load(filename, path='/'):
     """
 
@@ -113,10 +116,12 @@ update_hdf5 = hdf5_update
 dump_hdf5 = hdf5_dump
 
 
+# TODO: Can be moved to nt.io?
 class Hdf5DumpWarning(UserWarning):
     pass
 
 
+# TODO: Can be moved to nt.io?
 # http://codereview.stackexchange.com/a/121314
 class _ReportInterface(object):
 
