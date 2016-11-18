@@ -87,13 +87,16 @@ def seconds_to_samples(timestamp_in_seconds, sampling_rate):
 
 
 def get_targets_from_transcriptions(transcription_file, num_of_samples, events, scene, sampling_rate,
-                                    stretching_factor=1):
+                                    stretching_factor=1, silence=False):
     num_events = len(events)
     fid = open(transcription_file, 'r')
     lines = fid.read().split('\n')
     fid.close()
-    int_arr = np.zeros((num_of_samples, num_events + 1), dtype=np.int32)
-    dict_events = generate_transcription(events)
+    if silence:
+        int_arr = np.zeros((num_of_samples, num_events + 1), dtype=np.int32)
+    else:
+        int_arr = np.zeros((num_of_samples, num_events), dtype=np.int32)
+    dict_events = generate_transcription(events, silence)
 
     if scene == 'home':
         background, short_events, human_reflexes, water_activities, object_actions = get_home_garbageevents()
@@ -133,19 +136,25 @@ def get_targets_from_transcriptions(transcription_file, num_of_samples, events, 
     return int_arr
 
 
-def generate_transcription(events):
+def generate_transcription(events, silence=False):
     """
     Generates transcription from the provided events
     :param events: a list of events
+    :param silence: Whether to add 'silence' as a label or not.
     :return: a dictionary with labels as keys
     """
     label_to_int = dict()
     int_to_label = dict()
-    label_to_int['Silence'] = 0
-    int_to_label[0] = 'Silence'
-    for i in range(len(events)):
-        label_to_int[events[i]] = i + 1
-        int_to_label[i + 1] = events[i]
+    if silence:
+        label_to_int['Silence'] = 0
+        int_to_label[0] = 'Silence'
+        for i in range(len(events)):
+            label_to_int[events[i]] = i + 1
+            int_to_label[i + 1] = events[i]
+    else:
+        for i in range(len(events)):
+            label_to_int[events[i]] = i
+            int_to_label[i] = events[i]
     return label_to_int
 
 
