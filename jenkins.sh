@@ -5,7 +5,7 @@ renice -n 20 $$
 # set a prefix for each cmd
 green='\033[0;32m'
 NC='\033[0m' # No Color
-trap 'echo -e "${green}$ Error while executing $BASH_COMMAND ${NC}"' DEBUG
+trap 'echo -e "${green}$ $BASH_COMMAND ${NC}"' DEBUG
 
 # Force Exit 0
 trap 'exit 0' EXIT SIGINT SIGTERM
