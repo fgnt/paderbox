@@ -1,4 +1,3 @@
-import seaborn as sns
 import numpy as np
 import matplotlib.colors
 import matplotlib.pyplot as plt
@@ -11,6 +10,7 @@ from chainer import Variable
 import warnings
 import inspect
 from nt.visualization import module_facet_grid
+from nt.math.misc import softmax
 
 
 class _ChainerVariableWarning(UserWarning):
@@ -560,71 +560,11 @@ def plot_ctc_decode(decode, label_handler, ax=None, batch=0):
 
 
 @create_subplot
-def plot_nn_current_loss(status, ax=None):
-    plot = False
-
-    if len(status.loss_current_batch_training) > 1:
-        ax.plot(status.loss_current_batch_training,
-                label='training')
-        plot = True
-    if len(status.loss_current_batch_cv) > 1:
-        ax.plot(status.loss_current_batch_cv,
-                label='cross-validation')
-        plot = True
-    if plot:
-        ax.set_xlabel('Iterations')
-        ax.set_title('Batch loss')
-        plt.legend()
-    return ax
-
-
-@create_subplot
-def plot_nn_current_loss_distribution(status, ax=None):
-    plot = False
-
-    if len(status.loss_current_batch_training) > 10:
-        sns.distplot(status.loss_current_batch_training,
-                     label='training', ax=ax)
-        plot = True
-    if len(status.loss_current_batch_cv) > 10:
-        sns.distplot(status.loss_current_batch_cv,
-                     label='cross-validation', ax=ax)
-        plot = True
-    if plot:
-        ax.set_xlabel('Loss')
-        ax.set_title('Probability')
-        plt.legend()
-    return ax
-
-
-@create_subplot
-def plot_nn_current_timings_distribution(status, ax=None):
-    plot = False
-
-    if len(status.cur_time_forward) > 10:
-        sns.distplot(status.cur_time_forward,
-                     label='training forward', ax=ax)
-        plot = True
-    if len(status.cur_time_backprop) > 10:
-        sns.distplot(status.cur_time_backprop,
-                     label='training backprop', ax=ax)
-        plot = True
-    if len(status.cur_time_cv) > 10:
-        sns.distplot(status.cur_time_cv,
-                     label='cross-validation', ax=ax)
-        plot = True
-    if plot:
-        ax.set_xlabel('Time [ms]')
-        ax.set_title('Probability')
-        plt.legend()
-    return ax
-
-
-@create_subplot
 def plot_beampattern(W, sensor_positions, fft_size, sample_rate,
-                     source_angles=None, ax=None):
+                     source_angles=None, ax=None, resolution=360):
     if source_angles is None:
-        source_angles = numpy.arange(-numpy.pi, numpy.pi, 2 * numpy.pi / 360)
+        source_angles = numpy.arange(-numpy.pi, numpy.pi,
+                                     2 * numpy.pi / resolution)
         source_angles = numpy.vstack(
             [source_angles, numpy.zeros_like(source_angles)]
         )
@@ -635,11 +575,9 @@ def plot_beampattern(W, sensor_positions, fft_size, sample_rate,
     )
     s_vector = get_steering_vector(tdoa, fft_size, sample_rate)
 
-    B = numpy.zeros((fft_size // 2, source_angles.shape[1]))
-    for f in range(fft_size // 2):
-        for k in range(source_angles.shape[1]):
-            B[f, k] = numpy.abs(W[f].dot(s_vector[f, :, k])) ** 2 / \
-                      numpy.abs(W[f].dot(W[f])) ** 2
+    B = np.einsum('ab,bca->ac', W, s_vector) ** 2
+    B /= np.einsum('ab,ab->a', W, W.conj())[:, None]
+    B = np.abs(B)
 
     image = ax.imshow(10 * numpy.log10(B),
                       vmin=-10, vmax=10,
@@ -662,7 +600,7 @@ def plot_ctc_label_probabilities(net_out, ax=None, label_handler=None, batch=0):
     :param batch: Batch to plot
     """
     x = _get_batch(net_out, batch)
-    # x = softmax(x)
+    x = softmax(x)
     if label_handler is not None:
         ordered_map = OrderedDict(
             sorted(label_handler.int_to_label.items(), key=lambda t: t[1])
@@ -675,7 +613,7 @@ def plot_ctc_label_probabilities(net_out, ax=None, label_handler=None, batch=0):
         x[:, order].T,
         cmap='viridis', interpolation='none', aspect='auto'
     )
-    cbar = plt.colorbar(image, ax=ax)
+    _ = plt.colorbar(image, ax=ax)
 
     if label_handler is not None:
         plt.yticks(

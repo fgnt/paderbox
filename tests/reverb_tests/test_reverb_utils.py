@@ -1,14 +1,13 @@
 import unittest
 
+import nt.io.audioread as io
+import nt.reverb.reverb_utils as reverb_utils
+import nt.testing as tc
 import numpy as np
+import nt.reverb.scenario as scenario
 import scipy
 import scipy.signal
 from nose_parameterized import parameterized
-
-import nt.io.audioread as io
-import nt.reverb.reverb_utils as reverb_utils
-import nt.reverb.scenario as scenario
-import nt.testing as tc
 from nt.io.data_dir import testing as testing_dir
 from nt.utils.matlab import Mlab
 

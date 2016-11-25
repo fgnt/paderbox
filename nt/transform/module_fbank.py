@@ -56,22 +56,29 @@ def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
     time_signal = preemphasis_with_offset_compensation(
         time_signal, preemphasis_factor)
 
-    stft_signal = stft(time_signal, size=stft_size, shift=stft_shift,
-                       window=window, window_length=window_length, fading=False)
+    stft_signal = stft(
+        time_signal,
+        size=stft_size, shift=stft_shift,
+        window=window, window_length=window_length,
+        fading=False
+    )
 
     spectrogram = stft_to_spectrogram(stft_signal) / stft_size
 
     if use_librosa_mel:
-        filterbanks = librosa.filters.mel(sample_rate, stft_size,
-                                          number_of_filters,
-                                          fmin=lowest_frequency,
-                                          fmax=highest_frequency,
-                                          htk=use_htk_mel)
+        filterbanks = librosa.filters.mel(
+            sample_rate, stft_size, number_of_filters,
+            fmin=lowest_frequency,
+            fmax=highest_frequency,
+            htk=use_htk_mel
+        )
         if not energy_normalization:
             filterbanks /= numpy.max(filterbanks, axis=1, keepdims=True)
     else:
-        filterbanks = get_filterbanks(number_of_filters, stft_size, sample_rate,
-                                      lowest_frequency, highest_frequency)
+        filterbanks = get_filterbanks(
+            number_of_filters, stft_size, sample_rate,
+            lowest_frequency, highest_frequency
+        )
 
     # compute the filterbank energies
     feature = numpy.dot(spectrogram, filterbanks.T)
@@ -115,7 +122,7 @@ def get_filterbanks(number_of_filters=20, nfft=1024, sample_rate=16000,
     bin = numpy.floor((nfft + 1) * mel2hz(melpoints) / sample_rate)
 
     assert numpy.mod(nfft, 2) == 0
-    fbank = numpy.zeros([number_of_filters, nfft//2+1])
+    fbank = numpy.zeros([number_of_filters, nfft // 2 + 1])
     for j in range(0, number_of_filters):
         for i in range(int(bin[j]), int(bin[j + 1])):
             fbank[j, i] = (i - bin[j]) / (bin[j + 1] - bin[j])

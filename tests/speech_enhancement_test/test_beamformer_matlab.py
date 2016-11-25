@@ -12,7 +12,7 @@ from nt.speech_enhancement.beamformer import get_pca_vector
 from nt.speech_enhancement.beamformer import get_power_spectral_density_matrix
 from nt.speech_enhancement.mask_module import biased_binary_mask, \
     wiener_like_mask
-from nt.utils.math_ops import vector_H_vector
+from nt.math.vector import vector_H_vector
 from nt.utils.matlab import Mlab
 
 

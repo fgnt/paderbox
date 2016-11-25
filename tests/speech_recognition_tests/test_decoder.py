@@ -1,10 +1,11 @@
-import unittest
-import numpy as np
-from nt.speech_recognition.decoder import Decoder
-from nt.speech_recognition.utils.utils import write_lattice_file, argmax_decode
-from chainer import Variable
 import sys
+import unittest
+
+import numpy as np
+from chainer import Variable
 from nt.io.data_dir import testing as data_dir
+from nt.speech_recognition.utils.utils import write_lattice_file, argmax_decode
+from nt.TODO.kaldi.decoder import Decoder
 
 sys.path.append(data_dir('speech_recognition'))
 from model import BLSTMModel
@@ -12,7 +13,7 @@ import os
 import tempfile
 from nt.transcription_handling.lexicon_handling import *
 from nt.transcription_handling.transcription_handler import \
-    TranscriptionHandler, LabelHandler
+    LabelHandler
 
 
 class TestDecoder(unittest.TestCase):

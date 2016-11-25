@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import nt.testing as tc
-from nt.utils.math_ops import covariance
+from nt.math.correlation import covariance
 
 def rand(*shape, data_type=np.float64):
     if not shape:

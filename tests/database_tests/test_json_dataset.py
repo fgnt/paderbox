@@ -1,9 +1,8 @@
 import unittest
 
 import numpy as np
-
-from nt.database.json_dataset import ContextUtteranceJsonCallbackDataset
-from nt.database.json_dataset import UtteranceJsonCallbackDataset
+from chainer.dataset.json_dataset import ContextUtteranceJsonCallbackDataset
+from chainer.dataset.json_dataset import UtteranceJsonCallbackDataset
 from chainer.iterators.serial_iterator import SerialIterator
 
 _chime_json = '/net/storage/database_jsons/chime_new_template.json'

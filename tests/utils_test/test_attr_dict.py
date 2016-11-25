@@ -1,10 +1,10 @@
-from nt.utils import Container
+from nt.utils import AttrDict
 import unittest
 
 class ContainerTest(unittest.TestCase):
 
     def setUp(self):
-        self.c = Container()
+        self.c = AttrDict()
 
     def test_add_items(self):
         self.c.a1 = 1

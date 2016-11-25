@@ -256,7 +256,7 @@ class NoiseGeneratorSpherical(NoiseGeneratorTemplate):
         Example:
 
         >>> import nt.evaluation.sxr as sxr, numpy
-        >>> from nt.utils.math_ops import sph2cart
+        >>> from nt.math.vector import sph2cart
         >>> time_signal = numpy.random.randn(1000, 3)
         >>> x1,y1,z1 = sph2cart(0,0,0.1)    # Sensor position 1
         >>> x2,y2,z2 = sph2cart(0,0,0.2)    # Sensor position 2
@@ -287,50 +287,6 @@ class NoiseGeneratorSpherical(NoiseGeneratorTemplate):
 
         noise_signal = _sinf_3D_py(self.sensor_positions, shape[self.sample_axis])
         return noise_signal.T
-
-
-# class NoiseGeneratorMix:
-#     """
-#
-#     Example:
-#
-#     >>> import nt.evaluation.sxr as sxr
-#     >>> time_signal = numpy.random.randn(1000)
-#     >>> n_gens = [NoiseGeneratorWhite(), NoiseGeneratorPink()]
-#     >>> n_gen = NoiseGeneratorMix(n_gens, max_different_types=2)
-#     >>> n = n_gen.get_noise_for_signal(time_signal, 20)
-#     >>> SDR, SIR, SNR = sxr.input_sxr(time_signal[:, None, None], n[:, None, None])
-#     >>> SNR
-#     20.0
-#
-#
-#     """
-#
-#     def __init__(self, noise_generators, max_different_types=1, probabilities=None):
-#         self.noise_generators = noise_generators
-#         for n in noise_generators:
-#             assert isinstance(n, NoiseGeneratorTemplate)
-#         self.max_different_types = max_different_types
-#         if probabilities:
-#             self.probabilities = probabilities / sum(probabilities)
-#         else:
-#             self.probabilities = numpy.ones(len(noise_generators)) * 1 / len(noise_generators)
-#
-#     def get_noise_for_signal(self, time_signal, snr, seed=None, **kwargs):
-#
-#         numpy.random.seed(seed=seed)
-#         # replace = True ; Ziehen mit zurücklegen
-#         # replace = False ; Ziehen ohne zurücklegen
-#         noise_idx = numpy.random.choice(len(self.noise_generators), self.max_different_types, replace=True,
-#                                         p=self.probabilities)
-#
-#         noise = numpy.sum(numpy.stack(
-#             [self.noise_generators[i].get_noise_for_signal(time_signal, snr, seed, **kwargs) for i in noise_idx],
-#             axis=0), axis=0) / len(noise_idx)
-#
-#         set_snr(time_signal, noise, snr)
-#
-#         return noise
 
 
 if __name__ == "__main__":

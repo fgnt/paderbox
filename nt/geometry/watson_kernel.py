@@ -4,14 +4,14 @@ from nt.speech_enhancement.beamform_utils import get_stft_center_frequencies
 from nt.speech_enhancement.beamform_utils import get_steering_vector
 
 
-def watson_kernel_new(
+def watson_kernel_doa_estimation(
         Y, true_src_pos, source_positions, sensor_positions,
         filter_length, sample_rate, stft_size, room_Dim, T60
 ):
     """
     Generates the Complex Watson Kernel averaged PDF
 
-    :param roomDim 3-floats-sequence; The room dimensions in meters
+    :param room_Dim 3-floats-sequence; The room dimensions in meters
     :param true_src_pos with shape [1, 3]
     :param sensor_positions List of 3-floats (#sensors). The sensor
         positions in meter within room dimensions.
