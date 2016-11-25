@@ -240,4 +240,6 @@ class _ReportInterface(object):
             elif isinstance(item, h5py._hl.group.Group):
                 ans[key] = cls.__recursively_load_dict_contents_from_group__(
                     h5file, path + key + '/')
+            else:
+                raise TypeError(type(item))
         return ans
