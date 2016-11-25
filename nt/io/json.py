@@ -1,9 +1,10 @@
 import json
-import os
 import numpy as np
 import bson
 import datetime
 from chainer import Variable
+from pathlib import Path
+
 
 # http://stackoverflow.com/a/27050186
 class _Encoder(json.JSONEncoder):
@@ -23,37 +24,35 @@ class _Encoder(json.JSONEncoder):
         else:
             return super().default(obj)
 
+
 def dump_json(obj, path, *, indent=2, **kwargs):
     """
-    Numpy types will be converted to the equivalent python type for dumping the
-    obj.
+    Numpy types will be converted to the equivalent Python type for dumping the
+    object.
 
-    :param obj: arbitary object that is json serializable, where numpy is
-                allowed
-    :param path:
-    :param indent: see json.dump
-    :param kwargs: see json.dump
+    :param obj: Arbitrary object that is JSON serializable,
+        where Numpy is allowed.
+    :param path: String or ``pathlib.Path`` object.
+    :param indent: See ``json.dump()``.
+    :param kwargs: See ``json.dump()``.
 
     """
-    if isinstance(path, (tuple, list)) and isinstance(path[0], str):
-        path = os.path.join(path)
+    assert isinstance(path, (str, Path))
+    path = Path(path)
 
-    if isinstance(path, str):
-        with open(path, 'w') as f:
-            json.dump(obj, f, cls=_Encoder, indent=indent, **kwargs)
-    else:
-        json.dump(obj, path, cls=_Encoder, indent=indent, **kwargs)
+    with open(path, 'w') as f:
+        json.dump(obj, f, cls=_Encoder, indent=indent, **kwargs)
 
 
-def load_json(*path_parts, **kwargs):
-    """ Loads a json file and returns it as a dict
+def load_json(path, **kwargs):
+    """ Loads a JSON file and returns it as a dict.
 
-    :param path_parts: Json file name and possible parts of a path
-    :param kwargs: see json.load
-    :return: content of the json file
+    :param path: String or ``pathlib.Path`` object.
+    :param kwargs: See ``json.dump()``.
+    :return: Content of the JSON file.
     """
-    path = os.path.join(*path_parts)
-    path = os.path.expanduser(path)
+    assert isinstance(path, (str, Path))
+    path = Path(path)
 
-    with open(path) as fid:
+    with path.open() as fid:
         return json.load(fid, **kwargs)
