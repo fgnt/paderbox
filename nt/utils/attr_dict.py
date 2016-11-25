@@ -5,6 +5,7 @@ class AttrDict(dict):
     Source code: http://stackoverflow.com/a/14620633
 
     """
+
     def __init__(self, *args, **kwargs):
         super(AttrDict, self).__init__(*args, **kwargs)
         self.__dict__ = self
