@@ -40,7 +40,7 @@ def dump_json(obj, path, *, indent=2, **kwargs):
     assert isinstance(path, (str, Path))
     path = Path(path)
 
-    with open(path, 'w') as f:
+    with path.open('w') as f:
         json.dump(obj, f, cls=_Encoder, indent=indent, **kwargs)
 
 
