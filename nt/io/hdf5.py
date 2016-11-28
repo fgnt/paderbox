@@ -5,6 +5,7 @@ import warnings
 import h5py
 import numpy as np
 from nt.utils import AttrDict
+from natsort import natsorted
 
 __all__ = ['dump_hdf5', 'update_hdf5', 'load_hdf5']
 
@@ -228,13 +229,13 @@ class _ReportInterface(object):
                 tmp = cls.__recursively_load_dict_contents_from_group__(
                     h5file, path + key + '/')
                 ans[key[:-len("_<class 'list'>")]] = \
-                    [value for (key, value) in sorted(tmp.items())]
+                    [value for (key, value) in natsorted(tmp.items())]
             # Support old format
             elif key.endswith("_list"):
                 tmp = cls.__recursively_load_dict_contents_from_group__(
                     h5file, path + key + '/')
                 ans[key.rstrip("_list")] = \
-                    [value for (key, value) in sorted(tmp.items())]
+                    [value for (key, value) in natsorted(tmp.items())]
             elif isinstance(item, h5py._hl.dataset.Dataset):
                 ans[key] = item.value
             elif isinstance(item, h5py._hl.group.Group):
