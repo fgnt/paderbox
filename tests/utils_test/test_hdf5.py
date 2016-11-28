@@ -41,6 +41,8 @@ class TestHdf5:
          np.asarray([0, 1, np.nan, np.inf])),
         ('heterogenous list', {'key': [1.2, [3, 4]]},
          [1.2, [3, 4]]),  # Note type is list
+        ('large list', {'key': list(range(100, 0, -1))},
+         list(range(100, 0, -1))),  # Note type is list, test if sort correct
     ])
     def test_dump_load(self, name, data, expect):
         dump_hdf5(data, os.path.join(self.dir, 'test.hdf5'))

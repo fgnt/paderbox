@@ -115,6 +115,7 @@ class Hdf5DumpWarning(UserWarning):
 
 # http://codereview.stackexchange.com/a/121314
 class _ReportInterface(object):
+
     @classmethod
     def __save_dict_to_hdf5__(cls, dic, filename, force=False):
         """..."""
@@ -229,13 +230,15 @@ class _ReportInterface(object):
                 tmp = cls.__recursively_load_dict_contents_from_group__(
                     h5file, path + key + '/')
                 ans[key[:-len("_<class 'list'>")]] = \
-                    [value for (key, value) in natsorted(tmp.items())]
+                    [value for (key, value) in sorted(tmp.items(),
+                                                      key=lambda x: int(x[0]))]
             # Support old format
             elif key.endswith("_list"):
                 tmp = cls.__recursively_load_dict_contents_from_group__(
                     h5file, path + key + '/')
                 ans[key.rstrip("_list")] = \
-                    [value for (key, value) in natsorted(tmp.items())]
+                    [value for (key, value) in sorted(tmp.items(),
+                                                      key=lambda x: int(x[0]))]
             elif isinstance(item, h5py._hl.dataset.Dataset):
                 ans[key] = item.value
             elif isinstance(item, h5py._hl.group.Group):
