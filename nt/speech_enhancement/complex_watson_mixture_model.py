@@ -1,12 +1,12 @@
-import math
 import functools
+import math
 
 import numpy as np
-from nt.speech_enhancement import bss
 from nt.speech_enhancement.beamformer import get_pca
 from nt.speech_enhancement.beamformer import get_power_spectral_density_matrix
 from nt.transform import get_stft_center_frequencies
 from nt.utils.numpy_utils import reshape
+from nt.TODO import bss
 from scipy.interpolate import interp1d
 from scipy.special import hyp1f1
 
@@ -139,7 +139,7 @@ def initialize(initialization, Y_normalized, mixture_components, rng_state):
 
 class ComplexWatson:
     """
-    >>> from nt.speech_enhancement import bss
+    >>> from os.TODO import bss
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> scales = [

@@ -3,8 +3,7 @@ import unittest
 
 import h5py
 import numpy as np
-
-from nt.database.hdf5_dataset import UtteranceHDF5Dataset
+from chainer.dataset.hdf5_dataset import UtteranceHDF5Dataset
 from chainer.iterators.serial_iterator import SerialIterator
 
 
@@ -44,7 +43,7 @@ class TestUtteranceHDF5Dataset(unittest.TestCase):
             grp.create_dataset('4d', data=_get_data(4))
 
         self.dataset = UtteranceHDF5Dataset(
-            hdf5_file='/tmp/h5_testing_file',
+            hdf5_file='/tmp/h5_testing_file.h5',
             path='testing',
             data_list=['0d', '3d', '4d']
         )

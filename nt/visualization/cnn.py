@@ -1,5 +1,5 @@
 from itertools import product, combinations
-from mpl_toolkits.mplot3d import Axes3D
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -40,7 +40,7 @@ class CNNVisu:
         >>> n.visu(layer_names=None) # without layernames
     """
 
-    def __init__(self, img_h, img_w,  mod_list):
+    def __init__(self, img_h, img_w, mod_list):
         self.img_h = img_h
         self.img_w = img_w
         self.mod_list = mod_list
@@ -48,7 +48,8 @@ class CNNVisu:
         if mod_list[0].__class__.__name__ == "Convolution2D":
             self.conv2d = True
 
-    def _add_text(self, ax, d, h, w, xcenter,layer_names=None, pooling=None, color='blue'):
+    def _add_text(self, ax, d, h, w, xcenter, layer_names=None, pooling=None,
+                  color='blue'):
         """ Creates textinformations about cubes
 
         :param ax: matplotlib figure
@@ -62,27 +63,39 @@ class CNNVisu:
         :return: No output
         """
         if d > 1:
-            ax.text(-d/2+xcenter, 0, -h/2, "%d" % w, size='medium', color=color, horizontalalignment="center")
-            ax.text(-d/2+xcenter, w/2, 0, "%d" % h, size='medium', color=color, horizontalalignment="center")
-            ax.text(xcenter, -w/2, -h/2-5, "%d" % d, size='medium', color=color, horizontalalignment="center")
+            ax.text(-d / 2 + xcenter, 0, -h / 2, "%d" % w, size='medium',
+                    color=color, horizontalalignment="center")
+            ax.text(-d / 2 + xcenter, w / 2, 0, "%d" % h, size='medium',
+                    color=color, horizontalalignment="center")
+            ax.text(xcenter, -w / 2, -h / 2 - 5, "%d" % d, size='medium',
+                    color=color, horizontalalignment="center")
             if layer_names is not None:
-                sgn = layer_names[3]%2*2-1
+                sgn = layer_names[3] % 2 * 2 - 1
                 if pooling is None:
                     if layer_names[3] > 0:
-                        ax.text(xcenter, -w/2, sgn*h/2+sgn*20, "convolution\nlayer %d" % layer_names[0],
-                                size='medium', color="green", horizontalalignment="center")
+                        ax.text(xcenter, -w / 2, sgn * h / 2 + sgn * 20,
+                                "convolution\nlayer %d" % layer_names[0],
+                                size='medium', color="green",
+                                horizontalalignment="center")
                     else:
-                        ax.text(xcenter, -w/2, -h/2-20, "input\nlayer", size='medium', color="green",
+                        ax.text(xcenter, -w / 2, -h / 2 - 20, "input\nlayer",
+                                size='medium', color="green",
                                 horizontalalignment="center")
                 elif pooling is "max":
-                    ax.text(xcenter, -w/2, sgn*h/2+sgn*20, "%s-pooling\nlayer %d" % (pooling,layer_names[1]),
-                            size='medium', color="green", horizontalalignment="center")
+                    ax.text(xcenter, -w / 2, sgn * h / 2 + sgn * 20,
+                            "%s-pooling\nlayer %d" % (pooling, layer_names[1]),
+                            size='medium', color="green",
+                            horizontalalignment="center")
                 elif pooling is "avg":
-                    ax.text(xcenter, -w/2, sgn*h/2+sgn*20, "%s-pooling\nlayer %d" % (pooling,layer_names[2]),
-                    size='medium', color="green", horizontalalignment="center")
+                    ax.text(xcenter, -w / 2, sgn * h / 2 + sgn * 20,
+                            "%s-pooling\nlayer %d" % (pooling, layer_names[2]),
+                            size='medium', color="green",
+                            horizontalalignment="center")
         else:
-            ax.text(xcenter, 0, -h/2, "%d" % w, size='small', color=color, horizontalalignment="center")
-            ax.text(xcenter, w/2, 0, "%d" % h, size='small', color=color, horizontalalignment="center")
+            ax.text(xcenter, 0, -h / 2, "%d" % w, size='small', color=color,
+                    horizontalalignment="center")
+            ax.text(xcenter, w / 2, 0, "%d" % h, size='small', color=color,
+                    horizontalalignment="center")
 
     def _conv_area(self, ax, d_out, filter_size, xcenter_in, xcenter_out):
         """ Visualisation of area that gets filtered
@@ -94,22 +107,22 @@ class CNNVisu:
         :param xcenter_out: cube-center of output cube
         :return: No output
         """
-        fs_h = filter_size[0]/2
-        fs_w = filter_size[1]/2
+        fs_h = filter_size[0] / 2
+        fs_w = filter_size[1] / 2
         z = np.linspace(fs_h, 0, 100)
-        x = np.linspace(xcenter_in, xcenter_out-d_out, 100)
+        x = np.linspace(xcenter_in, xcenter_out - d_out, 100)
         y = np.linspace(fs_w, 0, 100)
         ax.plot(x, y, z, color="r", linestyle=':')
         z = np.linspace(-fs_h, 0, 100)
-        x = np.linspace(xcenter_in, xcenter_out-d_out, 100)
+        x = np.linspace(xcenter_in, xcenter_out - d_out, 100)
         y = np.linspace(-fs_w, 0, 100)
         ax.plot(x, y, z, color="r", linestyle=':')
         z = np.linspace(-fs_h, 0, 100)
-        x = np.linspace(xcenter_in, xcenter_out-d_out, 100)
+        x = np.linspace(xcenter_in, xcenter_out - d_out, 100)
         y = np.linspace(fs_w, 0, 100)
         ax.plot(x, y, z, color="r", linestyle=':')
         z = np.linspace(fs_h, 0, 100)
-        x = np.linspace(xcenter_in, xcenter_out-d_out, 100)
+        x = np.linspace(xcenter_in, xcenter_out - d_out, 100)
         y = np.linspace(-fs_w, 0, 100)
         ax.plot(x, y, z, color="r", linestyle=':')
 
@@ -130,9 +143,10 @@ class CNNVisu:
         y = np.linspace(-fs_w, fs_w, 100)
         ax.plot(x, y, z, color="r")
 
-        self._add_text(ax, 1, fs_h*2, fs_w*2, xcenter_in, color='darkred')
+        self._add_text(ax, 1, fs_h * 2, fs_w * 2, xcenter_in, color='darkred')
 
-    def _layer(self, ax, xcenter, d_min, d_out, filter_size, w_out, h_out, layer_names, pooling=None):
+    def _layer(self, ax, xcenter, d_min, d_out, filter_size, w_out, h_out,
+               layer_names, pooling=None):
         """ Generates cubevisualisation of new layer.
 
         :param ax: matplotlib figure
@@ -146,25 +160,28 @@ class CNNVisu:
         :param pooling: poolinglayer or not
         :return: depth of generated cube, center of generated cube
         """
-        d_out = d_out/2
-        w_out = w_out/2
-        h_out = h_out/2
+        d_out = d_out / 2
+        w_out = w_out / 2
+        h_out = h_out / 2
         depth = [-d_out, d_out]
         width = [-w_out, w_out]
         height = [-h_out, h_out]
-        center = [xcenter+d_min/2+50, 0, 0]
-        self._add_text(ax, d_out*2, h_out*2, w_out*2, center[0],layer_names, pooling=pooling)
-        for s, e in combinations(np.array(list(product(depth, width, height))), 2):
-            s = np.array(center)+np.array(s)
-            e = np.array(center)+np.array(e)
-            if np.linalg.norm(s-e) == 2*depth[1] or np.linalg.norm(s-e) == 2*width[1] \
-                    or np.linalg.norm(s-e) == 2*height[1]:
+        center = [xcenter + d_min / 2 + 50, 0, 0]
+        self._add_text(ax, d_out * 2, h_out * 2, w_out * 2, center[0],
+                       layer_names, pooling=pooling)
+        for s, e in combinations(np.array(list(product(depth, width, height))),
+                                 2):
+            s = np.array(center) + np.array(s)
+            e = np.array(center) + np.array(e)
+            if np.linalg.norm(s - e) == 2 * depth[1] or np.linalg.norm(
+                            s - e) == 2 * width[1] \
+                    or np.linalg.norm(s - e) == 2 * height[1]:
                 ax.plot3D(*zip(s, e), color="k", alpha=0.2)
         self._conv_area(ax, d_out, filter_size, xcenter, center[0])
-        d_in = d_out*2
+        d_in = d_out * 2
         return d_in, center[0]
 
-    def visu(self, layer_names = [0,0,0,0]):
+    def visu(self, layer_names=[0, 0, 0, 0]):
         """
 
         :param layer_names: (#conv, #max-pool, #avg-pool, #layer) or None if layernames not needed
@@ -180,18 +197,20 @@ class CNNVisu:
             d = self.mod_list[0].in_channels
         else:
             d = self.mod_list[0].W.data.shape[1]
-        depth = [-d/2, d/2]  # x-Axis
-        width = [-w/2, w/2]  # y-Axis
-        height = [-h/2, h/2]  # z-Axis
+        depth = [-d / 2, d / 2]  # x-Axis
+        width = [-w / 2, w / 2]  # y-Axis
+        height = [-h / 2, h / 2]  # z-Axis
         center = [0, 0, 0]
         xcenter = center[0]  # center of cube on x-Axis
         # create first layer/ input img:
         self._add_text(ax, d, h, w, center[0], layer_names)
-        for s, e in combinations(np.array(list(product(depth, width, height))), 2):
-            s = np.array(center)+np.array(s)
-            e = np.array(center)+np.array(e)
-            if np.linalg.norm(s-e) == 2*depth[1] or np.linalg.norm(s-e) == 2*width[1] \
-                    or np.linalg.norm(s-e) == 2*height[1]:
+        for s, e in combinations(np.array(list(product(depth, width, height))),
+                                 2):
+            s = np.array(center) + np.array(s)
+            e = np.array(center) + np.array(e)
+            if np.linalg.norm(s - e) == 2 * depth[1] or np.linalg.norm(
+                            s - e) == 2 * width[1] \
+                    or np.linalg.norm(s - e) == 2 * height[1]:
                 ax.plot3D(*zip(s, e), color="k", alpha=0.2)
 
         # create following layers/ convolution- and poolinglayers:
@@ -206,19 +225,21 @@ class CNNVisu:
                 d_in = module.W.data.shape[1]
                 filter_size = (module.W.data.shape[2], module.W.data.shape[3])
                 pooling = None
-            h, w = module.calc_output_size(h, w)
+            h, w = module._calc_cnn_output_size(h, w)
             if layer_names is not None:
                 if pooling is None:
-                    layer_names[0] = layer_names[0]+1
-                    layer_names[3] = layer_names[3]+1
+                    layer_names[0] = layer_names[0] + 1
+                    layer_names[3] = layer_names[3] + 1
                 elif pooling is "max":
-                    layer_names[1] = layer_names[1]+1
-                    layer_names[3] = layer_names[3]+1
+                    layer_names[1] = layer_names[1] + 1
+                    layer_names[3] = layer_names[3] + 1
                 else:
-                    layer_names[2] = layer_names[2]+1
-                    layer_names[3] = layer_names[3]+1
-            d, xcenter = self._layer(ax, xcenter, d_in+d_out, d_out, filter_size,
-                                     w_out=w, h_out=h, layer_names=layer_names, pooling=pooling)
+                    layer_names[2] = layer_names[2] + 1
+                    layer_names[3] = layer_names[3] + 1
+            d, xcenter = self._layer(ax, xcenter, d_in + d_out, d_out,
+                                     filter_size,
+                                     w_out=w, h_out=h, layer_names=layer_names,
+                                     pooling=pooling)
 
         ax.set_xlabel('X axis')
         plt.xticks([])

@@ -1,5 +1,3 @@
-__author__ = 'walter'
-
 import operator
 import numpy as np
 from nt.utils.dtw import dtw

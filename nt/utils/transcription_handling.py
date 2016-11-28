@@ -235,7 +235,7 @@ class EventLabelHandler(object):
 
     """
 
-    def __init__(self, events, stft_size=512, stft_shift=160, silence=False):
+    def __init__(self, events, stft_size=512, stft_shift=160):
         self.label_to_int = dict()
         self.int_to_label = dict()
 
@@ -244,16 +244,11 @@ class EventLabelHandler(object):
 
         # set up mapping dictionaries
         # add a Label for Silence First and fixate the event labels with integers
-        if silence:
-            self.label_to_int['Silence'] = 0
-            self.int_to_label[0] = 'Silence'
-            for i in range(len(events)):
-                self.label_to_int[events[i]] = i + 1
-                self.int_to_label[i + 1] = events[i]
-        else:
-            for i in range(len(events)):
-                self.label_to_int[events[i]] = i
-                self.int_to_label[i] = events[i]
+        self.label_to_int['Silence'] = 0
+        self.int_to_label[0] = 'Silence'
+        for i in range(len(events)):
+            self.label_to_int[events[i]] = i + 1
+            self.int_to_label[i + 1] = events[i]
 
     def label_seq_to_int_arr(self, transcription, resampling_factor):
         # for event detection (polyphonic) it is assumed that the transcription is list of

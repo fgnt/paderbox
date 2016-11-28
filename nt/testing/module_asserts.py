@@ -4,7 +4,7 @@ This file contains the STFT function and related helper functions.
 import numpy as np
 from numpy.testing.utils import assert_array_compare, assert_array_less
 import operator
-from nt.utils.math_ops import normalize_vector_to_unit_length, vector_H_vector
+from nt.math.vector import normalize_vector_to_unit_length, vector_H_vector
 
 """
 This is a copy of numpy.testing.assert_array_less.

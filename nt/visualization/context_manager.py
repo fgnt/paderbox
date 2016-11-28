@@ -8,7 +8,7 @@ import platform
 import os
 from os import path
 from nt.visualization.new_cm import cmaps
-from nt.utils import mkdir_p
+from nt.io.file_handling import mkdir_p
 
 
 mpl_ge_150 = LooseVersion(mpl.__version__) >= '1.5.0'
@@ -49,7 +49,7 @@ class LatexContextManager(object):
             filename,
             export_type=None,  # eps recomented (alternative pdf), because pdf is in Inkscape 0.91 r not working
             build_folder=None,
-            figure_size=[8.0, 6.0],
+            figure_size=(8.0, 6.0),
             formatter=None,
             format_x=True,
             format_y=True,

@@ -1,15 +1,16 @@
-import numpy as np
-import h5py
+import io
 import os
 import warnings
-import io
 
+import h5py
+import numpy as np
 from nt.utils import AttrDict
+from natsort import natsorted
 
-__all__ = ['hdf5_dump', 'hdf5_update']
+__all__ = ['dump_hdf5', 'update_hdf5', 'load_hdf5']
 
 
-def hdf5_dump(obj, filename, force=True):
+def dump_hdf5(obj, filename, force=True):
     """
 
     >>> from contextlib import redirect_stderr
@@ -36,12 +37,12 @@ def hdf5_dump(obj, filename, force=True):
     ...    }
     ... }
     >>> with redirect_stderr(sys.stdout):
-    ...     hdf5_dump(ex, 'tmp_foo.hdf5', True)
+    ...     dump_hdf5(ex, 'tmp_foo.hdf5', True)
     >>> ex = {
     ...    'fav_numbers4': {2,4,4.3}, # currently not supported
     ... }
     >>> with io.StringIO() as buf, redirect_stderr(buf):
-    ...     hdf5_dump(ex, 'tmp_foo.hdf5', True)
+    ...     dump_hdf5(ex, 'tmp_foo.hdf5', True)
     ...     s = buf.getvalue()
     ...     assert 'Hdf5DumpWarning' in s
     ...     assert 'fav_numbers4' in s
@@ -49,13 +50,13 @@ def hdf5_dump(obj, filename, force=True):
     _ReportInterface.__save_dict_to_hdf5__(obj, filename, force=force)
 
 
-def hdf5_update(obj, filename):
+def update_hdf5(obj, filename):
     """
     """
     _ReportInterface.__update_hdf5_from_dict__(obj, filename)
 
 
-def hdf5_load(filename):
+def load_hdf5(filename, path='/'):
     """
 
     >>> ex = {
@@ -67,7 +68,7 @@ def hdf5_load(filename):
     ...    'fav_numbers2': [2,4,4.3],
     ...    'fav_numbers3': (2,4,4.3),
     ...    # 'fav_numbers4': {2,4,4.3}, # currently not supported
-    ...    'fav_numbers5': [[2], 1], # currently not supported
+    ...    'fav_numbers5': [[2], 1],
     ...    'fav_tensors': {
     ...        'levi_civita3d': np.array([
     ...            [[0,0,0],[0,0,1],[0,-1,0]],
@@ -77,8 +78,8 @@ def hdf5_load(filename):
     ...        'kronecker2d': np.identity(3)
     ...    }
     ... }
-    >>> hdf5_dump(ex, 'tmp_foo.hdf5', True)
-    >>> ex_load = hdf5_load('tmp_foo.hdf5', True)
+    >>> dump_hdf5(ex, 'tmp_foo.hdf5', True)
+    >>> ex_load = load_hdf5('tmp_foo.hdf5', True)
     >>> from pprint import pprint
     >>> ex_load.fav_tensors.kronecker2d[0, 0]
     1.0
@@ -105,7 +106,7 @@ def hdf5_load(filename):
             [ 0,  0,  0]]])},
      'name': 'stefan'}
     """
-    return _ReportInterface.__load_dict_from_hdf5__(filename)
+    return _ReportInterface.__load_dict_from_hdf5__(filename, path=path)
 
 
 class Hdf5DumpWarning(UserWarning):
@@ -207,19 +208,19 @@ class _ReportInterface(object):
                 continue
 
     @classmethod
-    def __load_dict_from_hdf5__(cls, filename):
+    def __load_dict_from_hdf5__(cls, filename, path='/'):
         """..."""
         with h5py.File(filename, 'r') as h5file:
             return cls.__recursively_load_dict_contents_from_group__(
-                h5file, '/')
+                h5file, path)
 
     @classmethod
     def __recursively_load_dict_contents_from_group__(cls, h5file, path):
         """
 
         >>> ex = {'key': [1, 2, 3]}
-        >>> hdf5_dump(ex, 'tmp_foo.hdf5', True)
-        >>> ex_load = hdf5_load('tmp_foo.hdf5')
+        >>> dump_hdf5(ex, 'tmp_foo.hdf5', True)
+        >>> ex_load = load_hdf5('tmp_foo.hdf5')
         >>> ex_load
         {'key': [1, 2, 3]}
         """
@@ -229,10 +230,20 @@ class _ReportInterface(object):
                 tmp = cls.__recursively_load_dict_contents_from_group__(
                     h5file, path + key + '/')
                 ans[key[:-len("_<class 'list'>")]] = \
-                    [value for (key, value) in sorted(tmp.items())]
+                    [value for (key, value) in sorted(tmp.items(),
+                                                      key=lambda x: int(x[0]))]
+            # Support old format
+            elif key.endswith("_list"):
+                tmp = cls.__recursively_load_dict_contents_from_group__(
+                    h5file, path + key + '/')
+                ans[key.rstrip("_list")] = \
+                    [value for (key, value) in sorted(tmp.items(),
+                                                      key=lambda x: int(x[0]))]
             elif isinstance(item, h5py._hl.dataset.Dataset):
                 ans[key] = item.value
             elif isinstance(item, h5py._hl.group.Group):
                 ans[key] = cls.__recursively_load_dict_contents_from_group__(
                     h5file, path + key + '/')
+            else:
+                raise TypeError(type(item))
         return ans

@@ -3,7 +3,7 @@ import unittest
 from nt.utils.dtw import dtw
 from nt.transform import fbank
 from nt.io.audioread import read_raw
-from nt.utils.math_ops import cos_distance
+from nt.math.vector import cos_distance
 from numpy import array
 from numpy.testing import assert_equal
 from nt.io.data_dir import tidigits

@@ -8,6 +8,7 @@ from cached_property import cached_property
 from nt.utils.pandas_helper import colorize_and_display_dataframe, \
     filter_columns, make_css_mark, print_columns  # for backward compatibility
 from nt.utils.pandas_helper import set_values
+from datetime import datetime
 
 
 class SacredManager:
@@ -33,6 +34,9 @@ class SacredManager:
             self.database = database
         if prefix is not None:
             self.prefix = prefix
+        self.start_date = None
+        self.ignore_interrupted = False
+        self.ignore_failed = False
 
     @cached_property
     def client(self):
@@ -86,6 +90,19 @@ class SacredManager:
     def set_db_values(self, _id, values):
         set_values(self._get_runs(), _id, values)
 
+    def set_start_date(self, day, month, year):
+        self.start_date = datetime(year=year, month=month, day=day)
+
+    def _build_filter(self):
+        filter_ = {}
+        if self.start_date is not None:
+            filter_['start_time'] = {"$gt": self.start_date}
+        if self.ignore_interrupted:
+            filter_['status'] = {'$ne': 'INTERRUPTED'}
+        if self.ignore_failed:
+            filter_['status'] = {'$ne': 'FAILED'}
+        return filter_
+
     def get_data_frame(self, depth=2):
         """
         Creates a pandas DataFrame with a MultiIndex with depth count of levels
@@ -99,7 +116,7 @@ class SacredManager:
         :return:
         """
         runs = self._get_runs()
-        list_of_dicts = list(runs.find())
+        list_of_dicts = list(runs.find(self._build_filter()))
 
         d = dict()
 

@@ -1,12 +1,11 @@
-import unittest
-import numpy as np
-import nt.testing as tc
-import tempfile
-import nose_parameterized
 import os
+import tempfile
 import warnings
 
-from nt.utils.hdf5_utils import hdf5_dump, hdf5_load, hdf5_update, Hdf5DumpWarning
+import nose_parameterized
+import nt.testing as tc
+import numpy as np
+from nt.io import dump_hdf5, load_hdf5
 
 
 class TestHdf5:
@@ -42,10 +41,12 @@ class TestHdf5:
          np.asarray([0, 1, np.nan, np.inf])),
         ('heterogenous list', {'key': [1.2, [3, 4]]},
          [1.2, [3, 4]]),  # Note type is list
+        ('large list', {'key': list(range(100, 0, -1))},
+         list(range(100, 0, -1))),  # Note type is list, test if sort correct
     ])
     def test_dump_load(self, name, data, expect):
-        hdf5_dump(data, os.path.join(self.dir, 'test.hdf5'))
-        data_load = hdf5_load(os.path.join(self.dir, 'test.hdf5'))
+        dump_hdf5(data, os.path.join(self.dir, 'test.hdf5'))
+        data_load = load_hdf5(os.path.join(self.dir, 'test.hdf5'))
 
         assert 'key' in data_load.keys(), data_load
 

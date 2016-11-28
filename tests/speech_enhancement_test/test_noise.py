@@ -7,7 +7,7 @@ import nt.speech_enhancement.noise as noise
 import nt.testing as tc
 from nt.speech_enhancement.noise import get_snr
 from nt.speech_enhancement.noise import set_snr
-from nt.utils.math_ops import sph2cart
+from nt.math.vector import sph2cart
 import nt.transform as transform
 from nt.speech_enhancement.noise.spherical_habets import _mycohere,_sinf_3D
 from math import pi
@@ -59,7 +59,7 @@ class TestNoiseGeneratorWhite(unittest.TestCase):
         time_signal = np.random.randn(3, 16000)
         n = self.n_gen.get_noise_for_signal(time_signal, snr=20)
         N = transform.stft(n)
-        power_spec = 10*np.log10(noise.get_power(N, axis=(0, 1)))
+        power_spec = 10*np.log10(noise.get_energy(N, axis=(0, 1)))
         # slope_dB = power_spec[10]-power_spec[100]
         slope_dB, _, _, _, _ = scipy.stats.linregress(10*np.log10(range(1, len(power_spec))), power_spec[1:])
         print('slope_dB: ', slope_dB)
