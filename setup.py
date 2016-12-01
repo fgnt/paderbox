@@ -80,7 +80,7 @@ setup(
                       'pymatbridge',
                       'cached_property', 'tabulate', 'editdistance', 'Pyro4',
                       'psutil', 'plumbum', 'click', 'typecheck-decorator',
-                      'natsort', 'bson'
+                      'natsort'
                       ],
 
     # List additional groups of dependencies here (e.g. development
