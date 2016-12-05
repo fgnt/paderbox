@@ -70,6 +70,7 @@ def stft_single_channel(time_signal, size=1024, shift=256,
 
 
 class TestSTFTMethods(unittest.TestCase):
+
     @classmethod
     def setUpClass(self):
         path = testing_dir / 'timit' / 'data' / 'sample_1.wav'
@@ -186,14 +187,19 @@ class TestSTFTMethods(unittest.TestCase):
         with timer['normal']:
             vec_result = _biorthogonal_window(window, shift)
         with timer['brute_force']:
-            brute_force_result = _biorthogonal_window_brute_force(window, shift)
+            brute_force_result = _biorthogonal_window_brute_force(
+                window, shift)
         with timer['fastest']:
             brute_force_result = _biorthogonal_window_fastest(window, shift)
 
         # brute_force is fastest
         # tc.assert_array_greater(timer.as_dict['fastest'] * ..., timer.as_dict['brute_force'])
-        tc.assert_array_less(timer.as_dict['fastest'] * 5, timer.as_dict['normal'])
-        tc.assert_array_less(timer.as_dict['fastest'] * 2, timer.as_dict['loopy'])
+        tc.assert_array_less(
+            timer.as_dict['fastest'] * 5,
+            timer.as_dict['normal'])
+        tc.assert_array_less(
+            timer.as_dict['fastest'] * 2,
+            timer.as_dict['loopy'])
 
     def test_batch_mode(self):
         size = 1024

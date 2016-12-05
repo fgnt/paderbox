@@ -59,7 +59,10 @@ class TestBeamformerMethods(unittest.TestCase):
             Y = data['Y']
             N = data['N']
         ibm = biased_binary_mask(np.stack([X[4, :, :], N[4, :, :]]))
-        self.Y_bf, self.X_bf, self.N_bf = Y.T.transpose(0, 2, 1), X.T.transpose(0, 2, 1), N.T.transpose(0, 2, 1)
+        self.Y_bf, self.X_bf, self.N_bf = Y.T.transpose(
+            0, 2, 1), X.T.transpose(
+            0, 2, 1), N.T.transpose(
+            0, 2, 1)
         self.ibm_X_bf = ibm[0].T
         self.ibm_N_bf = ibm[1].T
         self.ibm_X_bf_th = np.maximum(self.ibm_X_bf, 1e-4)
@@ -140,7 +143,10 @@ class TestBeamformerMethods(unittest.TestCase):
         X = Speakers.transpose(3, 1, 2, 0).copy()
         N = Noise.transpose(1, 2, 0).copy()
 
-        datafile_multi_speaker = path.join(path.dirname(path.realpath(__file__)), 'data_multi_speaker.npz')
+        datafile_multi_speaker = path.join(
+            path.dirname(
+                path.realpath(__file__)),
+            'data_multi_speaker.npz')
         np.savez(datafile_multi_speaker, X=X, Y=Y, N=N)
 
     @tc.attr.matlab
@@ -156,7 +162,10 @@ class TestBeamformerMethods(unittest.TestCase):
     def test_compare_PSD_with_mask(self):
         mlab = self.mlab.process
         mlab.set_variable('Y', self.Y_bf)
-        mlab.set_variable('ibm', self.ibm_N_bf[:, np.newaxis, :].astype(np.float))
+        mlab.set_variable(
+            'ibm', self.ibm_N_bf[
+                :, np.newaxis, :].astype(
+                np.float))
         mlab.run_code('Phi = random.covariance(Y, ibm, 3, 2);')
         Phi_matlab = mlab.get_variable('Phi')
         Phi = get_power_spectral_density_matrix(self.Y_bf, self.ibm_N_bf)

@@ -13,7 +13,7 @@ from nt.io.data_dir import DataDir
 class TestWPEWrapper(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.settings_file_path = data_dir / 'speech_enhancement' /'utils'
+        self.settings_file_path = data_dir / 'speech_enhancement' / 'utils'
         self.audiofiles_path = data_dir / 'speech_enhancement' / 'data'
         self.sample_rate = 16000
 

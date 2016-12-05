@@ -11,6 +11,7 @@ from nt.io.data_dir import testing as testing_dir
 
 
 class TestSTFTMethods(unittest.TestCase):
+
     @classmethod
     def setUpClass(self):
         path = testing_dir / 'timit' / 'data' / 'sample_1.wav'
