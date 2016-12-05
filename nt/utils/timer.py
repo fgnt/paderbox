@@ -2,7 +2,6 @@ import time
 import datetime
 
 from collections import defaultdict
-from contextlib import contextmanager
 from cached_property import cached_property
 
 
@@ -54,98 +53,93 @@ class Timer(object):
                 print('elapsed time: %f ms' % self.msecs)
 
 
-class TimeIterator:
-    """
+class TimerDictEntry:
+    def __init__(self, style):    
+        self.time = 0.0
+        self._style = style
 
-    Measure the execution time of an iterator/generator to produce data.
+    def __enter__(self):
+        self._start = time.perf_counter()
 
-    >>> from time import sleep
-    >>> def generator():
-    ...    for i in range(3):
-    ...         sleep(0.1)
-    ...         yield i
-    >>> timer = TimeIterator()
-    >>> for i in timer(generator()):
-    ...     sleep(0.05)
-    >>> print("{0:.2f}".format(timer.secs))
-    0.30
-
-
-    """
-    secs = 0
-
-    @property
-    def msecs(self):
-        return self.secs * 1000
+    def __exit__(self, *args):
+        end = time.perf_counter()
+        self.time += end-self._start
 
     def __call__(self, iterable):
-        # https://github.com/wearpants/measure_it/blob/master/measure_it/__init__.py
-        self.secs = 0
         it = iter(iterable)
         while True:
-            t = time.time()
-            try:
+            with self:
                 x = next(it)
-            finally:
-                self.secs += time.time() - t
             yield x
+    
+    @property
+    def timedelta(self):
+        return datetime.timedelta(seconds=self.time)
+
+    @property
+    def value(self):
+        if self._style == 'timedelta':
+            return self.timedelta
+        elif self._style == 'float':
+            return self.time
+        else:
+            raise ValueError(self._style)
+
+    def __repr__(self):
+        return str(self.value)
 
 
-class TimerAccumulateDict(object):
+class TimerDict:
     """
-    >>> t = TimerAccumulateDict()
+    >>> t = TimerDict()
     >>> with t['test']:
     ...     time.sleep(1)
     >>> with t['test']:
     ...     time.sleep(1)
     >>> with t['test_2']:
     ...     time.sleep(1)
+    >>> def slow_range(N):
+    ...     for i in range(N):
+    ...         time.sleep(0.1)
+    ...         yield i
+    >>> for i in t['test_3'](slow_range(3)):
+    ...    pass
     >>> times = t.as_dict
     >>> sorted(times.keys())
-    ['test', 'test_2']
-    >>> print('test: {:.3} ms, test_2: {:.3} ms'.format(times['test'], times['test_2']))
-    test: 2e+03 ms, test_2: 1e+03 ms
+    ['test', 'test_2', 'test_3']
+    >>> print(str(times['test'])[:9], str(times['test_2'])[:9], str(times['test_3'])[:9])
+    0:00:02.0 0:00:01.0 0:00:00.3
+
     """
+    def __init__(self, style='timedelta'):    
+        """
+        :param style: default timedelta, alternative float
+        """
+        self.timings = defaultdict(lambda: TimerDictEntry(style))
 
-    def __init__(self, cuda_event=False, verbose=False, stat=False):
-
-        self.verbose = verbose
-        self.cuda_event = cuda_event
-        if not stat:
-            self.timings = defaultdict(lambda: 0)
-        else:
-            self.timings = defaultdict(list)
-        self.stat = stat
-
-    @contextmanager
-    def __getitem__(self, index):
-        t = Timer()
-
-        try:
-            t.__enter__()
-            yield t
-        finally:
-            t.__exit__()
-            if not self.stat:
-                self.timings[index] += t.msecs
-            else:
-                self.timings[index] += [t.msecs]
-
+    def __getitem__(self, item):
+        assert isinstance(item, str)
+        return self.timings[item]
+        
     @property
     def as_dict(self):
-        return dict(self.timings)
-
+        return {k: time.value for k, time in self.timings.items()}
+    
     @property
     def as_yaml(self):
         import yaml
-        return yaml.dump(dict(self.timings), default_flow_style=False)
+        return yaml.dump({k: str(time) for k, time in self.timings.items()},
+                         default_flow_style=False)
 
     def print_as_yaml(self):
-        print('Times are in milliseconds ( 0.001s )')
+        print('Times are in seconds')
         print(self.as_yaml)
 
+    def __repr__(self):
+        return 'TimerDict: ' + self.as_dict.__repr__()
+
     def __str__(self):
-        return str(dict(self.timings))
+        return self.as_dict.__str__()
 
 
 def timeStamped(fname, fmt='{fname}_%Y-%m-%d-%H-%M-%S'):
