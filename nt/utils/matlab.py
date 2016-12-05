@@ -28,8 +28,8 @@ class Mlab:
             mlab_process = Matlab(
                 'nice -n 3 ' +
                 '/net/ssd/software/MATLAB/R2015a/bin/matlab' +
-                ' -c /opt/MATLAB/license.dat'
-		# -c /opt/MATLAB/R2014a_studis/licenses/network.lic'
+                # ' -c /opt/MATLAB/license.dat'
+		        ' -c /opt/MATLAB/R2016b_studis/licenses/network.lic'
                 ' -nodisplay -nosplash'
             )
         else:
