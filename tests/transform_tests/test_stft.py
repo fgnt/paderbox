@@ -72,7 +72,7 @@ def stft_single_channel(time_signal, size=1024, shift=256,
 class TestSTFTMethods(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        path = testing_dir('timit', 'data', 'sample_1.wav')
+        path = testing_dir / 'timit' / 'data' / 'sample_1.wav'
         self.x = audioread(path)
 
     def test_samples_to_stft_frames(self):

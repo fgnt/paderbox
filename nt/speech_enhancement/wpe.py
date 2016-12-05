@@ -2,6 +2,7 @@ import os.path
 
 import numpy as np
 from nt.math.correlation import covariance
+from pathlib import Path
 
 try:
     from nt.utils.matlab import Mlab
@@ -41,6 +42,9 @@ def dereverb(settings_file_path, x, stop_mlab=True):
         mlab.process.start()
     else:
         mlab.run_code('clear all;')
+
+    if isinstance(settings_file_path, Path):
+        settings_file_path = str(settings_file_path)
 
     settings = os.path.join(settings_file_path, "wpe_settings.m")
 

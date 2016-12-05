@@ -46,7 +46,7 @@ class TestBeamformerMethods(unittest.TestCase):
         K : sources, number of speakers
         :return:
         """
-        datafile = testing_dir('speech_enhancement', 'data', 'beamformer.npz')
+        datafile = testing_dir / 'speech_enhancement' / 'data' / 'beamformer.npz'
         datafile_multi_speaker = path.join(path.dirname(path.realpath(__file__)), 'data_multi_speaker.npz')
 
         self.mlab = Mlab()
@@ -54,7 +54,7 @@ class TestBeamformerMethods(unittest.TestCase):
         if not path.exists(datafile_multi_speaker):
             self.generate_source_file_with_matlab(mlab=self.mlab)
 
-        with np.load(datafile) as data:
+        with np.load(str(datafile)) as data:
             X = data['X']  # DxTxF
             Y = data['Y']
             N = data['N']

@@ -1,17 +1,17 @@
 import json
 import unittest
 
+from nt.io import load_json
 from nt.testing import db_test
 
-NoiseX_92_json = db_test.ROOT + "/noisex_92.json"
+NoiseX_92_json = db_test.ROOT / "noisex_92.json"
 # NoiseX_92_json = "NoiseX_92.json"
 
 
 class test_NoiseX_92_db(db_test.DatabaseTest):
 
         def setUp(self):
-            with open(NoiseX_92_json) as file:
-                self.json = json.load(file)
+            self.json = load_json(NoiseX_92_json)
 
         def test_train_test_dev(self):
             self.assertIn("train", self.json)
