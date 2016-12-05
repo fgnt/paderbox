@@ -6,6 +6,7 @@ import os.path
 
 
 class Mlab:
+
     def __init__(self, matlab_startup_path=None):
 
         home_startup = os.path.expanduser('~/startup.m')
@@ -29,7 +30,7 @@ class Mlab:
                 'nice -n 3 ' +
                 '/net/ssd/software/MATLAB/R2015a/bin/matlab' +
                 # ' -c /opt/MATLAB/license.dat'
-		        ' -c /opt/MATLAB/R2016b_studis/licenses/network.lic'
+                ' -c /opt/MATLAB/R2016b_studis/licenses/network.lic'
                 ' -nodisplay -nosplash'
             )
         else:
@@ -51,8 +52,8 @@ class Mlab:
             print(ret)
             print(code)
             warnings.warn(str('Matlab code not executeable! \nCode:\t ')
-                          +str(code)+
-                          str('\nMatlab return:\t ')+
+                          + str(code) +
+                          str('\nMatlab return:\t ') +
                           str(ret))
             raise NameError('Matlab code not executeable! See above warning.')
         return ret
