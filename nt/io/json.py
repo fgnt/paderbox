@@ -41,7 +41,7 @@ def dump_json(obj, path, *, indent=2, **kwargs):
     path = Path(path)
 
     with path.open('w') as f:
-        json.dump(obj, f, cls=_Encoder, indent=indent, **kwargs)
+        json.dump(obj, f, cls=_Encoder, indent=indent, sort_keys=True, **kwargs)
 
 
 def load_json(path, **kwargs):
