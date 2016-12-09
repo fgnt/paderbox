@@ -7,7 +7,6 @@ import time
 from nt import testing
 from nt.io.data_dir import testing as testing_dir
 from nt.io.data_dir import testing as data_dir
-from nt.io.data_dir import DataDir
 
 
 class TestWPEWrapper(unittest.TestCase):
