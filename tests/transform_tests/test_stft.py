@@ -176,8 +176,8 @@ class TestSTFTMethods(unittest.TestCase):
         tc.assert_allclose(s, 1)
 
     def test_biorthogonal_window_fastest_is_fastest(self):
-        from nt.utils.timer import TimerAccumulateDict
-        timer = TimerAccumulateDict()
+        from nt.utils.timer import TimerDict
+        timer = TimerDict()
 
         window = signal.blackman(1024)
         shift = 256
