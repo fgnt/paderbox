@@ -49,8 +49,10 @@ python -m nt.database.timit.create_json
 
 python -m nt.database.wsj.database_wsj
 
-python -m nt.database.merl_mixtures.merl_speaker_mixtures --min_max=min --json_path='merl_speaker_mixtures_min.json'
-python -m nt.database.merl_mixtures.merl_speaker_mixtures --min_max=max --json_path='merl_speaker_mixtures_max.json'
+python -m nt.database.merl_mixtures.merl_speaker_mixtures --sample_rate wav8k --min_max min --json_path 'merl_speaker_mixtures_min_8k.json'
+python -m nt.database.merl_mixtures.merl_speaker_mixtures --sample_rate wav8k --min_max max --json_path 'merl_speaker_mixtures_max_8k.json'
+python -m nt.database.merl_mixtures.merl_speaker_mixtures --sample_rate wav16k --min_max min --json_path 'merl_speaker_mixtures_min_16k.json'
+python -m nt.database.merl_mixtures.merl_speaker_mixtures --sample_rate wav16k --min_max max --json_path 'merl_speaker_mixtures_max_16k.json'
 
 python -m nt.database.reverb.gen_config
 python -m nt.database.reverb.process_db
