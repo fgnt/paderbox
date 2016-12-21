@@ -17,9 +17,7 @@ def mfcc(time_signal, sample_rate=16000,
 
     Source: https://github.com/jameslyons/python_speech_features
 
-    Illustrations: http://ntjenkins.upb.de/view/PythonToolbox/job/
-        python_toolbox_notebooks/HTML_Report/toolbox_examples/
-        transform/06%20-%20Additional%20features.html
+    Illustrations: http://ntjenkins.upb.de/view/PythonToolbox/job/python_toolbox_notebooks/HTML_Report/build/toolbox_examples/transform/06%20-%20Additional%20features.html
 
     :param time_signal: the audio signal from which to compute features.
         Should be an N*1 array.
