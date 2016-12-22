@@ -3,6 +3,7 @@ from cached_property import cached_property
 import socket
 import warnings
 import os.path
+from nt.io.data_dir import matlab_toolbox, matlab_r2015a, matlab_license
 
 
 class Mlab:
@@ -18,7 +19,7 @@ class Mlab:
             #   startup
         elif matlab_startup_path is None:
             self.matlab_startup_path = \
-                '/net/ssd/software/matlab_toolbox/startup.m'
+                matlab_toolbox / 'startup.m'
         else:
             self.matlab_startup_path = matlab_startup_path
 
@@ -28,9 +29,9 @@ class Mlab:
         if 'nt' in hostname:
             mlab_process = Matlab(
                 'nice -n 3 ' +
-                '/net/ssd/software/MATLAB/R2015a/bin/matlab' +
+                matlab_r2015a / 'bin' / 'matlab' +
                 # ' -c /opt/MATLAB/license.dat'
-                ' -c /opt/MATLAB/R2016b_studis/licenses/network.lic'
+                ' -c {}'.format(matlab_license) +
                 ' -nodisplay -nosplash'
             )
         else:
