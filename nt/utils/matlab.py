@@ -30,7 +30,7 @@ class Mlab:
                 'nice -n 3 ' +
                 str(matlab_r2015a / 'bin' / 'matlab') +
                 # ' -c /opt/MATLAB/license.dat'
-                ' -c {}'.format(matlab_license) +
+                ' -c {}'.format(str(matlab_license)) +
                 ' -nodisplay -nosplash'
             )
         else:
