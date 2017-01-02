@@ -297,7 +297,7 @@ def _time_frequency_plot(
 
     signal = _get_batch(signal, batch)
 
-    if np.any(signal < 0) and log:
+    if log and np.any(signal < 0):
         warn('The array passed to spectrogram contained negative values. This '
              'leads to a wrong visualization and especially colorbar!')
 

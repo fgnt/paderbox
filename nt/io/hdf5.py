@@ -5,7 +5,6 @@ import warnings
 import h5py
 import numpy as np
 from nt.utils import AttrDict
-from natsort import natsorted
 
 __all__ = ['dump_hdf5', 'update_hdf5', 'load_hdf5']
 
