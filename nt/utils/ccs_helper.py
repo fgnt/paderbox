@@ -7,14 +7,17 @@ import numpy as np
 from tqdm import tqdm
 
 
-def ccsinfo(host=None):
+def ccsinfo(host=None, use_ssh=True):
     """ Wrapper for ccsinfo.
 
     :param host: PC2 ssh host alias.
     """
-    host = 'pc2' if host is None else host
-    ret = sh.ssh(host, 'ccsinfo', '-s', '--mine', '--fmt="%.R%.60N%.4w%P%D%v"',
-                 '--raw')
+    common_args = ['-s', '--mine', '--fmt=%.R%.60N%.4w%P%D%v', '--raw']
+    if use_ssh:
+        host = 'pc2' if host is None else host
+        ret = sh.ssh(host, 'ccsinfo', *common_args)
+    else:
+        ret = sh.ccsinfo(*common_args)
     return pd.read_csv(StringIO(ret.stdout.decode('utf-8')),
                        delim_whitespace=True,
                        names=['id', 'name', 'status', 'start_time',
@@ -56,10 +59,10 @@ def get_job_id(allocation_result):
         ).groups()[0]
 
 
-def _test_finished(job_ids, host):
+def _test_finished(job_ids, host, use_ssh):
     """ Expects list of job ids as strings. """
     job_ids = [str(_id) for _id in job_ids]
-    df = ccsinfo(host=host)
+    df = ccsinfo(host=host, use_ssh=use_ssh)
     jobs = df[df['id'].apply(lambda x: str(x) in job_ids)]
     next_ids = []
     new_finished_jobs = 0
@@ -68,25 +71,24 @@ def _test_finished(job_ids, host):
             next_ids.append(job['name'])
         else:
             new_finished_jobs += 1
-            job_ids = next_ids
-    return job_ids, new_finished_jobs
+    return next_ids, new_finished_jobs
 
 
 def idle_while_jobs_are_running(
-        job_ids, sleep_time=300, host='pc2'
+        job_ids, sleep_time=300, host='pc2', use_ssh=True
 ):
     """ Expects list of job ids as strings. """
     total_jobs = len(job_ids)
     p = tqdm(total=total_jobs, desc='Cluster jobs')
     while len(job_ids):
         time.sleep(sleep_time)
-        job_ids, new_finished_jobs = _test_finished(job_ids, host)
+        job_ids, new_finished_jobs = _test_finished(job_ids, host, use_ssh)
         if new_finished_jobs:
             p.update(new_finished_jobs)
 
 
 def idle_while_array_jobs_are_running(
-        job_ids, sleep_time=300, host='pc2'
+        job_ids, sleep_time=300, host='pc2', use_ssh=True
 ):
     """ Idle after job array allocation to wait for remaining jobs.
 
@@ -103,7 +105,6 @@ def idle_while_array_jobs_are_running(
     regex_waiting = re.compile(r'Waiting\s*subjobs\s*\:\s([0-9]*)')
 
     while len(job_ids):
-        time.sleep(sleep_time)
         completed = 0
         running = 0
         planned = 0
@@ -111,7 +112,10 @@ def idle_while_array_jobs_are_running(
         remaining_job_ids = []
         for job_id in job_ids:
             try:
-                res = sh.ssh(host, 'ccsinfo', job_id)
+                if use_ssh:
+                    res = sh.ssh(host, 'ccsinfo', job_id)
+                else:
+                    res = sh.ccsinfo(job_id)
                 res = res.stdout.decode('utf-8')
                 jobs_running, jobs_planned, jobs_waiting = 0, 0, 0
                 if re.search(regex_completed, res) is not None:
@@ -141,3 +145,4 @@ def idle_while_array_jobs_are_running(
             completed, running, planned, waiting
         ))
         job_ids = remaining_job_ids
+        time.sleep(sleep_time)
