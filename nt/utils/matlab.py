@@ -7,7 +7,6 @@ from nt.io.data_dir import matlab_toolbox, matlab_r2015a, matlab_license
 
 
 class Mlab:
-
     def __init__(self, matlab_startup_path=None):
 
         home_startup = os.path.expanduser('~/startup.m')
@@ -29,7 +28,7 @@ class Mlab:
         if 'nt' in hostname:
             mlab_process = Matlab(
                 'nice -n 3 ' +
-                matlab_r2015a / 'bin' / 'matlab' +
+                str(matlab_r2015a / 'bin' / 'matlab') +
                 # ' -c /opt/MATLAB/license.dat'
                 ' -c {}'.format(matlab_license) +
                 ' -nodisplay -nosplash'
