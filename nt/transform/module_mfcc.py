@@ -20,7 +20,7 @@ def mfcc(time_signal, sample_rate=16000,
     Illustrations: http://ntjenkins.upb.de/view/PythonToolbox/job/python_toolbox_notebooks/HTML_Report/build/toolbox_examples/transform/06%20-%20Additional%20features.html
 
     :param time_signal: the audio signal from which to compute features.
-        Should be an N*1 array.
+        Should be an channels x samples array.
     :param sample_rate: the sample rate of the signal we are working with.
         Default is 16000.
     :param window_length: the length of the analysis window. In samples.
@@ -49,7 +49,7 @@ def mfcc(time_signal, sample_rate=16000,
                        number_of_filters, stft_size, lowest_frequency,
                        highest_frequency, preemphasis_factor, window)
     feat = numpy.log(feat)
-    feat = dct(feat, type=2, axis=1, norm='ortho')[:, :numcep]
+    feat = dct(feat, type=2, axis=-1, norm='ortho')[..., :numcep]
     feat = _lifter(feat, ceplifter)
 
     return feat
@@ -70,7 +70,7 @@ def _lifter(cepstra, L=22):
         machine-learning/guide-mel-frequency-cepstral-coefficients-mfccs/
     """
     if L > 0:
-        nframes,ncoeff = numpy.shape(cepstra)
+        nframes,ncoeff = numpy.shape(cepstra)[-2:]
         n = numpy.arange(ncoeff)
         lift = 1+ (L/2)*numpy.sin(numpy.pi*n/L)
         return lift*cepstra

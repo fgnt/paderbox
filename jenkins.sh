@@ -14,6 +14,7 @@ trap 'exit 0' EXIT SIGINT SIGTERM
 CUDA_PATH=/usr/local/cuda
 LD_LIBRARY_PATH=$CUDA_PATH/lib64:${LD_LIBRARY_PATH}
 PATH=$CUDA_PATH/bin:$PATH
+PATH=/net/ssd/software/anaconda/bin/:$PATH
 export PATH
 export LD_LIBRARY_PATH
 source activate py35
