@@ -47,7 +47,7 @@ python -m nt.database.tidigits.JSON_conv_tidigits
 
 python -m nt.database.timit.create_json
 
-python -m nt.database.wsj.database_wsj
+python -m nt.database.wsj.create_json
 
 python -m nt.database.merl_mixtures.merl_speaker_mixtures --sample_rate wav8k --min_max min --json_path 'merl_speaker_mixtures_min_8k.json'
 python -m nt.database.merl_mixtures.merl_speaker_mixtures --sample_rate wav8k --min_max max --json_path 'merl_speaker_mixtures_max_8k.json'
