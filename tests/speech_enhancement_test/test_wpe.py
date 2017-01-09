@@ -7,20 +7,19 @@ import time
 from nt import testing
 from nt.io.data_dir import testing as testing_dir
 from nt.io.data_dir import testing as data_dir
-from nt.io.data_dir import DataDir
 
 
 class TestWPEWrapper(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.settings_file_path = DataDir(data_dir.join('speech_enhancement', 'utils'))
-        self.audiofiles_path = DataDir(data_dir.join('speech_enhancement', 'data'))
+        self.settings_file_path = data_dir / 'speech_enhancement' / 'utils'
+        self.audiofiles_path = data_dir / 'speech_enhancement' / 'data'
         self.sample_rate = 16000
 
     @testing.attr.matlab
     def test_dereverb_one_channel(self):
         input_file_paths =\
-            {self.audiofiles_path('sample_ch1.wav'): 1, }
+            {str(self.audiofiles_path / 'sample_ch1.wav'): 1, }
         self.process_dereverbing_framework(input_file_paths)
         time.sleep(2) # wait 2 seconds for audio files to pop up in file manager
 
@@ -34,7 +33,7 @@ class TestWPEWrapper(unittest.TestCase):
     @testing.attr.matlab
     def test_dereverb_eight_channels(self):
         input_file_paths =\
-            {self.audiofiles_path('sample_ch1.wav'): 8, }
+            {str(self.audiofiles_path / 'sample_ch1.wav'): 8, }
         self.process_dereverbing_framework(input_file_paths)
         time.sleep(2) # wait 2 seconds for audio files to pop up in file manager
 
@@ -142,8 +141,8 @@ class TestGetCrazyMatrix(unittest.TestCase):
             file = 'wpe_psi_bar_L{}_N{}_T{}_K{}_Delta{}.npy'.format(
                 L, N, T, K, Delta
             )
-            file = testing_dir('speech_enhancement', 'data', file)
-            return file
+            file = testing_dir / 'speech_enhancement' / 'data' / file
+            return str(file)
 
         def _load(L, N, T, K, Delta):
             return np.load(_get_fname(L, N, T, K, Delta))

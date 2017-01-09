@@ -35,6 +35,21 @@ def segment_axis(a, length, overlap=0, axis=None, end='cut', endvalue=0):
            [2, 3, 4, 5],
            [4, 5, 6, 7],
            [6, 7, 8, 9]])
+    >>> segment_axis(np.arange(5).reshape(5), 4, 3, axis=0)
+    array([[0, 1, 2, 3],
+           [1, 2, 3, 4]])
+    >>> segment_axis(np.arange(10).reshape(2, 5), 4, 3, axis=-1)
+    array([[[0, 1, 2, 3],
+            [1, 2, 3, 4]],
+    <BLANKLINE>
+           [[5, 6, 7, 8],
+            [6, 7, 8, 9]]])
+    >>> segment_axis(np.arange(10).reshape(5, 2).T, 4, 3, axis=1)
+    array([[[0, 2, 4, 6],
+            [2, 4, 6, 8]],
+    <BLANKLINE>
+           [[1, 3, 5, 7],
+            [3, 5, 7, 9]]])
     """
 
     if axis is None:
@@ -78,19 +93,23 @@ def segment_axis(a, length, overlap=0, axis=None, end='cut', endvalue=0):
         a = a.swapaxes(-1, axis)
 
     l = a.shape[axis]
-    if l == 0: raise ValueError(
-        "Not enough data points to segment array in 'cut' mode; "
-        "try 'pad' or 'wrap'")
+    if l == 0:
+        raise ValueError(
+            "Not enough data points to segment array in 'cut' mode; "
+            "try 'pad' or 'wrap'")
     assert l >= length
     assert (l - length) % (length - overlap) == 0
     n = 1 + (l - length) // (length - overlap)
+
+    axis = axis % a.ndim  # force axis >= 0
+
     s = a.strides[axis]
     newshape = a.shape[:axis] + (n, length) + a.shape[axis + 1:]
     newstrides = a.strides[:axis] + ((length - overlap) * s, s) + a.strides[
                                                                   axis + 1:]
-
     if not a.flags.contiguous:
         a = a.copy()
+        s = a.strides[axis]
         newstrides = a.strides[:axis] + ((length - overlap) * s, s) + a.strides[
                                                                       axis + 1:]
         return np.ndarray.__new__(np.ndarray, strides=newstrides,
@@ -428,3 +447,48 @@ def roll_zeropad(a, shift, axis=None):
         return res.reshape(a.shape)
     else:
         return res
+
+
+def labels_to_one_hot(
+        labels: np.ndarray, categories: int, axis: int = 0,
+        keepdims=False, dtype=np.float32
+):
+    """ Translates an arbitrary ndarray with labels to one hot coded array.
+
+    Args:
+        labels: Array with any shape and integer labels.
+        categories: Maximum integer label larger or equal to maximum of the
+            labels ndarray.
+        axis: Axis along which the one-hot vector will be aligned.
+        keepdims:
+            If keepdims is True, this function behaves similar to
+            numpy.concatenate(). It will expand the provided axis.
+            If keepdims is False, it will create a new axis along which the
+            one-hot vector will be placed.
+        dtype: Provides the dtype of the output one-hot mask.
+
+    Returns:
+        One-hot encoding with shape (..., categories, ...).
+
+    """
+    if keepdims:
+        assert labels.shape[axis] == 1
+        result_ndim = labels.ndim
+    else:
+        result_ndim = labels.ndim + 1
+
+    if axis < 0:
+        axis += result_ndim
+
+    shape = labels.shape
+    zeros = np.zeros((categories, labels.size), dtype=dtype)
+    zeros[labels.ravel(), range(labels.size)] = 1
+
+    zeros = zeros.reshape((categories,) + shape)
+
+    if keepdims:
+        zeros = zeros[(slice(None),) * (axis+1) + (0,)]
+
+    zeros = np.moveaxis(zeros, 0, axis)
+
+    return zeros

@@ -11,22 +11,22 @@ class NamedAudio(Audio):
     name = None
 
     def _repr_html_(self):
-        autio_html = super()._repr_html_()
+        audio_html = super()._repr_html_()
 
         assert self.name is not None
 
         return """
         <table style="width:100%">
             <tr>
-                <td>
+                <td style="width:25%">
                     {}
                 </td>
-                <td>
+                <td style="width:75%">
                     {}
                 </td>
             </tr>
         </table>
-        """.format(self.name, autio_html)
+        """.format(self.name, audio_html)
 
 
 def play(data, channel=0, sample_rate=16000,

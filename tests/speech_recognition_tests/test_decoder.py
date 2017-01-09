@@ -7,7 +7,7 @@ from nt.io.data_dir import testing as data_dir
 from nt.speech_recognition.utils.utils import write_lattice_file, argmax_decode
 from nt.TODO.kaldi.decoder import Decoder
 
-sys.path.append(data_dir('speech_recognition'))
+sys.path.append(str(data_dir / 'speech_recognition'))
 from model import BLSTMModel
 import os
 import tempfile
@@ -36,7 +36,8 @@ class TestDecoder(unittest.TestCase):
     # @unittest.skip("")
     def test_ground_truth(self):
 
-        lex = get_lexicon_from_arpa(data_dir('speech_recognition', 'tcb05cnp'))
+        lex = get_lexicon_from_arpa(
+            str(data_dir / 'speech_recognition' / 'tcb05cnp'))
         labels = ["<blank>", ] + lex.tokens()
 
         utt = "THIS SHOULD BE RECOGNIZED"
@@ -48,8 +49,9 @@ class TestDecoder(unittest.TestCase):
         with tempfile.TemporaryDirectory() as working_dir:
 
             lm_path_uni = os.path.join(working_dir, 'tcb05cnp')
-            arpa.write_unigram(data_dir('speech_recognition', 'tcb05cnp'),
-                               lm_path_uni)
+            arpa.write_unigram(
+                str(data_dir / 'speech_recognition' / 'tcb05cnp'),
+                lm_path_uni)
 
             self.decoder = Decoder(labels, working_dir, lex,
                                    lm_file=lm_path_uni)
@@ -68,7 +70,8 @@ class TestDecoder(unittest.TestCase):
     def test_ground_truth_with_eow(self):
 
         space = "<space>"
-        lex = get_lexicon_from_arpa(data_dir('speech_recognition', 'tcb05cnp'))
+        lex = get_lexicon_from_arpa(
+            str(data_dir / 'speech_recognition' / 'tcb05cnp'))
         labels = ["<blank>", space] + lex.tokens()
 
         utt = "THIS SHOULD BE RECOGNIZED"
@@ -79,8 +82,9 @@ class TestDecoder(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as working_dir:
             lm_path_uni = os.path.join(working_dir, 'tcb05cnp')
-            arpa.write_unigram(data_dir('speech_recognition', 'tcb05cnp'),
-                               lm_path_uni)
+            arpa.write_unigram(
+                str(data_dir / 'speech_recognition' / 'tcb05cnp'),
+                lm_path_uni)
             self.decoder = Decoder(labels, working_dir, lex,
                                    lm_file=lm_path_uni, silent_tokens=[space])
             self.decoder.create_graphs()
@@ -97,7 +101,8 @@ class TestDecoder(unittest.TestCase):
     # @unittest.skip("")
     def test_only_lex(self):
 
-        lex = get_lexicon_from_arpa(data_dir('speech_recognition', 'tcb05cnp'))
+        lex = get_lexicon_from_arpa(
+            str(data_dir / 'speech_recognition' / 'tcb05cnp'))
         labels = ["<blank>"] + lex.tokens()
 
         utt = "THIS SHOULD BE RECOGNIZED"
@@ -149,7 +154,7 @@ class TestDecoder(unittest.TestCase):
 
     # @unittest.skip("")
     def test_one_word_grammar(self):
-        lm_file = data_dir('speech_recognition', "arpa_one_word")
+        lm_file = str(data_dir / 'speech_recognition' / "arpa_one_word")
         lex = get_lexicon_from_arpa(lm_file)
         labels = ["<blank>"] + lex.tokens()
 
@@ -177,7 +182,7 @@ class TestDecoder(unittest.TestCase):
         word2 = "LANGUAGE"
         utt_id = "11111111"
 
-        lm_file = data_dir('speech_recognition', "arpa_two_words_uni")
+        lm_file = str(data_dir / 'speech_recognition' / "arpa_two_words_uni")
         lex = get_lexicon_from_arpa(lm_file)
         labels = ["<blank>"] + lex.tokens()
 
@@ -206,7 +211,7 @@ class TestDecoder(unittest.TestCase):
     # @unittest.skip("")
     def test_trigram_grammar(self):
 
-        lm_file = data_dir('speech_recognition', "arpa_three_words_tri")
+        lm_file = str(data_dir / 'speech_recognition' / "arpa_three_words_tri")
         lex = get_lexicon_from_arpa(lm_file)
         labels = ["<blank>"] + lex.tokens()
 
@@ -251,8 +256,9 @@ class TestDecoder(unittest.TestCase):
             labels = ["<blank>"] + lex.tokens()
 
             lm_path_uni = os.path.join(working_dir, 'tcb05cnp')
-            arpa.write_unigram(data_dir('speech_recognition', 'tcb05cnp'),
-                               lm_path_uni)
+            arpa.write_unigram(
+                str(data_dir / 'speech_recognition' / 'tcb05cnp'),
+                lm_path_uni)
 
             self.decoder = Decoder(labels, working_dir, lex,
                                    lm_file=lm_path_uni)

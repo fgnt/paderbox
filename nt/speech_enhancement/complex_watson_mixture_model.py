@@ -139,7 +139,7 @@ def initialize(initialization, Y_normalized, mixture_components, rng_state):
 
 class ComplexWatson:
     """
-    >>> from os.TODO import bss
+    >>> from nt.speech_enhancement import complex_watson_mixture_model as cwmm
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> scales = [
@@ -148,9 +148,9 @@ class ComplexWatson:
     ...     np.arange(0, 100, 1)
     ... ]
     >>> functions = [
-    ...     bss.ComplexWatson.log_norm_low_concentration,
-    ...     bss.ComplexWatson.log_norm_medium_concentration,
-    ...     bss.ComplexWatson.log_norm_high_concentration
+    ...     cwmm.ComplexWatson.log_norm_low_concentration,
+    ...     cwmm.ComplexWatson.log_norm_medium_concentration,
+    ...     cwmm.ComplexWatson.log_norm_high_concentration
     ... ]
     >>>
     >>> f, axis = plt.subplots(1, 3)
@@ -323,6 +323,7 @@ def em(
     )
 
     for i in range(iterations):
+        # TODO: Why did I not move this out of the for loop?
         if i == 0 and 'affiliations' in initialization:
             affiliations = initialization['affiliations']
         else:

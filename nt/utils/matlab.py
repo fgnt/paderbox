@@ -3,6 +3,7 @@ from cached_property import cached_property
 import socket
 import warnings
 import os.path
+from nt.io.data_dir import matlab_toolbox, matlab_r2015a, matlab_license
 
 
 class Mlab:
@@ -17,7 +18,7 @@ class Mlab:
             #   startup
         elif matlab_startup_path is None:
             self.matlab_startup_path = \
-                '/net/ssd/software/matlab_toolbox/startup.m'
+                matlab_toolbox / 'startup.m'
         else:
             self.matlab_startup_path = matlab_startup_path
 
@@ -27,8 +28,8 @@ class Mlab:
         if 'nt' in hostname:
             mlab_process = Matlab(
                 'nice -n 3 ' +
-                '/net/ssd/software/MATLAB/R2015a/bin/matlab' +
-                ' -c /opt/MATLAB/license.dat'
+                str(matlab_r2015a / 'bin' / 'matlab') +
+                ' -c {}'.format(matlab_license) +
                 ' -nodisplay -nosplash'
             )
         else:
@@ -50,8 +51,8 @@ class Mlab:
             print(ret)
             print(code)
             warnings.warn(str('Matlab code not executeable! \nCode:\t ')
-                          +str(code)+
-                          str('\nMatlab return:\t ')+
+                          + str(code) +
+                          str('\nMatlab return:\t ') +
                           str(ret))
             raise NameError('Matlab code not executeable! See above warning.')
         return ret

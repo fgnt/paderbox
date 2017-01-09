@@ -1,64 +1,82 @@
+"""
+
+>>> from pathlib import Path
+>>> p = Path('/') / 'net' # /storage/python_unittest_data
+>>> p
+>>> p = p / 'storage'
+>>> p
+>>> str(p)
+
+"""
+
 import os
+from pathlib import Path
 
 
-class DataDir(str):
-    """
-    Append string class with join, for easier calling.
-
-    Example:
-
-        >>> import os
-        >>> os.environ['NT_TESTING_DIR'] = '/net'
-        >>> from nt.io.data_dir import testing as data_dir
-        >>> data_dir.join('a', 'b')
-        '/net/a/b'
-        >>> data_dir
-        '/net'
-        >>> data_dir / 'b' / 'c'
-        '/net/b/c'
-        >>> os.path.join(data_dir, '2')
-        '/net/2'
-        >>> data_dir('2')
-        '/net/2'
-        >>> type(data_dir.join('a', 'b'))
-        <class 'str'>
-    """
-
-    def join(self, *args):
-        return os.path.join(self, *args)
-
-    def __call__(self, *args):
-        return os.path.join(self, *args)
-
-    def __div__(self, other):
-        return DataDir(os.path.join(self, other))
-    __truediv__ = __div__
-
-
-testing = DataDir(os.getenv(
+testing = Path(os.getenv(
     'NT_TESTING_DIR',
     '/net/storage/python_unittest_data'
 ))
-timit = DataDir(os.getenv(
+timit = Path(os.getenv(
     'NT_TIMIT_DIR',
-    '/net/speechdb/timit'
+    '/net/db/timit'
 ))
-tidigits = DataDir(os.getenv(
+tidigits = Path(os.getenv(
     'NT_TIDIGITS_DIR',
-    '/net/speechdb/tidigits'
+    '/net/db/tidigits'
 ))
-database_jsons = DataDir(os.getenv(
+database_jsons = Path(os.getenv(
     'NT_DATABASE_JSONS_DIR',
     '/net/storage/database_jsons'
 ))
-chime = DataDir(os.getenv(
-    'NT_CHIME_DIR',
-    '/net/ssd/2015/chime'
+chime_3 = Path(os.getenv(
+    'NT_CHIME_3_DIR',
+    '/net/db/chime3'
 ))
-
-kaldi_root = DataDir(os.getenv(
+chime_4 = Path(os.getenv(
+    'NT_CHIME_4_DIR',
+    '/net/db/chime4'
+))
+kaldi_root = Path(os.getenv(
     'KALDI_ROOT',
-    '/net/ssd/software/kaldi'
+    '/net/ssd/jheymann/software/kaldi_latest'
+    # '/net/ssd/software/kaldi'
+))
+merl_mixtures = Path(os.getenv(
+    'NT_MERL_MIXTURES_DIR',
+    '/net/db/merl_speaker_mixtures'
+))
+german_speechdata = Path(os.getenv(
+    'NT_GERMAN_SPEECHDATA_DIR',
+    '/net/storage/jheymann/speech_db/german-speechdata-package-v2/'
+))
+noisex92 = Path(os.getenv(
+    'NT_NoiseX_92_DIR',
+    '/net/db/NoiseX_92'
+))
+wsj = Path(os.getenv(
+    'NT_WSJ_DIR',
+    '/net/db/wsj'
+))
+dcase = Path(os.getenv(
+    'NT_DCASE_DIR',
+    '/home/parora/Documents/DCASE/DCASE 2016/'
+))
+matlab_toolbox = Path(os.getenv(
+    'MATLAB_TOOLBOX_DIR',
+    '/net/ssd/software/matlab_toolbox'
+))
+matlab_r2015a = Path(os.getenv(
+    'MATLAB_R2015a',
+    '/net/ssd/software/MATLAB/R2015a'
+))
+matlab_license = Path(os.getenv(
+    'MATLAB_LICENSE',
+    '/opt/MATLAB/R2016b_studis/licenses/network.lic'
+))
+language_model = Path(os.getenv(
+    'LANGUAGE_MODEL',
+    '/net/storage/jheymann/__share/ldrude/2016/2016-05-10_lm'
 ))
 
 if __name__ == "__main__":
