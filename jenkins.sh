@@ -15,9 +15,9 @@ CUDA_PATH=/usr/local/cuda
 LD_LIBRARY_PATH=$CUDA_PATH/lib64:${LD_LIBRARY_PATH}
 PATH=$CUDA_PATH/bin:$PATH
 PATH=/net/ssd/software/anaconda/bin/:$PATH
+source activate py35
 export PATH
 export LD_LIBRARY_PATH
-source activate py35
 
 # Use a pseudo virtualenv, http://stackoverflow.com/questions/2915471/install-a-python-package-into-a-different-directory-using-pip
 mkdir -p venv
