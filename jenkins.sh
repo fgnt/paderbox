@@ -10,8 +10,6 @@ trap 'echo -e "${green}$ $BASH_COMMAND ${NC}"' DEBUG
 # Force Exit 0
 trap 'exit 0' EXIT SIGINT SIGTERM
 
-env
-
 # Use a pseudo virtualenv, http://stackoverflow.com/questions/2915471/install-a-python-package-into-a-different-directory-using-pip
 mkdir -p venv
 export PYTHONUSERBASE=$(readlink -m venv)
@@ -38,12 +36,6 @@ pip show chainer
 nosetests -a '!matlab' --with-xunit --with-coverage --cover-package=nt -v # --processes=-1
 # Use as many prosesses as you have cores: --processes=-1
 
-# Uninstall packages
-pip uninstall --quiet --yes chainer
-pip uninstall --quiet --yes nt
-
-unset $PYTHONUSERBASE
-
 # Export coverage
 python -m coverage xml --include=nt*
 
@@ -61,3 +53,7 @@ make --directory=doc html
 
 # Store pip packages
 pip freeze > pip.txt
+
+# Uninstall packages
+pip uninstall --quiet --yes chainer
+pip uninstall --quiet --yes nt
