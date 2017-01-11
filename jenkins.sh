@@ -19,6 +19,8 @@ source activate py35
 export PATH
 export LD_LIBRARY_PATH
 
+cat ~/.bashrc
+
 # Use a pseudo virtualenv, http://stackoverflow.com/questions/2915471/install-a-python-package-into-a-different-directory-using-pip
 mkdir -p venv
 export PYTHONUSERBASE=$(readlink -m venv)
