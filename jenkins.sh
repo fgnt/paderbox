@@ -21,8 +21,10 @@ source activate py35
 export PATH
 export LD_LIBRARY_PATH
 
-echo 'PATH=/net/ssd/software/anaconda/bin/:$PATH' >> ~/.bashrc
-echo "source activate py35" >> ~/.bashrc
+#echo 'PATH=/net/ssd/software/anaconda/bin/:$PATH' >> ~/.bashrc
+#echo "source activate py35" >> ~/.bashrc
+
+cat ~/.bashrc
 
 env
 
