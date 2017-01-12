@@ -10,15 +10,6 @@ trap 'echo -e "${green}$ $BASH_COMMAND ${NC}"' DEBUG
 # Force Exit 0
 trap 'exit 0' EXIT SIGINT SIGTERM
 
-# Set Paths
-CUDA_PATH=/usr/local/cuda
-LD_LIBRARY_PATH=$CUDA_PATH/lib64:${LD_LIBRARY_PATH}
-PATH=$CUDA_PATH/bin:$PATH
-PATH=/net/ssd/software/anaconda/bin/:$PATH
-export PATH
-export LD_LIBRARY_PATH
-source activate py35
-
 # Use a pseudo virtualenv, http://stackoverflow.com/questions/2915471/install-a-python-package-into-a-different-directory-using-pip
 mkdir -p venv
 export PYTHONUSERBASE=$(readlink -m venv)
@@ -51,6 +42,8 @@ python -m coverage xml --include=nt*
 # Pylint tests
 pylint --rcfile=pylint.cfg -f parseable nt > pylint.txt
 # --files-output=y is a bad option, because it produces hundreds of files
+
+env
 
 # Build documentation
 make --directory=doc/source/auto_reference/ clean
