@@ -36,11 +36,12 @@ pip show chainer
 
 # Unittets
 # It seems, that jenkins currentliy does not work with matlab: Error: Segmentation violation
+
 nosetests -a '!matlab' --with-xunit --with-coverage --cover-package=nt -v -w ${TOOLBOX} # --processes=-1
 # Use as many processes as you have cores: --processes=-1
 
 # Export coverage
-python -m coverage xml --include=nt*
+python -m coverage xml --include=${TOOLBOX}/nt*
 
 # Pylint tests
 pylint --rcfile=pylint.cfg -f parseable nt > pylint.txt
