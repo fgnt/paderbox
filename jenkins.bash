@@ -31,7 +31,7 @@ pip show nt
 pip uninstall --quiet --yes chainer
 ls chainer
 pip show chainer
-pip install --quiet --user -e .${CHAINER}
+pip install --quiet --user -e ${CHAINER}
 pip show chainer
 
 # Unittets
