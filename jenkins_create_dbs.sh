@@ -11,6 +11,10 @@ trap 'echo -e "${green}$ $BASH_COMMAND ${NC}"' DEBUG
 # trap 'exit 0' EXIT SIGINT SIGTERM EXIT
 
 # Set Paths
+BUILD_DIR=build/database_jsons
+DST_DIR=/net/storage/database_jsons
+INFO=info.txt
+
 CUDA_PATH=/usr/local/cuda
 LD_LIBRARY_PATH=$CUDA_PATH/lib64:${LD_LIBRARY_PATH}
 PATH=$CUDA_PATH/bin:$PATH
@@ -22,17 +26,16 @@ source activate py35
 mkdir -p venv
 export PYTHONUSERBASE=$(readlink -m venv)
 
+# Update chainer
+pip uninstall --quiet --yes chainer
+pip install --quiet --user --no-deps -e ./chainer/
 
 # Refresh toolbox
-pip install  --quiet --user -e .
+pip install  --quiet --user -e ./toolbox/
 
-BUILD_DIR=build/database_jsons
-DST_DIR=/net/storage/database_jsons
-
+# create build dirs
 mkdir -p $BUILD_DIR
 cd $BUILD_DIR
-
-INFO=info.txt
 
 echo "" > $INFO
 # echo "" > /net/storage/database_jsons/BUILDING_NOW
@@ -68,11 +71,13 @@ python -m nt.database.chime.process_db --json
 
 # Uninstall packages
 pip uninstall --quiet --yes nt
+pip uninstall --quiet --yes chainer
 
 # rm /net/storage/database_jsons/BUILDING_NOW
 
 # exit # uncomment for testing
 
+# sync with destination
 # -n, --dry-run    perform a trial run with no changes made
 rsync --itemize-changes --archive --backup --human-readable --verbose \
 --partial --progress --stats  *.json ${DST_DIR} \
