@@ -21,6 +21,7 @@ CHAINER=./chainer
 ls /net/ssd/software/anaconda/envs/py35/lib/python3.5/lib-dynload/../../ > /dev/null
 
 # Refresh toolbox
+# TODO: install all dependencies and add --no-deps option
 pip uninstall --quiet --yes nt
 ls
 pip show nt
