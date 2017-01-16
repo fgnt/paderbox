@@ -21,7 +21,7 @@ ls /net/ssd/software/anaconda/envs/py35/lib/python3.5/lib-dynload/../../ > /dev/
 pip uninstall --quiet --yes nt
 ls
 pip show nt
-pip install  --quiet --user -e .
+pip install  --quiet --user -e ./toolbox/
 pip show nt
 
 # Update chainer
@@ -34,7 +34,7 @@ pip show chainer
 # Unittets
 # It seems, that jenkins currentliy does not work with matlab: Error: Segmentation violation
 nosetests -a '!matlab' --with-xunit --with-coverage --cover-package=nt -v # --processes=-1
-# Use as many prosesses as you have cores: --processes=-1
+# Use as many processes as you have cores: --processes=-1
 
 # Export coverage
 python -m coverage xml --include=nt*
