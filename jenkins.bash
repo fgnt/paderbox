@@ -14,6 +14,9 @@ trap 'exit 0' EXIT SIGINT SIGTERM
 mkdir -p venv
 export PYTHONUSERBASE=$(readlink -m venv)
 
+TOOLBOX=./toolbox
+CHAINER=./chainer
+
 # Refresh files...
 ls /net/ssd/software/anaconda/envs/py35/lib/python3.5/lib-dynload/../../ > /dev/null
 
@@ -21,19 +24,19 @@ ls /net/ssd/software/anaconda/envs/py35/lib/python3.5/lib-dynload/../../ > /dev/
 pip uninstall --quiet --yes nt
 ls
 pip show nt
-pip install  --quiet --user -e ./toolbox/
+pip install  --quiet --user -e ${TOOLBOX}
 pip show nt
 
 # Update chainer
 pip uninstall --quiet --yes chainer
 ls chainer
 pip show chainer
-pip install --quiet --user -e ./chainer/
+pip install --quiet --user -e .${CHAINER}
 pip show chainer
 
 # Unittets
 # It seems, that jenkins currentliy does not work with matlab: Error: Segmentation violation
-nosetests -a '!matlab' --with-xunit --with-coverage --cover-package=nt -v # --processes=-1
+nosetests -a '!matlab' --with-xunit --with-coverage --cover-package=nt -v -w ${TOOLBOX} # --processes=-1
 # Use as many processes as you have cores: --processes=-1
 
 # Export coverage
@@ -46,10 +49,10 @@ pylint --rcfile=pylint.cfg -f parseable nt > pylint.txt
 env
 
 # Build documentation
-make --directory=doc/source/auto_reference/ clean
-make --directory=doc/source/auto_reference/
-make --directory=doc clean
-make --directory=doc html
+make --directory=${TOOLBOX}/doc/source/auto_reference/ clean
+make --directory=${TOOLBOX}/doc/source/auto_reference/
+make --directory=${TOOLBOX}/doc clean
+make --directory=${TOOLBOX}/doc html
 
 # Store pip packages
 pip freeze > pip.txt
