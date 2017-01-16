@@ -129,11 +129,7 @@ class TestDecoder(unittest.TestCase):
 
         labels = ["<blank>", "a", "b"]
 
-        nn = BLSTMModel(10, 3, 2, 32)
-        model_input = \
-            np.random.uniform(0, 1, size=(20, 1, 10)).astype(np.float32)
-        net_out = nn.propagate(nn.data_to_variable(model_input))
-
+        net_out = Variable(np.random.randn(20, 1, len(labels)))
         utt_id = "11111111"
 
         with tempfile.TemporaryDirectory() as working_dir:
