@@ -45,7 +45,7 @@ nosetests -a '!matlab' --with-xunit --with-coverage --cover-package=nt -v -w ${T
 python -m coverage xml --include=${TOOLBOX}/nt*
 
 # Pylint tests
-pylint --rcfile=pylint.cfg -f parseable nt > pylint.txt
+pylint --rcfile=${TOOLBOX}/pylint.cfg -f parseable nt > pylint.txt
 # --files-output=y is a bad option, because it produces hundreds of files
 
 env
