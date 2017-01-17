@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
 # include common stuff (installation of toolbox and chainer, paths, traps, nice level...)
-source ./jenkins_common.bash
+CHAINER=./chainer
+TOOLBOX=./toolbox
+source ./{TOOLBOX}/jenkins_common.bash
 
 # Unittets
 # It seems, that jenkins currentliy does not work with matlab: Error: Segmentation violation
