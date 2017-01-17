@@ -18,7 +18,7 @@ class Mlab:
             #   startup
         elif matlab_startup_path is None:
             self.matlab_startup_path = \
-                matlab_toolbox / 'startup.m'
+                str(matlab_toolbox / 'startup.m')
         else:
             self.matlab_startup_path = matlab_startup_path
 

@@ -82,6 +82,7 @@ setup(
                       'psutil', 'plumbum', 'click', 'typecheck-decorator',
                       'natsort', 'pymongo',
                       'coverage',  # for nosetests --with-coverage
+                      'bs4',  # for german speech database
                       ],
 
     # List additional groups of dependencies here (e.g. development
