@@ -3,7 +3,7 @@
 # include common stuff (installation of toolbox and chainer, paths, traps, nice level...)
 source "`dirname "$0"`/jenkins_common.bash"
 
-python check_json_wavs.py
+python "${TOOLBOX}/check_json_wavs.py"
 
 # Uninstall packages
 pip uninstall --quiet --yes nt
