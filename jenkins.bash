@@ -21,8 +21,8 @@ env
 # Build documentation
 make --directory="${TOOLBOX}/doc/source/auto_reference/" clean
 make --directory="${TOOLBOX}/doc/source/auto_reference/"
-make --directory="${TOOLBOX}/doc clean"
-make --directory="${TOOLBOX}/doc html"
+make --directory="${TOOLBOX}/doc" clean
+make --directory="${TOOLBOX}/doc" html
 
 # Store pip packages
 pip freeze > pip.txt
