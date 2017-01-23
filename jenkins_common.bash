@@ -31,7 +31,7 @@ ls /net/ssd/software/anaconda/envs/py35/lib/python3.5/lib-dynload/../../ > /dev/
 # Refresh toolbox
 # TODO: install all dependencies and add --no-deps option
 pip uninstall --quiet --yes nt
-ls
+ls toolbox
 pip show nt
 pip install  --quiet --user -e ${TOOLBOX}
 pip show nt
