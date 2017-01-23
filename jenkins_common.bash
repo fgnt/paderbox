@@ -3,6 +3,9 @@
 renice -n 20 $$
 
 # paths
+CHAINER=./chainer
+TOOLBOX=./toolbox
+
 CUDA_PATH=/usr/local/cuda
 LD_LIBRARY_PATH=$CUDA_PATH/lib64:${LD_LIBRARY_PATH}
 PATH=$CUDA_PATH/bin:$PATH
