@@ -43,7 +43,8 @@ class Timer(object):
         if self.cuda_event:
             self.end.record()
             self.end.synchronize()
-            self.msecs = self.cuda.cupy.cuda.get_elapsed_time(self.start, self.end)
+            self.msecs = self.cuda.cupy.cuda.get_elapsed_time(
+                self.start, self.end)
             self.secs = self.msecs / 1000
         else:
             self.end = time.time()
@@ -54,7 +55,8 @@ class Timer(object):
 
 
 class TimerDictEntry:
-    def __init__(self, style):    
+
+    def __init__(self, style):
         self.time = 0.0
         self._style = style
 
@@ -63,7 +65,7 @@ class TimerDictEntry:
 
     def __exit__(self, *args):
         end = time.perf_counter()
-        self.time += end-self._start
+        self.time += end - self._start
 
     def __call__(self, iterable):
         it = iter(iterable)
@@ -71,7 +73,7 @@ class TimerDictEntry:
             with self:
                 x = next(it)
             yield x
-    
+
     @property
     def timedelta(self):
         return datetime.timedelta(seconds=self.time)
@@ -111,7 +113,8 @@ class TimerDict:
     0:00:02.0 0:00:01.0 0:00:00.3
 
     """
-    def __init__(self, style='timedelta'):    
+
+    def __init__(self, style='timedelta'):
         """
         :param style: default timedelta, alternative float
         """
@@ -120,11 +123,11 @@ class TimerDict:
     def __getitem__(self, item):
         assert isinstance(item, str)
         return self.timings[item]
-        
+
     @property
     def as_dict(self):
         return {k: time.value for k, time in self.timings.items()}
-    
+
     @property
     def as_yaml(self):
         import yaml
