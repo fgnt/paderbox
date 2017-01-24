@@ -68,7 +68,7 @@ def _test_finished(job_ids, host, use_ssh):
     new_finished_jobs = 0
     for idx, job in jobs.iterrows():
         if not job['status'] == 'STOPPED':
-            next_ids.append(job['name'])
+            next_ids.append(job['id'])
         else:
             new_finished_jobs += 1
     return next_ids, new_finished_jobs
@@ -78,6 +78,8 @@ def idle_while_jobs_are_running(
         job_ids, sleep_time=300, host='pc2', use_ssh=True
 ):
     """ Expects list of job ids as strings. """
+    if not len(job_ids):
+        return
     total_jobs = len(job_ids)
     p = tqdm(total=total_jobs, desc='Cluster jobs')
     while len(job_ids):
