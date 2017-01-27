@@ -31,14 +31,22 @@ ls /net/ssd/software/anaconda/envs/py35/lib/python3.5/lib-dynload/../../ > /dev/
 # Refresh toolbox
 # TODO: install all dependencies and add --no-deps option
 pip uninstall --quiet --yes nt
-ls toolbox
 pip show nt
 pip install  --quiet --user -e ${TOOLBOX}
 pip show nt
 
 # Update chainer
 pip uninstall --quiet --yes chainer
-ls chainer
 pip show chainer
 pip install --quiet --user -e ${CHAINER}
 pip show chainer
+
+# Tear down everything (uninstall packages), to be called at the end of the jenkins script
+function tear_down {
+    # Store pip packages
+    pip freeze > pip.txt
+
+    # Uninstall packages
+    pip uninstall --quiet --yes chainer
+    pip uninstall --quiet --yes nt
+}

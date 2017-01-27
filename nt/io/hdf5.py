@@ -49,10 +49,10 @@ def dump_hdf5(obj, filename, force=True):
     _ReportInterface.__save_dict_to_hdf5__(obj, filename, force=force)
 
 
-def update_hdf5(obj, filename):
+def update_hdf5(obj, filename, path='/'):
     """
     """
-    _ReportInterface.__update_hdf5_from_dict__(obj, filename)
+    _ReportInterface.__update_hdf5_from_dict__(obj, filename, path)
 
 
 def load_hdf5(filename, path='/'):
@@ -124,10 +124,13 @@ class _ReportInterface(object):
             cls.__recursively_save_dict_contents_to_group__(h5file, '/', dic)
 
     @classmethod
-    def __update_hdf5_from_dict__(cls, dic, filename):
+    def __update_hdf5_from_dict__(cls, dic, filename, path='/'):
         """..."""
-        with h5py.File(filename, 'a') as h5file:
-            cls.__recursively_save_dict_contents_to_group__(h5file, '/', dic)
+        if isinstance(filename, h5py.File):
+            cls.__recursively_save_dict_contents_to_group__(filename, path, dic)
+        else:
+            with h5py.File(filename, 'a') as h5file:
+                cls.__recursively_save_dict_contents_to_group__(h5file, path, dic)
 
     @classmethod
     def _dump_warning(cls, msg):
@@ -167,6 +170,8 @@ class _ReportInterface(object):
                         not np.isnan(h5file[cur_path].value):
                     raise ValueError('The data representation in the HDF5 '
                                      'file does not match the original dict.')
+            elif isinstance(item, type(None)):
+                h5file[cur_path] = 'None'
             # save numpy arrays
             elif isinstance(item, (np.ndarray, tuple)):
                 try:
@@ -240,6 +245,9 @@ class _ReportInterface(object):
                                                       key=lambda x: int(x[0]))]
             elif isinstance(item, h5py._hl.dataset.Dataset):
                 ans[key] = item.value
+                if isinstance(ans[key], str):
+                    if ans[key] == 'None':
+                        ans[key] = None
             elif isinstance(item, h5py._hl.group.Group):
                 ans[key] = cls.__recursively_load_dict_contents_from_group__(
                     h5file, path + key + '/')

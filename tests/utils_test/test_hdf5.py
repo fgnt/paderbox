@@ -25,6 +25,7 @@ class TestHdf5:
         ('float', {'key': 1.1}, np.float64(1.1)),
         ('complex', {'key': 1.1j}, np.complex128(1.1j)),
         ('str', {'key': 'bla'}, 'bla'),
+        ('none', {'key': None}, None),
         ('np int', {'key': np.int(1)}, np.int64(1)),
         ('np float32', {'key': np.float32(1.1)}, np.float32(1.1)),
         ('np float64', {'key': np.float64(1.1)}, np.float64(1.1)),
@@ -51,5 +52,5 @@ class TestHdf5:
         assert 'key' in data_load.keys(), data_load
 
         assert type(expect) is type(data_load['key']), \
-            (type(expect), type(data_load['key']))
+            (type(expect), type(data_load['key']), expect, data_load['key'])
         tc.assert_equal(expect, data_load['key'])
