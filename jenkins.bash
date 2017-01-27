@@ -24,9 +24,4 @@ make --directory="${TOOLBOX}/doc/source/auto_reference/"
 make --directory="${TOOLBOX}/doc" clean
 make --directory="${TOOLBOX}/doc" html
 
-# Store pip packages
-pip freeze > pip.txt
-
-# Uninstall packages
-pip uninstall --quiet --yes chainer
-pip uninstall --quiet --yes nt
+tear_down

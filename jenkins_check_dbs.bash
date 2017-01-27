@@ -6,6 +6,4 @@ source "`dirname "$0"`/jenkins_common.bash"
 # execute test and create xml for jenkins
 nosetests --with-xunit -s "${TOOLBOX}/check_json_wavs.py"
 
-# Uninstall packages
-pip uninstall --quiet --yes nt
-pip uninstall --quiet --yes chainer
+tear_down
