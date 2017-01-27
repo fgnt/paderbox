@@ -48,5 +48,5 @@ function tear_down {
 
     # Uninstall packages
     pip uninstall --quiet --yes chainer
-    pip uninstall --quiet --es nt
+    pip uninstall --quiet --yes nt
 }
