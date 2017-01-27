@@ -12,6 +12,9 @@ from nt.speech_enhancement.noise.utils import set_snr
 from nt.speech_enhancement.noise.spherical_habets import _sinf_3D_py
 from nt.database.noisex92 import helper
 
+from nt.io import load_json
+from nt.io.data_dir import database_jsons
+
 
 class NoiseGeneratorTemplate:
     """
@@ -26,7 +29,7 @@ class NoiseGeneratorTemplate:
             time_signal,
             *,
             snr,
-            rng_state: np.random.RandomState=np.random,
+            rng_state: np.random.RandomState = np.random,
             **kwargs
     ):
         """
@@ -66,7 +69,6 @@ class NoiseGeneratorWhite(NoiseGeneratorTemplate):
     >>> round(SNR, 1)
     20.0
 
-    >>> from nt.evaluation.sxr import input_sxr
     >>> time_signal = np.random.normal(size=(1000, 2))
     >>> ng = NoiseGeneratorWhite()
     >>> n = ng.get_noise_for_signal(time_signal, snr=20)
@@ -76,10 +78,12 @@ class NoiseGeneratorWhite(NoiseGeneratorTemplate):
     >>> time_signal.shape
     (1000, 2)
 
+    >>> from nt.evaluation.sxr import input_sxr
     >>> SDR, SIR, SNR = input_sxr(time_signal[:, :, None], n)
     >>> round(SNR, 1)
     20.0
     """
+
     def _get_noise(self, shape, rng_state=np.random):
         noise_signal = rng_state.normal(size=shape)
         return noise_signal
@@ -93,13 +97,14 @@ class NoiseGeneratorChimeBackground(NoiseGeneratorTemplate):
     You can create the file by running this code:
     ``python -m nt.database.chime.create_background_json``
 
-    >>> ng = NoiseGeneratorChimeBackground('chime_bss.json', flist='train')
+    >>> ng = NoiseGeneratorChimeBackground(database_jsons / 'chime_backgrounds.json', flist='train')
     >>> noise = ng.get_noise((3, 16000), np.random)
     >>> print(noise.shape)
     (3, 16000)
     """
     def __init__(
-            self, json_src, flist=None, sampling_rate=16000, max_channels=6
+            self, json_src=database_jsons / 'chime_backgrounds.json',
+            flist=None, sampling_rate=16000, channels=6
     ):
         """
 
@@ -107,14 +112,13 @@ class NoiseGeneratorChimeBackground(NoiseGeneratorTemplate):
             json_src: Path to your chime background data json.
             flist: Either ``all``, ``train``, or ``cv``.
             sampling_rate:
-            max_channels: Chose a number of channels from {1, ..., 6}.
+            channels: Chose a number of channels from {1, ..., 6}.
         """
         flist = 'all' if flist is None else flist
-        with open(json_src) as f:
-            database = json.load(f)
+        database = load_json(json_src)
 
         self.sampling_rate = sampling_rate
-        self.max_channels = max_channels
+        self.max_channels = channels
         self.flist = database[flist]
         self.utterance_list = sorted(self.flist['wav'].keys())
 
@@ -132,7 +136,8 @@ class NoiseGeneratorChimeBackground(NoiseGeneratorTemplate):
         for channel in channels:
             noise_list.append(audioread(
                 self.flist['wav'][utt_id]['CH{}'.format(channel + 1)],
-                offset=start/self.sampling_rate, duration=T/self.sampling_rate
+                offset=start / self.sampling_rate,
+                duration=T / self.sampling_rate
             ))
 
         # Reshape to deal with singleton dimensions
@@ -143,6 +148,7 @@ class NoiseGeneratorPink(NoiseGeneratorTemplate):
     """
     See example code of ``NoiseGeneratorWhite``.
     """
+
     def _get_noise(self, shape, rng_state=np.random):
         """Generates pink noise. You still need to rescale it to your needs.
 
@@ -186,12 +192,13 @@ class NoiseGeneratorNoisex92(NoiseGeneratorTemplate):
             if label not in self.labels:
                 raise KeyError('The label "{label}" does not exist. '
                                'Please choose a valid label from following list: '
-                               '{l}'.format(label=label, l=', '.join(self.labels)))
+                               '{l}'.format(label=label,
+                                            l=', '.join(self.labels)))
             self.labels = [label]
         self.audio_datas = list()
         for l in self.labels:
-                path = helper.get_path_for_label(l, sample_rate)
-                self.audio_datas += [ar.audioread(path, sample_rate=sample_rate)]
+            path = helper.get_path_for_label(l, sample_rate)
+            self.audio_datas += [ar.audioread(path, sample_rate=sample_rate)]
 
         self.sample_rate = sample_rate
 
@@ -229,16 +236,15 @@ class NoiseGeneratorNoisex92(NoiseGeneratorTemplate):
         if shape[0] <= audio_data.shape[0]:
             seq = rng_state.randint(0, audio_data.shape[0] - shape[0])
         else:
-            raise ValueError('Length of Time Signal is longer then the length of a possible noisex92 Noise Signal!')
+            raise ValueError(
+                'Length of Time Signal is longer then the length of a possible noisex92 Noise Signal!')
         noise_signal = audio_data[seq: seq + shape[0]]
         return noise_signal
 
 
 class NoiseGeneratorSpherical(NoiseGeneratorTemplate):
-
     def __init__(self, sensor_positions, *, sample_axis=-1, channel_axis=-2,
                  sample_rate=16000, c=340, number_of_cylindrical_angels=256):
-
         assert sensor_positions.shape[0] == 3
 
         self.sample_axis = sample_axis
@@ -285,7 +291,8 @@ class NoiseGeneratorSpherical(NoiseGeneratorTemplate):
         """
         tc.assert_equal(shape[self.channel_axis], self.number_of_channels)
 
-        noise_signal = _sinf_3D_py(self.sensor_positions, shape[self.sample_axis])
+        noise_signal = _sinf_3D_py(self.sensor_positions,
+                                   shape[self.sample_axis])
         return noise_signal.T
 
 
