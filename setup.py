@@ -83,6 +83,7 @@ setup(
                       'natsort', 'pymongo',
                       'coverage',  # for nosetests --with-coverage
                       'bs4',  # for german speech database
+                      'soundfile',  # for reading .flac audio
                       ],
 
     # List additional groups of dependencies here (e.g. development
