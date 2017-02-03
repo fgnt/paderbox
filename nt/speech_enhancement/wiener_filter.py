@@ -7,6 +7,12 @@ def wiener_filter_gain(observation, n_mask, G_min_db=-25, mask_min=1e-6):
         This function returns the gain function, which is multiplied with the
         STFT of the noisy obseration.
 
+        The NPP-based noise PSD estimation is proposed in [1].
+
+        Chinaev, Heymann, Drude, Häb-Umbach, "Noise-Presence-Probability-Based
+        Noise PSD Estimation by Using DNNs", 12. ITG Fachtagung
+        Sprachkommunikation (ITG 2016). 2016
+
         :param observation: Single channel complex STFT signal with
             dimensions TxF.
         :param n_mask:
@@ -35,7 +41,8 @@ def wiener_filter_gain(observation, n_mask, G_min_db=-25, mask_min=1e-6):
 
 def wiener_filter(observation, n_mask, G_min_db=-25, mask_min=1e-6):
     """
-    Apply gain function calculated as suggested in the DSSP script.
+    Apply gain function calculated via the a posteriori SNR as suggested
+    in the DSSP script.
 
     :param observation: Single channel complex STFT signal with dimensions TxF.
     :param n_mask:
