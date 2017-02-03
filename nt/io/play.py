@@ -5,6 +5,7 @@ from nt.transform import istft
 import numpy as np
 import os
 from nt.io.audioread import audioread
+from pathlib import Path
 
 
 class NamedAudio(Audio):
@@ -48,6 +49,9 @@ def play(data, channel=0, sample_rate=16000,
     :return:
     """
     assert isinstance(channel, int)
+
+    if isinstance(data, Path):
+        data = str(data)
 
     if isinstance(data, str):
         assert os.path.exists(data), 'File does not exist.'
