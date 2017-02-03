@@ -30,7 +30,8 @@ class NamedAudio(Audio):
 
 
 def play(data, channel=0, sample_rate=16000,
-         size=1024, shift=256, window=signal.blackman, *, name=None):
+         size=1024, shift=256, window=signal.blackman, *,
+         name=None):
     """ Tries to guess, what the input data is. Plays time series and stft.
 
     Provides an easy to use interface to play back sound in an IPython Notebook.
