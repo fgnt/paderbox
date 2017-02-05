@@ -59,12 +59,13 @@ class TimerDictEntry:
     def __init__(self, style):
         self.time = 0.0
         self._style = style
+        self.timestamp = time.perf_counter  # time.process_time
 
     def __enter__(self):
-        self._start = time.perf_counter()
+        self._start = self.timestamp()
 
     def __exit__(self, *args):
-        end = time.perf_counter()
+        end = self.timestamp()
         self.time += end - self._start
 
     def __call__(self, iterable):
