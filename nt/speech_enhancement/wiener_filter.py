@@ -76,8 +76,8 @@ def wiener_filter_gain(observation, n_mask, G_min_db=-25, mask_min=1e-6):
     Phi_NN = spectrogram(n_mask * observation)
     Phi_NN_smoothed = Phi_NN
     for t in range(1, n_mask.shape[0]):
-        Phi_NN_smoothed[t, :] = (1 - n_mask[t, :]) * Phi_NN_smoothed[t - 1, :] \
-            + Phi_NN[t, :]
+        Phi_NN_smoothed[t, :] = (1 - n_mask[t, :]) * \
+            Phi_NN_smoothed[t - 1, :] + Phi_NN[t, :]
 
     # Phi_NN_smoothed[1:, :] = (1 - n_mask[1:, :]) * Phi_NN[:-1, :] \
     #                          + Phi_NN[1:, :]
