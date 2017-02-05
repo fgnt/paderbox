@@ -114,7 +114,7 @@ class TimerDict:
 
     """
 
-    def __init__(self, style='timedelta'):
+    def __init__(self, style: ('timedelta', 'float')='timedelta'):
         """
         :param style: default timedelta, alternative float
         """
