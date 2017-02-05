@@ -76,8 +76,8 @@ def wiener_filter_gain(observation, n_mask, G_min_db=-25, mask_min=1e-6):
     Phi_NN = spectrogram(n_mask * observation)
     Phi_NN_smoothed = Phi_NN
     for t in range(1, n_mask.shape[0]):
-        Phi_NN_smoothed[t, :] = (1 - n_mask[t, :]) * Phi_NN_smoothed[t-1, :] \
-                             + Phi_NN[t, :]
+        Phi_NN_smoothed[t, :] = (1 - n_mask[t, :]) * Phi_NN_smoothed[t - 1, :] \
+            + Phi_NN[t, :]
 
     # Phi_NN_smoothed[1:, :] = (1 - n_mask[1:, :]) * Phi_NN[:-1, :] \
     #                          + Phi_NN[1:, :]
@@ -121,6 +121,8 @@ if __name__ == '__main__':
     s_hat = wiener_filter(obs, n_mask)
     g = wiener_filter_gain(obs, n_mask)
     # play.play(s_hat)
-    audiowrite.audiowrite(istft(s_hat), '/net/nas/boeddeker/asn_data/wiener_test.wav')
-    print('snr', get_snr(istft(x*g), istft(n*g)))
+    audiowrite.audiowrite(
+        istft(s_hat),
+        '/net/nas/boeddeker/asn_data/wiener_test.wav')
+    print('snr', get_snr(istft(x * g), istft(n * g)))
     print('pesq', pesq.pesq(data.X[4], istft(s_hat)))
