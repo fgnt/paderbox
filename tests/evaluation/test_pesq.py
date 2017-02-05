@@ -12,8 +12,9 @@ class TestProposedPESQ(unittest.TestCase):
     This is, why it fails.
     """
     def setUp(self):
-        self.ref_path = testing_dir('evaluation', 'data', 'speech.wav')
-        self.deg_path = testing_dir('evaluation', 'data', 'speech_bab_0dB.wav')
+        data_dir = testing_dir / 'evaluation' / 'data'
+        self.ref_path = data_dir / 'speech.wav'
+        self.deg_path = data_dir / 'speech_bab_0dB.wav'
 
         self.ref_array = audioread(self.ref_path)
         self.deg_array = audioread(self.deg_path)
@@ -84,3 +85,14 @@ class TestProposedPESQ(unittest.TestCase):
             self.deg_path
         )
         nptest.assert_equal(scores, numpy.asarray([1.083]))
+
+    def test_wrong_file(self):
+        with self.assertRaisesRegex(
+                ChildProcessError,
+                r'An error of type 2  \(Reference or Degraded below 1/4 '
+                r'second - processing stopped \) occurred during processing.'
+        ):
+            pesq(
+                __file__,
+                self.deg_path
+            )
