@@ -5,6 +5,7 @@ from nt.transform import istft
 import numpy as np
 import os
 from nt.io.audioread import audioread
+from pathlib import Path
 
 
 class NamedAudio(Audio):
@@ -30,7 +31,8 @@ class NamedAudio(Audio):
 
 
 def play(data, channel=0, sample_rate=16000,
-         size=1024, shift=256, window=signal.blackman, *, name=None):
+         size=1024, shift=256, window=signal.blackman, *,
+         name=None):
     """ Tries to guess, what the input data is. Plays time series and stft.
 
     Provides an easy to use interface to play back sound in an IPython Notebook.
@@ -48,6 +50,9 @@ def play(data, channel=0, sample_rate=16000,
     :return:
     """
     assert isinstance(channel, int)
+
+    if isinstance(data, Path):
+        data = str(data)
 
     if isinstance(data, str):
         assert os.path.exists(data), 'File does not exist.'
