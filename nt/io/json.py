@@ -2,9 +2,9 @@ import json
 import numpy as np
 import bson
 import datetime
-from chainer import Variable
 from pathlib import Path
 
+from chainer import Variable
 
 # http://stackoverflow.com/a/27050186
 class _Encoder(json.JSONEncoder):
@@ -38,7 +38,7 @@ def dump_json(obj, path, *, indent=2, **kwargs):
 
     """
     assert isinstance(path, (str, Path))
-    path = Path(path)
+    path = Path(path).expanduser()
 
     with path.open('w') as f:
         json.dump(obj, f, cls=_Encoder, indent=indent, sort_keys=True, **kwargs)
@@ -52,7 +52,7 @@ def load_json(path, **kwargs):
     :return: Content of the JSON file.
     """
     assert isinstance(path, (str, Path))
-    path = Path(path)
+    path = Path(path).expanduser()
 
     with path.open() as fid:
         return json.load(fid, **kwargs)
