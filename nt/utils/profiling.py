@@ -6,6 +6,7 @@ import time as time
 from pycallgraph import PyCallGraph
 from pycallgraph.output import GraphvizOutput
 from inspect import isclass, isfunction
+from functools import wraps
 
 def timefunc(func):
     def profiled_func(*args, **kwargs):
@@ -58,6 +59,7 @@ def gprun(func):
 
 def lprun(func_or_list=list()):
     if isfunction(func_or_list):
+        @wraps(func_or_list)
         def profiled_func(*args, **kwargs):
             profiler = line_profiler.LineProfiler()
             try:
@@ -69,6 +71,7 @@ def lprun(func_or_list=list()):
         return profiled_func
     elif isinstance(func_or_list, list):
         def inner(func):
+            @wraps(func)
             def profiled_func(*args, **kwargs):
                 profiler = line_profiler.LineProfiler()
                 try:
