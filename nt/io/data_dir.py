@@ -48,11 +48,11 @@ ami = Path(os.getenv(
 ))
 timit = Path(os.getenv(
     'NT_TIMIT_DIR',
-    '/net/db/timit'
+    db_dir /'timit'
 ))
 tidigits = Path(os.getenv(
     'NT_TIDIGITS_DIR',
-    '/net/db/tidigits'
+    db_dir /'tidigits'
 ))
 chime_3 = Path(os.getenv(
     'NT_CHIME_3_DIR',
@@ -74,6 +74,10 @@ noisex92 = Path(os.getenv(
     'NT_NoiseX_92_DIR',
     db_dir / 'NoiseX_92'
 ))
+reverb = Path(os.getenv(
+    'NT_REVERB_DIR',
+    db_dir / 'reverb'
+))
 wsj = Path(os.getenv(
     'NT_WSJ_DIR',
     db_dir / 'wsj'
@@ -81,6 +85,10 @@ wsj = Path(os.getenv(
 dcase = Path(os.getenv(
     'NT_DCASE_DIR',
     '/home/parora/Documents/DCASE/DCASE 2016/'
+))
+wsjcam0 = Path(os.getenv(
+    'NT_WSJCAM0_DIR',
+    db_dir / 'wsjcam0'
 ))
 language_model = Path(os.getenv(
     'LANGUAGE_MODEL',
