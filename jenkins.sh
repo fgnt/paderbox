@@ -25,10 +25,6 @@ export PYTHONUSERBASE=$(readlink -m venv)
 # Refresh files...
 ls /net/ssd/software/anaconda/envs/py35/lib/python3.5/lib-dynload/../../ > /dev/null
 
-# enable matlab tests
-TEST_MATLAB=true
-export TEST_MATLAB
-
 # Refresh toolbox
 pip uninstall --quiet --yes nt
 ls
@@ -44,7 +40,8 @@ pip install --quiet --user -e ./chainer/
 pip show chainer
 
 # Unittets
-nosetests --with-xunit --with-coverage --cover-package=nt -v # --processes=-1
+# It seems, that jenkins currentliy does not work with matlab: Error: Segmentation violation
+nosetests -a '!matlab' --with-xunit --with-coverage --cover-package=nt -v # --processes=-1
 # Use as many prosesses as you have cores: --processes=-1
 
 # Export coverage

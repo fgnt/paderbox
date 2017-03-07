@@ -13,7 +13,7 @@ from nt.speech_enhancement.beamformer import get_power_spectral_density_matrix
 from nt.speech_enhancement.mask_module import biased_binary_mask, \
     wiener_like_mask
 from nt.utils.math_ops import vector_H_vector
-from nt.utils.matlab import Mlab, matlab_test
+from nt.utils.matlab import Mlab
 
 
 # uncomment, if you want to test matlab functions
@@ -143,7 +143,7 @@ class TestBeamformerMethods(unittest.TestCase):
         datafile_multi_speaker = path.join(path.dirname(path.realpath(__file__)), 'data_multi_speaker.npz')
         np.savez(datafile_multi_speaker, X=X, Y=Y, N=N)
 
-    @matlab_test
+    @tc.attr.matlab
     def test_compare_PSD_without_mask(self):
         mlab = self.mlab.process
         mlab.set_variable('Y', self.Y_bf)
@@ -152,7 +152,7 @@ class TestBeamformerMethods(unittest.TestCase):
         Phi = get_power_spectral_density_matrix(self.Y_bf)
         tc.assert_allclose(Phi, Phi_matlab, atol=1e-4)
 
-    @matlab_test
+    @tc.attr.matlab
     def test_compare_PSD_with_mask(self):
         mlab = self.mlab.process
         mlab.set_variable('Y', self.Y_bf)
@@ -162,7 +162,7 @@ class TestBeamformerMethods(unittest.TestCase):
         Phi = get_power_spectral_density_matrix(self.Y_bf, self.ibm_N_bf)
         tc.assert_allclose(Phi, Phi_matlab, atol=1e-4)
 
-    @matlab_test
+    @tc.attr.matlab
     def test_compare_PCA_beamformer(self):
         mlab = self.mlab.process
         mlab.set_variable('Phi_XX', self.Phi_XX)
@@ -173,7 +173,7 @@ class TestBeamformerMethods(unittest.TestCase):
     def test_mvdr_beamformer(self):
         tc.assert_allclose(vector_H_vector(self.W_pca, self.W_mvdr), 1)
 
-    @matlab_test
+    @tc.attr.matlab
     def test_compare_mvdr_beamformer(self):
         mlab = self.mlab.process
         mlab.set_variable('Phi_NN', self.Phi_NN)
@@ -182,7 +182,7 @@ class TestBeamformerMethods(unittest.TestCase):
         W_matlab = mlab.get_variable('W')
         tc.assert_cosine_similarity(W_matlab, self.W_mvdr)
 
-    @matlab_test
+    @tc.attr.matlab
     def test_compare_gev_beamformer(self):
         mlab = self.mlab.process
         mlab.set_variable('Phi_XX', self.Phi_XX)
@@ -191,7 +191,7 @@ class TestBeamformerMethods(unittest.TestCase):
         W_matlab = mlab.get_variable('W')
         tc.assert_cosine_similarity(W_matlab, self.W_gev)
 
-    @matlab_test
+    @tc.attr.matlab
     def test_compare_lcmv_beamformer(self):
         from nt.speech_enhancement.beamformer import apply_beamforming_vector
         from nt.transform.module_stft import istft_loop

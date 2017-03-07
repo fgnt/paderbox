@@ -6,29 +6,57 @@ import math
 from nt.utils.numpy_utils import segment_axis
 from nt.speech_enhancement.noise import NoiseGeneratorWhite
 
-background = ['washing machine', 'fridge', 'microwave running', 'ironing', 'coffee maker', 'vacuum cleaner',
-              'music playing']
 
-short_events = ['mouse', 'page turning', 'paper rustling', 'mouse rolling', 'mouse clicking', 'adjusting fabric',
-                'adjusting thermostat', 'adjusting sheet', 'lid', 'dispenser drawer', 'switch', 'glass', 'cup',
-                'pot', 'fridge door', 'cork', 'closing bottle', 'opening bottle', 'coffee pot', 'plate', 'garbage can',
-                'carpet', 'pen clicking', 'paper shuffling', 'dishwasher rack', 'noise', 'unknown sound',
-                'thumping', 'iron', 'scooping detergent', 'shaking container', 'typing', 'whooshing',
-                'pan banging', 'scooping coffee', 'pressing button', 'microwave', 'rubbing', 'writing',
-                'paper hitting', 'cable', 'bird singing', 'power cord']
+def get_residential_area_garbageevents():
+    automobile = ['traffic', 'bus arriving', 'bus leaving', 'car arriving', 'bicycle passing by', 'car leaving',
+                  'bus passing by', 'airplane passing by', 'truck passing by']
 
-human_reflexes = ['person breathing', 'person whistling', 'person clapping', 'person coughing', 'person sneezing',
-                  'person swallowing', 'people speaking', 'television']
+    short_events = ['flagpole swaying', 'rock flying', 'rock crunching', 'gate rattling', 'car door slamming',
+                    '(object) squeaking', '(object) rattling', 'gate opening', 'gate closing', '(object) clacking',
+                    '(object) rubbing', 'unknown sound', 'car door closing', '(object) flapping', '(object) knocking',
+                    '(object) ticking', '(object) ringing', 'dog walking', '(object) snapping', 'snapping fingers',
+                    'person clapping', 'bus door opening', '(object) scratching', '(object) scraping',
+                    '(object) shaking',
+                    '(object) falling', 'construction sounds', 'car door opening', '(object) rustling', 'cane dragging']
 
-water_activities = ['water spraying', 'water pouring', 'pouring drink', 'sink draining', 'soda stream', 'water',
-                    'water splashing', 'water dripping']
+    human_reflexes = ['person breathing', 'person whistling', 'children speaking', 'children laughing',
+                      'people laughing', 'people shouting']
 
-object_actions = ['(object) knocking', 'chair squeaking', '(object) wobbling', '(object) tapping',
-                  '(object) sweeping', 'door closing', '(object) rattling', '(object) shaking', '(object) knocking',
-                  '(object) dragging', '(object) squeaking', '(object) swiping', 'door opening', '(object) pulling',
-                  '(object) clacking', '(object) ripping', '(object) rubbing', '(object) ticking', '(object) clicking',
-                  '(object) beeping', '(object) jingling', '(object) scraping', '(object) opening',
-                  '(object) shuffling']
+    animals = ['dog barking', '(person) howling', 'gull cawing']
+
+    engine_actions = ['brakes squeaking', 'engine idling', 'engine running', 'leaves rustling', 'engine starting',
+                      'hand brake grinding', 'engine coughing', 'moped accelerating']
+
+    return automobile, short_events, human_reflexes, animals, engine_actions
+
+
+def get_home_garbageevents():
+    background = ['washing machine', 'fridge', 'microwave running', 'ironing', 'coffee maker', 'vacuum cleaner',
+                  'music playing']
+
+    short_events = ['mouse', 'page turning', 'paper rustling', 'mouse rolling', 'mouse clicking', 'adjusting fabric',
+                    'adjusting thermostat', 'adjusting sheet', 'lid', 'dispenser drawer', 'switch', 'glass', 'cup',
+                    'pot', 'fridge door', 'cork', 'closing bottle', 'opening bottle', 'coffee pot', 'plate',
+                    'garbage can', 'carpet', 'pen clicking', 'paper shuffling', 'dishwasher rack', 'noise',
+                    'unknown sound', 'thumping', 'iron', 'scooping detergent', 'shaking container', 'typing',
+                    'whooshing', 'pan banging', 'scooping coffee', 'pressing button', 'microwave', 'rubbing', 'writing',
+                    'paper hitting', 'cable', 'bird singing', 'power cord']
+
+    human_reflexes = ['person breathing', 'person whistling', 'person clapping', 'person coughing', 'person sneezing',
+                      'person swallowing', 'people speaking', 'television']
+
+    water_activities = ['water spraying', 'water pouring', 'pouring drink', 'sink draining', 'soda stream', 'water',
+                        'water splashing', 'water dripping']
+
+    object_actions = ['(object) knocking', 'chair squeaking', '(object) wobbling', '(object) tapping',
+                      '(object) sweeping', 'door closing', '(object) rattling', '(object) shaking', '(object) knocking',
+                      '(object) dragging', '(object) squeaking', '(object) swiping', 'door opening', '(object) pulling',
+                      '(object) clacking', '(object) ripping', '(object) rubbing', '(object) ticking',
+                      '(object) clicking',
+                      '(object) beeping', '(object) jingling', '(object) scraping', '(object) opening',
+                      '(object) shuffling']
+
+    return background, short_events, human_reflexes, water_activities, object_actions
 
 # Generate a dictionary of training data
 def generate_training_dict(dir_name):
@@ -43,32 +71,63 @@ def generate_training_dict(dir_name):
     return y_data, sr, scripts
 
 
+def generate_training_dict_stereo(dir_name):
+    print('Generating sampled data from given utterances....')
+    y_data = dict()
+    scripts = list()
+    for file in os.listdir(dir_name):
+        filename = ''.join((dir_name, file))
+        scripts.append(file[:-4])
+        y, sr = librosa.load(filename, sr=16000, mono=False)
+        y_data.update({file[:-4]: y})
+    return y_data, sr, scripts
+
 def seconds_to_samples(timestamp_in_seconds, sampling_rate):
     return int(math.floor(timestamp_in_seconds * sampling_rate))
 
 
-def get_targets_from_transcriptions(transcription_file, num_of_samples, events, sampling_rate, stretching_factor=1):
+def get_targets_from_transcriptions(transcription_file, num_of_samples, events, scene, sampling_rate,
+                                    stretching_factor=1):
     num_events = len(events)
     fid = open(transcription_file, 'r')
     lines = fid.read().split('\n')
     fid.close()
     int_arr = np.zeros((num_of_samples, num_events + 1), dtype=np.int32)
     dict_events = generate_transcription(events)
+
+    if scene == 'home':
+        background, short_events, human_reflexes, water_activities, object_actions = get_home_garbageevents()
+    else:
+        automobile, short_events, human_reflexes, animals, engine_actions = get_residential_area_garbageevents()
+
     for line in lines[:-1]:
         start, end, class_label = line.split('\t')
         start = seconds_to_samples(float(start) * stretching_factor, sampling_rate)
         end = seconds_to_samples(float(end) * stretching_factor, sampling_rate)
 
-        if class_label in background:
-            class_label = 'background'
-        elif class_label in short_events:
-            class_label = 'short_events'
-        elif class_label in human_reflexes:
-            class_label = 'human_reflexes'
-        elif class_label in water_activities:
-            class_label = 'water_activities'
-        elif class_label in object_actions:
-            class_label = 'object_actions'
+        if scene == 'home':
+
+            if class_label in background:
+                class_label = 'background'
+            elif class_label in short_events:
+                class_label = 'short_events'
+            elif class_label in human_reflexes:
+                class_label = 'human_reflexes'
+            elif class_label in water_activities:
+                class_label = 'water_activities'
+            elif class_label in object_actions:
+                class_label = 'object_actions'
+        else:
+            if class_label in automobile:
+                class_label = 'automobile'
+            elif class_label in short_events:
+                class_label = 'short_events'
+            elif class_label in human_reflexes:
+                class_label = 'human_reflexes'
+            elif class_label in animals:
+                class_label = 'animals'
+            elif class_label in engine_actions:
+                class_label = 'engine_actions'
         int_arr[start:end, dict_events[class_label]] = 1
 
     return int_arr

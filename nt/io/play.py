@@ -3,6 +3,8 @@ from IPython.display import Audio
 from scipy import signal
 from nt.transform import istft
 import numpy as np
+import os
+from nt.io.audioread import audioread
 
 
 def play(data, channel=0, rate=16000,
@@ -13,6 +15,7 @@ def play(data, channel=0, rate=16000,
 
     :param data: Time series with shape (frames,)
         or stft with shape (frames, channels, bins) or (frames, bins)
+        or string containing path to audio file.
     :param channel: Channel, if you have a multichannel stft signal.
     :param rate: Sampling rate in Hz.
     :param size: STFT window size
@@ -20,13 +23,19 @@ def play(data, channel=0, rate=16000,
     :param window: STFT analysis window
     :return:
     """
-    if np.issubdtype(data.dtype, np.complex):
-        assert data.shape[-1] == size//2 + 1, 'Wrong number of frequency bins.'
+    if isinstance(data, str):
+        assert os.path.exists(data), 'File does not exist.'
+        data = audioread(data, sample_rate=rate)
+    elif np.issubdtype(data.dtype, np.complex):
+        assert data.shape[-1] == size // 2 + 1, 'Wrong number of frequency bins'
 
         if len(data.shape) == 3:
             data = data[:, channel, :]
 
         data = istft(data, size=size, shift=shift, window=window)
+    elif np.issubdtype(data.dtype, np.float):
+        if len(data.shape) == 2:
+            data = data[channel, :]
 
     assert np.issubdtype(data.dtype, np.float)
     assert len(data.shape) == 1

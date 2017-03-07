@@ -310,9 +310,9 @@ def get_test_data_provider(json_data, flist_dev, transcription_list, events,
 
 def resample_and_convert_frame_to_seconds(frame_num, frame_size=512, frame_shift=160, resampling_factor=44.1 / 16,
                                           sampling_rate=44100):
-    sample_num = module_stft._stft_frames_to_samples(frame_num, frame_size, frame_shift) # convert into samples corresponding to the frame size and shift
+    sample_num = module_stft._stft_frames_to_samples(frame_num, frame_size, frame_shift)
+    # convert into samples corresponding to the frame size and shift
     return (resampling_factor * sample_num )/ sampling_rate # convert it into seconds
-
 
 def generate_onset_offset_label(decoded_allFrames, event_id, event_label_handler, filename, garbage_events,
                                  frame_size=512, frame_shift=160,
@@ -322,9 +322,10 @@ def generate_onset_offset_label(decoded_allFrames, event_id, event_label_handler
     file = open(filename, 'a')
     while i < decoded_allFrames.shape[0] - 1:
         onset = resample_and_convert_frame_to_seconds(
-            i + 1, frame_size, frame_shift, resampling_factor)  # To save frame no. which is 1 greater than the array index.
+            i + 1, frame_size, frame_shift, resampling_factor)  # To save frame no. which is 1 greater than the array
+        # index.
         label_now = decoded_allFrames[
-            i]  ## label_now and label_next are either 1 or 0 indicating the event to be active or inactive
+            i]  # label_now and label_next are either 1 or 0 indicating the event to be active or inactive
         j = i + 1
         label_next = decoded_allFrames[j]
         while label_next == label_now and j < decoded_allFrames.shape[0] - 1:
@@ -332,10 +333,11 @@ def generate_onset_offset_label(decoded_allFrames, event_id, event_label_handler
             label_next = decoded_allFrames[j]
         offset = resample_and_convert_frame_to_seconds(
             j, frame_size, frame_shift,
-            resampling_factor)  # To save frame no. [not exceeded by 1 here as it is already greater than the offset index by 1]
+            resampling_factor)  # To save frame no. [not exceeded by 1 here as it is already greater than the offset
+        # index by 1]
         # if the period in question was active for that event, log it's onset and offset.
         # Minimum duration constraint
-        if label_now == 1 and offset - onset > 0.06 and class_label != 'Silence' and class_label not in garbage_events:
+        if label_now == 1 and class_label != 'Silence' and class_label not in garbage_events and offset - onset > 0.06:
             file.write(''.join(('\t'.join(('%.2f' % onset, '%.2f' % offset, class_label)), '\n')))
         i = j
     file.close()

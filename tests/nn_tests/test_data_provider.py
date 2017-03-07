@@ -95,7 +95,7 @@ class TestDataProviderMP(unittest.TestCase):
         numpy.testing.assert_equal(data['Y'], numpy.asarray([0, 2, 4]))
 
     def test_get_item_slice(self):
-        data = self.dp[2:3]
+        data = list(self.dp[2:3])
         numpy.testing.assert_equal(data[0]['X'], numpy.asarray([2]))
 
     def test_data_shapes(self):

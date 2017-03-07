@@ -100,6 +100,14 @@ def _build_cmd(extractor, add_deltas=False, store_feats=False):
     return '|'.join(cmds)
 
 
+def _read_opts_file(filename):
+    try:
+        with open(filename) as fid:
+            return fid.readline().strip()
+    except FileNotFoundError:
+        return ''
+
+
 def make_mfcc_features(wav_scp, dst_dir, num_mel_bins, num_ceps, low_freq=20,
                        high_freq=-400, num_jobs=20, add_deltas=True,
                        use_energy=False):
@@ -264,10 +272,39 @@ def make_fmllr_features(feat_scp, cmvn_ark, utt2spk, transform_dir):
             '"ark:cat {transform_dir}/trans.*|" ' \
             'ark:- ark,scp:{dir}/fmllr.ark,{dir}/fmllr.scp'
         final_cmd = ' | '.join([cmvn_cmd, delta_cmd, transform_cmd])
-        final_cmd.format(
+        final_cmd = final_cmd.format(
             utt2spk_cmd=utt2spk_cmd,
             cmvn_ark=cmvn_ark,
             src_scp=feat_scp,
+            dir=os.path.dirname(feat_scp),
+            transform_dir=transform_dir
+        )
+        run_processes(final_cmd, environment=get_kaldi_env())
+
+
+def make_lda_fmllr_features(feat_scp, cmvn_scp, utt2spk, transform_dir):
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        write_utt2spk(tmp_dir, utt2spk)
+        utt2spk_cmd = '--utt2spk=ark:{}'.format(
+            os.path.join(tmp_dir, 'utt2spk'))
+        cmvn_cmd = ('apply-cmvn {cmvn_opts} {utt2spk_cmd}'
+                    ' scp:{cmvn_scp} scp:{src_scp} ark:-')
+        cmvn_opts = _read_opts_file(os.path.join(transform_dir, 'cmvn_opts'))
+        splice_cmd = 'splice-feats {splice_opts} ark:- ark:-'
+        splice_opts = _read_opts_file(os.path.join(transform_dir,
+                                                   'splice_opts'))
+        lda_cmd = 'transform-feats {transform_dir}/final.mat ark:- ark:-'
+        transform_cmd = \
+            'transform-feats {utt2spk_cmd} ' \
+            '"ark:cat {transform_dir}/trans.*|" ' \
+            'ark:- ark,scp:{dir}/fmllr.ark,{dir}/fmllr.scp'
+        final_cmd = ' | '.join([cmvn_cmd, splice_cmd, lda_cmd, transform_cmd])
+        final_cmd = final_cmd.format(
+            cmvn_opts=cmvn_opts,
+            utt2spk_cmd=utt2spk_cmd,
+            cmvn_scp=cmvn_scp,
+            src_scp=feat_scp,
+            splice_opts=splice_opts,
             dir=os.path.dirname(feat_scp),
             transform_dir=transform_dir
         )
@@ -542,6 +579,15 @@ def read_text_file(text_file):
             utt_id = line.split()[0]
             transcriptions[utt_id] = ' '.join(line.split()[1:]).strip()
     return transcriptions
+
+
+def read_utt2spk_file(utt2spk_file):
+    utt2spk = dict()
+    with open(utt2spk_file) as fid:
+        for line in fid:
+            utt_id = line.split()[0]
+            utt2spk[utt_id] = line.split()[1].strip()
+    return utt2spk
 
 
 def import_alignment(ali_dir, model_file=None):
