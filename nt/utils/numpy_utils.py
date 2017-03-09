@@ -1,8 +1,113 @@
 import warnings
-import chainer
 import numpy as np
 import collections
 import numbers
+
+import chainer
+
+
+def segment_axis_v2(x, length, shift, axis=-1,
+                    end='pad', pad_mode='constant', pad_value=0):
+    """ !!! WIP !!!
+    Generate a new array that chops the given array along the given axis
+    into overlapping frames.
+
+    Note: if end='pad' the return is maybe a copy
+
+    :param x: The array to segment
+    :param length: The length of each frame
+    :param shift: The number of array elements by which the frames should shift
+    :param axis: The axis to operate on
+    :param end: 'pad' -> pad, None -> assert, 'cut' -> cut
+    :param pad_mode: see numpy.pad
+    :param pad_value: The value to pad
+    :return:
+
+    >>> segment_axis_v2(np.arange(10), 4, 2)
+    array([[0, 1, 2, 3],
+           [2, 3, 4, 5],
+           [4, 5, 6, 7],
+           [6, 7, 8, 9]])
+    >>> segment_axis_v2(np.arange(5).reshape(5), 4, 1, axis=0)
+    array([[0, 1, 2, 3],
+           [1, 2, 3, 4]])
+    >>> segment_axis_v2(np.arange(5).reshape(5), 4, 2, axis=0, end='cut')
+    array([[0, 1, 2, 3]])
+    >>> segment_axis_v2(np.arange(5).reshape(5), 4, 2, axis=0, end='pad')
+    array([[0, 1, 2, 3],
+           [2, 3, 4, 0],
+           [4, 0, 0, 0]])
+    >>> segment_axis_v2(np.arange(10).reshape(2, 5), 4, 1, axis=-1)
+    array([[[0, 1, 2, 3],
+            [1, 2, 3, 4]],
+    <BLANKLINE>
+           [[5, 6, 7, 8],
+            [6, 7, 8, 9]]])
+    >>> segment_axis_v2(np.arange(10).reshape(5, 2).T, 4, 1, axis=1)
+    array([[[0, 2, 4, 6],
+            [2, 4, 6, 8]],
+    <BLANKLINE>
+           [[1, 3, 5, 7],
+            [3, 5, 7, 9]]])
+    >>> segment_axis_v2(np.asfortranarray(np.arange(10).reshape(2, 5)), 4, 1, axis=1)
+    array([[[0, 1, 2, 3],
+            [1, 2, 3, 4]],
+    <BLANKLINE>
+           [[5, 6, 7, 8],
+            [6, 7, 8, 9]]])
+    >>> segment_axis_v2(np.arange(8).reshape(2, 2, 2).transpose(1, 2, 0), 2, 1, axis=0, end='cut')
+    array([[[[0, 4],
+             [1, 5]],
+    <BLANKLINE>
+            [[2, 6],
+             [3, 7]]]])
+    >>> a = np.arange(5).reshape(5)
+    >>> b = segment_axis_v2(a, 4, 2, axis=0, end='cut')
+    >>> a += 1  # a and b point to the same memory
+    >>> b
+    array([[1, 2, 3, 4]])
+    """
+
+    axis = axis % x.ndim
+
+    if end == 'pad':
+        if (x.shape[axis] + shift - length) % shift != 0:
+            npad = np.zeros([x.ndim, 2], dtype=np.int)
+            npad[axis, 1] = length - ((x.shape[axis] + shift - length) % shift)
+            x = np.pad(x, pad_width=npad, mode=pad_mode,
+                       constant_values=pad_value)
+    elif end is None:
+        assert (x.shape[axis] + shift - length) % shift == 0, \
+            '{} = x.shape[axis]({}) + shift({}) - length({})) % shift({})' \
+            ''.format((x.shape[axis] + shift - length) % shift,
+                      x.shape[axis], shift, length, shift)
+    elif end == 'cut':
+        pass
+    else:
+        raise ValueError(end)
+
+    shape = list(x.shape)
+    del shape[axis]
+    shape.insert(axis, (x.shape[axis] + shift - length) // shift)
+    shape.insert(axis + 1, length)
+
+    strides = list(x.strides)
+    strides.insert(axis, shift * strides[axis])
+
+    # Alternative to np.ndarray.__new__
+    # I am not sure if np.lib.stride_tricks.as_strided is better.
+    # return np.lib.stride_tricks.as_strided(
+    #     x, shape=shape, strides=strides)
+    try:
+        return np.lib.stride_tricks.as_strided(x, strides=strides, shape=shape)
+        # return np.ndarray.__new__(np.ndarray, strides=strides,
+        #                           shape=shape, buffer=x, dtype=x.dtype)
+    except Exception:
+        print('strides:', x.strides, ' -> ', strides)
+        print('shape:', x.shape, ' -> ', shape)
+        print('flags:', x.flags)
+        raise
+
 
 """
 From http://wiki.scipy.org/Cookbook/SegmentAxis
@@ -35,6 +140,26 @@ def segment_axis(a, length, overlap=0, axis=None, end='cut', endvalue=0):
            [2, 3, 4, 5],
            [4, 5, 6, 7],
            [6, 7, 8, 9]])
+    >>> segment_axis(np.arange(5).reshape(5), 4, 3, axis=0)
+    array([[0, 1, 2, 3],
+           [1, 2, 3, 4]])
+    >>> segment_axis(np.arange(10).reshape(2, 5), 4, 3, axis=-1)
+    array([[[0, 1, 2, 3],
+            [1, 2, 3, 4]],
+    <BLANKLINE>
+           [[5, 6, 7, 8],
+            [6, 7, 8, 9]]])
+    >>> segment_axis(np.arange(10).reshape(5, 2).T, 4, 3, axis=1)
+    array([[[0, 2, 4, 6],
+            [2, 4, 6, 8]],
+    <BLANKLINE>
+           [[1, 3, 5, 7],
+            [3, 5, 7, 9]]])
+    >>> a = np.arange(5).reshape(5)
+    >>> b = segment_axis(a, 4, 2, axis=0)
+    >>> a += 1  # a and b point to the same memory
+    >>> b
+    array([[1, 2, 3, 4]])
     """
 
     if axis is None:
@@ -43,10 +168,12 @@ def segment_axis(a, length, overlap=0, axis=None, end='cut', endvalue=0):
 
     l = a.shape[axis]
 
-    if overlap >= length: raise ValueError(
-        "frames cannot overlap by more than 100%")
-    if overlap < 0 or length <= 0: raise ValueError(
-        "overlap must be nonnegative and length must be positive")
+    if overlap >= length:
+        raise ValueError(
+            "frames cannot overlap by more than 100%")
+    if overlap < 0 or length <= 0:
+        raise ValueError(
+            "overlap must be nonnegative and length must be positive")
 
     if l < length or (l - length) % (length - overlap):
         if l > length:
@@ -78,21 +205,25 @@ def segment_axis(a, length, overlap=0, axis=None, end='cut', endvalue=0):
         a = a.swapaxes(-1, axis)
 
     l = a.shape[axis]
-    if l == 0: raise ValueError(
-        "Not enough data points to segment array in 'cut' mode; "
-        "try 'pad' or 'wrap'")
+    if l == 0:
+        raise ValueError(
+            "Not enough data points to segment array in 'cut' mode; "
+            "try 'pad' or 'wrap'")
     assert l >= length
     assert (l - length) % (length - overlap) == 0
     n = 1 + (l - length) // (length - overlap)
+
+    axis = axis % a.ndim  # force axis >= 0
+
     s = a.strides[axis]
     newshape = a.shape[:axis] + (n, length) + a.shape[axis + 1:]
     newstrides = a.strides[:axis] + ((length - overlap) * s, s) + a.strides[
-                                                                  axis + 1:]
-
+        axis + 1:]
     if not a.flags.contiguous:
         a = a.copy()
+        s = a.strides[axis]
         newstrides = a.strides[:axis] + ((length - overlap) * s, s) + a.strides[
-                                                                      axis + 1:]
+            axis + 1:]
         return np.ndarray.__new__(np.ndarray, strides=newstrides,
                                   shape=newshape, buffer=a, dtype=a.dtype)
 
@@ -104,7 +235,7 @@ def segment_axis(a, length, overlap=0, axis=None, end='cut', endvalue=0):
         a = a.copy()
         # Shape doesn't change but strides does
         newstrides = a.strides[:axis] + ((length - overlap) * s, s) + a.strides[
-                                                                      axis + 1:]
+            axis + 1:]
         return np.ndarray.__new__(np.ndarray, strides=newstrides,
                                   shape=newshape, buffer=a, dtype=a.dtype)
 
@@ -301,7 +432,7 @@ def reshape(array, operation):
         msg = 'op: {}, shape: {}'.format(transposition_operation,
                                          np.shape(array))
         if len(e.args) == 1:
-            e.args = (e.args[0]+'\n\n'+msg,)
+            e.args = (e.args[0] + '\n\n' + msg,)
         else:
             print(msg)
         raise
@@ -407,7 +538,8 @@ def roll_zeropad(a, shift, axis=None):
 
     """
     a = np.asanyarray(a)
-    if shift == 0: return a
+    if shift == 0:
+        return a
     if axis is None:
         n = a.size
         reshape = True
@@ -428,3 +560,48 @@ def roll_zeropad(a, shift, axis=None):
         return res.reshape(a.shape)
     else:
         return res
+
+
+def labels_to_one_hot(
+        labels: np.ndarray, categories: int, axis: int = 0,
+        keepdims=False, dtype=np.float32
+):
+    """ Translates an arbitrary ndarray with labels to one hot coded array.
+
+    Args:
+        labels: Array with any shape and integer labels.
+        categories: Maximum integer label larger or equal to maximum of the
+            labels ndarray.
+        axis: Axis along which the one-hot vector will be aligned.
+        keepdims:
+            If keepdims is True, this function behaves similar to
+            numpy.concatenate(). It will expand the provided axis.
+            If keepdims is False, it will create a new axis along which the
+            one-hot vector will be placed.
+        dtype: Provides the dtype of the output one-hot mask.
+
+    Returns:
+        One-hot encoding with shape (..., categories, ...).
+
+    """
+    if keepdims:
+        assert labels.shape[axis] == 1
+        result_ndim = labels.ndim
+    else:
+        result_ndim = labels.ndim + 1
+
+    if axis < 0:
+        axis += result_ndim
+
+    shape = labels.shape
+    zeros = np.zeros((categories, labels.size), dtype=dtype)
+    zeros[labels.ravel(), range(labels.size)] = 1
+
+    zeros = zeros.reshape((categories,) + shape)
+
+    if keepdims:
+        zeros = zeros[(slice(None),) * (axis + 1) + (0,)]
+
+    zeros = np.moveaxis(zeros, 0, axis)
+
+    return zeros

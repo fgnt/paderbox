@@ -8,7 +8,7 @@ from nt.speech_enhancement.beamformer import get_gev_vector, \
 from nt.speech_enhancement.beamformer import get_lcmv_vector
 from nt.speech_enhancement.beamformer import get_mvdr_vector
 from nt.speech_enhancement.beamformer import get_pca_vector
-from nt.utils.math_ops import cos_similarity
+from nt.math.vector import cos_similarity
 from nt.utils.random_helper import uniform, hermitian, pos_def_hermitian
 
 
@@ -22,7 +22,10 @@ class TestBeamformerWrapper(unittest.TestCase):
         self.shape_vector = self.shape_psd[:-1]
 
     def test_gev_dimensions(self):
-        output = get_gev_vector(pos_def_hermitian(self.shape_psd), pos_def_hermitian(self.shape_psd))
+        output = get_gev_vector(
+            pos_def_hermitian(
+                self.shape_psd), pos_def_hermitian(
+                self.shape_psd))
         tc.assert_equal(output.shape, self.shape_vector)
 
     def test_pca_dimensions(self):
@@ -114,4 +117,4 @@ class TestCythonizedEig(unittest.TestCase):
             1.0, atol=1e-6)
 
         # assume speedup is bigger than 5
-        tc.assert_array_greater(elapsed_time_python / elapsed_time_cython1, 5)
+        tc.assert_array_greater(elapsed_time_python / elapsed_time_cython1, 4)

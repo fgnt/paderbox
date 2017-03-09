@@ -1,9 +1,12 @@
 import os.path
 
 import numpy as np
+from nt.math.correlation import covariance
+from pathlib import Path
 
 try:
     from nt.utils.matlab import Mlab
+
     matlab_available = True
 except ImportError:
     matlab_available = False
@@ -39,6 +42,9 @@ def dereverb(settings_file_path, x, stop_mlab=True):
         mlab.process.start()
     else:
         mlab.run_code('clear all;')
+
+    if isinstance(settings_file_path, Path):
+        settings_file_path = str(settings_file_path)
 
     settings = os.path.join(settings_file_path, "wpe_settings.m")
 
@@ -122,7 +128,47 @@ def wpe(Y, epsilon=1e-6, order=15, delay=1, iterations=10):
     return dereverberated
 
 
-from nt.utils.math_ops import scaled_full_correlation_matrix
+def scaled_full_correlation_matrix(X, iterations=4, trace_one_constraint=True):
+    """ Scaled full correlation matrix.
+
+    See the paper "Generalization of Multi-Channel Linear Prediction
+    Methods for Blind MIMO Impulse Response Shortening" for reference.
+
+    You can plot the time dependent power to validate this function.
+
+    :param X: Assumes shape F, M, T.
+    :param iterations: Number of iterations between time dependent
+        scaling factor (power) and covariance estimation.
+    :param trace_one_constraint: This constraint is not part of the original
+        paper. It is not necessary for the result but removes the scaling
+        ambiguity.
+    :return: Covariance matrix and time dependent power for each frequency.
+    """
+    F, M, T = X.shape
+
+    def _normalize(cm):
+        if trace_one_constraint:
+            trace = np.einsum('...mm', cm)
+            cm /= trace[:, None, None] / M
+            cm += 1e-6 * np.eye(M)[None, :, :]
+        return cm
+
+    covariance_matrix = covariance(X)
+    covariance_matrix = _normalize(covariance_matrix)
+
+    for i in range(iterations):
+        inverse = np.linalg.inv(covariance_matrix)
+
+        power = np.abs(np.einsum(
+            '...mt,...mn,...nt->...t',
+            X.conj(),
+            inverse,
+            X
+        )) / M
+
+        covariance_matrix = covariance(X, mask=1/power)
+        covariance_matrix = _normalize(covariance_matrix)
+    return covariance_matrix, power
 
 
 def _dereverberate(y, G_hat, K, Delta):
@@ -130,18 +176,19 @@ def _dereverberate(y, G_hat, K, Delta):
     dtype = y.dtype
     x_hat = np.copy(y)
     for l in range(L):
-        for t in range(Delta+K, T):  # Some restrictions
+        for t in range(Delta + K, T):  # Some restrictions
             for tau in range(Delta, Delta + K):
-                x_hat[l, :, t] -= G_hat[l, tau - Delta, :, :].conj().T.dot(y[l, :, t-tau])
+                x_hat[l, :, t] -= G_hat[l, tau - Delta, :, :].conj().T.dot(
+                    y[l, :, t - tau])
     return x_hat
 
 
 def _dereverberate_vectorized(y, G_hat, K, Delta):
     x_hat = np.copy(y)
     for tau in range(Delta, Delta + K):
-        x_hat[:, :, K+Delta:] -= np.einsum('abc,abe->ace',
-                                    G_hat[:, tau - Delta, :, :].conj(),
-                                    y[..., K+Delta-tau:-tau])
+        x_hat[:, :, K + Delta:] -= np.einsum('abc,abe->ace',
+                                             G_hat[:, tau - Delta, :, :].conj(),
+                                             y[..., K + Delta - tau:-tau])
     return x_hat
 
 
@@ -165,15 +212,85 @@ def _get_crazy_matrix(Y, K, Delta):
     # A view may possibly be enough as well.
     L, N, T = Y.shape
     dtype = Y.dtype
-    psi_bar = np.zeros((L, N*N*K, N, T-Delta-K+1), dtype=dtype)
+    psi_bar = np.zeros((L, N * N * K, N, T - Delta - K + 1), dtype=dtype)
     for n0 in range(N):
         for n1 in range(N):
             for tau in range(Delta, Delta + K):
                 for t in range(T):
                     psi_bar[
-                        :, N*N*(tau-Delta) + N*n0 + n1, n0, t-Delta-K+1
-                    ] = Y[:, n1, t-tau]
+                    :, N * N * (tau - Delta) + N * n0 + n1, n0,
+                    t - Delta - K + 1
+                    ] = Y[:, n1, t - tau]
     return psi_bar
+
+
+def _get_Phi_YY(Y, l, t_1, t_2):
+    phi_yy = np.outer(Y[l, :, t_1], Y[l, :, t_2].conj())
+    assert np.all(np.abs(phi_yy) > 0)
+    return phi_yy
+
+
+def _get_T_segmented(Y, l, t, K):
+    assert Y.ndim == 3
+    N = Y.shape[1]
+    T = np.zeros((N * N * K, N * N * K), dtype=Y.dtype)
+    for index_1, t_1 in enumerate(range(t, t - K, -1)):
+        for index_2, t_2 in enumerate(range(t, t - K, -1)):
+            T[index_1 * N * N:(index_1 + 1) * N * N,
+            index_2 * N * N:(index_2 + 1) * N * N] = np.tile(
+                _get_Phi_YY(Y, l, t_1, t_2), (N, N))
+    np.testing.assert_almost_equal(T, T.T.conj())
+    return T
+
+
+def _get_T_segmented_prediction(Y, l, t_m_delta, t, K):
+    assert Y.ndim == 3
+    N = Y.shape[1]
+    T = np.zeros((N * N * K, N * N), dtype=Y.dtype)
+    for index_1, t_1 in enumerate(range(t_m_delta, t_m_delta - K, -1)):
+        T[index_1 * N * N:(index_1 + 1) * N * N, :] = np.tile(
+            _get_Phi_YY(Y, l, t_1, t), (N, N))
+    assert np.all(np.abs(T) > 0)
+    return T
+
+
+def _get_global_T_segmented(Y, K, Delta):
+    L, N, T = Y.shape
+    global_T = np.zeros((L, N * N * K, N * N * K, T - K - Delta), dtype=Y.dtype)
+    for l in range(L):
+        for t in range(K + Delta, T):
+            global_T[l, :, :, t - K - Delta] = _get_T_segmented(Y, l, t, K)
+    assert np.all(np.abs(global_T) > 0)
+    np.testing.assert_almost_equal(global_T,
+                                   global_T.transpose(0, 2, 1, 3).conj())
+    return global_T
+
+
+def _get_global_T_segmented_prediction(Y, K, Delta):
+    L, N, T = Y.shape
+    global_T = np.zeros((L, N * N * K, N * N, T - K - Delta), dtype=Y.dtype)
+    for l in range(L):
+        for t in range(K + Delta, T):
+            global_T[l, :, :, t - K - Delta] = _get_T_segmented_prediction(Y, l,
+                                                                           t - Delta,
+                                                                           t, K)
+    assert np.all(np.abs(global_T) > 0)
+    return global_T
+
+def _y_tilde(Y, l, t):
+    L, N, T = Y.shape
+    y_tilde = np.zeros((N*N, N), dtype=Y.dtype)
+    for n in range(N):
+        y_tilde[n*N:(n+1)*N, n] = Y[l, :, t]
+    return y_tilde
+
+def _psi(Y, l, t, K):
+    assert t>=K-1
+    L, N, T = Y.shape
+    psi = np.zeros((N*N*K, N), dtype=Y.dtype)
+    for k in range(K):
+        psi[k*N*N:(k+1)*N*N] = _y_tilde(Y, l, t-k)
+    return psi
 
 
 def multichannel_wpe(Y, K, Delta, iterations=4):
@@ -195,37 +312,25 @@ def multichannel_wpe(Y, K, Delta, iterations=4):
 
         # Step 3
         # Maybe better on a subpart, due to fade in
-        Lambda_hat_inverse = _get_spatial_correlation_matrix_inverse(x_hat)[:, :, :, :T-Delta-K+1]
-        assert Lambda_hat_inverse.shape == (L, N, N, T-Delta-K+1)
+        Lambda_hat_inverse = _get_spatial_correlation_matrix_inverse(x_hat)
 
         # Step 4
-        psi_bar = _get_crazy_matrix(Y, K, Delta)
-        assert psi_bar.shape == (L, N*N*K, N, T-Delta-K+1)
-        # return psi_bar
-
-        R_hat = np.einsum(
-            'lmnt,lnot,lpot->lmp',
-            psi_bar,
-            Lambda_hat_inverse,
-            psi_bar.conj()
-        )
-        assert R_hat.shape == (L, N*N*K, N*N*K)
-
-        r_hat = np.einsum(
-            'lmnt,lnot,lot->lm',
-            psi_bar,
-            Lambda_hat_inverse,
-            Y[:, :, K+Delta-1:]
-        )
-        assert r_hat.shape == (L, N*N*K)
+        L, N, T = Y.shape
+        R_hat = np.zeros((L, N*N*K, N*N*K), dtype=Y.dtype)
+        r_hat = np.zeros((L, N*N*K), dtype=Y.dtype)
+        for l in range(L):
+            for t in range(K+Delta, T):
+                psi_bar = _psi(Y, l, t-Delta, K).conj()
+                R_hat[l, :, :] = psi_bar.dot(Lambda_hat_inverse[l, :, :, t]).dot(psi_bar.T.conj())
+                r_hat[l, :] = psi_bar.dot(Lambda_hat_inverse[l, :, :, t]).dot(Y[l, :, t])
 
         # Step 5
         # the easiness of the reshape depends on the definition of psi_bar
-        g_hat = np.zeros((L, N*N*K), dtype=dtype)
+        g_hat = np.zeros((L, N * N * K), dtype=dtype)
         for l in range(L):
             # g_hat[l, :] = np.linalg.inv(R_hat[l, :, :]).dot(r_hat[l, :])
             g_hat[l, :] = np.linalg.solve(R_hat[l, :, :], r_hat[l, :])
-        assert g_hat.shape == (L, N*N*K)
+        assert g_hat.shape == (L, N * N * K)
         G_hat = g_hat.reshape(L, N, N, K).transpose((0, 3, 1, 2))
         assert G_hat.shape == (L, K, N, N)
 

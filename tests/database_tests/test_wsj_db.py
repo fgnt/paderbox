@@ -1,9 +1,10 @@
 import json
 import unittest
 
+from nt.io import load_json
 from nt.testing import db_test
 
-wsj_json = db_test.ROOT + "/wsj.json"
+wsj_json = db_test.ROOT / "wsj.json"
 
 
 # wsj_json = "wsj.json"
@@ -24,8 +25,7 @@ def complete(scenario, word):
 
 class test_wsj_db(db_test.DatabaseTest):
     def setUp(self):
-        with open(wsj_json) as file:
-            self.json = json.load(file)
+        self.json = load_json(wsj_json)
 
     def test_official_len(self):
         self.assertEqual(

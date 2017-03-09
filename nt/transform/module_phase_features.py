@@ -1,6 +1,7 @@
-import numpy as np
-import nt.utils.directional as directional
 from copy import deepcopy
+
+import numpy as np
+import os.geometry.directional as directional
 
 
 def transform_to_baseband(X, size, shift):

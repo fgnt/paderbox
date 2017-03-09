@@ -275,7 +275,7 @@ def get_test_data_provider(json_data, flist_dev, transcription_list, events,
         T, B, C, H, W = dev_data.shape
         dev_data = dev_data.reshape((T, C, H, W))
     else:
-        dev_data = dev_data.reshape(T, -1)  # commenet this for LSTMs.
+        dev_data = dev_data.reshape(T, -1)  # comment this for LSTMs.
     print(dev_data.shape)
 
     # Load Test targets

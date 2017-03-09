@@ -1,3 +1,16 @@
+""" Beamformer module.
+
+The shape convention is to place time at the end to speed up computation and
+move independent dimensions to the front.
+
+That results i.e. in the following possible shapes:
+    X: Shape (F, D, T).
+    mask: Shape (F, K, T).
+    PSD: Shape (F, D, D).
+
+The functions themselves are written more generic, though.
+"""
+
 import warnings
 
 import numpy as np
@@ -120,15 +133,9 @@ def get_pca(target_psd_matrix):
 
     # Calculate eigenvals/vecs
     eigenvals, eigenvecs = np.linalg.eigh(target_psd_matrix)
-    # Find max eigenvals
-    vals = np.argmax(eigenvals, axis=-1)
-    # Select eigenvec for max eigenval
-    beamforming_vector = np.array(
-        [eigenvecs[i, :, vals[i]] for i in range(eigenvals.shape[0])]
-    )
-    eigenvalues = np.array(
-        [eigenvals[i, vals[i]] for i in range(eigenvals.shape[0])]
-    )
+    # Select eigenvec for max eigenval. Eigenvals are sorted in ascending order.
+    beamforming_vector = eigenvecs[..., -1]
+    eigenvalues = eigenvals[..., -1]
     # Reconstruct original shape
     beamforming_vector = np.reshape(beamforming_vector, shape[:-1])
     eigenvalues = np.reshape(eigenvalues, shape[:-2])
@@ -188,16 +195,28 @@ def get_gev_vector(target_psd_matrix, noise_psd_matrix, force_cython=False,
     Returns the GEV beamforming vector.
 
     :param target_psd_matrix: Target PSD matrix
-        with shape (bins, sensors, sensors)
+        with shape (..., sensors, sensors)
     :param noise_psd_matrix: Noise PSD matrix
-        with shape (bins, sensors, sensors)
-    :return: Set of beamforming vectors with shape (bins, sensors)
+        with shape (..., sensors, sensors)
+    :return: Set of beamforming vectors with shape (..., sensors)
     """
     if c_gev_available and not use_eig:
         try:
-            return _c_get_gev_vector(
-                np.asfortranarray(target_psd_matrix.astype(np.complex128).T),
-                np.asfortranarray(noise_psd_matrix.astype(np.complex128).T))
+            if target_psd_matrix.ndim == 3:
+                return _c_get_gev_vector(
+                    np.asfortranarray(target_psd_matrix.astype(np.complex128).T),
+                    np.asfortranarray(noise_psd_matrix.astype(np.complex128).T))
+            else:
+                D = target_psd_matrix.shape[-1]
+                assert D == target_psd_matrix.shape[-2]
+                assert target_psd_matrix.shape == noise_psd_matrix.shape
+                dst_shape = target_psd_matrix.shape[:-1]
+                target_psd_matrix = target_psd_matrix.reshape(-1, D, D)
+                noise_psd_matrix = noise_psd_matrix.reshape(-1, D, D)
+                ret = _c_get_gev_vector(
+                    np.asfortranarray(target_psd_matrix.astype(np.complex128).T),
+                    np.asfortranarray(noise_psd_matrix.astype(np.complex128).T))
+                return ret.reshape(*dst_shape)
         except ValueError as e:
             if not force_cython:
                 pass
@@ -234,9 +253,20 @@ def _get_gev_vector(target_psd_matrix, noise_psd_matrix, use_eig=False):
     solver = eig if use_eig else eigh
 
     for f in range(bins):
-        eigenvals, eigenvecs = solver(
-            target_psd_matrix[f, :, :], noise_psd_matrix[f, :, :]
-        )
+        try:
+            eigenvals, eigenvecs = solver(
+                target_psd_matrix[f, :, :], noise_psd_matrix[f, :, :]
+            )
+        except ValueError:
+            raise ValueError('Error for frequency {}\n'
+                             'phi_xx: {}\n'
+                             'phi_nn: {}'.format(
+                f, target_psd_matrix[f], noise_psd_matrix[f]))
+        except np.linalg.LinAlgError:
+            raise np.linalg.LinAlgError('Error for frequency {}\n'
+                             'phi_xx: {}\n'
+                             'phi_nn: {}'.format(
+                f, target_psd_matrix[f], noise_psd_matrix[f]))
         beamforming_vector[f, :] = eigenvecs[:, np.argmax(eigenvals)]
 
     return beamforming_vector.reshape(original_shape[:-1])
@@ -282,7 +312,13 @@ def get_lcmv_vector(atf_vectors, response_vector, noise_psd_matrix):
 
 
 def blind_analytic_normalization(vector, noise_psd_matrix):
-    bins, sensors = vector.shape
+    """Reduces distortions in beamformed ouptput.
+
+    Args:
+        vector: Beamforming vector with shape (bins, sensors)
+        noise_psd_matrix: With shape (bins, sensors, sensors)
+    """
+    bins, _ = vector.shape
     normalization = np.zeros(bins)
     for f in range(bins):
         normalization[f] = np.abs(np.sqrt(np.dot(
@@ -292,6 +328,52 @@ def blind_analytic_normalization(vector, noise_psd_matrix):
             np.dot(vector[f, :].T.conj(), noise_psd_matrix[f]), vector[f, :]))
 
     return vector * normalization[:, np.newaxis]
+
+
+def phase_correction(vector):
+    """Phase correction to reduce distortions due to phase inconsistencies.
+
+    We need a copy first, because not all elements are touched during the
+    multiplication. Otherwise, the vector would be modified in place.
+
+    TODO: Write test cases.
+    TODO: Only use non-loopy version when test case is written.
+
+    Args:
+        vector: Beamforming vector with shape (..., bins, sensors).
+    Returns: Phase corrected beamforming vectors. Lengths remain.
+
+    >>> w = np.array([[1, 1], [-1, -1]], dtype=np.complex128)
+    >>> np.around(phase_correction(w), decimals=14)
+    array([[ 1.+0.j,  1.+0.j],
+           [ 1.-0.j,  1.-0.j]])
+    >>> np.around(phase_correction([w]), decimals=14)[0]
+    array([[ 1.+0.j,  1.+0.j],
+           [ 1.-0.j,  1.-0.j]])
+    >>> w  # ensure that w is not modified
+    array([[ 1.+0.j,  1.+0.j],
+           [-1.+0.j, -1.+0.j]])
+    """
+
+    # w = W.copy()
+    # F, D = w.shape
+    # for f in range(1, F):
+    #     w[f, :] *= np.exp(-1j*np.angle(
+    #         np.sum(w[f, :] * w[f-1, :].conj(), axis=-1, keepdims=True)))
+    # return w
+
+    vector = np.array(vector, copy=True)
+    vector[..., 1:, :] *= np.cumprod(
+        np.exp(
+            1j * np.angle(
+                np.sum(
+                    vector[..., 1:, :].conj() * vector[..., :-1, :],
+                    axis=-1, keepdims=True
+                )
+            )
+        ), axis=0
+    )
+    return vector
 
 
 def apply_beamforming_vector(vector, mix):

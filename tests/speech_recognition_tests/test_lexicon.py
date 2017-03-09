@@ -1,9 +1,9 @@
-
-import unittest
 import tempfile
+import unittest
+
 from nt.speech_recognition.lexicon import Linear
 from nt.transcription_handling.transcription_handler import LabelHandler
-from nt.speech_recognition import fst
+from nt.TODO.kaldi import fst
 
 
 class TestLexicon(unittest.TestCase):

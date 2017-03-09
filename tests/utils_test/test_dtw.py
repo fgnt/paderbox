@@ -1,17 +1,17 @@
-__author__ = 'walter'
 import unittest
 from nt.utils.dtw import dtw
 from nt.transform import fbank
 from nt.io.audioread import read_raw
-from nt.utils.math_ops import cos_distance
+from nt.math.vector import cos_distance
 from numpy import array
 from numpy.testing import assert_equal
 from nt.io.data_dir import tidigits
 
+
 class TestDTW(unittest.TestCase):
     def test_dtw(self):
-        file1 = tidigits.join('tidigits_16kHz_LE/train/man/ae/oa.raw')
-        file2 = tidigits.join('tidigits_16kHz_LE/train/man/ae/ob.raw')
+        file1 = tidigits / 'tidigits_16kHz_LE' / 'train' / 'man' / 'ae' / 'oa.raw'
+        file2 = tidigits / 'tidigits_16kHz_LE' / 'train' / 'man' / 'ae' / 'ob.raw'
         audio1 = read_raw(file1)
         audio2 = read_raw(file2)
         fb1 = fbank(audio1)

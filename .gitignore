@@ -1,3 +1,5 @@
+/nt/speech_enhancement/cythonized/get_gev_vector.cpython*
+/nt/speech_enhancement/cythonized/get_gev_vector.c
 # Backup files
 *~
 
@@ -34,6 +36,7 @@ var/
 *.egg
 MANIFEST
 .idea
+.vscode
 
 # Installer logs
 pip-log.txt

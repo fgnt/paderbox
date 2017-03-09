@@ -1,9 +1,10 @@
-import numpy
+import numpy as np
 from scipy.io.wavfile import write as wav_write
 import threading
+from pathlib import Path
 
-int16_max = numpy.iinfo(numpy.int16).max
-int16_min = numpy.iinfo(numpy.int16).min
+int16_max = np.iinfo(np.int16).max
+int16_min = np.iinfo(np.int16).min
 
 
 def audiowrite(data, path, sample_rate=16000, normalize=False, threaded=True):
@@ -22,27 +23,40 @@ def audiowrite(data, path, sample_rate=16000, normalize=False, threaded=True):
         thread
     :return: The number of clipped samples
     """
+    assert data.dtype.kind == 'f', (data.shape, data.dtype)
+
+    if isinstance(path, Path):
+        path = str(path)
+
     data = data.copy()
 
     if normalize:
         if not data.dtype.kind == 'f':
-            data = data.astype(numpy.float)
-        data /= numpy.max(numpy.abs(data))
+            data = data.astype(np.float)
+        data /= np.maximum(np.amax(np.abs(data)), 1e-6)
 
     if data.dtype.kind == 'f':
         data *= int16_max
 
-    sample_to_clip = numpy.sum(data > int16_max)
+    sample_to_clip = np.sum(data > int16_max)
     if sample_to_clip > 0:
-        print('Warning, clipping {} samples'.format(sample_to_clip))
-    data = numpy.clip(data, int16_min, int16_max)
-    data = data.astype(numpy.int16)
+        print('Warning, clipping {} sample{}.'.format(
+            sample_to_clip, '' if sample_to_clip == 1 else 's'
+            ))
+    data = np.clip(data, int16_min, int16_max)
+    data = data.astype(np.int16)
 
     if threaded:
         threading.Thread(target=wav_write, args=(path, sample_rate, data)
                          ).start()
     else:
-        wav_write(path, sample_rate, data)
+        try:
+            wav_write(path, sample_rate, data)
+        except Exception:  #_struct.error
+            if data.ndim == 2:
+                assert data.shape[1] < 20, \
+                    "channels bigger than 20 looks wrong. " \
+                    "Maybe you must call audiowrite(data.T, ...)"
+            raise
 
     return sample_to_clip
-

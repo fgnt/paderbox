@@ -1,7 +1,8 @@
 import unittest
+
 import numpy as np
-from nt.speech_enhancement import bss
 from nt.speech_enhancement import complex_watson_mixture_model
+from nt.TODO import bss
 
 
 def _random_stft(*shape):

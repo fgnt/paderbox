@@ -1,14 +1,13 @@
 import unittest
 
+import nt.io.audioread as io
+import nt.reverb.reverb_utils as reverb_utils
+import nt.testing as tc
 import numpy as np
+import nt.reverb.scenario as scenario
 import scipy
 import scipy.signal
 from nose_parameterized import parameterized
-
-import nt.io.audioread as io
-import nt.reverb.reverb_utils as reverb_utils
-import nt.reverb.scenario as scenario
-import nt.testing as tc
 from nt.io.data_dir import testing as testing_dir
 from nt.utils.matlab import Mlab
 
@@ -327,11 +326,11 @@ class TestConvolution(unittest.TestCase):
 
         # get audio data
         testsignal1 = io.audioread(
-            testing_dir('timit', 'data', 'sample_1.wav'))
+            testing_dir / 'timit' / 'data' / 'sample_1.wav')
         testsignal2 = io.audioread(
-            testing_dir('timit', 'data', 'sample_1.wav'))
+            testing_dir / 'timit' / 'data' / 'sample_1.wav')
         testsignal3 = io.audioread(
-            testing_dir('timit', 'data', 'sample_1.wav'))
+            testing_dir / 'timit' / 'data' / 'sample_1.wav')
         # pad all audiosignals with zeros such they have equal lengths
         maxlen = np.amax((len(testsignal1),
                           len(testsignal2),

@@ -1,6 +1,8 @@
-import unittest
 import tempfile
-from nt.speech_recognition.fst import build_monophone_fst, draw
+import unittest
+
+from nt.TODO.kaldi.fst import build_monophone_fst, draw
+
 
 class TestFST(unittest.TestCase):
     def test_build_monophone_fst(self):

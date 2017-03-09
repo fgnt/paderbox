@@ -4,7 +4,7 @@ This file contains the STFT function and related helper functions.
 import numpy as np
 from numpy.testing.utils import assert_array_compare, assert_array_less
 import operator
-from nt.utils.math_ops import normalize_vector_to_unit_length, vector_H_vector
+from nt.math.vector import normalize_vector_to_unit_length, vector_H_vector
 
 """
 This is a copy of numpy.testing.assert_array_less.
@@ -121,6 +121,7 @@ def assert_isreal(actual, err_msg='', verbose=True):
     import numpy as np
     np.testing.assert_equal(np.isreal(actual), True, err_msg, verbose)
 
+
 def assert_array_not_equal(x, y, err_msg='', verbose=True):
     """
     Raises an AssertionError if two array_like objects are equal.
@@ -160,14 +161,16 @@ def assert_array_not_equal(x, y, err_msg='', verbose=True):
 
 
 def assert_cosine_similarity(x, y, atol=1e-6):
-        x_normalized = normalize_vector_to_unit_length(x)
-        y_normalized = normalize_vector_to_unit_length(y)
-        distance = 1 - np.abs(vector_H_vector(x_normalized, y_normalized))**2
-        assert_array_less(distance, atol)
+    x_normalized = normalize_vector_to_unit_length(x)
+    y_normalized = normalize_vector_to_unit_length(y)
+    distance = 1 - np.abs(vector_H_vector(x_normalized, y_normalized)) ** 2
+    assert_array_less(distance, atol)
+
 
 def assert_hermitian(matrix, axes=(-2, -1)):
     np.testing.assert_allclose(matrix,
                                matrix.swapaxes(*axes[::-1]).conj())
+
 
 def assert_positive_semidefinite(matrix):
     # https://en.wikipedia.org/wiki/Positive-definite_matrix
@@ -182,6 +185,3 @@ def assert_positive_semidefinite(matrix):
         assert_array_greater_equal(eigenvalues + 1e-6, 0)
     else:
         raise NotImplementedError()
-
-
-

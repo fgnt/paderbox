@@ -1,16 +1,16 @@
 import json
 import unittest
 
+from nt.io import load_json
 from nt.testing import db_test
 
-timit_json = db_test.ROOT + "/timit.json"
+timit_json = db_test.ROOT / "timit.json"
 #timit_json = "TIMIT.json"
 
 class test_timit_db(db_test.DatabaseTest):
 
     def setUp(self):
-        with open(timit_json) as file:
-            self.json = json.load(file)
+        self.json = load_json(timit_json)
 
     def test_train_test_dev(self):
         self.assertIn("test", self.json)
