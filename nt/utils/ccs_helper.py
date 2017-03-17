@@ -107,6 +107,8 @@ def idle_while_array_jobs_are_running(
     regex_waiting = re.compile(r'Waiting\s*subjobs\s*\:\s([0-9]*)')
 
     while len(job_ids):
+        time.sleep(sleep_time)
+
         completed = 0
         running = 0
         planned = 0
@@ -147,4 +149,3 @@ def idle_while_array_jobs_are_running(
             completed, running, planned, waiting
         ))
         job_ids = remaining_job_ids
-        time.sleep(sleep_time)

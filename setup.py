@@ -97,10 +97,10 @@ setup(
 
     ext_modules=cythonize(["nt/reverb/CalcRIR_Simple_C.pyx",
                            'nt/speech_enhancement/cythonized/get_gev_vector.pyx',
-                           'nt/speech_enhancement/cythonized/c_eig.pyx'
+                           'nt/speech_enhancement/cythonized/c_eig.pyx',
+                           'nt/reverb/rirgen/pyrirgen.pyx'
                            ],
                           annotate=True,
                           ),
-
     include_dirs=[numpy.get_include()],
 )
