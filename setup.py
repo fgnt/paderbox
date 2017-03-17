@@ -85,6 +85,7 @@ setup(
                       'coverage',  # for nosetests --with-coverage
                       'bs4',  # for german speech database
                       'pysoundfile',  # for reading .flac audio
+                      'wavefile'
                       ],
 
     # List additional groups of dependencies here (e.g. development
