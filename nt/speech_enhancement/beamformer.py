@@ -189,6 +189,35 @@ def get_mvdr_vector(atf_vector, noise_psd_matrix):
     return beamforming_vector
 
 
+def get_mvdr_vector_merl(target_psd_matrix, noise_psd_matrix):
+    """
+    Returns the MVDR beamforming vector.
+
+    This implementation is based on a variant described in 
+    https://www.merl.com/publications/docs/TR2016-072.pdf
+    It selects a reference channel that maximizes the post-SNR.
+
+    :param target_psd_matrix: Target PSD matrix
+        with shape (..., bins, sensors, sensors)
+    :param noise_psd_matrix: Noise PSD matrix
+        with shape (..., bins, sensors, sensors)
+    :return: Set of beamforming vectors with shape (..., bins, sensors)
+    """
+    G = np.linalg.solve(noise_psd_matrix, target_psd_matrix)
+    lambda_ = np.trace(G, axis1=-2, axis2=-1)
+    h = G / lambda_[..., None, None]
+
+    nom = np.sum(
+        np.einsum('...fac,fab,...fbc->c', h.conj(), target_psd_matrix, h)
+    )
+    denom = np.sum(
+        np.einsum('...fac,fab,...fbc->c', h.conj(), noise_psd_matrix, h)
+    )
+    h_idx = np.argmax(nom/denom)
+
+    return h[..., h_idx]
+
+
 def get_gev_vector(target_psd_matrix, noise_psd_matrix, force_cython=False,
                    use_eig=False):
     """
@@ -311,23 +340,48 @@ def get_lcmv_vector(atf_vectors, response_vector, noise_psd_matrix):
     return beamforming_vector
 
 
-def blind_analytic_normalization(vector, noise_psd_matrix):
-    """Reduces distortions in beamformed ouptput.
+def blind_analytic_normalization(vector, noise_psd_matrix,
+                                 target_psd_matrix=None):
+    nominator = np.einsum(
+        'fa,fab,fbc,fc->f',
+        vector.conj(), noise_psd_matrix, noise_psd_matrix, vector
+    )
+    if target_psd_matrix is not None:
+        atf = get_pca_vector(target_psd_matrix)
+        nominator /= atf
+    nominator = np.sqrt(nominator)
 
-    Args:
-        vector: Beamforming vector with shape (bins, sensors)
-        noise_psd_matrix: With shape (bins, sensors, sensors)
-    """
-    bins, _ = vector.shape
-    normalization = np.zeros(bins)
-    for f in range(bins):
-        normalization[f] = np.abs(np.sqrt(np.dot(
-            np.dot(np.dot(vector[f, :].T.conj(), noise_psd_matrix[f]),
-                   noise_psd_matrix[f]), vector[f, :])))
-        normalization[f] /= np.abs(np.dot(
-            np.dot(vector[f, :].T.conj(), noise_psd_matrix[f]), vector[f, :]))
+    denominator = np.einsum(
+        'fa,fab,fb->f', vector.conj(), noise_psd_matrix, vector
+    )
+    denominator = np.sqrt(denominator * denominator.conj())
 
-    return vector * normalization[:, np.newaxis]
+    normalization = np.abs(nominator / denominator)
+
+
+def distortionless_normalization(vector, atf_vector, noise_psd_matrix):
+    nominator = np.einsum(
+        'fab,fb,fc->fac', noise_psd_matrix, vector, vector.conj()
+    )
+    denominator = np.einsum(
+        'fa,fab,fb->f', vector.conj(), noise_psd_matrix, vector
+    )
+    projection_matrix = nominator / denominator[..., None, None]
+    return np.einsum('fab,fb->fa', projection_matrix, atf_vector)
+
+
+def mvdr_snr_postfilter(vector, target_psd_matrix, noise_psd_matrix):
+    nominator = np.einsum(
+        'fa,fab,fb->f', vector.conj(), target_psd_matrix, vector
+    )
+    denominator = np.einsum(
+        'fa,fab,fb->f', vector.conj(), noise_psd_matrix, vector
+    )
+    return (nominator / denominator)[:, None]
+
+
+def zero_degree_normalization(vector, reference_channel):
+    return vector * np.exp(-1j * np.angle(vector[:, reference_channel]))
 
 
 def phase_correction(vector):

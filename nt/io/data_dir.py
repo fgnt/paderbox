@@ -12,87 +12,92 @@
 import os
 from pathlib import Path
 
-ami = Path(os.getenv(
-    'NT_AMI_DIR',
-    '/net/db/ami'
-))
-testing = Path(os.getenv(
-    'NT_TESTING_DIR',
-    '/net/storage/python_unittest_data'
-))
-timit = Path(os.getenv(
-    'NT_TIMIT_DIR',
-    '/net/db/timit'
-))
-tidigits = Path(os.getenv(
-    'NT_TIDIGITS_DIR',
-    '/net/db/tidigits'
-))
-database_jsons = Path(os.getenv(
+
+def _get_path(environment_name, default):
+    return Path(os.getenv(environment_name, default)).expanduser()
+
+database_jsons = _get_path(
     'NT_DATABASE_JSONS_DIR',
     '/net/storage/database_jsons'
-))
-chime_3 = Path(os.getenv(
-    'NT_CHIME_3_DIR',
-    '/net/db/chime3'
-))
-chime_4 = Path(os.getenv(
-    'NT_CHIME_4_DIR',
-    '/net/db/chime4'
-))
-kaldi_root = Path(os.getenv(
+)
+db_dir = _get_path(
+    'NT_DB_DIR',
+    '/net/db'
+)
+testing = _get_path(
+    'NT_TESTING_DIR',
+    '/net/storage/python_unittest_data'
+)
+kaldi_root = _get_path(
     'KALDI_ROOT',
     '/net/ssd/jheymann/software/kaldi_latest'
     # '/net/ssd/software/kaldi'
-))
-merl_mixtures = Path(os.getenv(
-    'NT_MERL_MIXTURES_DIR',
-    '/net/db/merl_speaker_mixtures'
-))
-german_speechdata = Path(os.getenv(
-    'NT_GERMAN_SPEECHDATA_DIR',
-    '/net/storage/jheymann/speech_db/german-speechdata-package-v2/'
-))
-noisex92 = Path(os.getenv(
-    'NT_NoiseX_92_DIR',
-    '/net/db/NoiseX_92'
-))
-reverb = Path(os.getenv(
-    'NT_REVERB_DIR',
-    '/net/db/reverb'
-))
-wsj = Path(os.getenv(
-    'NT_WSJ_DIR',
-    '/net/db/wsj'
-))
-wsjcam0 = Path(os.getenv(
-    'NT_WSJCAM0_DIR',
-    '/net/db/wsjcam0'
-))
-dcase = Path(os.getenv(
-    'NT_DCASE_DIR',
-    '/home/parora/Documents/DCASE/DCASE 2016/'
-))
-librispeech = Path(os.getenv(
-    'NT_LIBRISPEECH_DIR',
-    '/net/db/LibriSpeech'
-))
-matlab_toolbox = Path(os.getenv(
+)
+matlab_toolbox = _get_path(
     'MATLAB_TOOLBOX_DIR',
     '/net/ssd/software/matlab_toolbox'
-))
-matlab_r2015a = Path(os.getenv(
+)
+matlab_r2015a = _get_path(
     'MATLAB_R2015a',
     '/net/ssd/software/MATLAB/R2015a'
-))
-matlab_license = Path(os.getenv(
+)
+matlab_license = _get_path(
     'MATLAB_LICENSE',
     '/opt/MATLAB/R2016b_studis/licenses/network.lic'
-))
-language_model = Path(os.getenv(
+)
+
+ami = _get_path(
+    'NT_AMI_DIR',
+    db_dir / 'ami'
+)
+timit = _get_path(
+    'NT_TIMIT_DIR',
+    db_dir /'timit'
+)
+tidigits = _get_path(
+    'NT_TIDIGITS_DIR',
+    db_dir /'tidigits'
+)
+chime_3 = _get_path(
+    'NT_CHIME_3_DIR',
+    db_dir / 'chime3'
+)
+chime_4 = _get_path(
+    'NT_CHIME_4_DIR',
+    db_dir / 'chime4'
+)
+merl_mixtures = _get_path(
+    'NT_MERL_MIXTURES_DIR',
+    '/net/db/merl_speaker_mixtures'
+)
+german_speechdata = _get_path(
+    'NT_GERMAN_SPEECHDATA_DIR',
+    '/net/storage/jheymann/speech_db/german-speechdata-package-v2/'
+)
+noisex92 = _get_path(
+    'NT_NoiseX_92_DIR',
+    db_dir / 'NoiseX_92'
+)
+reverb = _get_path(
+    'NT_REVERB_DIR',
+    db_dir / 'reverb'
+)
+wsj = _get_path(
+    'NT_WSJ_DIR',
+    db_dir / 'wsj'
+)
+dcase = _get_path(
+    'NT_DCASE_DIR',
+    '/home/parora/Documents/DCASE/DCASE 2016/'
+)
+wsjcam0 = _get_path(
+    'NT_WSJCAM0_DIR',
+    db_dir / 'wsjcam0'
+)
+language_model = _get_path(
     'LANGUAGE_MODEL',
     '/net/storage/jheymann/__share/ldrude/2016/2016-05-10_lm'
-))
+)
 
 if __name__ == "__main__":
     import doctest
