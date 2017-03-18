@@ -124,4 +124,5 @@ coverage.xml
 # PyBuilder
 target/
 
+.vscode
 

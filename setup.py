@@ -74,7 +74,8 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=['numpy', 'bokeh', 'tabulate',
                       'chainer', 'scipy', 'librosa', 'seaborn', 'tqdm', 'dill',
-                      'pip', 'IPython', 'scikit-learn', 'pymatbridge',
+                      'pip', 'IPython', 'scikit-learn',
+                      'pymatbridge', 'zmq',
                       'h5py',
                       'line_profiler', 'memory_profiler', 'pycallgraph',
                       'pymatbridge',
@@ -84,6 +85,7 @@ setup(
                       'coverage',  # for nosetests --with-coverage
                       'bs4',  # for german speech database
                       'pysoundfile',  # for reading .flac audio
+                      'wavefile'
                       ],
 
     # List additional groups of dependencies here (e.g. development
@@ -97,30 +99,10 @@ setup(
 
     ext_modules=cythonize(["nt/reverb/CalcRIR_Simple_C.pyx",
                            'nt/speech_enhancement/cythonized/get_gev_vector.pyx',
-                           'nt/speech_enhancement/cythonized/c_eig.pyx'
+                           'nt/speech_enhancement/cythonized/c_eig.pyx',
+                           'nt/reverb/rirgen/pyrirgen.pyx'
                            ],
                           annotate=True,
                           ),
-
-    # If there are data files included in your packages that need to be
-    # installed, specify them here.  If using Python 2.6 or less, then these
-    # have to be included in MANIFEST.in as well.
-    package_data={
-        'nt_feature_extraction': ['package_data.dat'],
-    },
-
-    # Although 'package_data' is the preferred approach, in some case you may
-    # need to place data files outside of your packages. See:
-    # http://docs.python.org/3.4/distutils/setupscript.html#installing-additional-files # noqa
-    # In this case, 'data_file' will be installed into '<sys.prefix>/my_data'
-    data_files=[('my_data', ['data/data_file'])],
     include_dirs=[numpy.get_include()],
-    # To provide executable scripts, use entry points in preference to the
-    # "scripts" keyword. Entry points provide cross-platform support and allow
-    # pip to create the appropriate form of executable for the target platform.
-    entry_points={
-        'console_scripts': [
-            'nt_feature_extraction=nt_feature_extraction:main',
-        ],
-    },
 )

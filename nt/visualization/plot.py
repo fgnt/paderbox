@@ -80,10 +80,6 @@ def allow_dict_for_title(f):
 
 def _get_batch(signal, batch):
     if signal.ndim == 3:
-        assert signal.shape[1] < 20, 'Normally the batch size is smaller ' \
-                                     'than 20, therefore a value above 20 ' \
-                                     'seems to be wrong. Shape: ' \
-                                     '{}'.format(signal.shape)
         return signal[:, batch, :]
     elif signal.ndim == 2:
         return signal
@@ -548,12 +544,14 @@ def plot_ctc_decode(decode, label_handler, ax=None, batch=0):
     net_out_e = np.exp(net_out)
     net_out = net_out_e / (np.sum(net_out_e, axis=1, keepdims=True) + 1e-20)
 
-    for char in range(decode.shape[2]):
+    for char in range(decode.shape[-1]):
         _ = ax.plot(net_out[:, char],
-                    label=label_handler.int_to_label[char])
-        plt.legend(loc='lower center',
-                   ncol=decode.shape[2] // 3,
-                   bbox_to_anchor=[0.5, -0.35])
+                    label='{} [{}]'.format(
+                        label_handler.int_to_label[char], char
+                    ))
+    plt.legend(loc='lower center',
+               ncol=decode.shape[-1] // 3,
+               bbox_to_anchor=[0.5, -0.35])
     ax.set_xlabel('Time frame index')
     ax.set_ylabel('Probability')
     return ax
@@ -617,9 +615,54 @@ def plot_ctc_label_probabilities(net_out, ax=None, label_handler=None, batch=0):
 
     if label_handler is not None:
         plt.yticks(
-            range(len(label_handler)),
+            range(label_handler.num_labels),
             list(ordered_map.values()))
 
     ax.set_xlabel('Time frame index')
     ax.set_ylabel('Transcription')
+    return ax
+
+@create_subplot
+def seq2seq_alignment(alignment, targets=None, decode=None, ax=None,
+                      alignment_length=None, label_length=None,
+                      label_handler=None, batch=None):
+    """ Plots a posteriorgram of the network output of a CTC trained network
+
+    :param net_out: Output of the network
+    :param label_handler: Labelhandler holding the correspondence labels
+    :param batch: Batch to plot
+    """
+
+    if batch is not None:
+        alignment = alignment[:, batch, :]
+        if alignment_length is not None:
+            alignment = alignment[:alignment_length[batch]]
+        if targets is not None:
+            targets = targets[batch]
+            if label_length is not None:
+                targets = targets[:label_length[batch]]
+        if decode is not None:
+            decode = decode[batch]
+            if label_length is not None:
+                decode = decode[:label_length[batch]]
+
+    image = ax.imshow(
+        alignment,
+        cmap='bone', interpolation='none', aspect='auto', origin='lower'
+    )
+
+    if label_handler is not None:
+        if decode is not None:
+            decode_labels = label_handler.ints2labels(np.argmax(decode, axis=1))
+            if targets is not None:
+                target_labels = label_handler.ints2labels(targets)[:len(decode_labels)]
+            else:
+                target_labels = len(decode_labels) * ['']
+        plt.yticks(
+            range(len(decode_labels)),
+            ['{} [{}]'.format(d, t) for d, t in zip(decode_labels, target_labels)]
+        )
+    ax.grid(False)
+    ax.set_xlabel('frame index')
+    ax.set_ylabel('decode')
     return ax
