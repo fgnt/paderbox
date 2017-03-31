@@ -24,6 +24,10 @@ db_dir = _get_path(
     'NT_DB_DIR',
     '/net/db'
 )
+fast_db_dir = _get_path(
+    'NT_FAST_DB_DIR',
+    '/net/fastdb'
+)
 testing = _get_path(
     'NT_TESTING_DIR',
     '/net/storage/python_unittest_data'
@@ -48,7 +52,7 @@ matlab_license = _get_path(
 
 ami = _get_path(
     'NT_AMI_DIR',
-    db_dir / 'ami'
+    fast_db_dir / 'ami'
 )
 timit = _get_path(
     'NT_TIMIT_DIR',
@@ -60,11 +64,11 @@ tidigits = _get_path(
 )
 chime_3 = _get_path(
     'NT_CHIME_3_DIR',
-    db_dir / 'chime3'
+    fast_db_dir / 'chime3'
 )
 chime_4 = _get_path(
     'NT_CHIME_4_DIR',
-    db_dir / 'chime4'
+    fast_db_dir / 'chime4'
 )
 merl_mixtures = _get_path(
     'NT_MERL_MIXTURES_DIR',
