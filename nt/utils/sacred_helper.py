@@ -1,162 +1,52 @@
-import os
-from warnings import warn
-import shutil
-import pandas as pd
-from bson.objectid import ObjectId
-from pymongo import MongoClient
-from cached_property import cached_property
-from nt.utils.pandas_helper import colorize_and_display_dataframe, \
-    filter_columns, make_css_mark, print_columns  # for backward compatibility
-from nt.utils.pandas_helper import set_values
-from datetime import datetime
+"""Sacred helper when used for local folders with JsonObserver.
+
+Support for MongoDB has been dropped. If you still need it, let us know.
+"""
+from pathlib import Path
+import datetime
+
+from sacred import Experiment
+from sacred.observers import JsonObserver
 
 
-class SacredManager:
-    def __init__(self, secret_file=None, uri=None, database=None, prefix=None):
-        """ Create a SacredManager which provides info about sacred db.
+class LocalExperiment(Experiment):
+    """Experiment with automatically added JsonObserver."""
+    def __init__(self, data_root: Path, experiment_name: str):
+        """Simplifies experiment creation. Automatically adds date prefix.
+
+        Assumes, that you have a data root which may contain more than one
+        exeperiment.
 
         Args:
-            secret_file: Path to your sacred secret, i.e. `~/.sacred`.
-            uri: Alternatively, provide a uri i.e.
-                `mongodb://user:password@131.234.222.24:10135`.
+            data_root: Path object, i.e. Path('/net/vol/project/data')
+            experiment_name: String, i.e. 'enhancement'
+        Returns:
+            Experiment to be used as decorator in main Sacred file.
         """
-        if uri is None:
-            secret_file = '~/.sacred' if secret_file is None else secret_file
-            secret_file = os.path.expanduser(secret_file)
-            with open(secret_file, 'r') as f:
-                self.uri = f.read().replace('\n', '').strip()
-        else:
-            assert secret_file is None, 'Provide either secret_file or uri.'
-            self.uri = uri
+        super(LocalExperiment, self).__init__(experiment_name)
+        self.observers.append(JsonObserver.create(
+            data_root / experiment_name,
+            prefix=datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S_')
+        ))
 
-        # I decided to not set the properties if None to get good error messages
-        if database is not None:
-            self.database = database
-        if prefix is not None:
-            self.prefix = prefix
-        self.start_date = None
-        self.ignore_interrupted = False
-        self.ignore_failed = False
-
-    @cached_property
-    def client(self):
-        return MongoClient(self.uri)
-
-    def print_database_and_collection_names(self):
-        """ Print overview about MongoDB server with databases and collections.
-
-        Only works, when there is no authentication required.
-        """
-        # TODO: Improve behavior for databases with authentication.
-        for database in self.client.database_names():
-            print(database)
-            for collection in self.client[database].collection_names():
-                print('    ' + collection)
-
-    def _get_runs(self):
-        return self.client[self.database][self.prefix].runs
-
-    def get_experiment_from_id(self, _id):
-        runs = self._get_runs()
-        return runs.find_one({'_id': ObjectId(_id)})
-
-    def get_config_from_id(self, _id):
-        db = self.get_experiment_from_id(_id)
-        if db is None:
-            print(self.get_data_frame()['_id'])
-            raise ValueError('Could not load experiment with id {}'.format(
-                _id
-            ))
-        else:
-            return db['config']
-
-    def get_info_from_id(self, _id):
-        return self.get_experiment_from_id(_id)['info']
-
-    def delete_entry_by_id(self, _id, delete_dir=False):
-        runs = self._get_runs()
-        if delete_dir:
-            config = self.get_config_from_id(_id)
-            try:
-                data_dir = config[delete_dir]
-            except KeyError:
-                warn('{} is not part of the config. Cannot delete data dir.'.
-                     format(delete_dir))
-            else:
-                shutil.rmtree(data_dir)
-        delete_result = runs.delete_one({'_id': ObjectId(_id)})
-        print(delete_result.raw_result)
-
-    def set_db_values(self, _id, values):
-        set_values(self._get_runs(), _id, values)
-
-    def set_start_date(self, day, month, year):
-        self.start_date = datetime(year=year, month=month, day=day)
-
-    def _build_filter(self):
-        filter_ = {}
-        if self.start_date is not None:
-            filter_['start_time'] = {"$gt": self.start_date}
-        if self.ignore_interrupted:
-            filter_['status'] = {'$ne': 'INTERRUPTED'}
-        if self.ignore_failed:
-            filter_['status'] = {'$ne': 'FAILED'}
-        return filter_
-
-    def get_data_frame(self, depth=2):
-        """
-        Creates a pandas DataFrame with a MultiIndex with depth count of levels
-        out of entries found in database with prefix prefix. Keys for the
-        MultiIndex are taken from the keys of nested dicts in the database
-        entries.
-
-        :param database:
-        :param prefix:
-        :param depth: length of the keys of the MultiIndex of the DataFrame
-        :return:
-        """
-        runs = self._get_runs()
-        list_of_dicts = list(runs.find(self._build_filter()))
-
-        d = dict()
-
-        # TODO: Don't know if this needs to be as cryptic as it is...
-        def _multiindex_key_dict(indices, dic, i):
-            """Creates a dict with Tuples of length depth as keys so that
-            the constructor of DataFrame creates a MultiIndex out of it.
-            For recursive calls, indices specifies a prefix of all keys
-            created in this call. dic is a dictionary (row) whose values
-            should be added to dict d and i is the row index."""
-            for key in dic.keys():
-                val = dic[key]
-                new_indices = indices + (key,)
-                if type(val) is dict and len(new_indices) < depth:
-                    # recursively go deeper into nested dicts
-                    _multiindex_key_dict(new_indices, val, i)
-                else:
-                    # reached end of nested dicts or desired depth.
-                    # create key of given length
-                    new_indices = _expand_key(new_indices, depth)
-
-                    # add value from dict
-                    if new_indices in d.keys():
-                        d[new_indices][i] = val
-                    else:
-                        d[new_indices] = {i: val}
-
-        for i, e in enumerate(list_of_dicts):
-            _multiindex_key_dict(tuple(), e, i)
-        return pd.DataFrame(d)
+    @property
+    def target_path(self):
+        """Short name to get target folder (use in main function)."""
+        return self.observers[0].folder
 
 
-def _expand_key(key, length, expansion_key=''):
-    """Creates a Key for a MultiIndex (tuple) of length length and fills
-    missing entries with expansion_key. This is needed to create a DataFrame
-    with a MultiIndex of given depth."""
-    if not type(key) is tuple:
-        key = (key,)
+def get_path_by_id(
+    data_root: Path,
+    experiment_name: str,
+    _id: str
+):
+    """Helps to get full path, if you just know the previous ID.
 
-    if len(key) < length:
-        key = key + (expansion_key,) * (length - len(key))
-
-    return key
+    Args:
+        data_root: Path object, i.e. Path('/net/vol/project/data')
+        experiment_name: String, i.e. 'enhancement'
+        _id: Desired ID as string, i.e. '58e23bbf6753904febf824eb'
+    """
+    experiment_path = data_root / experiment_name
+    path = next(experiment_path.glob('*_{}'.format(flist_id)))
+    assert path.is_dir(), 'Folder {} for ID {} not found.'.format(path, _id)
