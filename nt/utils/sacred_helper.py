@@ -11,7 +11,7 @@ from sacred.observers import JsonObserver
 
 class LocalExperiment(Experiment):
     """Experiment with automatically added JsonObserver."""
-    def __init__(self, data_root: Path, experiment_name: str):
+    def __init__(self, data_dir: Path, experiment_name: str):
         """Simplifies experiment creation. Automatically adds date prefix.
 
         Assumes, that you have a data root which may contain more than one
@@ -25,8 +25,7 @@ class LocalExperiment(Experiment):
         """
         super(LocalExperiment, self).__init__(experiment_name)
         self.observers.append(JsonObserver.create(
-            data_root / experiment_name,
-            prefix=datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S_')
+            data_dir,
         ))
 
     @property
