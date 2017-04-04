@@ -32,7 +32,7 @@ class LocalExperiment(Experiment):
     @property
     def data_dir(self):
         """Short name to get target folder (use in main function)."""
-        return self.observers[0].data_dir
+        return Path(self.observers[0].data_dir)
 
 
 def get_path_by_id(
@@ -48,5 +48,5 @@ def get_path_by_id(
         _id: Desired ID as string, i.e. '58e23bbf6753904febf824eb'
     """
     experiment_path = data_root / experiment_name
-    path = next(experiment_path.glob('*_{}'.format(flist_id)))
+    path = next(experiment_path.glob('*{}*'.format(flist_id)))
     assert path.is_dir(), 'Folder {} for ID {} not found.'.format(path, _id)
