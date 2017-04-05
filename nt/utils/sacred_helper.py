@@ -57,3 +57,4 @@ def get_path_by_id(
     experiment_path = data_root / experiment_name
     path = next(experiment_path.glob('*{}*'.format(_id)))
     assert path.is_dir(), 'Folder {} for ID {} not found.'.format(path, _id)
+    return path
