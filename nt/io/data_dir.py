@@ -90,6 +90,10 @@ wsj = _get_path(
     'NT_WSJ_DIR',
     db_dir / 'wsj'
 )
+wsj_corrected_paths = _get_path(
+    'NT_WSJ_DIR',
+    db_dir / 'wsj_corrected_paths'
+)
 dcase = _get_path(
     'NT_DCASE_DIR',
     '/home/parora/Documents/DCASE/DCASE 2016/'

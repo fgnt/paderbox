@@ -175,7 +175,7 @@ def getparams(path):
     :return: Named tuple with attributes (nchannels, sampwidth, framerate,
     nframes, comptype, compname)
     """
-    with wave.open(path, 'r') as wave_file:
+    with wave.open(str(path), 'r') as wave_file:
         return wave_file.getparams()
 
 

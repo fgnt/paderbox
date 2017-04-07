@@ -137,7 +137,8 @@ class NoiseGeneratorChimeBackground(NoiseGeneratorTemplate):
             noise_list.append(audioread(
                 self.flist['wav'][utt_id]['CH{}'.format(channel + 1)],
                 offset=start / self.sampling_rate,
-                duration=T / self.sampling_rate
+                duration=T / self.sampling_rate,
+                sample_rate=self.sampling_rate
             ))
 
         # Reshape to deal with singleton dimensions
