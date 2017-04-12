@@ -1,7 +1,9 @@
-from nt.speech_enhancement.noise.Generator import NoiseGeneratorWhite
-from nt.speech_enhancement.noise.Generator import NoiseGeneratorChimeBackground
-from .Generator import NoiseGeneratorPink
-from .Generator import NoiseGeneratorNoisex92
-from .Generator import NoiseGeneratorSpherical
-from nt.speech_enhancement.noise.utils import get_snr, set_snr, \
-    get_variance_for_zero_mean_signal, get_energy
+from nt.speech_enhancement.noise.generator import NoiseGeneratorWhite
+from nt.speech_enhancement.noise.generator import NoiseGeneratorChimeBackground
+from nt.speech_enhancement.noise.generator import NoiseGeneratorPink
+from nt.speech_enhancement.noise.generator import NoiseGeneratorNoisex92
+from nt.speech_enhancement.noise.generator import NoiseGeneratorSpherical
+from nt.speech_enhancement.noise.utils import get_snr
+from nt.speech_enhancement.noise.utils import set_snr
+from nt.speech_enhancement.noise.utils import get_variance_for_zero_mean_signal
+from nt.speech_enhancement.noise.utils import get_energy
