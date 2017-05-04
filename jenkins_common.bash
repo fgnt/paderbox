@@ -11,8 +11,6 @@ LD_LIBRARY_PATH=$CUDA_PATH/lib64:${LD_LIBRARY_PATH}
 PATH=$CUDA_PATH/bin:$PATH
 export PATH
 export LD_LIBRARY_PATH
-conda info
-conda update conda
 source activate py35
 
 # set a prefix for each cmd
