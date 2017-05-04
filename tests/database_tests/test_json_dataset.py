@@ -6,7 +6,7 @@ from chainer.dataset.json_dataset import UtteranceJsonCallbackDataset
 from chainer.iterators.serial_iterator import SerialIterator
 from nt.testing import db_test
 
-_chime_json = db_test.ROOT/ 'chime_new_template.json'
+_chime_json = db_test.ROOT/ 'chime.json'
 flist = 'train/flists/wav/tr05_real'
 feature_channels = ['embedded/CH1']
 annotations = 'train/annotations/tr05_real'
