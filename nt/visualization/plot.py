@@ -1,16 +1,18 @@
-import numpy as np
-import matplotlib.colors
-import matplotlib.pyplot as plt
-from nt.speech_enhancement.beamform_utils import *
-import nt.transform
-from warnings import warn
+import inspect
+import warnings
 from collections import OrderedDict
 from functools import wraps
+from warnings import warn
+
+import matplotlib.colors
+import matplotlib.pyplot as plt
+import numpy as np
+
+import nt.transform
 from chainer import Variable
-import warnings
-import inspect
-from nt.visualization import module_facet_grid
 from nt.math.misc import softmax
+from nt.speech_enhancement.beamform_utils import *
+from nt.visualization import module_facet_grid
 
 
 class _ChainerVariableWarning(UserWarning):
@@ -151,7 +153,8 @@ def line(*signal, ax=None, xlim=None, ylim=None, label=None, color=None,
 
 @allow_dict_input_and_colorize
 @create_subplot
-def scatter(*signal, ax=None, ylim=None, label=None, color=None, **kwargs):
+def scatter(*signal, ax=None, ylim=None, label=None, color=None, xlim=None,
+            **kwargs):
     """
     Use together with facet_grid().
 
@@ -195,6 +198,9 @@ def scatter(*signal, ax=None, ylim=None, label=None, color=None, **kwargs):
         ax.scatter(*signal, label=label, **kwargs)
     if ylim is not None and isinstance(ylim, tuple):
         ax.set_ylim(ylim)
+    if xlim is not None and isinstance(xlim, tuple):
+        ax.set_xlim(xlim)
+
 
     # if type(signal) is tuple:
     #     ax.scatter(signal[0], signal[1], label=label, color=color)
