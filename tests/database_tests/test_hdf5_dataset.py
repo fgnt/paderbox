@@ -3,7 +3,8 @@ import unittest
 
 import h5py
 import numpy as np
-from chainer.dataset.hdf5_dataset import UtteranceHDF5Dataset
+from nt.dataset.hdf5_dataset import UtteranceHDF5Dataset
+
 from chainer.iterators.serial_iterator import SerialIterator
 
 

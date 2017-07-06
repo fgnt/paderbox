@@ -1,8 +1,9 @@
 import unittest
 
 import numpy as np
-from chainer.dataset.json_dataset import ContextUtteranceJsonCallbackDataset
-from chainer.dataset.json_dataset import UtteranceJsonCallbackDataset
+from nt.dataset.json_dataset import ContextUtteranceJsonCallbackDataset
+from nt.dataset.json_dataset import UtteranceJsonCallbackDataset
+
 from chainer.iterators.serial_iterator import SerialIterator
 from nt.testing import db_test
 
