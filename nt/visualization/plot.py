@@ -9,11 +9,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import nt.transform
-from chainer import Variable
 from nt.math.misc import softmax
 from nt.speech_enhancement.beamform_utils import *
 from nt.visualization import module_facet_grid
 
+# from chainer import Variable  # see line 281
 
 class _ChainerVariableWarning(UserWarning):
     pass
@@ -278,7 +278,10 @@ def _time_frequency_plot(
     :param z_scale: how to scale the values ('linear', 'log', 'symlog' or instance of matplotlib.colors.Normalize)
     :return:
     """
-    if isinstance(signal, Variable):
+    # if isinstance(signal, Variable):
+    if 'data' and 'num' in dir(signal):  # `signal` is an instance of
+        # `chainer.Variable`. A bit hacky but keeps dependencies on `chainer`
+        # away.
         frame = inspect.currentframe()
         frame_origin = frame
         for i in range(6):

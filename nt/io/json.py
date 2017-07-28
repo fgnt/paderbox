@@ -4,7 +4,7 @@ import bson
 import datetime
 from pathlib import Path
 
-from chainer import Variable
+# from chainer import Variable  # see line 16
 
 # http://stackoverflow.com/a/27050186
 class _Encoder(json.JSONEncoder):
@@ -13,7 +13,11 @@ class _Encoder(json.JSONEncoder):
             return int(obj)
         elif isinstance(obj, np.floating):
             return float(obj)
-        elif isinstance(obj, Variable):
+        # elif isinstance(obj, Variable):
+            # return obj.num.tolist()
+        elif 'data' and 'num' in dir(obj):  # `obj` is an instance of
+            # `chainer.Variable`. A bit hacky but keeps dependencies on
+            # `chainer` away
             return obj.num.tolist()
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
