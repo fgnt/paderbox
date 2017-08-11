@@ -259,7 +259,8 @@ def time_series(*signal, ax=None, ylim=None, label=None, color=None):
 def _time_frequency_plot(
         signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
         sample_rate=None, stft_size=None, stft_shift=None,
-        x_label=None, y_label=None, z_label=None, z_scale=None, cmap=None
+        x_label=None, y_label=None, z_label=None, z_scale=None, cmap=None,
+        cbar_ticks=None, cbar_tick_labels=None
 ):
     """
 
@@ -381,7 +382,8 @@ def _time_frequency_plot(
             # The default colorbar is not compatible with symlog scale.
             # Set the ticks to
             # max, ..., log2lin border, 0, log2lin border, ..., min
-            tick_locations = (norm.vmin,
+            if cbar_ticks is None:
+                tick_locations = (norm.vmin,
                               norm.vmin * 1e-1,
                               norm.vmin * 1e-2,
                               norm.vmin * 1e-3,
@@ -392,9 +394,15 @@ def _time_frequency_plot(
                               norm.vmax  * 1e-2,
                               norm.vmax  * 1e-1,
                               norm.vmax)
+            else:
+                tick_locations = cbar_ticks
             cbar = plt.colorbar(image, ax=ax, ticks=tick_locations)
         else:
-            cbar = plt.colorbar(image, ax=ax)
+            cbar = plt.colorbar(image, ax=ax, ticks=cbar_ticks)
+
+        if cbar_tick_labels is not None:
+            cbar.ax.set_yticklabels(cbar_tick_labels) 
+
         if z_label is None:
             if log:
                 cbar.set_label('Energy / dB')
@@ -412,7 +420,8 @@ def _time_frequency_plot(
 def spectrogram(
         signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
         sample_rate=None, stft_size=None, stft_shift=None,
-        x_label=None, y_label=None, z_label=None, z_scale=None, cmap=None
+        x_label=None, y_label=None, z_label=None, z_scale=None, cmap=None,
+        cbar_ticks=None, cbar_tick_labels=None
 ):
     """
     Plots a spectrogram from a spectrogram (power) as input.
