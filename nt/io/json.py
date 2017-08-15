@@ -1,10 +1,9 @@
+import io
 import json
 import numpy as np
 import bson
 import datetime
 from pathlib import Path
-
-# from chainer import Variable  # see line 16
 
 # http://stackoverflow.com/a/27050186
 class _Encoder(json.JSONEncoder):
@@ -13,11 +12,7 @@ class _Encoder(json.JSONEncoder):
             return int(obj)
         elif isinstance(obj, np.floating):
             return float(obj)
-        # elif isinstance(obj, Variable):
-            # return obj.num.tolist()
-        elif 'data' and 'num' in dir(obj):  # `obj` is an instance of
-            # `chainer.Variable`. A bit hacky but keeps dependencies on
-            # `chainer` away
+        elif str(type(obj)) == "<class 'chainer.variable.Variable'>":
             return obj.num.tolist()
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
@@ -41,11 +36,17 @@ def dump_json(obj, path, *, indent=2, **kwargs):
     :param kwargs: See ``json.dump()``.
 
     """
-    assert isinstance(path, (str, Path))
-    path = Path(path).expanduser()
+    if isinstance(path, io.IOBase):
+        json.dump(obj, path, cls=_Encoder, indent=indent,
+                  sort_keys=True, **kwargs)
+    elif isinstance(path, (str, Path)):
+        path = Path(path).expanduser()
 
-    with path.open('w') as f:
-        json.dump(obj, f, cls=_Encoder, indent=indent, sort_keys=True, **kwargs)
+        with path.open('w') as f:
+            json.dump(obj, f, cls=_Encoder, indent=indent,
+                      sort_keys=True, **kwargs)
+    else:
+        raise TypeError(path)
 
 
 def load_json(path, **kwargs):

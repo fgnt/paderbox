@@ -278,10 +278,7 @@ def _time_frequency_plot(
     :param z_scale: how to scale the values ('linear', 'log', 'symlog' or instance of matplotlib.colors.Normalize)
     :return:
     """
-    # if isinstance(signal, Variable):
-    if 'data' and 'num' in dir(signal):  # `signal` is an instance of
-        # `chainer.Variable`. A bit hacky but keeps dependencies on `chainer`
-        # away.
+    if str(type(signal)) == "<class 'chainer.variable.Variable'>":
         frame = inspect.currentframe()
         frame_origin = frame
         for i in range(6):
