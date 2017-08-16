@@ -63,6 +63,7 @@ class TimerDictEntry:
 
     def __enter__(self):
         self._start = self.timestamp()
+        return self
 
     def __exit__(self, *args):
         end = self.timestamp()
@@ -114,6 +115,8 @@ class TimerDict:
     0:00:02.0 0:00:01.0 0:00:00.3
 
     """
+    _display_data = None
+    _display_vbox = None
 
     def __init__(self, style: ('timedelta', 'float')='timedelta'):
         """
@@ -145,9 +148,49 @@ class TimerDict:
     def __str__(self):
         return self.as_dict.__str__()
 
+    @property
+    def widget(self):
+        import ipywidgets
+
+        def gen():
+            l = [
+                ipywidgets.widgets.FloatProgress(
+                    min=0,
+                    max=1,
+                    step=0.1,
+                    bar_style='info',
+                    orientation='horizontal'
+                ),
+                ipywidgets.Label('')
+            ]
+            return ipywidgets.HBox(l)
+
+        self._display_data = defaultdict(gen)
+        self._display_vbox = ipywidgets.VBox()
+
+        self.widget_update()
+        return self._display_vbox
+
+    def widget_update(self):
+        assert self._display_data is not None, 'Did you forget "display(timer_dict.widget)" ?'
+
+        d = {k: v.total_seconds() for k, v in self.as_dict.items()}
+        total = sum([v for v in d.values()])
+
+        for k, v in d.items():
+            float_progress, label = self._display_data[k].children
+            float_progress.value = v
+            float_progress.description = str(k)
+            label.value = str(v)
+            float_progress.max = total
+
+        if len(self._display_vbox.children) != len(self._display_data):
+            self._display_vbox.children = [
+                v for k, v in self._display_data.items()
+            ]
+
 
 def timeStamped(fname, fmt='{fname}_%Y-%m-%d-%H-%M-%S'):
-
     """ Timestamps a string according to ``fmt``
     :param fname: String to timestamp
     :param fmt: Format of the timestamp where ``{fname}`` is the placeholder for the string
