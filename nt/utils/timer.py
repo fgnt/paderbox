@@ -180,8 +180,8 @@ class TimerDict:
         for k, v in d.items():
             float_progress, label = self._display_data[k].children
             float_progress.value = v
-            float_progress.description = f'{k}'
-            label.value = f'{v}'
+            float_progress.description = str(k)
+            label.value = str(v)
             float_progress.max = total
 
         if len(self._display_vbox.children) != len(self._display_data):
