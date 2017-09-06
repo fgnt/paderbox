@@ -2,7 +2,6 @@ import time
 import datetime
 
 from collections import defaultdict
-from cached_property import cached_property
 
 
 class Timer(object):
@@ -15,43 +14,25 @@ class Timer(object):
         print(t.secs)
 
     """
-    @cached_property
-    def cuda(self):
-        from chainer import cuda
-        return cuda
 
-    def __init__(self, cuda_event=False, verbose=False):
+    def __init__(self, verbose=False):
         self.verbose = verbose
         self.secs = 0
         self.msecs = 0
         self.start = 0
         self.end = 0
-        self.cuda_event = cuda_event
 
     def __enter__(self):
-        if self.cuda_event:
-            self.start = self.cuda.cupy.cuda.Event()
-            self.end = self.cuda.cupy.cuda.Event()
-            self.start.record()
-            return self
-        else:
-            self.start = time.time()
-            return self
+        self.start = time.time()
+        return self
 
     def __exit__(self, *args):
 
-        if self.cuda_event:
-            self.end.record()
-            self.end.synchronize()
-            self.msecs = self.cuda.cupy.cuda.get_elapsed_time(
-                self.start, self.end)
-            self.secs = self.msecs / 1000
-        else:
-            self.end = time.time()
-            self.secs = self.end - self.start
-            self.msecs = self.secs * 1000  # millisecs
-            if self.verbose:
-                print('elapsed time: %f ms' % self.msecs)
+        self.end = time.time()
+        self.secs = self.end - self.start
+        self.msecs = self.secs * 1000  # millisecs
+        if self.verbose:
+            print('elapsed time: %f ms' % self.msecs)
 
 
 class TimerDictEntry:
