@@ -24,6 +24,10 @@ class AudioWriteTest(unittest.TestCase):
         read_data = audioread(path)
         nptest.assert_almost_equal(signal, read_data, decimal=3)
 
+    def test_write_read_complex(self):
+        with nptest.assert_raises(AssertionError):
+            audiowrite((signal*int16_max).astype(numpy.complex128), path, threaded=False)
+
     def test_write_threaded(self):
         audiowrite(signal, path)
         time.sleep(5)
