@@ -1,19 +1,19 @@
 import sys
 import unittest
+import os
+import tempfile
 
 import numpy as np
-from chainer import Variable
+
 from nt.io.data_dir import testing as data_dir
 from nt.speech_recognition.utils.utils import write_lattice_file, argmax_decode
 from nt.TODO.kaldi.decoder import Decoder
-
-sys.path.append(str(data_dir / 'speech_recognition'))
-from model import BLSTMModel
-import os
-import tempfile
 from nt.transcription_handling.lexicon_handling import *
 from nt.transcription_handling.transcription_handler import \
     LabelHandler
+
+
+sys.path.append(str(data_dir / 'speech_recognition'))
 
 
 class TestDecoder(unittest.TestCase):
@@ -31,7 +31,7 @@ class TestDecoder(unittest.TestCase):
                     sym = "<space>"
                 net_out[idx, 0, labels.index(sym)] = \
                     -cost_along_path/len(label_seq)
-        return Variable(net_out)
+        return net_out
 
     # @unittest.skip("")
     def test_ground_truth(self):
@@ -57,7 +57,7 @@ class TestDecoder(unittest.TestCase):
                                    lm_file=lm_path_uni)
             self.decoder.create_graphs()
             lattice_file = path.join(working_dir, "net.lat")
-            write_lattice_file({utt_id: net_out.num}, lattice_file)
+            write_lattice_file({utt_id: net_out}, lattice_file)
             search_graphs = self.decoder.create_search_graphs(lattice_file)
             sym_decode, word_decode = self.decoder.decode(
                 search_graphs, lm_scale=1, out_type='string')
@@ -89,7 +89,7 @@ class TestDecoder(unittest.TestCase):
                                    lm_file=lm_path_uni, silent_tokens=[space])
             self.decoder.create_graphs()
             lattice_file = path.join(working_dir, "net.lat")
-            write_lattice_file({utt_id: net_out.num}, lattice_file)
+            write_lattice_file({utt_id: net_out}, lattice_file)
             search_graphs = self.decoder.create_search_graphs(lattice_file)
             sym_decode, word_decode = self.decoder.decode(
                 search_graphs, lm_scale=1, out_type='string')
@@ -115,7 +115,7 @@ class TestDecoder(unittest.TestCase):
             self.decoder = Decoder(labels, working_dir, lex)
             self.decoder.create_graphs()
             lattice_file = path.join(working_dir, "net.lat")
-            write_lattice_file({utt_id: net_out.num}, lattice_file)
+            write_lattice_file({utt_id: net_out}, lattice_file)
             search_graphs = self.decoder.create_search_graphs(lattice_file)
             sym_decode, word_decode = self.decoder.decode(
                 search_graphs, lm_scale=1, out_type='string')
@@ -129,20 +129,20 @@ class TestDecoder(unittest.TestCase):
 
         labels = ["<blank>", "a", "b"]
 
-        net_out = Variable(np.random.randn(20, 1, len(labels)))
+        net_out = np.random.randn(20, 1, len(labels))
         utt_id = "11111111"
 
         with tempfile.TemporaryDirectory() as working_dir:
             self.decoder = Decoder(labels, working_dir)
             self.decoder.create_graphs()
             lattice_file = path.join(working_dir, "net.lat")
-            write_lattice_file({utt_id: net_out.num}, lattice_file)
+            write_lattice_file({utt_id: net_out}, lattice_file)
             search_graphs = self.decoder.create_search_graphs(lattice_file)
             sym_decode, word_decode = \
                 self.decoder.decode(search_graphs, lm_scale=1)
 
         ref_decode, _ = argmax_decode(
-            net_out.num[:, 0, :], transcription_handler=LabelHandler(labels))
+            net_out[:, 0, :], transcription_handler=LabelHandler(labels))
         print(sym_decode)
         print(word_decode)
         print(ref_decode)
@@ -162,7 +162,7 @@ class TestDecoder(unittest.TestCase):
             self.decoder = Decoder(labels, working_dir, lex, lm_file=lm_file)
             self.decoder.create_graphs()
             lattice_file = path.join(working_dir, "net.lat")
-            write_lattice_file({utt_id: net_out.num}, lattice_file)
+            write_lattice_file({utt_id: net_out}, lattice_file)
             search_graphs = self.decoder.create_search_graphs(lattice_file)
             sym_decode, word_decode = self.decoder.decode(
                 search_graphs, lm_scale=1, out_type='string')
@@ -189,7 +189,7 @@ class TestDecoder(unittest.TestCase):
             self.decoder = Decoder(labels, working_dir, lex, lm_file=lm_file)
             self.decoder.create_graphs()
             lattice_file = path.join(working_dir, "net.lat")
-            write_lattice_file({utt_id: net_out.num}, lattice_file)
+            write_lattice_file({utt_id: net_out}, lattice_file)
             search_graphs = self.decoder.create_search_graphs(lattice_file)
             sym_decode_ac, word_decode_ac = self.decoder.decode(
                 search_graphs, lm_scale=0.9, out_type='string')
@@ -225,8 +225,8 @@ class TestDecoder(unittest.TestCase):
             self.decoder = Decoder(labels, working_dir, lex, lm_file=lm_file)
             self.decoder.create_graphs()
             lattice_file = path.join(working_dir, "net.lat")
-            write_lattice_file({utt1_id: net_out1.num,
-                                utt2_id: net_out2.num}, lattice_file)
+            write_lattice_file({utt1_id: net_out1,
+                                utt2_id: net_out2}, lattice_file)
             search_graphs = self.decoder.create_search_graphs(lattice_file)
             sym_decode, word_decode = self.decoder.decode(
                 search_graphs, lm_scale=1, out_type='string')
@@ -269,10 +269,9 @@ class TestDecoder(unittest.TestCase):
                 sym2 = word2[idx]
                 net_out[idx, 0, labels.index(sym1)] += 5
                 net_out[idx, 0, labels.index(sym2)] += 10
-            net_out = Variable(net_out)
 
             lattice_file = path.join(working_dir, "net.lat")
-            write_lattice_file({utt_id: net_out.num}, lattice_file)
+            write_lattice_file({utt_id: net_out}, lattice_file)
             search_graphs = self.decoder.create_search_graphs(lattice_file)
             sym_decode, word_decode = self.decoder.decode(
                 search_graphs, lm_scale=1, out_type='string')
@@ -284,7 +283,7 @@ class TestDecoder(unittest.TestCase):
 
     def test_nbest(self):
         utt_id = "11111111"
-        net_out = Variable(np.zeros((3, 1, 4)))
+        net_out = np.zeros((3, 1, 4))
         labels = ["<blk>", "a", "b", "c"]
         lex = {"abc": ["a", "b", "c"],
                "a": ["a"], }
@@ -292,12 +291,12 @@ class TestDecoder(unittest.TestCase):
             self.decoder = Decoder(labels, working_dir, lex)
             self.decoder.create_graphs()
             lattice_file = path.join(working_dir, "net1.lat")
-            write_lattice_file({utt_id: net_out.num}, lattice_file)
+            write_lattice_file({utt_id: net_out}, lattice_file)
             search_graphs = self.decoder.create_search_graphs(lattice_file)
             sym_decodes_1, word_decodes_1 = self.decoder.decode(
                 search_graphs, lm_scale=1, n=10, out_type='string')
             lattice_file = path.join(working_dir, "net2.lat")
-            write_lattice_file({utt_id: net_out.num}, lattice_file)
+            write_lattice_file({utt_id: net_out}, lattice_file)
             search_graphs = self.decoder.create_search_graphs(
                 lattice_file, determinize=False)
             sym_decodes_2, word_decodes_2 = self.decoder.decode(
