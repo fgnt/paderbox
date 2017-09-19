@@ -4,7 +4,6 @@ import numpy as np
 from nt.dataset.json_dataset import ContextUtteranceJsonCallbackDataset
 from nt.dataset.json_dataset import UtteranceJsonCallbackDataset
 
-from chainer.iterators.serial_iterator import SerialIterator
 from nt.testing import db_test
 
 _chime_json = db_test.ROOT/ 'chime.json'
@@ -50,12 +49,3 @@ class TestContextUtteranceJsonCallbackDataset(unittest.TestCase):
         np.testing.assert_equal(data['observed'].shape[-1],
                                 data_with_context['embedded'].shape[-1] - context)
         np.testing.assert_equal(data['observed'], data_with_context['embedded'][:, context:])
-
-    def test_integration(self):
-        iterator = SerialIterator(self.dataset, batch_size=1, repeat=False)
-        for batch in iterator:
-            pass
-        for batch in iterator:
-            break
-        for batch in iterator:
-            pass

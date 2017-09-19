@@ -5,8 +5,6 @@ import h5py
 import numpy as np
 from nt.dataset.hdf5_dataset import UtteranceHDF5Dataset
 
-from chainer.iterators.serial_iterator import SerialIterator
-
 
 def _get_data(dimension, deltas=0):
     if dimension == 0:
@@ -62,12 +60,3 @@ class TestUtteranceHDF5Dataset(unittest.TestCase):
             np.testing.assert_equal(
                 data[key], _get_data(dimension)
             )
-
-    def test_integration(self):
-        iterator = SerialIterator(self.dataset, batch_size=1, repeat=False)
-        for batch in iterator:
-            pass
-        for batch in iterator:
-            break
-        for batch in iterator:
-            pass
