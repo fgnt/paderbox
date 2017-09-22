@@ -135,7 +135,10 @@ class TestRoomImpulseGenerator(unittest.TestCase):
             source_positions - sensor_positions)
 
         # Tranvu: first index of returned RIR equals time-index minus 128
-        fixedshift = 128
+        if algorithm is not "habets":
+            fixedshift = 128
+        else:
+            fixedshift = 0
         rir = reverb_utils.generate_rir(
             room_dimensions=self.room,
             source_positions=source_positions,
@@ -215,7 +218,8 @@ class TestRoomImpulseGenerator(unittest.TestCase):
     @tc.attr.matlab
     def test_compare_matlab_with(self, algorithm):
         print(algorithm)
-        self._test_compare_rir_with_matlab(algorithm=algorithm)
+        if algorithm is not "habets": # compare only TranVu. See function description.
+            self._test_compare_rir_with_matlab(algorithm=algorithm)
 
     @parameterized.expand(reverb_utils.available_rir_algorithms)
     @tc.attr.matlab
