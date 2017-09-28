@@ -32,6 +32,7 @@ class NamedAudio(Audio):
 
 def play(data, channel=0, sample_rate=16000,
          size=1024, shift=256, window=signal.blackman, *,
+         scale=1,
          name=None):
     """ Tries to guess, what the input data is. Plays time series and stft.
 
@@ -45,6 +46,8 @@ def play(data, channel=0, sample_rate=16000,
     :param size: STFT window size
     :param shift: STFT shift
     :param window: STFT analysis window
+    :param scale: Scalte the Volume, currently only amplification with clip
+        is supported.
     :param name: if name is set, then in ipynb table with name and audio is
                  displayed
     :return:
@@ -70,6 +73,14 @@ def play(data, channel=0, sample_rate=16000,
 
     assert np.issubdtype(data.dtype, np.float)
     assert len(data.shape) == 1
+
+    if scale != 1:
+        assert scale > 1, \
+            'Only Amplification with clipping is supported. \n' \
+            'Note: IPython.display.Audio scales the input, therefore a ' \
+            'np.clip can increase the power, but not decrease it.'
+        max_abs_data = np.max(np.abs(data))
+        data = np.clip(data, -max_abs_data/scale, max_abs_data/scale)
 
     if name is None:
         display(Audio(data, rate=sample_rate))
