@@ -35,8 +35,22 @@ class UtteranceCallbackDataset():
                 ret.append(self.get_example(current))
                 current += step
             return ret
+        elif isinstance(index, str):
+            try:
+                utt_idx = self.utterances.index(index)
+            except ValueError:
+                raise KeyError('{} is not a valid database key'.format(index))
+            return self._get_utterance_for_utt(
+                index, utt_idx
+            )
         else:
             return self.get_example(index)
+
+    def __contains__(self, key):
+        if isinstance(key, str):
+            return key in self.utterances
+        else:
+            raise TypeError(type(key), key, 'Expect str')
 
     def _get_utterance_list(self):
         """ Returns a list with utterance ids
