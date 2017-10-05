@@ -5,23 +5,63 @@ import bson
 import datetime
 from pathlib import Path
 
+
 # http://stackoverflow.com/a/27050186
-class _Encoder(json.JSONEncoder):
+class Encoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.integer):
-            return int(obj)
+            return self._handle_np_integer(obj)
         elif isinstance(obj, np.floating):
-            return float(obj)
+            return self._handle_np_floating(obj)
         elif str(type(obj)) == "<class 'chainer.variable.Variable'>":
-            return obj.num.tolist()
+            return self._handle_chainer_variable(obj)
         elif isinstance(obj, np.ndarray):
-            return obj.tolist()
+            return self._handle_np_ndarray(obj)
         elif isinstance(obj, bson.objectid.ObjectId):
-            return str(obj)
+            return self._handle_bson_object_id(obj)
         elif isinstance(obj, datetime.datetime):
-            return obj.strftime('%Y-%m-%d_%H-%M-%S')
+            return self._handle_datetime_datetime(obj)
         else:
             return super().default(obj)
+
+    @staticmethod
+    def _handle_np_integer(obj):
+        return int(obj)
+
+    @staticmethod
+    def _handle_np_floating(obj):
+        return float(obj)
+
+    @staticmethod
+    def _handle_chainer_variable(obj):
+        return obj.num.tolist()
+
+    @staticmethod
+    def _handle_np_ndarray(obj):
+        return obj.tolist()
+
+    @staticmethod
+    def _handle_bson_object_id(obj):
+        return str(obj)
+
+    @staticmethod
+    def _handle_datetime_datetime(obj):
+        return obj.strftime('%Y-%m-%d_%H-%M-%S')
+
+
+class SummaryEncoder(Encoder):
+    """
+    Often, you may want a very short summary, just containing some shapes of
+    numpy arrays in a Jupyter Notebook.
+
+    Example usage:
+    >>> import numpy as np
+    >>> example = dict(a=np.random.uniform(size=(3, 4))
+    >>> print(json.dumps(example, cls=SummaryEncoder, indent=2))
+    """
+    @staticmethod
+    def _handle_np_ndarray(obj):
+        return 'ndarray: shape {}, dtype {}'.format(obj.shape, obj.dtype)
 
 
 def dump_json(obj, path, *, indent=2, **kwargs):
@@ -37,13 +77,13 @@ def dump_json(obj, path, *, indent=2, **kwargs):
 
     """
     if isinstance(path, io.IOBase):
-        json.dump(obj, path, cls=_Encoder, indent=indent,
+        json.dump(obj, path, cls=Encoder, indent=indent,
                   sort_keys=True, **kwargs)
     elif isinstance(path, (str, Path)):
         path = Path(path).expanduser()
 
         with path.open('w') as f:
-            json.dump(obj, f, cls=_Encoder, indent=indent,
+            json.dump(obj, f, cls=Encoder, indent=indent,
                       sort_keys=True, **kwargs)
     else:
         raise TypeError(path)
