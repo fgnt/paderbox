@@ -46,9 +46,9 @@ def play(data, channel=0, sample_rate=16000,
     :param size: STFT window size
     :param shift: STFT shift
     :param window: STFT analysis window
-    :param scale: Scalte the Volume, currently only amplification with clip
+    :param scale: Scale the Volume, currently only amplification with clip
         is supported.
-    :param name: if name is set, then in ipynb table with name and audio is
+    :param name: If name is set, then in ipynb table with name and audio is
                  displayed
     :return:
     """
