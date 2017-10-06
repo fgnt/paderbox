@@ -64,7 +64,7 @@ class SummaryEncoder(Encoder):
         return 'ndarray: shape {}, dtype {}'.format(obj.shape, obj.dtype)
 
 
-def dump_json(obj, path, *, indent=2, **kwargs):
+def dump_json(obj, path, *, indent=2, create_path=True, **kwargs):
     """
     Numpy types will be converted to the equivalent Python type for dumping the
     object.
@@ -81,6 +81,9 @@ def dump_json(obj, path, *, indent=2, **kwargs):
                   sort_keys=True, **kwargs)
     elif isinstance(path, (str, Path)):
         path = Path(path).expanduser()
+
+        if create_path:
+            path.parent.mkdir(parents=True, exist_ok=True)
 
         with path.open('w') as f:
             json.dump(obj, f, cls=Encoder, indent=indent,
