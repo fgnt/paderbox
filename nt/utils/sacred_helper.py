@@ -5,9 +5,21 @@ Support for MongoDB has been dropped. If you still need it, let us know.
 from pathlib import Path
 import datetime
 from typing import List, Tuple
+import warnings
+import getpass
 
 from sacred import Experiment, Ingredient
-from sacred.observers import JsonObserver
+
+try:
+    from sacred.observers import JsonObserver as Observer
+    HAS_FILE_STORAGE_OBSERVER = False
+except:
+    warnings.warn(' '.join((
+        'Could not import JsonObserver.',
+        'You probably use the official Sacred repository instead of our',
+        'deprecated local version.')))
+    from sacred.observers import FileStorageObserver as Observer
+    HAS_FILE_STORAGE_OBSERVER = True
 
 
 class LocalExperiment(Experiment):
@@ -32,14 +44,26 @@ class LocalExperiment(Experiment):
         Returns:
             Experiment to be used as decorator in main Sacred file.
         """
-        super(LocalExperiment, self).__init__(experiment_name,
-                                              ingredients=ingredients)
-        self.observers.append(JsonObserver.create(data_dir=data_dir))
+
+        if HAS_FILE_STORAGE_OBSERVER:
+            data_dir = data_dir.parent / data_dir.name.format(
+                now=datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
+                id='nan',
+                user=getpass.getuser(),
+                name='unknown'
+            )
+
+        super(LocalExperiment, self).__init__(
+            experiment_name, ingredients=ingredients)
+        self.observers.append(Observer.create(data_dir))
 
     @property
     def data_dir(self):
         """Short name to get target folder (use in main function)."""
-        return Path(self.observers[0].data_dir)
+        try:
+            return Path(self.observers[0].data_dir)
+        except:
+            return Path(self.observers[0].dir)
 
 
 def get_path_by_id(
