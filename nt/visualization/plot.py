@@ -260,7 +260,7 @@ def _time_frequency_plot(
         signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
         sample_rate=None, stft_size=None, stft_shift=None,
         x_label=None, y_label=None, z_label=None, z_scale=None, cmap=None,
-        cbar_ticks=None, cbar_tick_labels=None
+        cbar_ticks=None, cbar_tick_labels=None, xticks=None, xtickslabels=None
 ):
     """
 
@@ -365,6 +365,11 @@ def _time_frequency_plot(
             ax.set_xlabel('Time frame index')
     else:
         ax.set_xlabel(x_label)
+
+    if xticks is not None:
+        ax.set_xticks(xticks)
+    if xtickslabels is not None:
+        ax.set_xticklabels(xtickslabels)
 
     if y_label is None:
         if sample_rate is not None and stft_size is not None:
@@ -482,9 +487,10 @@ def stft(
 @allow_dict_for_title
 @create_subplot
 def mask(
-        signal, ax=None, limits=(0, 1), log=False, colorbar=True, batch=0,
-        sample_rate=None, stft_size=None, stft_shift=None,
-        x_label=None, y_label=None, z_label='Mask', z_scale=None
+        signal, ax=None, limits=(0, 1), log=False,
+        colorbar=True, batch=0, sample_rate=None, stft_size=None,
+        stft_shift=None, x_label=None, y_label=None, z_label='Mask',
+        z_scale=None
 ):
     """
     Plots any mask with values between zero and one.
@@ -498,6 +504,52 @@ def mask(
     :return: axes
     """
     return _time_frequency_plot(**locals())
+
+
+def _switch_indices(alignment):
+    return np.concatenate(
+        [[0], np.argwhere(alignment[:-1] != alignment[1:])[:, 0]])
+
+
+@allow_dict_for_title
+@create_subplot
+def phone_alignment(
+        signal, phone_alignment, ax=None, limits=None, log=True,
+        colorbar=True, batch=0, sample_rate=None, stft_size=None,
+        stft_shift=None, x_label=None, y_label=None, z_label=None, z_scale=None
+):
+    """
+    Plots any mask with values between zero and one.
+
+    Example (using tf_speech):
+
+        >> from tf_speech.notebook import *
+        >> db = dispatch_db('reverb')
+        >> sample = fetcher.get_sample()
+        >> utt_id = sample['features']['utt_id'][0].decode('utf-8')
+        >> ali = np.array([db.id2phone(p) for p in db.phone_alignment[utt_id]])
+        >> with context_manager(figure_size=(150, 10)):
+        >>     plot.phone_alignment(sample['features'][keys.Y][0], ali)
+
+    :param signal: Mask with shape (time-frames, frequency-bins)
+    :param phone_alignment: Alignment vector (time-frames)
+    :param ax: Optional figure axis for use with facet_grid()
+    :param limits: Clip the signal to these limits
+    :param colorbar: Show colorbar right to the plot
+    :param batch: If the decode has 3 dimensions:
+        Specify the which batch to plot
+    :return: axes
+    """
+    xticks = (_switch_indices(phone_alignment)[1:] -
+              _switch_indices(phone_alignment)[:-1]) // 2 +\
+             _switch_indices(phone_alignment)[:-1]
+    xtickslabels = phone_alignment[xticks]
+    ax.vlines(_switch_indices(phone_alignment), 0, signal.shape[1],
+              linestyle='dotted', color='r', alpha=.75)
+    del phone_alignment
+    signal = nt.transform.stft_to_spectrogram(signal)
+    ax = _time_frequency_plot(**locals())
+    return ax
 
 
 def _get_limits_for_tf_symlog(signal, limits):
@@ -517,6 +569,8 @@ def _get_limits_for_tf_symlog(signal, limits):
                 linthresh = 1e-14
         limits = (*limits, linthresh)
     return limits
+
+
 
 
 @allow_dict_for_title
