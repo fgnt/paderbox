@@ -73,7 +73,7 @@ setup(
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=['numpy', 'bokeh', 'tabulate',
-		      'scipy', 'librosa', 'seaborn', 'tqdm', 'dill',
+		      'scipy', 'seaborn', 'tqdm', 'dill',
                       'pip', 'IPython', 'scikit-learn',
                       'pyzmq', 'pymatbridge',
                       'h5py',
