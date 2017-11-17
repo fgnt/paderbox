@@ -1,26 +1,13 @@
 import os
 import tempfile
-import warnings
-
-import nose_parameterized
+import parameterized
 import nt.testing as tc
 import numpy as np
 from nt.io import dump_hdf5, load_hdf5
 
 
 class TestHdf5:
-
-    dir = None
-
-    def setUp(self):
-        self._dir = tempfile.TemporaryDirectory()
-        self.dir = self._dir.__enter__()
-        warnings.filterwarnings('error')
-
-    def tearDown(self):
-        self.dir = self._dir.__exit__(None, None, None)
-
-    @nose_parameterized.parameterized([
+    @parameterized.parameterized([
         ('int', {'key': 1}, np.int64(1)),
         ('float', {'key': 1.1}, np.float64(1.1)),
         ('complex', {'key': 1.1j}, np.complex128(1.1j)),
@@ -46,8 +33,9 @@ class TestHdf5:
          list(range(100, 0, -1))),  # Note type is list, test if sort correct
     ])
     def test_dump_load(self, name, data, expect):
-        dump_hdf5(data, os.path.join(self.dir, 'test.hdf5'))
-        data_load = load_hdf5(os.path.join(self.dir, 'test.hdf5'))
+        with tempfile.TemporaryDirectory() as temp_dir:
+            dump_hdf5(data, os.path.join(temp_dir, 'test.hdf5'))
+            data_load = load_hdf5(os.path.join(temp_dir, 'test.hdf5'))
 
         assert 'key' in data_load.keys(), data_load
 
