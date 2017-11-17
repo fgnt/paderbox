@@ -73,7 +73,7 @@ setup(
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=['numpy', 'bokeh', 'tabulate',
-                      'chainer', 'scipy', 'librosa', 'seaborn', 'tqdm', 'dill',
+		      'scipy', 'librosa', 'seaborn', 'tqdm', 'dill',
                       'pip', 'IPython', 'scikit-learn',
                       'pyzmq', 'pymatbridge',
                       'h5py',
@@ -84,8 +84,14 @@ setup(
                       'coverage',  # for nosetests --with-coverage
                       'bs4',  # for german speech database
                       'pysoundfile',  # for reading .flac audio
-                      'wavefile'
+                      'wavefile', 'nose', 'nose_parameterized'
                       ],
+
+    # Installation problems in a clean, new environment:
+    # 1. `cython` and `scipy` must be installed manually before using
+    # `pip install`
+    # 2. `pyzmq` has to be installed manually, otherwise `pymatbridge` will
+    # complain
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
