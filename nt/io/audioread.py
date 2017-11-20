@@ -1,21 +1,21 @@
 """
 This module deals with all sorts of audio input and output.
 """
+import inspect
+import os
+import tempfile
 import wave
 from io import BytesIO
-import inspect
-from os import path, remove
-import tempfile
-import nt.utils.process_caller as pc
-import numpy as np
 from pathlib import Path
+
+import numpy as np
 import wavefile
 
+import nt.utils.process_caller as pc
 
-UTILS_DIR = path.join(path.dirname(path.abspath(
-        inspect.getfile(inspect.currentframe()))), 'utils')
-
-
+UTILS_DIR = os.path.join(os.path.dirname(os.path.abspath(
+    inspect.getfile(inspect.currentframe()))), 'utils'
+)
 
 
 def audioread(path, offset=0.0, duration=None, sample_rate=16000):
@@ -97,11 +97,11 @@ def read_nist_wsj(path, sample_rate=16000, audioread_function=audioread):
     """
     tmp_file = tempfile.NamedTemporaryFile(delete=False)
     cmd = "{}/sph2pipe -f wav {path} {dest_file}".format(
-        UTILS_DIR, path=path, dest_file=tmp_file.name)
-    # subprocess.Popen([dir , '-f', 'wav', path, tmp_file.name])
+        UTILS_DIR, path=path, dest_file=tmp_file.name
+    )
     pc.run_processes(cmd, ignore_return_code=False)
     signal = audioread_function(tmp_file.name, sample_rate=sample_rate)
-    remove(tmp_file.name)
+    os.remove(tmp_file.name)
     return signal
 
 
@@ -145,6 +145,7 @@ def read_from_byte_string(byte_string, dtype=np.dtype('<i2')):
     channels = wav_file.getnchannels()
     interleaved_audio_data = np.frombuffer(
         wav_file.readframes(wav_file.getnframes()), dtype=dtype)
-    audio_data = np.array([interleaved_audio_data[ch::channels] for ch in range(channels)])
+    audio_data = np.array(
+        [interleaved_audio_data[ch::channels] for ch in range(channels)])
     audio_data = audio_data.astype(np.float32) / np.max(audio_data)
     return audio_data
