@@ -2,7 +2,6 @@
 Provides fbank features and the fbank filterbank.
 """
 
-import librosa
 import numpy
 import scipy.signal
 
@@ -14,8 +13,7 @@ from nt.transform.module_stft import stft_to_spectrogram
 def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
           number_of_filters=23, stft_size=512, lowest_frequency=0,
           highest_frequency=None, preemphasis_factor=0.97,
-          window=scipy.signal.hamming, use_librosa_mel=True,
-          use_htk_mel=False, energy_normalization=True, denoise=False):
+          window=scipy.signal.hamming, denoise=False):
     """
     Compute Mel-filterbank energy features from an audio signal.
 
@@ -42,13 +40,8 @@ def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
     :param preemphasis: apply preemphasis filter with preemph as coefficient.
         0 is no filter. Default is 0.97.
     :param window: window function used for stft
-    :param use_librosa_mel: use the librosa filterbanks or use the own
-        implementations of the filterbanks. Default is True: use librosa.
     :param use_htk_mel: whether to use the htk hz to mel conversion or not
         (False is Slaney). Default is False.
-    :param energy_normalization: makes sense when using librosa mel filter banks.
-        Default is True: mel filter banks are energy normalized. If False,
-        amplitude normalization of filters is also carried out.
     :returns: A numpy array of size (frames by number_of_filters) containing the
         Mel filterbank features.
     """
@@ -65,17 +58,7 @@ def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
 
     spectrogram = stft_to_spectrogram(stft_signal) / stft_size
 
-    if use_librosa_mel:
-        filterbanks = librosa.filters.mel(
-            sample_rate, stft_size, number_of_filters,
-            fmin=lowest_frequency,
-            fmax=highest_frequency,
-            htk=use_htk_mel
-        )
-        if not energy_normalization:
-            filterbanks /= numpy.max(filterbanks, axis=1, keepdims=True)
-    else:
-        filterbanks = get_filterbanks(
+    filterbanks = get_filterbanks(
             number_of_filters, stft_size, sample_rate,
             lowest_frequency, highest_frequency
         )
@@ -156,8 +139,7 @@ def mel2hz(mel):
 def logfbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
              number_of_filters=23, stft_size=512, lowest_frequency=0,
              highest_frequency=None, preemphasis_factor=0.97,
-             window=scipy.signal.hamming, use_librosa_mel=True,
-             use_htk_mel=False, energy_normalization=True, denoise=False):
+             window=scipy.signal.hamming, denoise=False):
     """Generates log fbank features from time signal.
 
     Simply wraps fbank function. See parameters there.
@@ -173,8 +155,5 @@ def logfbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
         highest_frequency=highest_frequency,
         preemphasis_factor=preemphasis_factor,
         window=window,
-        use_librosa_mel=use_librosa_mel,
-        use_htk_mel=use_htk_mel,
-        energy_normalization=energy_normalization,
         denoise=denoise
     ))

@@ -3,7 +3,6 @@ import numpy as np
 from nt.transform.module_fbank import fbank
 import scipy.signal
 from scipy.fftpack import dct
-from librosa.feature import delta
 
 
 def mfcc(time_signal, sample_rate=16000,
@@ -100,3 +99,67 @@ def mfcc_velocity_acceleration(time_signal, *args, **kwargs):
         (mfcc_signal, delta_mfcc_signal, delta_delta_mfcc_signal),
         axis=1
     )
+
+
+
+def delta(data, width=9, order=1, axis=-1, trim=True):
+    r'''Compute delta features: local estimate of the derivative
+    of the input data along the selected axis.
+
+
+    Parameters
+    ----------
+    data      : np.ndarray
+        the input data matrix (eg, spectrogram)
+
+    width     : int >= 3, odd [scalar]
+        Number of frames over which to compute the delta feature
+
+    order     : int > 0 [scalar]
+        the order of the difference operator.
+        1 for first derivative, 2 for second, etc.
+
+    axis      : int [scalar]
+        the axis along which to compute deltas.
+        Default is -1 (columns).
+
+    trim      : bool
+        set to `True` to trim the output matrix to the original size.
+
+    Returns
+    -------
+    delta_data   : np.ndarray [shape=(d, t) or (d, t + window)]
+        delta matrix of `data`.
+
+    '''
+
+    data = np.atleast_1d(data)
+
+    if width < 3 or np.mod(width, 2) != 1:
+        raise ValueError('width must be an odd integer >= 3')
+
+    if order <= 0 or not isinstance(order, int):
+        raise ValueError('order must be a positive integer')
+
+    half_length = 1 + int(width // 2)
+    window = np.arange(half_length - 1., -half_length, -1.)
+
+    # Normalize the window so we're scale-invariant
+    window /= np.sum(np.abs(window)**2)
+
+    # Pad out the data by repeating the border values (delta=0)
+    padding = [(0, 0)] * data.ndim
+    width = int(width)
+    padding[axis] = (width, width)
+    delta_x = np.pad(data, padding, mode='edge')
+
+    for _ in range(order):
+        delta_x = scipy.signal.lfilter(window, 1, delta_x, axis=axis)
+
+    # Cut back to the original shape of the input data
+    if trim:
+        idx = [slice(None)] * delta_x.ndim
+        idx[axis] = slice(- half_length - data.shape[axis], - half_length)
+        delta_x = delta_x[idx]
+
+    return delta_x

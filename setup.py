@@ -5,14 +5,15 @@ https://packaging.python.org/en/latest/distributing.html
 https://github.com/pypa/sampleproject
 """
 
-# Always prefer setuptools over distutils
-from distutils.core import setup
-from setuptools import find_packages
 # To use a consistent encoding
 from codecs import open
+# Always prefer setuptools over distutils
+from distutils.core import setup
 from os import path
+
 import numpy
 from Cython.Build import cythonize
+from setuptools import find_packages
 
 here = path.abspath(path.dirname(__file__))
 
@@ -72,20 +73,46 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['numpy', 'bokeh', 'tabulate',
-                      'chainer', 'scipy', 'librosa', 'seaborn', 'tqdm', 'dill',
-                      'pip', 'IPython', 'scikit-learn',
-                      'pyzmq', 'pymatbridge',
-                      'h5py',
-                      'line_profiler', 'memory_profiler', 'pycallgraph',
-                      'cached_property', 'tabulate', 'editdistance', 'Pyro4',
-                      'psutil', 'plumbum', 'click', 'typecheck-decorator',
-                      'natsort', 'pymongo',
-                      'coverage',  # for nosetests --with-coverage
-                      'bs4',  # for german speech database
-                      'pysoundfile',  # for reading .flac audio
-                      'wavefile'
-                      ],
+    install_requires=[
+        'numpy',
+        'bokeh',
+        'tabulate',
+        'scipy',
+        'seaborn',
+        'tqdm',
+        'dill',
+        'pip',
+        'IPython',
+        'scikit-learn',
+        'pyzmq',
+        'pymatbridge',
+        'h5py',
+        'line_profiler',
+        'memory_profiler',
+        'pycallgraph',
+        'cached_property',
+        'tabulate',
+        'editdistance',
+        'Pyro4',
+        'psutil',
+        'plumbum',
+        'click',
+        'typecheck-decorator',
+        'natsort',
+        'pymongo',
+        'coverage',  # for nosetests --with-coverage
+        'bs4',
+        'pysoundfile',  # for german speech database
+        'wavefile',  # for reading .flac audio
+        'nose',
+        'nose_parameterized'
+    ],
+
+    # Installation problems in a clean, new environment:
+    # 1. `cython` and `scipy` must be installed manually before using
+    # `pip install`
+    # 2. `pyzmq` has to be installed manually, otherwise `pymatbridge` will
+    # complain
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
@@ -96,12 +123,13 @@ setup(
         'test': ['coverage'],
     },
 
-    ext_modules=cythonize(["nt/reverb/CalcRIR_Simple_C.pyx",
-                           'nt/speech_enhancement/cythonized/get_gev_vector.pyx',
-                           'nt/speech_enhancement/cythonized/c_eig.pyx',
-                           'nt/reverb/rirgen/pyrirgen.pyx'
-                           ],
-                          annotate=True,
-                          ),
+    ext_modules=cythonize([
+        'nt/reverb/CalcRIR_Simple_C.pyx',
+        'nt/speech_enhancement/cythonized/get_gev_vector.pyx',
+        'nt/speech_enhancement/cythonized/c_eig.pyx',
+        'nt/reverb/rirgen/pyrirgen.pyx'
+    ],
+        annotate=True,
+    ),
     include_dirs=[numpy.get_include()],
 )

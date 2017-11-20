@@ -118,7 +118,7 @@ class TestBeamformerMethods(unittest.TestCase):
         mlab.run_code('sourceDoA = sourceDoA(1:K);')
         mlab.run_code('rir = zeros(rirFilterLength, 8, numel(sourceDoA));')
         mlab.run_code('for ii = 1 : numel(sourceDoA);'
-                      '    [rir(:, :, ii), sensorPositions] = reverb.acquireMIRD(1, 1, sourceDoA(ii), samplingRate, rirFilterLength, soundDecayTime);'
+                      '[rir(:, :, ii), sensorPositions] = reverb.acquireMIRD(1, 1, sourceDoA(ii), samplingRate, rirFilterLength, soundDecayTime);'
                       'end;')
         mlab.run_code('sensorsID = [4 5 3 6 2 7 1 8];')
         mlab.run_code('sensorsID = sensorsID(1:D);')
