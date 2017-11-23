@@ -52,7 +52,7 @@ class TestBeamformerMethods(unittest.TestCase):
         self.mlab = Mlab()
 
         if not path.exists(datafile_multi_speaker):
-            self.generate_source_file_with_matlab(mlab=self.mlab)
+            self.generate_source_file()
 
         with np.load(str(datafile)) as data:
             X = data['X']  # DxTxF
