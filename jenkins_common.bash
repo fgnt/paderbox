@@ -5,12 +5,6 @@ renice -n 20 $$
 # paths
 TOOLBOX=./toolbox
 
-CUDA_PATH=/usr/local/cuda
-LD_LIBRARY_PATH=$CUDA_PATH/lib64:${LD_LIBRARY_PATH}
-PATH=$CUDA_PATH/bin:$PATH
-export PATH
-export LD_LIBRARY_PATH
-
 source /net/ssd/software/conda/bin/activate
 
 # set a prefix for each cmd
@@ -34,13 +28,3 @@ pip uninstall --quiet --yes nt
 pip show nt
 pip install  --quiet --user -e ${TOOLBOX}
 pip show nt
-
-# Tear down everything (uninstall packages), to be called at the end of the jenkins script
-function tear_down {
-    # Store pip packages
-    pip freeze > pip.txt
-
-    # Uninstall packages
-    pip uninstall --quiet --yes chainer
-    pip uninstall --quiet --yes nt
-}

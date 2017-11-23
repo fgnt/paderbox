@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# include common stuff (installation of toolbox and chainer, paths, traps, nice level...)
+# include common stuff (installation of toolbox, paths, traps, nice level...)
 source "`dirname "$0"`/jenkins_common.bash"
 
 # Unittets
@@ -16,6 +16,8 @@ python -m coverage xml --include="${TOOLBOX}/nt*"
 pylint --rcfile="${TOOLBOX}/pylint.cfg" -f parseable nt > pylint.txt
 # --files-output=y is a bad option, because it produces hundreds of files
 
-env
+make --directory=./toolbox/doc/ clean
+make --directory=./toolbox/doc/ html
 
-tear_down
+pip freeze > pip.txt
+pip uninstall --quiet --yes nt
