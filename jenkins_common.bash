@@ -41,6 +41,5 @@ function tear_down {
     pip freeze > pip.txt
 
     # Uninstall packages
-    pip uninstall --quiet --yes chainer
     pip uninstall --quiet --yes nt
 }
