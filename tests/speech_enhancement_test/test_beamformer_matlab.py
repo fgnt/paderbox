@@ -5,6 +5,7 @@ import numpy as np
 
 import nt.testing as tc
 from nt.io.data_dir import testing as testing_dir
+from nt.io.audioread import audioread
 from nt.speech_enhancement.beamformer import get_gev_vector
 from nt.speech_enhancement.beamformer import get_lcmv_vector
 from nt.speech_enhancement.beamformer import get_mvdr_vector
@@ -14,7 +15,6 @@ from nt.speech_enhancement.mask_module import biased_binary_mask, \
     wiener_like_mask
 from nt.math.vector import vector_H_vector
 from nt.utils.matlab import Mlab
-
 
 # uncomment, if you want to test matlab functions
 # matlab_test = unittest.skipUnless(True,'matlab-test')
@@ -97,46 +97,42 @@ class TestBeamformerMethods(unittest.TestCase):
         W_lcmv = get_lcmv_vector(W_pca, [1, 0], Phi_NN)
 
     @staticmethod
-    def generate_source_file_with_matlab(mlab=Mlab()):
+    def generate_source_file():
         import nt.transform as transform
+        from nt.speech_enhancement.noise.Generator import NoiseGeneratorSpherical
+        from nt.reverb.reverb_utils import generate_rir, convolve
+        from nt.reverb.scenario import generate_sensor_positions, generate_source_positions_on_circle
 
         # ToDo: replace with Python funktions (current missing)
-        mlab.run_code('D = 6;')  # Number of microphones
-        mlab.run_code('K = 2;')  # Number of speakers
-        mlab.run_code('tSignal = 5;')  # Signal length in seconds
-        mlab.run_code('seed = 1;')
-        mlab.run_code('SNR = 15;')
-        mlab.run_code('soundDecayTime = 0.16;')
-        mlab.run_code('samplingRate = 16000;')
-        mlab.run_code("noiseType = 'whiteGaussian';")
-        mlab.run_code('rirFilterLength = 2^14;')
-        mlab.run_code('fftSize = 2^10;')
-        mlab.run_code('fftShiftFactor = 1/4;')
-        mlab.run_code('analysisWindowHandle = @(x) blackman(x);')
+        D = 6
+        K = 2
+        SNR = 15
+        soundDecayTime = 0.16
+        samplingRate = 16000
+        noisetype = np.random.randn
+        secs = 2
+        rirFilterLength = 2**14
+        sensor_positions = generate_sensor_positions(number_of_sensors=D)[:,:D]
+        sourceDoA = np.deg2rad([30, -30, 60, -60, 90, -90, 15, -15, 45, -45, 75, -75, 0])
+        sourceDoA = sourceDoA[:K]
+        source_positions = generate_source_positions_on_circle(azimuth_angles=sourceDoA)
+        rir =  generate_rir(np.array([3,3,3]),source_positions, sensor_positions, soundDecayTime,
+                sample_rate=samplingRate, filter_length=rirFilterLength, sensor_orientations=None,
+                sensor_directivity=None, sound_velocity=343, algorithm=None
+        )
+        speaker_files = testing_dir / 'timit' / 'data'
+        speakers = np.array(
+            [audioread(str(speaker_files / f'sample_{num+1}.wav'))[:secs*samplingRate]
+             for num in range(K)]
+        )
+        speakers = convolve(speakers, rir, truncate=True)
+        generator = NoiseGeneratorSpherical(sensor_positions,
+                                            sample_rate=samplingRate)
 
-        mlab.run_code('sourceDoA =  degtorad([30, -30, 60, -60, 90, -90, 15, -15, 45, -45, 75, -75, 0]);')
-        mlab.run_code('sourceDoA = sourceDoA(1:K);')
-        mlab.run_code('rir = zeros(rirFilterLength, 8, numel(sourceDoA));')
-        mlab.run_code('for ii = 1 : numel(sourceDoA);'
-                      '[rir(:, :, ii), sensorPositions] = reverb.acquireMIRD(1, 1, sourceDoA(ii), samplingRate, rirFilterLength, soundDecayTime);'
-                      'end;')
-        mlab.run_code('sensorsID = [4 5 3 6 2 7 1 8];')
-        mlab.run_code('sensorsID = sensorsID(1:D);')
-        mlab.run_code('sensorsID = sort(sensorsID);')
-        mlab.run_code('sensorPositions = sensorPositions(:, sensorsID);')
-        mlab.run_code('rir = rir(:, sensorsID, :);')
+        noise = generator.get_noise_for_signal(speakers, snr=SNR, rng_state=noisetype)
 
-        mlab.run_code('speakers = database.acquireSignals(tSignal, samplingRate,  K, seed);')
-        mlab.run_code(
-            "noise = database.noise(tSignal, samplingRate, D, seed, 'noiseType', noiseType, 'sensorPositions', sensorPositions);")
 
-        mlab.run_code(
-            "[~, speakers, noise] = bss.generate.convolutiveMixture(speakers, rir, noise, SNR, 'sourceScaled');")
-
-        speakers = mlab.get_variable('speakers')
-        noise = mlab.get_variable('noise')
-
-        Speakers = transform.stft(speakers)
+        Speakers = transform.stft(speakers).transpose(1,2,3,0)
         Noise = transform.stft(noise)
 
         Y = np.sum(np.concatenate((Speakers, Noise[:, :, :, np.newaxis]), axis=3), axis=3).transpose(1, 2, 0).copy()
