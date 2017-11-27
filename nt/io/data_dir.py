@@ -54,13 +54,17 @@ ami = _get_path(
     'NT_AMI_DIR',
     fast_db_dir / 'ami'
 )
+audioset = _get_path(
+    'NT_AUDIOSET_DIR',
+    db_dir / 'audioset'
+)
 timit = _get_path(
     'NT_TIMIT_DIR',
-    db_dir /'timit'
+    db_dir / 'timit'
 )
 tidigits = _get_path(
     'NT_TIDIGITS_DIR',
-    db_dir /'tidigits'
+    db_dir / 'tidigits'
 )
 chime_3 = _get_path(
     'NT_CHIME_3_DIR',
@@ -97,6 +101,14 @@ wsj_corrected_paths = _get_path(
 dcase = _get_path(
     'NT_DCASE_DIR',
     '/home/parora/Documents/DCASE/DCASE 2016/'
+)
+dcase17_task4 = _get_path(
+    'NT_DCASE17_TASK4_DIR',
+    db_dir / 'dcase17_task4',
+)
+tut_sound_events_2017 = _get_path(
+    'NT_TUT_SOUND_EVENTS_2017_DIR',
+    db_dir / 'dcase17_task4',
 )
 wsjcam0 = _get_path(
     'NT_WSJCAM0_DIR',
