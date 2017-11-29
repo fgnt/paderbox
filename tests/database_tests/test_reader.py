@@ -35,9 +35,13 @@ class ReaderTest(unittest.TestCase):
         iterator = self.db.get_iterator_by_names('train')
         example_ids = [e['example_id'] for e in iterator]
         self.assertListEqual(
-            sorted(example_ids),
-            sorted(self.json['datasets']['train'])
+            example_ids,
+            self.json['datasets']['train']
         )
+        _ = iterator['a']
+        _ = iterator['b']
+        _ = iterator[0]
+        _ = iterator[1]
 
     def test_map_iterator(self):
         iterator = self.db.get_iterator_by_names('train')
@@ -49,9 +53,11 @@ class ReaderTest(unittest.TestCase):
         iterator = iterator.map(map_fn)
         example_ids = [e['example_id'] for e in iterator]
         self.assertListEqual(
-            sorted(example_ids),
+            example_ids,
             'A B'.split()
         )
+        _ = iterator['a']
+        _ = iterator[0]
 
     def test_filter_iterator(self):
         iterator = self.db.get_iterator_by_names('train')
@@ -62,9 +68,14 @@ class ReaderTest(unittest.TestCase):
         iterator = iterator.filter(filter_fn)
         example_ids = [e['example_id'] for e in iterator]
         self.assertListEqual(
-            sorted(example_ids),
+            example_ids,
             'a'.split()
         )
+        _ = iterator['a']
+        with self.assertRaises(KeyError):
+            _ = iterator['b']
+        with self.assertRaises(AssertionError):
+            _ = iterator[0]
 
     def test_concatenate_iterator(self):
         train_iterator = self.db.get_iterator_by_names('train')
@@ -72,8 +83,31 @@ class ReaderTest(unittest.TestCase):
         iterator = train_iterator.concatenate(test_iterator)
         example_ids = [e['example_id'] for e in iterator]
         self.assertListEqual(
-            sorted(example_ids),
+            example_ids,
             'a b c'.split()
+        )
+        self.assertEqual(
+            iterator['a']['example_id'],
+            'a'
+        )
+        self.assertEqual(
+            iterator[0]['example_id'],
+            'a'
+        )
+
+    def test_concatenate_iterator_double_keys(self):
+        train_iterator = self.db.get_iterator_by_names('train')
+        iterator = train_iterator.concatenate(train_iterator)
+        example_ids = [e['example_id'] for e in iterator]
+        self.assertListEqual(
+            example_ids,
+            'a b a b'.split()
+        )
+        with self.assertRaises(AssertionError):
+            _ = iterator['a']
+        self.assertEqual(
+            iterator[0]['example_id'],
+            'a'
         )
 
     def test_multiple_concatenate_iterator(self):
@@ -81,8 +115,8 @@ class ReaderTest(unittest.TestCase):
         iterator = train_iterator.concatenate(train_iterator)
         example_ids = [e['example_id'] for e in iterator]
         self.assertListEqual(
-            sorted(example_ids),
-            sorted('a b a b'.split())
+            example_ids,
+            'a b a b'.split()
         )
 
     def tearDown(self):
