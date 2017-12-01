@@ -15,6 +15,7 @@ from nt.visualization import module_facet_grid
 
 # from chainer import Variable  # see line 281
 
+
 class _ChainerVariableWarning(UserWarning):
     pass
 
@@ -201,7 +202,6 @@ def scatter(*signal, ax=None, ylim=None, label=None, color=None, xlim=None,
     if xlim is not None and isinstance(xlim, tuple):
         ax.set_xlim(xlim)
 
-
     # if type(signal) is tuple:
     #     ax.scatter(signal[0], signal[1], label=label, color=color)
     # else:
@@ -260,7 +260,8 @@ def _time_frequency_plot(
         signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
         sample_rate=None, stft_size=None, stft_shift=None,
         x_label=None, y_label=None, z_label=None, z_scale=None, cmap=None,
-        cbar_ticks=None, cbar_tick_labels=None, xticks=None, xtickslabels=None
+        cbar_ticks=None, cbar_tick_labels=None, xticks=None, xtickslabels=None,
+        origin='lower'
 ):
     """
 
@@ -276,27 +277,10 @@ def _time_frequency_plot(
     :param x_label:
     :param y_label:
     :param z_label:
-    :param z_scale: how to scale the values ('linear', 'log', 'symlog' or instance of matplotlib.colors.Normalize)
+    :param z_scale: how to scale the values
+        ('linear', 'log', 'symlog' or instance of matplotlib.colors.Normalize)
     :return:
     """
-    if str(type(signal)) == "<class 'chainer.variable.Variable'>":
-        frame = inspect.currentframe()
-        frame_origin = frame
-        for i in range(6):
-            if inspect.getfile(frame_origin.f_code) == __file__:
-                frame_origin = frame_origin.f_back
-            elif inspect.getfile(frame_origin.f_code) ==  module_facet_grid.__file__:
-                frame_origin = frame_origin.f_back
-            else:
-                break
-        warnings.warn_explicit('signal is a chainer.Variable. This is not '
-                               'supported, fallback to numpy. Source {}:{}'
-                               ''.format(inspect.getfile(frame_origin.f_code),
-                                         frame_origin.f_lineno),
-                               category=_ChainerVariableWarning,
-                               filename=inspect.getfile(frame.f_code),
-                               lineno=frame.f_lineno)
-        signal = signal.num
 
     signal = _get_batch(signal, batch)
 
@@ -305,7 +289,7 @@ def _time_frequency_plot(
              'leads to a wrong visualization and especially colorbar!')
 
     if log:
-        signal = 10 * np.log10(np.maximum(signal, np.max(signal)/1e6)).T
+        signal = 10 * np.log10(np.maximum(signal, np.max(signal) / 1e6)).T
     else:
         signal = signal.T
 
@@ -319,20 +303,20 @@ def _time_frequency_plot(
         norm = None
     elif z_scale == 'log':
         norm = matplotlib.colors.LogNorm(
-                    vmin=limits[0],
-                    vmax=limits[1],)
+            vmin=limits[0],
+            vmax=limits[1],)
     elif z_scale == 'symlog':
         if len(limits) == 2:
             # assume median is a good log2lin border
             # have anyone a better idea?
             limits = (*limits, np.median(np.abs(signal)))
         norm = matplotlib.colors.SymLogNorm(
-                    linthresh=limits[2],
-                    linscale=1,
-                    vmin=limits[0],
-                    vmax=limits[1],
-                    clip=False,
-                    )
+            linthresh=limits[2],
+            linscale=1,
+            vmin=limits[0],
+            vmax=limits[1],
+            clip=False,
+        )
     elif isinstance(z_scale, matplotlib.colors.Normalize):
         norm = z_scale
         if isinstance(z_scale, matplotlib.colors.SymLogNorm):
@@ -348,17 +332,17 @@ def _time_frequency_plot(
         vmin=limits[0],
         vmax=limits[1],
         cmap=cmap,
-        origin='lower',
+        origin=origin,
         norm=norm,
     )
 
     if x_label is None:
         if sample_rate is not None and stft_shift is not None:
             seconds_per_tick = 0.5
-            blocks_per_second = sample_rate/stft_shift
+            blocks_per_second = sample_rate / stft_shift
             x_tick_range = np.arange(0, signal.shape[1],
-                                     seconds_per_tick*blocks_per_second)
-            x_tick_labels = x_tick_range/blocks_per_second
+                                     seconds_per_tick * blocks_per_second)
+            x_tick_labels = x_tick_range / blocks_per_second
             plt.xticks(x_tick_range, x_tick_labels)
             ax.set_xlabel('Time / s')
         else:
@@ -373,8 +357,8 @@ def _time_frequency_plot(
 
     if y_label is None:
         if sample_rate is not None and stft_size is not None:
-            y_tick_range = np.linspace(0, stft_size/2, num=5)
-            y_tick_labels = y_tick_range*(sample_rate/stft_size/1000)
+            y_tick_range = np.linspace(0, stft_size / 2, num=5)
+            y_tick_labels = y_tick_range * (sample_rate / stft_size / 1000)
             plt.yticks(y_tick_range, y_tick_labels)
             ax.set_ylabel('Frequency / kHz')
         else:
@@ -389,16 +373,16 @@ def _time_frequency_plot(
             # max, ..., log2lin border, 0, log2lin border, ..., min
             if cbar_ticks is None:
                 tick_locations = (norm.vmin,
-                              norm.vmin * 1e-1,
-                              norm.vmin * 1e-2,
-                              norm.vmin * 1e-3,
-                              -norm.linthresh,
-                              0.0,
-                              norm.linthresh,
-                              norm.vmax  * 1e-3,
-                              norm.vmax  * 1e-2,
-                              norm.vmax  * 1e-1,
-                              norm.vmax)
+                                  norm.vmin * 1e-1,
+                                  norm.vmin * 1e-2,
+                                  norm.vmin * 1e-3,
+                                  -norm.linthresh,
+                                  0.0,
+                                  norm.linthresh,
+                                  norm.vmax * 1e-3,
+                                  norm.vmax * 1e-2,
+                                  norm.vmax * 1e-1,
+                                  norm.vmax)
             else:
                 tick_locations = cbar_ticks
             cbar = plt.colorbar(image, ax=ax, ticks=tick_locations)
@@ -406,7 +390,7 @@ def _time_frequency_plot(
             cbar = plt.colorbar(image, ax=ax, ticks=cbar_ticks)
 
         if cbar_tick_labels is not None:
-            cbar.ax.set_yticklabels(cbar_tick_labels) 
+            cbar.ax.set_yticklabels(cbar_tick_labels)
 
         if z_label is None:
             if log:
@@ -454,9 +438,27 @@ def spectrogram(
 
 
 @create_subplot
+def image(
+        signal, ax=None, x_label='', y_label='', cmap=None, colorbar=False
+):
+    """
+    Plots a spectrogram from a spectrogram (power) as input.
+
+    :param signal: Real valued power spectrum
+        with shape (frames, frequencies).
+    :param ax: Provide axis. I.e. for use with facet_grid().
+    :return: axes
+    """
+    signal = signal.T
+    return _time_frequency_plot(
+        limits=None, log=False, origin='upper', **locals()
+    )
+
+
+@create_subplot
 def stft(
         signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
-         sample_rate=None, stft_size=None, stft_shift=None,
+        sample_rate=None, stft_size=None, stft_shift=None,
         x_label=None, y_label=None, z_label=None, z_scale=None,
 ):
     """
@@ -542,7 +544,7 @@ def phone_alignment(
     """
     xticks = (_switch_indices(phone_alignment)[1:] -
               _switch_indices(phone_alignment)[:-1]) // 2 +\
-             _switch_indices(phone_alignment)[:-1]
+        _switch_indices(phone_alignment)[:-1]
     xtickslabels = phone_alignment[xticks]
     ax.vlines(_switch_indices(phone_alignment), 0, signal.shape[1],
               linestyle='dotted', color='r', alpha=.75)
@@ -571,8 +573,6 @@ def _get_limits_for_tf_symlog(signal, limits):
     return limits
 
 
-
-
 @allow_dict_for_title
 @create_subplot
 def tf_symlog(
@@ -599,25 +599,25 @@ def tf_symlog(
 
 
 @create_subplot
-def plot_ctc_decode(decode, label_handler, ax=None, batch=0):
-    """ Plot a ctc decode
+def labeled_line_plot(probabilities, label_handler=None, ax=None, batch=0):
+    """ Plots a line plot with optional labels from a label handler.
 
-    :param decode: Output of the network
+    :param probabilities: Probabilities
     :param label_handler: The label handler
     :param ax: Optional figure axes to use with facet_grid()
     :param batch: If the decode has 3 dimensions: Specify the which batch to plot
     :return:
     """
-    net_out = _get_batch(decode, batch)
-    net_out -= np.amax(net_out)
-    net_out_e = np.exp(net_out)
-    net_out = net_out_e / (np.sum(net_out_e, axis=1, keepdims=True) + 1e-20)
+    probabilities = _get_batch(probabilities, batch)
+
+    def _get_label(char):
+        if label_handler is not None:
+            return f'{label_handler.int_to_label[char]} [{char}]'
+        else:
+            return str(char)
 
     for char in range(decode.shape[-1]):
-        _ = ax.plot(net_out[:, char],
-                    label='{} [{}]'.format(
-                        label_handler.int_to_label[char], char
-                    ))
+        _ = ax.plot(probabilities[:, char], label=_get_label(char))
     plt.legend(loc='lower center',
                ncol=decode.shape[-1] // 3,
                bbox_to_anchor=[0.5, -0.35])
@@ -627,8 +627,8 @@ def plot_ctc_decode(decode, label_handler, ax=None, batch=0):
 
 
 @create_subplot
-def plot_beampattern(W, sensor_positions, fft_size, sample_rate,
-                     source_angles=None, ax=None, resolution=360):
+def beampattern(W, sensor_positions, fft_size, sample_rate,
+                source_angles=None, ax=None, resolution=360):
     if source_angles is None:
         source_angles = numpy.arange(-numpy.pi, numpy.pi,
                                      2 * numpy.pi / resolution)
@@ -659,15 +659,14 @@ def plot_beampattern(W, sensor_positions, fft_size, sample_rate,
 
 
 @create_subplot
-def plot_ctc_label_probabilities(net_out, ax=None, label_handler=None, batch=0):
-    """ Plots a posteriorgram of the network output of a CTC trained network
+def posteriorgram(probabilities, ax=None, label_handler=None, batch=0):
+    """ Plots a posteriorgram
 
-    :param net_out: Output of the network
+    :param probabilities: Probabilities for the labels
     :param label_handler: Labelhandler holding the correspondence labels
     :param batch: Batch to plot
     """
-    x = _get_batch(net_out, batch)
-    x = softmax(x)
+    x = _get_batch(probabilities, batch)
     if label_handler is not None:
         ordered_map = OrderedDict(
             sorted(label_handler.int_to_label.items(), key=lambda t: t[1])
@@ -690,6 +689,7 @@ def plot_ctc_label_probabilities(net_out, ax=None, label_handler=None, batch=0):
     ax.set_xlabel('Time frame index')
     ax.set_ylabel('Transcription')
     return ax
+
 
 @create_subplot
 def seq2seq_alignment(alignment, targets=None, decode=None, ax=None,
@@ -722,16 +722,36 @@ def seq2seq_alignment(alignment, targets=None, decode=None, ax=None,
 
     if label_handler is not None:
         if decode is not None:
-            decode_labels = label_handler.ints2labels(np.argmax(decode, axis=1))
+            decode_labels = label_handler.ints2labels(
+                np.argmax(decode, axis=1))
             if targets is not None:
-                target_labels = label_handler.ints2labels(targets)[:len(decode_labels)]
+                target_labels = label_handler.ints2labels(
+                    targets)[:len(decode_labels)]
             else:
                 target_labels = len(decode_labels) * ['']
         plt.yticks(
             range(len(decode_labels)),
-            ['{} [{}]'.format(d, t) for d, t in zip(decode_labels, target_labels)]
+            ['{} [{}]'.format(d, t)
+             for d, t in zip(decode_labels, target_labels)]
         )
     ax.grid(False)
     ax.set_xlabel('frame index')
     ax.set_ylabel('decode')
     return ax
+
+
+__all__ = [
+    'seq2seq_alignment',
+    'ctc_label_probabilities',
+    'beampattern',
+    'ctc_decode',
+    'tf_symlog',
+    'phone_alignment',
+    'mask',
+    'stft',
+    'spectrogram',
+    'time_series',
+    'scatter',
+    'line',
+    'image'
+]
