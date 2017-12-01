@@ -1,7 +1,7 @@
 import unittest
-from nt.transcription_handling.lexicon_handling import \
-    get_lexicon_from_word_list, Lexicon
+
 import nt.testing as tc
+from nt.label_handling.lexicon import get_lexicon_from_word_list, Lexicon
 
 
 class TestLexicon(unittest.TestCase):

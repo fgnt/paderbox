@@ -1,8 +1,9 @@
-import unittest
-from nt.transcription_handling.transcription_handler import TranscriptionHandler
-import nt.testing as tc
 import tempfile
+import unittest
 from os import path
+
+import nt.testing as tc
+from nt.label_handling.transcription_handler import WordTranscriptionHandler
 
 
 class TestTransHandler(unittest.TestCase):
@@ -11,8 +12,8 @@ class TestTransHandler(unittest.TestCase):
 
     def test_length(self):
         mandatory_tok = ["blank"]
-        th = TranscriptionHandler(self.lexicon, mandatory_tokens=mandatory_tok,
-                                  oov_word="<unk>")
+        th = WordTranscriptionHandler(
+            lexicon=self.lexicon, labels=mandatory_tok, oov_word="<unk>")
         tokens = {token for tokens in self.lexicon.values() for token in tokens}
         num_tokens = len(tokens) + len(mandatory_tok) + 1
         self.assertEqual(num_tokens, len(th.labels))
@@ -20,46 +21,46 @@ class TestTransHandler(unittest.TestCase):
 
     def test_mandatory(self):
         mandatory_tok = ["eps", "phi", "blank"]
-        th = TranscriptionHandler(self.lexicon, mandatory_tokens=mandatory_tok,
-                                  oov_word="<unk>")
+        th = WordTranscriptionHandler(
+            lexicon=self.lexicon, labels=mandatory_tok, oov_word="<unk>")
         self.assertEqual(
             [th.int_to_label[idx] for idx in range(len(mandatory_tok))],
             mandatory_tok)
 
     def test_mapping(self):
-        th = TranscriptionHandler(self.lexicon, oov_word="<unk>")
+        th = WordTranscriptionHandler(self.lexicon, oov_word="<unk>")
 
         word_seq = ["ab", "c", "def", "g"]
-        label_seq = th.prepare_target(word_seq, to_int=False)
+        label_seq = th.prepare_transcription(word_seq)
 
         expected = ["a", "b", "c", "d", "e", "f", "<unk>"]
         self.assertEqual(expected, label_seq)
 
     def test_mapping_to_int(self):
-        th = TranscriptionHandler(self.lexicon, mandatory_tokens=["<blank>", ])
+        th = WordTranscriptionHandler(lexicon=self.lexicon, labels=["<blank>"])
 
         word_seq = ["ab", "c", "def"]
-        label_seq = th.prepare_target(word_seq)
+        label_seq = th.process_transcription(word_seq)
 
         expected = range(1, 7)  # expecting a sorted label mapping here
         tc.assert_array_equal(expected, label_seq)
 
     def test_case_insensitive(self):
-        th = TranscriptionHandler(self.lexicon, case_sensitive=False)
+        th = WordTranscriptionHandler(self.lexicon, case_sensitive=False)
         self.assertEqual(
             th.lexicon, {"AB": ["a", "b"], "C": ["c"], "DEF": ["d", "e", "f"]})
 
         word_seq = ["AB", "c", "dEf"]
-        label_seq = th.prepare_target(word_seq, to_int=False)
+        label_seq = th.prepare_transcription(word_seq)
         expected = ["a", "b", "c", "d", "e", "f"]
         self.assertEqual(expected, label_seq)
 
     def test_save_and_load(self):
-        th_orig = TranscriptionHandler(self.lexicon, eow="<eow>")
+        th_orig = WordTranscriptionHandler(self.lexicon, eow="<eow>")
         with tempfile.TemporaryDirectory() as _dir:
             file = path.join(_dir, "th.json")
             th_orig.save(file)
-            th_load = TranscriptionHandler.load(file)
+            th_load = WordTranscriptionHandler.load(file)
         self.assertEqual(th_orig.__dict__, th_load.__dict__)
 
 

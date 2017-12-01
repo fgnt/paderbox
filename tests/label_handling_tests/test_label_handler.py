@@ -17,8 +17,8 @@ class TestLabelHandler(unittest.TestCase):
         self.lh.add_labels(new_labels)
         self.assertEqual(self.lh.num_labels, 5)
         self.assertEqual(self.lh.labels, self.labels + new_labels)
-        self.assertEqual(self.lh._label_to_int['e'], 4)
-        self.assertEqual(self.lh._int_to_label[4], 'e')
+        self.assertEqual(self.lh.label_to_int['e'], 4)
+        self.assertEqual(self.lh.int_to_label[4], 'e')
 
     def test_transcription(self):
         self.assertEqual(self.lh.process_transcription(
