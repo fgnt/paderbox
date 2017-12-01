@@ -72,7 +72,7 @@ class ReaderTest(unittest.TestCase):
             'a'.split()
         )
         _ = iterator['a']
-        with self.assertRaises(KeyError):
+        with self.assertRaises(IndexError):
             _ = iterator['b']
         with self.assertRaises(AssertionError):
             _ = iterator[0]
