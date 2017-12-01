@@ -1,9 +1,9 @@
 import tempfile
 import unittest
 
-from nt.speech_recognition.lexicon import Linear
-from nt.transcription_handling.transcription_handler import LabelHandler
 from nt.TODO.kaldi import fst
+from nt.speech_recognition.lexicon import Linear
+from nt.label_handling.transcription_handler import LabelHandler
 
 
 class TestLexicon(unittest.TestCase):
@@ -19,30 +19,25 @@ class TestLexicon(unittest.TestCase):
                             self.special_symbols['phi'], ]
         tokens = [t for spelling in self.lexicon.values() for t in spelling]
         words = list(self.lexicon.keys())
-        self.lh = LabelHandler(mandatory_tokens + tokens +
-                               list(self.special_symbols.values()) + words)
+        self.lh = LabelHandler(
+            mandatory_tokens + tokens + list(self.special_symbols.values())
+            + words)
 
-        self.int_lexicon = {self.lh.labels2ints(word)[0]:
-                            self.lh.labels2ints(labels)
+        self.int_lexicon = {self.lh.process_transcription(word)[0]:
+                            self.lh.process_transcription(labels)
                             for word, labels in self.lexicon.items()}
-        self.int_eos_word = self.lh.labels2ints(
+        self.int_eos_word = self.lh.process_transcription(
             self.special_symbols['eos'])[0]
 
-        self.int_eps = self.lh.labels2ints(
-            self.special_symbols['eps'])[0]
-        self.int_eow = self.lh.labels2ints(
-            self.special_symbols['eow'])[0]
-        self.int_phi = self.lh.labels2ints(
-            self.special_symbols['phi'])[0]
-        self.int_sow = self.lh.labels2ints(
-            self.special_symbols['sow'])[0]
-        self.int_eoc = self.lh.labels2ints(
-            self.special_symbols['eoc'])[0]
-        self.int_eos_label = self.lh.labels2ints(
-            self.special_symbols['eos'])[0]
-        self.int_label = [self.lh.labels2ints(label)[0]
-                          for label in self.lh.labels
-                          if label not in self.special_symbols.values()]
+        self.int_eps = self.lh.process_label(self.special_symbols['eps'])
+        self.int_eow = self.lh.process_label(self.special_symbols['eow'])
+        self.int_phi = self.lh.process_label(self.special_symbols['phi'])
+        self.int_sow = self.lh.process_label(self.special_symbols['sow'])
+        self.int_eoc = self.lh.process_label(self.special_symbols['eoc'])
+        self.int_eos_label = self.lh.process_label(self.special_symbols['eos'])
+        self.int_label = [
+            self.lh.process_label(label) for label in self.lh.labels
+            if label not in self.special_symbols.values()]
 
     def _test_write_fst(self, class_type, add_word_mode,
                         build_character_model_mode, sow=None, eoc=None):
