@@ -1,7 +1,7 @@
 import json
 
 DELIMITER = '/'
-ALLOWED_TYPES = (list, tuple, int, float, str)
+ALLOWED_TYPES = (list, tuple, int, float, str, type(None))
 
 
 class Options:
@@ -26,6 +26,7 @@ class Options:
         """Adds nested parameters from a dict."""
         for k, v in nested_dict.items():
             self.add_param(k, v)
+        return self
 
     def add_param(self, name, value):
         """Adds a parameter."""
@@ -49,13 +50,13 @@ class Options:
         _dict = self._params
         root = 'root'
         for level_idx in range(len(path)):
-            root = path[level_idx - 1]
-            if not key in _dict:
+            if not path[level_idx] in _dict:
                 raise KeyError(f"{path[level_idx]} not in {root}")
             else:
+                root = path[level_idx]
                 _dict = _dict[path[level_idx]]._params
         if not key in _dict:
-            raise KeyError(f"{path[level_idx]} not in {root}")
+            raise KeyError(f"{key} not in {root}")
         _dict[key] = value
 
     def update_params(self, nested_dict):
@@ -69,6 +70,7 @@ class Options:
                     name = DELIMITER.join([*path, k])
                     self.update_param(name, v)
         _update_recursive(nested_dict, [])
+        return self
 
     def to_json(self, indent=2, separators=None, sort_keys=True):
         """Serializes the hyperparameters into json."""
@@ -95,13 +97,13 @@ class Options:
         """Creates new HParams from json file."""
         with open(json_path) as fid:
             json_values = json.load(fid)
-        return Options.from_nested_dict(json_values)
+        return Options(**json_values)
 
     @staticmethod
     def from_json(json_values):
         """Creates new HParams from json string."""
         json_values = json.loads(json_values)
-        return Options.from_nested_dict(json_values)
+        return Options(**json_values)
 
     def __repr__(self):
         return self.to_json()
