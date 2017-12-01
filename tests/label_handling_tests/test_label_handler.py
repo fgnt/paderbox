@@ -49,8 +49,8 @@ class TestLabelHandler(unittest.TestCase):
         self.assertEqual(lh.process_transcription(
             ['a', 'b', 'c'], toarray=False), [0, 2, 1])
 
-    def test_automatic_add(self):
-        lh = LabelHandler(oov_label='<unk>', freeze=False)
+    def test_auto_add(self):
+        lh = LabelHandler(oov_label='<unk>', auto_add=True)
         self.assertEqual(lh.num_labels, 1)
         self.assertEqual(lh.process_transcription(
             ['a', 'b', 'c'], toarray=False), [1, 2, 3])
