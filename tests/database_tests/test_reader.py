@@ -42,6 +42,7 @@ class ReaderTest(unittest.TestCase):
         _ = iterator['b']
         _ = iterator[0]
         _ = iterator[1]
+        _ = iterator[:1][0]
 
     def test_map_iterator(self):
         iterator = self.db.get_iterator_by_names('train')
@@ -58,6 +59,7 @@ class ReaderTest(unittest.TestCase):
         )
         _ = iterator['a']
         _ = iterator[0]
+        _ = iterator[:1][0]
 
     def test_filter_iterator(self):
         iterator = self.db.get_iterator_by_names('train')
@@ -76,6 +78,8 @@ class ReaderTest(unittest.TestCase):
             _ = iterator['b']
         with self.assertRaises(AssertionError):
             _ = iterator[0]
+        with self.assertRaises(AssertionError):
+            _ = iterator[:1]
 
     def test_concatenate_iterator(self):
         train_iterator = self.db.get_iterator_by_names('train')
@@ -94,6 +98,7 @@ class ReaderTest(unittest.TestCase):
             iterator[0]['example_id'],
             'a'
         )
+        _ = iterator[:1][0]
 
     def test_concatenate_iterator_double_keys(self):
         train_iterator = self.db.get_iterator_by_names('train')
@@ -109,6 +114,7 @@ class ReaderTest(unittest.TestCase):
             iterator[0]['example_id'],
             'a'
         )
+        _ = iterator[:1][0]
 
     def test_multiple_concatenate_iterator(self):
         train_iterator = self.db.get_iterator_by_names('train')
@@ -118,6 +124,31 @@ class ReaderTest(unittest.TestCase):
             example_ids,
             'a b a b'.split()
         )
+        _ = iterator[:1][0]
+
+    def test_slice_iterator(self):
+        iterator = self.db.get_iterator_by_names('train')
+        iterator = iterator[:4]
+        example_ids = [e['example_id'] for e in iterator]
+        self.assertListEqual(
+            example_ids,
+            'a b a b'.split()
+        )
+        iterator = iterator[:3]
+        example_ids = [e['example_id'] for e in iterator]
+        self.assertListEqual(
+            example_ids,
+            'a b a'.split()
+        )
+        iterator = iterator[:5]  # Should this work?
+        example_ids = [e['example_id'] for e in iterator]
+        self.assertListEqual(
+            example_ids,
+            'a b a b'.split()
+        )
+        _ = iterator[:2]
+        _ = iterator[:1]
+        _ = iterator[:0]  # Should this work?
 
     def tearDown(self):
         shutil.rmtree(str(self.temp_directory))
