@@ -330,11 +330,11 @@ class TestConvolution(unittest.TestCase):
 
         # get audio data
         testsignal1 = io.audioread(
-            testing_dir / 'timit' / 'data' / 'sample_1.wav')
+            testing_dir / 'timit' / 'data' / 'sample_1.wav')[0]
         testsignal2 = io.audioread(
-            testing_dir / 'timit' / 'data' / 'sample_1.wav')
+            testing_dir / 'timit' / 'data' / 'sample_1.wav')[0]
         testsignal3 = io.audioread(
-            testing_dir / 'timit' / 'data' / 'sample_1.wav')
+            testing_dir / 'timit' / 'data' / 'sample_1.wav')[0]
         # pad all audiosignals with zeros such they have equal lengths
         maxlen = np.amax((len(testsignal1),
                           len(testsignal2),

@@ -222,7 +222,7 @@ class UtteranceJsonCallbackDataset(UtteranceCallbackDataset):
         self.utterances = list(self.flist.keys())
 
     def _read_audio(self, wav_file, utt):
-        return audioread(wav_file, sample_rate=self.sample_rate)
+        return audioread(wav_file, expected_sample_rate=self.sample_rate)[0]
         # return audioread(wav_file)
 
     def _read_utterance(self, utt):
@@ -341,7 +341,7 @@ class ContextUtteranceJsonCallbackDataset(UtteranceJsonCallbackDataset):
             try:
                 wav_file = get_channel_for_utt(self.flist, channel, utt)
                 data = audioread(wav_file, start_context, duration,
-                                 sample_rate=self.sample_rate)
+                                 expected_sample_rate=self.sample_rate)[0]
                 data = np.atleast_2d(data)
                 ch_group = channel.split('/')[0]
                 try:

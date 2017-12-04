@@ -14,7 +14,7 @@ class TestSTFTMethods(unittest.TestCase):
 
     def test_mfcc(self):
         path = testing_dir / 'timit' / 'data' / 'sample_1.wav'
-        y = audioread(path)
+        y = audioread(path)[0]
         y_filtered = transform.mfcc(y)
 
         tc.assert_equal(y_filtered.shape, (291, 13))
