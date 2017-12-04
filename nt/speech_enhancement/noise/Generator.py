@@ -104,7 +104,7 @@ class NoiseGeneratorChimeBackground(NoiseGeneratorTemplate):
     """
     def __init__(
             self, json_src=database_jsons / 'chime_backgrounds.json',
-            flist=None, sampling_rate=16000, channels=6
+            flist=None, channels=6
     ):
         """
 
@@ -116,8 +116,8 @@ class NoiseGeneratorChimeBackground(NoiseGeneratorTemplate):
         """
         flist = 'all' if flist is None else flist
         database = load_json(json_src)
-
-        self.sampling_rate = sampling_rate
+        # TODO: solution for signals with different sampling_rates is missing
+        self.sampling_rate = 16000
         self.max_channels = channels
         self.flist = database[flist]
         self.utterance_list = sorted(self.flist['wav'].keys())
@@ -138,7 +138,6 @@ class NoiseGeneratorChimeBackground(NoiseGeneratorTemplate):
                 self.flist['wav'][utt_id]['CH{}'.format(channel + 1)],
                 offset=start / self.sampling_rate,
                 duration=T / self.sampling_rate,
-                sample_rate=self.sampling_rate
             ))
 
         # Reshape to deal with singleton dimensions
@@ -199,7 +198,7 @@ class NoiseGeneratorNoisex92(NoiseGeneratorTemplate):
         self.audio_datas = list()
         for l in self.labels:
             path = helper.get_path_for_label(l, sample_rate)
-            self.audio_datas += [ar.audioread(path, sample_rate=sample_rate)]
+            self.audio_datas += [ar.audioread(path)]
 
         self.sample_rate = sample_rate
 
