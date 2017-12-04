@@ -58,10 +58,11 @@ def play(data, channel=0, sample_rate=16000,
         data = str(data)
 
     if isinstance(data, str):
-        assert os.path.exists(data), 'File does not exist.'
+        assert os.path.exists(data), ('File does not exist.', data)
         data = audioread(data, expected_sample_rate=sample_rate)[0]
     elif np.issubdtype(data.dtype, np.complex):
-        assert data.shape[-1] == size // 2 + 1, 'Wrong number of frequency bins'
+        assert data.shape[-1] == size // 2 + \
+            1, ('Wrong number of frequency bins', data.shape, size)
 
         if len(data.shape) == 3:
             data = data[:, channel, :]
@@ -71,14 +72,15 @@ def play(data, channel=0, sample_rate=16000,
         if len(data.shape) == 2:
             data = data[channel, :]
 
-    assert np.issubdtype(data.dtype, np.float)
-    assert len(data.shape) == 1
+    assert np.issubdtype(data.dtype, np.float), data.dtype
+    assert len(data.shape) == 1, data.shape
 
     if scale != 1:
         assert scale > 1, \
             'Only Amplification with clipping is supported. \n' \
             'Note: IPython.display.Audio scales the input, therefore a ' \
-            'np.clip can increase the power, but not decrease it.'
+            'np.clip can increase the power, but not decrease it. ' \
+            f'scale={scale}'
         max_abs_data = np.max(np.abs(data))
         data = np.clip(data, -max_abs_data/scale, max_abs_data/scale)
 
