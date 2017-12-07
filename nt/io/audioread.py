@@ -89,8 +89,6 @@ def read_nist_wsj(path, sample_rate=16000, audioread_function=audioread):
     Converts a nist/sphere file of wsj and reads it with audioread.
 
     :param path: file path to audio file.
-    :param sample_rate: Resamples utterances to given value. None = native
-        sample rate.
     :param audioread_function: Function to use to read the resulting audio file
     :return:
     """
