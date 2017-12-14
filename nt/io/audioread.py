@@ -18,7 +18,7 @@ UTILS_DIR = os.path.join(os.path.dirname(os.path.abspath(
 )
 
 
-def audioread(path, offset=0.0, duration=None):
+def audioread(path, offset=0.0, duration=None, expected_sample_rate=None):
     """
     Reads a wav file, converts it to 32 bit float values and reshapes according
     to the number of channels.
@@ -49,13 +49,13 @@ def audioread(path, offset=0.0, duration=None):
         Only path provided:
 
         >>> path = '/net/speechdb/timit/pcm/train/dr1/fcjf0/sa1.wav'
-        >>> signal = audioread(path)
+        >>> signal, sample_rate = audioread(path)
 
         Say you load audio examples from a very long audio, you can provide a
         start position and a duration in seconds.
 
         >>> path = '/net/speechdb/timit/pcm/train/dr1/fcjf0/sa1.wav'
-        >>> signal = audioread(path, offset=0, duration=1)
+        >>> signal, sample_rate = audioread(path, offset=0, duration=1)
     """
     if isinstance(path, Path):
         path = str(path)
@@ -64,10 +64,10 @@ def audioread(path, offset=0.0, duration=None):
     with wavefile.WaveReader(path) as wav_reader:
         channels = wav_reader.channels
         sample_rate = wav_reader.samplerate
-        if wav_reader.samplerate != sample_rate:
+        if expected_sample_rate is not None and expected_sample_rate != sample_rate:
             raise ValueError(
                 'Requested sampling rate is {} but the audiofile has {}'.format(
-                    sample_rate, wav_reader.samplerate
+                    expected_sample_rate, sample_rate
                 )
             )
 
@@ -81,7 +81,7 @@ def audioread(path, offset=0.0, duration=None):
         data = np.empty((channels, samples), dtype=np.float32, order='F')
         wav_reader.seek(frames_before)
         wav_reader.read(data)
-        return np.squeeze(data)
+        return np.squeeze(data), sample_rate
 
 
 def read_nist_wsj(path, sample_rate=16000, audioread_function=audioread):
@@ -89,8 +89,6 @@ def read_nist_wsj(path, sample_rate=16000, audioread_function=audioread):
     Converts a nist/sphere file of wsj and reads it with audioread.
 
     :param path: file path to audio file.
-    :param sample_rate: Resamples utterances to given value. None = native
-        sample rate.
     :param audioread_function: Function to use to read the resulting audio file
     :return:
     """
@@ -99,7 +97,7 @@ def read_nist_wsj(path, sample_rate=16000, audioread_function=audioread):
         UTILS_DIR, path=path, dest_file=tmp_file.name
     )
     pc.run_processes(cmd, ignore_return_code=False)
-    signal = audioread_function(tmp_file.name, sample_rate=sample_rate)
+    signal, _ = audioread_function(tmp_file.name, expected_sample_rate=sample_rate)
     os.remove(tmp_file.name)
     return signal
 

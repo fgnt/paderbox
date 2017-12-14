@@ -10,7 +10,7 @@ class TestSTOI(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         path = testing_dir('timit', 'data', 'sample_1.wav')
-        cls.x = audioread(path)
+        cls.x = audioread(path)[0]
         cls.sample_rate = 16000
 
     def test_stoi_range(self):

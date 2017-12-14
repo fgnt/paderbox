@@ -68,8 +68,8 @@ class TestWPEWrapper(unittest.TestCase):
                 print(" - Reading channel "+str(cha+1))
                 utt_to_read = utt.replace('ch1', 'ch'+str(cha+1))
                 signal = audioread.audioread(path=utt_to_read,
-                                             sample_rate=self.sample_rate
-                                             )
+                                             expected_sample_rate=self.sample_rate
+                                             )[0]
                 if not noisy_audiosignals.shape[0] == len(signal):
                     raise Exception("Signal " + utt_to_read +
                                     " has a different size than other signals.")

@@ -16,8 +16,8 @@ class TestProposedPESQ(unittest.TestCase):
         self.ref_path = data_dir / 'speech.wav'
         self.deg_path = data_dir / 'speech_bab_0dB.wav'
 
-        self.ref_array = audioread(self.ref_path)
-        self.deg_array = audioread(self.deg_path)
+        self.ref_array = audioread(self.ref_path)[0]
+        self.deg_array = audioread(self.deg_path)[0]
 
     def test_wb_scores_with_lists_of_paths_length_one(self):
         scores = pesq(

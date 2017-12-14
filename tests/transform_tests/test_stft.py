@@ -74,7 +74,7 @@ class TestSTFTMethods(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         path = testing_dir / 'timit' / 'data' / 'sample_1.wav'
-        self.x = audioread(path)
+        self.x = audioread(path)[0]
 
     def test_samples_to_stft_frames(self):
         size = 1024

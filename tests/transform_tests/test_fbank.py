@@ -16,7 +16,7 @@ class TestSTFTMethods(unittest.TestCase):
 
     def test_fbank(self):
         path = testing_dir / 'timit' / 'data' / 'sample_1.wav'
-        y = audioread(path)
+        y = audioread(path)[0]
         feature = transform.fbank(y)
 
         tc.assert_equal(feature.shape, (291, 23))
