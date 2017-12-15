@@ -15,20 +15,20 @@ class test_ger_db(db_test.DatabaseTest):
     def test_structure(self):
         self.assertIn(DATASETS, self.json)
         self.assertIn(EXAMPLES, self.json)
-        self.assertIn('dev_Kinect-Beam', self.json[DATASETS])
+        self.assertIn('tr_Kinect_Beam', self.json[DATASETS])
 
     def test_len(self):
         # ids
-        self.assertEqual(len(list(self.json[EXAMPLES])), 14907,
-                         "There should be 14907 utt_ids in '{}'!"
+        self.assertEqual(len(list(self.json[EXAMPLES])), 71156,
+                         "There should be 71156 utt_ids in '{}'!"
                          .format(EXAMPLES))
         # datasets
         self.assertEqual(len(list(self.json[DATASETS])), 15,
                          "There should be 15 datasets in '{}'!"
                          .format(DATASETS))
         # dataset length
-        self.assertEqual(len(list(self.json[DATASETS]['dev_Kinect-Beam'])), 1084,
-                    "There should be 1084 utt_ids in dataset 'dev_Kinect-Beam'!")
+        self.assertEqual(len(list(self.json[DATASETS]['tr_Kinect_Beam'])), 11734,
+                    "There should be 11734 utt_ids in dataset 'tr_Kinect_Beam'!")
 
     def test_examples(self):
         utt_id = list(self.json[EXAMPLES])[0]

@@ -6,7 +6,6 @@ from nt.io import load_json
 from nt.database.keys import *
 
 merl = db_test.ROOT / "merl_speaker_mixtures_min_8k.json"
-merl = '/home/danielha/Schreibtisch/merl.json'
 
 class test_ger_db(db_test.DatabaseTest):
 
