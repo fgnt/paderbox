@@ -8,7 +8,7 @@ from nt.database.keys import *
 NoiseX_92_json = db_test.ROOT / "NoiseX_92.json"
 
 
-class test_NoiseX_92_db(db_test.DatabaseTest):
+class TestNoiseX92Database(db_test.DatabaseTest):
 
         def setUp(self):
             self.json = load_json(NoiseX_92_json)

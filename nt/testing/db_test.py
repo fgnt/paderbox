@@ -1,19 +1,21 @@
 import unittest
 
 from nt.io.data_dir import database_jsons as database_jsons_dir
+from nt.database.keys import *
 
 ROOT = database_jsons_dir
 
 class DatabaseTest(unittest.TestCase):
 
-    def _test_train_test_dev(self):
-        self.assertIn("test", self.json)
-        self.assertIn("train", self.json)
-        self.assertIn("dev", self.json)
 
-    def _test_orth(self):
-        self.assertIn("orth", self.json)
+    def test_structure(self):
+        self.assertIn(DATASETS, self.json)
+        self.assertIn(EXAMPLES, self.json)
 
-    def _test_flists(self):
-        self.assertIn("flists", self.json)
+    def test_examples(self):
+        utt_id = list(self.json[EXAMPLES])[0]
+        # audio_path
+        self.assertIn(AUDIO_PATH, self.json[EXAMPLES][utt_id])
+        # transcription
+        self.assertIn(TRANSCRIPTION, self.json[EXAMPLES][utt_id])
 
