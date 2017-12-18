@@ -84,7 +84,7 @@ def audioread(path, offset=0.0, duration=None, expected_sample_rate=None):
         return np.squeeze(data), sample_rate
 
 
-def read_nist_wsj(path, sample_rate=16000, audioread_function=audioread):
+def read_nist_wsj(path, audioread_function=audioread, **kwargs):
     """
     Converts a nist/sphere file of wsj and reads it with audioread.
 
@@ -97,7 +97,7 @@ def read_nist_wsj(path, sample_rate=16000, audioread_function=audioread):
         UTILS_DIR, path=path, dest_file=tmp_file.name
     )
     pc.run_processes(cmd, ignore_return_code=False)
-    signal, _ = audioread_function(tmp_file.name, expected_sample_rate=sample_rate)
+    signal = audioread_function(tmp_file.name, **kwargs)
     os.remove(tmp_file.name)
     return signal
 
