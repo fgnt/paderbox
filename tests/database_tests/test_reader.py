@@ -1,5 +1,6 @@
 import unittest
 from nt.database.reader import JsonDatabase
+from nt.database.reader import DictDatabase
 from pathlib import Path
 import shutil
 import tempfile
@@ -10,13 +11,13 @@ class ReaderTest(unittest.TestCase):
     def setUp(self):
         self.json = dict(
             datasets=dict(
-                train='a b'.split(),
-                test='c'.split()
-            ),
-            examples=dict(
-                a=dict(example_id='a'),
-                b=dict(example_id='b'),
-                c=dict(example_id='c')
+                train=dict(
+                    a=dict(example_id='a'),
+                    b=dict(example_id='b')
+                ),
+                test=dict(
+                    c=dict(example_id='c')
+                )
             ),
             meta=dict()
         )
@@ -27,8 +28,8 @@ class ReaderTest(unittest.TestCase):
 
     def test_dataset_names(self):
         self.assertListEqual(
-            sorted(self.db.dataset_names),
-            sorted(list(self.json['datasets'].keys()))
+            self.db.dataset_names,
+            list(self.json['datasets'].keys())
         )
 
     def test_iterator(self):
@@ -152,3 +153,27 @@ class ReaderTest(unittest.TestCase):
 
     def tearDown(self):
         shutil.rmtree(str(self.temp_directory))
+
+
+class UniqueIDReaderTest(unittest.TestCase):
+    def setUp(self):
+        self.d = dict(
+            datasets=dict(
+                train=dict(
+                    a=dict(example_id='a'),
+                    b=dict(example_id='b')
+                ),
+                test=dict(
+                    a=dict(example_id='a')
+                )
+            ),
+            meta=dict()
+        )
+        self.db = DictDatabase(self.d)
+
+    def test_duplicate_id(self):
+        with self.assertRaises(AssertionError):
+            _ = self.db.get_iterator_by_names(''.split())
+
+    def test_duplicate_id_with_prepend_dataset_name(self):
+        _ = self.db.get_iterator_by_names(''.split(), prepend_dataset_name=True)
