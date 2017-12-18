@@ -7,7 +7,7 @@ from nt.database.keys import *
 
 reverb = db_test.ROOT / "reverb.json"
 
-class test_reverb(db_test.DatabaseTest):
+class TestReverbDatabase(db_test.DatabaseTest):
 
     def setUp(self):
         self.json = load_json(reverb)

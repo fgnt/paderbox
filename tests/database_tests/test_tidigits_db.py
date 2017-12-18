@@ -7,7 +7,7 @@ from nt.database.keys import *
 
 tidigits_json = db_test.ROOT / "tidigits.json"
 
-class test_tidigits_db(db_test.DatabaseTest):
+class TestTidigitsDatabase(db_test.DatabaseTest):
 
     def setUp(self):
         self.json = load_json(tidigits_json)
