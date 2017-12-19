@@ -118,6 +118,10 @@ language_model = _get_path(
     'LANGUAGE_MODEL',
     '/net/storage/jheymann/__share/ldrude/2016/2016-05-10_lm'
 )
+wsj_mc = _get_path(
+    'NT_WSJ_MC_DIR',
+    db_dir / 'wsj_mc_complete'
+)
 
 if __name__ == "__main__":
     import doctest
