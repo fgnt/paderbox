@@ -1,4 +1,3 @@
-import json
 import unittest
 
 from nt.io import load_json
@@ -13,16 +12,11 @@ class TestNoiseX92Database(db_test.DatabaseTest):
         def setUp(self):
             self.json = load_json(NoiseX_92_json)
 
-        def test_structure(self):
-            self.assertIn(DATASETS, self.json)
-            self.assertIn(EXAMPLES, self.json)
-
         def test_examples(self):
-            utt_id = list(self.json[EXAMPLES])[0]
-            # audio_path
-            self.assertIn(AUDIO_PATH, self.json[EXAMPLES][utt_id])
-            # transcription
-            self.assertIn(TRANSCRIPTION, self.json[EXAMPLES][utt_id])
+            self.assert_in_example([AUDIO_PATH])
+
+        def test_dataset(self):
+            self.assert_in_datasets(['standard set', '16kHz set', 'metro set'])
 
         def test_len(self):
             self.assertEqual(len(self.json[DATASETS]['standard set']), 15)
