@@ -21,10 +21,10 @@ class ReaderTest(unittest.TestCase):
             ),
             meta=dict()
         )
-        self.temp_directory = Path(tempfile.mkdtemp())
-        self.json_path = self.temp_directory / 'db.json'
-        dump_json(self.json, self.json_path)
-        self.db = JsonDatabase(self.json_path)
+        # self.temp_directory = Path(tempfile.mkdtemp())
+        # self.json_path = self.temp_directory / 'db.json'
+        # dump_json(self.json, self.json_path)
+        self.db = DictDatabase(self.json)
 
     def test_dataset_names(self):
         self.assertListEqual(
@@ -128,31 +128,32 @@ class ReaderTest(unittest.TestCase):
         _ = iterator[:1][0]
 
     def test_slice_iterator(self):
-        iterator = self.db.get_iterator_by_names('train')
-        iterator = iterator[:4]  # Should this work?
+        base_iterator = self.db.get_iterator_by_names('train')
+        base_iterator = base_iterator.concatenate(base_iterator)
+        iterator = base_iterator[:4]
         example_ids = [e['example_id'] for e in iterator]
         self.assertListEqual(
             example_ids,
             'a b a b'.split()
         )
-        iterator = iterator[:3]  # Should this work?
+        iterator = base_iterator[:3]
         example_ids = [e['example_id'] for e in iterator]
         self.assertListEqual(
             example_ids,
             'a b a'.split()
         )
-        iterator = iterator[:5]  # Should this work?
+        iterator = base_iterator[:5]  # Should this work?
         example_ids = [e['example_id'] for e in iterator]
         self.assertListEqual(
             example_ids,
             'a b a b'.split()
         )
-        _ = iterator[:2]
-        _ = iterator[:1]
-        _ = iterator[:0]  # Should this work?
+        _ = base_iterator[:2]
+        _ = base_iterator[:1]
+        _ = base_iterator[:0]  # Should this work?
 
-    def tearDown(self):
-        shutil.rmtree(str(self.temp_directory))
+    # def tearDown(self):
+    #     shutil.rmtree(str(self.temp_directory))
 
 
 class UniqueIDReaderTest(unittest.TestCase):
