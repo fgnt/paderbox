@@ -30,14 +30,14 @@ class ReaderTest(unittest.TestCase):
         self.assertListEqual(
             self.db.dataset_names,
             list(self.json['datasets'].keys())
-        )
+        )  # fails because dump_json sorts keys
 
     def test_iterator(self):
         iterator = self.db.get_iterator_by_names('train')
         example_ids = [e['example_id'] for e in iterator]
         self.assertListEqual(
             example_ids,
-            self.json['datasets']['train']
+            list(self.json['datasets']['train'].keys())
         )
         _ = iterator['a']
         _ = iterator['b']
@@ -129,13 +129,13 @@ class ReaderTest(unittest.TestCase):
 
     def test_slice_iterator(self):
         iterator = self.db.get_iterator_by_names('train')
-        iterator = iterator[:4]
+        iterator = iterator[:4]  # Should this work?
         example_ids = [e['example_id'] for e in iterator]
         self.assertListEqual(
             example_ids,
             'a b a b'.split()
         )
-        iterator = iterator[:3]
+        iterator = iterator[:3]  # Should this work?
         example_ids = [e['example_id'] for e in iterator]
         self.assertListEqual(
             example_ids,
@@ -173,7 +173,7 @@ class UniqueIDReaderTest(unittest.TestCase):
 
     def test_duplicate_id(self):
         with self.assertRaises(AssertionError):
-            _ = self.db.get_iterator_by_names(''.split())
+            _ = self.db.get_iterator_by_names('train test'.split())
 
     def test_duplicate_id_with_prepend_dataset_name(self):
-        _ = self.db.get_iterator_by_names(''.split(), prepend_dataset_name=True)
+        _ = self.db.get_iterator_by_names('train test'.split(), prepend_dataset_name=True)
