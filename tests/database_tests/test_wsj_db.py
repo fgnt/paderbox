@@ -1,4 +1,3 @@
-import json
 import unittest
 
 from nt.io import load_json
@@ -7,8 +6,6 @@ from nt.database.keys import *
 
 wsj_json = db_test.ROOT / "wsj.json"
 
-
-wsj_json = "/home/danielha/Schreibtisch/wsj.json"
 
 def complete(scenario, word):
     """ Checks whether there is a word transcription of every utterance ID in a give scenario
@@ -28,18 +25,11 @@ class TestWSJDatabase(db_test.DatabaseTest):
     def setUp(self):
         self.json = load_json(wsj_json)
 
-    def test_structure(self):
-        self.assertIn(DATASETS, self.json)
-        self.assertIn(EXAMPLES, self.json)
-
     def test_examples(self):
-        utt_id = list(self.json[EXAMPLES])[0]
-        # audio_path
-        self.assertIn(AUDIO_PATH, self.json[EXAMPLES][utt_id])
-        # transcription
-        self.assertIn(TRANSCRIPTION, self.json[EXAMPLES][utt_id])
+        self.assert_in_example([TRANSCRIPTION, AUDIO_PATH])
 
     def test_len(self):
+        self.assert_total_length(48077)
         self.assertEqual(
             len(self.json[DATASETS]['train_si284']), 37416,
             'Warning: expected 37416 lines in train_si284')

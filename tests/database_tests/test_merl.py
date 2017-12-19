@@ -11,18 +11,13 @@ class TestMerlDatabase(db_test.DatabaseTest):
     def setUp(self):
         self.json = load_json(merl)
 
-    def test_structure(self):
-        self.assertIn(DATASETS, self.json)
-        self.assertIn(EXAMPLES, self.json)
-        self.assertIn('mix_2_spk_min_cv', self.json[DATASETS])
+    def test_dataset(self):
+        self.assert_in_datasets(['mix_2_spk_min_cv'])
 
     def test_len(self):
-        ids = 56000
-        self.assertEqual(
-            len(list(self.json[EXAMPLES])),
-            ids,
-            f"There should be {ids} utt_ids in '{EXAMPLES}'!"
-        )
+        # total length
+        self.assert_total_length(56000)
+
         datasets = 6
         self.assertEqual(
             len(list(self.json[DATASETS])),
@@ -39,11 +34,7 @@ class TestMerlDatabase(db_test.DatabaseTest):
             )
 
     def test_examples(self):
-        utt_id = list(self.json[EXAMPLES])[0]
-        # audio_path
-        self.assertIn(AUDIO_PATH, self.json[EXAMPLES][utt_id])
-        # transcription
-        self.assertIn(TRANSCRIPTION, self.json[EXAMPLES][utt_id])
+        self.assert_in_example([TRANSCRIPTION, AUDIO_PATH])
 
 
 if __name__ == '__main__':
