@@ -16,6 +16,7 @@ from pathlib import Path
 def _get_path(environment_name, default):
     return Path(os.getenv(environment_name, default)).expanduser()
 
+
 database_jsons = _get_path(
     'NT_DATABASE_JSONS_DIR',
     '/net/storage/database_jsons'
@@ -34,8 +35,7 @@ testing = _get_path(
 )
 kaldi_root = _get_path(
     'KALDI_ROOT',
-    '/net/ssd/jheymann/software/kaldi_latest'
-    # '/net/ssd/software/kaldi'
+    None  # Has be set by user as an environment variable, i.e. in `.env` file.
 )
 matlab_toolbox = _get_path(
     'MATLAB_TOOLBOX_DIR',
