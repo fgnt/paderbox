@@ -84,6 +84,19 @@ def audioread(path, offset=0.0, duration=None, expected_sample_rate=None):
         return np.squeeze(data), sample_rate
 
 
+def audio_length(path, unit='samples'):
+    # ToDo: unit == 'seconds'
+
+    # params = soundfile.info(str(path))
+    # return int(params.samplerate * params.duration)
+
+    if unit == 'samples':
+        with soundfile.SoundFile(str(path)) as f:
+            return len(f) / f.samplerate
+    else:
+        return ValueError(unit)
+
+
 def read_nist_wsj(path, audioread_function=audioread, **kwargs):
     """
     Converts a nist/sphere file of wsj and reads it with audioread.
