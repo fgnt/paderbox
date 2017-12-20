@@ -6,7 +6,6 @@ from nt.database.keys import *
 
 ger_json = db_test.ROOT / "german.json"
 
-
 class TestGermanDatabase(db_test.DatabaseTest):
 
     def setUp(self):
@@ -24,7 +23,7 @@ class TestGermanDatabase(db_test.DatabaseTest):
                          "There should be 15 datasets in '{}'!"
                          .format(DATASETS))
         # dataset length
-        self.assertEqual(len(list(self.json[DATASETS]['tr_Kinect_Beam'])), 13506,
+        self.assertEqual(len(list(self.json[DATASETS]['tr_Kinect_Beam'])), 11734,
                     "There should be 11734 utt_ids in dataset 'tr_Kinect_Beam'!")
 
     def test_examples(self):

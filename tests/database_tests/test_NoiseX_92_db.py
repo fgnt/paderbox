@@ -6,7 +6,6 @@ from nt.database.keys import *
 
 NoiseX_92_json = db_test.ROOT / "NoiseX_92.json"
 
-
 class TestNoiseX92Database(db_test.DatabaseTest):
 
         def setUp(self):
@@ -16,12 +15,12 @@ class TestNoiseX92Database(db_test.DatabaseTest):
             self.assert_in_example([AUDIO_PATH])
 
         def test_dataset(self):
-            self.assert_in_datasets(['standard set', '16kHz set', 'metro set'])
+            self.assert_in_datasets(['standard', '16kHz'])
 
         def test_len(self):
-            self.assertEqual(len(self.json[DATASETS]['standard set']), 15)
-            self.assertEqual(len(self.json[DATASETS]['16kHz set']), 15)
-            self.assertEqual(len(self.json[DATASETS]['metro set']), 0)
+            self.assertEqual(len(self.json[DATASETS]['standard']), 15)
+            self.assertEqual(len(self.json[DATASETS]['16kHz']), 15)
+            #self.assertEqual(len(self.json[DATASETS]['metro']), 0)
 
 
 if __name__ == '__main__':

@@ -8,6 +8,7 @@ import wave
 from io import BytesIO
 from pathlib import Path
 
+import soundfile
 import numpy as np
 import wavefile
 
