@@ -11,6 +11,11 @@ ROOT = database_jsons_dir
 
 
 class DatabaseTest(unittest.TestCase):
+
+    @property
+    def json(self):
+        raise NotImplementedError()
+
     def _check_audio_file_exists(self, wav_path):
         wav_path = pathlib.Path(wav_path)
         if wav_path.exists() and wav_path.is_file():
