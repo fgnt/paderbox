@@ -29,7 +29,7 @@ class TestWSJDatabase(db_test.DatabaseTest):
         self.assert_in_example([TRANSCRIPTION, AUDIO_PATH])
 
     def test_len(self):
-        self.assert_total_length(48077)
+        self.assert_total_length(46661)
         self.assertEqual(
             len(self.json[DATASETS]['train_si284']), 37416,
             'Warning: expected 37416 lines in train_si284')
@@ -43,22 +43,17 @@ class TestWSJDatabase(db_test.DatabaseTest):
             len(self.json[DATASETS]['test_eval92_5k']), 330,
             'Warning: expected 330 lines in test_eval92_5k')
         self.assertEqual(len(self.json[DATASETS]['test_eval93']), 213,
-                         'Warning: expected 213 lines in official_si_test_eval93')
+                         'Warning: expected 213 lines in test_eval93')
         self.assertEqual(
             len(self.json[DATASETS]['test_eval93_5k']), 215,
-            'Warning: expected 213 lines in test_eval93_5k')
+            'Warning: expected 215 lines in test_eval93_5k')
         self.assertEqual(
-            len(self.json[DATASETS]['test_dev_93']), 503,
-            'Warning: expected 503 lines in test_dev_93')
+            len(self.json[DATASETS]['cv_dev93']), 503,
+            'Warning: expected 503 lines in cv_dev93')
         self.assertEqual(
-            len(self.json[DATASETS]['test_dev_93_5k']), 513,
-            'Warning: expected 513 lines in test_dev_93_5k')
-        self.assertEqual(
-            len(self.json[DATASETS]['dev_dt_20']), 503,
-            'Warning: expected 503 lines in dev_dt_20')
-        self.assertEqual(
-            len(self.json[DATASETS]['dev_dt_05']), 913,
-            'Warning: expected 913 lines in dev_dt_05')
+            len(self.json[DATASETS]['cv_dev93_5k']), 513,
+            'Warning: expected 513 lines in cv_dev93_5k')
+
 
     # def test_official_words(self):
     #     word = self.json['orth']["word"]
