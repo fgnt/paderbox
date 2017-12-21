@@ -26,5 +26,5 @@ ls /net/ssd/software/conda/lib/python3.6/lib-dynload/../../ > /dev/null
 # TODO: install all dependencies and add --no-deps option
 pip uninstall --quiet --yes nt
 pip show nt
-pip install  --quiet --user -e ${TOOLBOX}
+pip install --quiet --user -e ${TOOLBOX}
 pip show nt
