@@ -81,7 +81,9 @@ class Options:
             sort_keys=sort_keys,
         )
 
-    def to_json_file(self, json_path, indent=2, separators=None, sort_keys=True):
+    def to_json_file(
+            self, json_path, indent=2, separators=None, sort_keys=True
+    ):
         """Serializes the hyperparameters to a json file."""
         with open(json_path, 'w') as fid:
             json.dump(
@@ -130,3 +132,6 @@ class Options:
                 self.update_param(name, value)
         else:
             super().__setattr__(name, value)
+
+    def __len__(self):
+        return len(self._params)
