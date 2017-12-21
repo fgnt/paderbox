@@ -53,6 +53,13 @@ class DatabaseTest(unittest.TestCase):
                           f'The key "{key}" should be present in examples')
 
     def assert_in_datasets(self, datasets):
+        """
+
+        :param datasets: list of keys
+        :return:
+        """
+        assert isinstance(datasets, list), "Datasets is not a list!"
+
         for dataset in datasets:
             self.assertIn(dataset, self.json[DATASETS],
                           f'"{dataset}" should be in DATASETS')
@@ -61,13 +68,13 @@ class DatabaseTest(unittest.TestCase):
         self.assert_in_example([AUDIO_PATH, ])
 
     def assert_total_length(self, total_length):
-        _total_legnth = 0
+        _total_length = 0
         for dataset in self.json[DATASETS].values():
-            _total_legnth += len(dataset)
+            _total_length += len(dataset)
 
-        self.assertEqual(total_length, _total_legnth,
+        self.assertEqual(total_length, _total_length,
                          f'The database should contain exactly {total_length} '
-                         f'examples in total, but contains {_total_legnth}')
+                         f'examples in total, but contains {_total_length}')
 
     def test_reader(self):
         reader = AudioReader()

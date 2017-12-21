@@ -6,7 +6,6 @@ from nt.database.keys import *
 
 reverb = db_test.ROOT / "reverb.json"
 
-
 class TestReverbDatabase(db_test.DatabaseTest):
 
     def setUp(self):
@@ -14,7 +13,7 @@ class TestReverbDatabase(db_test.DatabaseTest):
 
 
     def test_dataset(self):
-        self.assert_in_datasets('RealData_dt_for_1ch_far_room1')
+        self.assert_in_datasets(['RealData_dt_for_1ch_far_room1'])
 
     def test_len(self):
         # datasets
