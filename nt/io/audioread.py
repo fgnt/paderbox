@@ -8,8 +8,8 @@ import wave
 from io import BytesIO
 from pathlib import Path
 
-import soundfile
 import numpy as np
+import soundfile
 import wavefile
 
 import nt.utils.process_caller as pc
@@ -100,12 +100,26 @@ def audioread(path, offset=0.0, duration=None, expected_sample_rate=None):
 
 
 def audio_length(path, unit='samples'):
-    # ToDo: unit == 'seconds'
+    """
+
+    Args:
+        path:
+        unit:
+
+    Returns:
+
+    >>> path = '/net/fastdb/chime3/audio/16kHz/isolated/dt05_caf_real/F01_050C0102_CAF.CH1.wav'
+    >>> audio_length(path)
+    122111
+    """
 
     # params = soundfile.info(str(path))
     # return int(params.samplerate * params.duration)
 
     if unit == 'samples':
+        with soundfile.SoundFile(str(path)) as f:
+            return len(f)
+    elif unit == 'seconds':
         with soundfile.SoundFile(str(path)) as f:
             return len(f) / f.samplerate
     else:
