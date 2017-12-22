@@ -17,6 +17,7 @@ from nt.transform.module_stft import istft
 from nt.transform.module_stft import spectrogram_to_energy_per_frame
 from nt.transform.module_stft import stft
 from nt.transform.module_stft import stft_to_spectrogram
+from nt.transform.module_stft import stft_with_kaldi_dimensions
 from nt.utils.matlab import Mlab
 from numpy.fft import rfft
 import numpy
@@ -238,6 +239,15 @@ class TestSTFTMethods(unittest.TestCase):
         tc.assert_equal(X22.shape, (186, 513, 2, 2))
         for d, k in np.ndindex(2, 2):
             tc.assert_equal(X22[:, :, d, k].squeeze(), X)
+
+    def test_window_length(self):
+        X = stft(self.x, 512, 160, window_length=400)
+        x_hat = istft(X, 512, 160, window_length=400)
+
+        X_ref = istft(stft(self.x, 400, 160), 400, 160)
+        tc.assert_equal(X.shape, (294, 257))
+
+        tc.assert_allclose(X_ref, x_hat, rtol=1e-6, atol=1e-6)
 
     def test_center_frequencies(self):
         tc.assert_allclose(get_stft_center_frequencies(size=1024, sample_rate=16000)[0], 0)
