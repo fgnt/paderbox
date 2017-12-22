@@ -14,7 +14,11 @@ class DatabaseTest(unittest.TestCase):
 
     @property
     def json(self):
-        raise NotImplementedError()
+        return self._json
+
+    @json.setter
+    def json(self, value):
+        self._json = value
 
     def _check_audio_file_exists(self, wav_path):
         wav_path = pathlib.Path(wav_path)
