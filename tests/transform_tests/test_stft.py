@@ -60,9 +60,9 @@ def stft_single_channel(time_signal, size=1024, shift=256,
     range_object = range(0, len(time_signal) - size + shift, shift)
 
     if window_length is None:
-        window = window(size)
+        window = window(size+1)[:-1]
     else:
-        window = window(window_length)
+        window = window(size+1)[:-1]
         window = numpy.pad(window, (0, size - window_length), mode='constant')
     windowed = numpy.array([(window * time_signal[i:i + size])
                             for i in range_object])
@@ -222,19 +222,19 @@ class TestSTFTMethods(unittest.TestCase):
             tc.assert_equal(X11[d, k, :, :].squeeze(), X)
 
         x2 = x1.transpose()
-        X2 = stft(x2)
+        X2 = stft(x2, axis=0)
         tc.assert_equal(X2.shape, (186, 513, 2))
         for d in np.ndindex(2):
             tc.assert_equal(X2[:, :, d].squeeze(), X)
 
         x21 = np.array([x2, x2])
-        X21 = stft(x21)
+        X21 = stft(x21, axis=1)
         tc.assert_equal(X21.shape, (2, 186, 513, 2))
         for d, k in np.ndindex(2, 2):
             tc.assert_equal(X21[d, :, :, k].squeeze(), X)
 
         x22 = x21.swapaxes(0, 1)
-        X22 = stft(x22)
+        X22 = stft(x22, axis=0)
         tc.assert_equal(X22.shape, (186, 513, 2, 2))
         for d, k in np.ndindex(2, 2):
             tc.assert_equal(X22[:, :, d, k].squeeze(), X)
@@ -245,7 +245,7 @@ class TestSTFTMethods(unittest.TestCase):
     @tc.attr.matlab
     def test_compare_with_matlab(self):
         y = self.x
-        Y_python = stft(y)
+        Y_python = stft(y, symmetric_window=True)
         mlab = Mlab().process
         mlab.set_variable('y', y)
         mlab.run_code('Y = transform.stft(y(:), 1024, 256, @blackman);')
