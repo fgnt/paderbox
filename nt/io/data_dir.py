@@ -56,7 +56,7 @@ ami = _get_path(
 )
 audioset = _get_path(
     'NT_AUDIOSET_DIR',
-    db_dir / 'audioset'
+    db_dir / 'AudioSet'
 )
 timit = _get_path(
     'NT_TIMIT_DIR',
