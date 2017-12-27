@@ -5,6 +5,7 @@ from nt.io import load_json
 from nt.database.keys import *
 
 reverb = db_test.ROOT / "reverb.json"
+#reverb = "reverb.json"
 
 class TestReverbDatabase(db_test.DatabaseTest):
 

@@ -5,7 +5,7 @@ from nt.io import load_json
 from nt.database.keys import *
 
 tidigits_json = db_test.ROOT / "tidigits.json"
-tidigits_json = '/home/danielha/Schreibtisch/tidigits.json'
+#tidigits_json = 'tidigits.json'
 
 class TestTidigitsDatabase(db_test.DatabaseTest):
 

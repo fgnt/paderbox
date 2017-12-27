@@ -5,6 +5,7 @@ from nt.io import load_json
 from nt.testing import db_test
 
 merl = db_test.ROOT / "merl_speaker_mixtures_min_8k.json"
+#merl = "merl_speaker_mixtures.json"
 
 class TestMerlDatabase(db_test.DatabaseTest):
     def setUp(self):
