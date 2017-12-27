@@ -30,26 +30,26 @@ class DatabaseTest(unittest.TestCase):
             self._wav_complete = False
             return False
 
-    # def test_audio_files_exist(self):
-    #     """
-    #     Tests if all audio files mentioned in the datasets are available.
-    #     """
-    #     successful = True
-    #     for dataset_key, dataset_examples in self.json[DATASETS].items():
-    #         print(f'{dataset_key}:')
-    #         self._wav_complete = True
-    #         for example_key, example in dataset_examples.items():
-    #             recursive_transform(self._check_audio_file_exists,
-    #                                 example[AUDIO_PATH])
-    #
-    #         if not self._wav_complete:
-    #             successful = False
-    #             print('  is not complete!')
-    #         else:
-    #             print('  is complete!')
-    #
-    #     assert successful, 'Some *.wav file referenced in the database '\
-    #                        'json are not available!'
+    def test_audio_files_exist(self):
+        """
+        Tests if all audio files mentioned in the datasets are available.
+        """
+        successful = True
+        for dataset_key, dataset_examples in self.json[DATASETS].items():
+            print(f'{dataset_key}:')
+            self._wav_complete = True
+            for example_key, example in dataset_examples.items():
+                recursive_transform(self._check_audio_file_exists,
+                                    example[AUDIO_PATH])
+
+            if not self._wav_complete:
+                successful = False
+                print('  is not complete!')
+            else:
+                print('  is complete!')
+
+        assert successful, 'Some *.wav file referenced in the database '\
+                           'json are not available!'
 
     def test_structure(self):
         self.assertIn(DATASETS, self.json)
@@ -70,12 +70,9 @@ class DatabaseTest(unittest.TestCase):
     #    natsorted_datasets = natsorted(datasets)
     #    self.assertEqual(datasets, natsorted_datasets,
     #                     "Datasets are not natsorted!")
-
     #    for ds in datasets:
     #        examples = list(self.json[DATASETS][ds].keys())
-    #        #print(examples)
     #        natsorted_examples = natsorted(examples)
-    #        #print(natsorted_examples)
     #        self.assertEqual(examples, natsorted_examples,
     #                        f'Examples in dataset {ds} are not natsorted!')
 
