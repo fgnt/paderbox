@@ -5,7 +5,7 @@ from nt.testing import db_test
 from nt.database.keys import *
 
 timit_json = db_test.ROOT / "timit.json"
-
+#timit_json = "timit.json"
 
 class TestTimitDatabase(db_test.DatabaseTest):
 

@@ -8,8 +8,8 @@ import wave
 from io import BytesIO
 from pathlib import Path
 
-import soundfile
 import numpy as np
+import soundfile
 import wavefile
 
 import nt.utils.process_caller as pc
@@ -49,49 +49,77 @@ def audioread(path, offset=0.0, duration=None, expected_sample_rate=None):
     .. admonition:: Example:
         Only path provided:
 
-        >>> path = '/net/speechdb/timit/pcm/train/dr1/fcjf0/sa1.wav'
+        >>> path = '/net/db/timit/pcm/train/dr1/fcjf0/sa1.wav'
         >>> signal, sample_rate = audioread(path)
 
         Say you load audio examples from a very long audio, you can provide a
         start position and a duration in seconds.
 
-        >>> path = '/net/speechdb/timit/pcm/train/dr1/fcjf0/sa1.wav'
+        >>> path = '/net/db/timit/pcm/train/dr1/fcjf0/sa1.wav'
         >>> signal, sample_rate = audioread(path, offset=0, duration=1)
+
+        >>> path = '/net/db/tidigits/tidigits/test/man/ah/111a.wav'
+        >>> audioread(path)  #doctest: +ELLIPSIS
+        Traceback (most recent call last):
+        ...
+        OSError: /net/db/tidigits/tidigits/test/man/ah/111a.wav: NIST SPHERE file
+        <BLANKLINE>
     """
     if isinstance(path, Path):
         path = str(path)
     path = os.path.expanduser(path)
 
-    with wavefile.WaveReader(path) as wav_reader:
-        channels = wav_reader.channels
-        sample_rate = wav_reader.samplerate
-        if expected_sample_rate is not None and expected_sample_rate != sample_rate:
-            raise ValueError(
-                'Requested sampling rate is {} but the audiofile has {}'.format(
-                    expected_sample_rate, sample_rate
+    try:
+        with wavefile.WaveReader(path) as wav_reader:
+            channels = wav_reader.channels
+            sample_rate = wav_reader.samplerate
+            if expected_sample_rate is not None and expected_sample_rate != sample_rate:
+                raise ValueError(
+                    'Requested sampling rate is {} but the audiofile has {}'.format(
+                        expected_sample_rate, sample_rate
+                    )
                 )
-            )
 
-        if duration is None:
-            samples = wav_reader.frames - int(np.round(offset * sample_rate))
-            frames_before = int(np.round(offset * sample_rate))
-        else:
-            samples = int(np.round(duration * sample_rate))
-            frames_before = int(np.round(offset * sample_rate))
+            if duration is None:
+                samples = wav_reader.frames - int(np.round(offset * sample_rate))
+                frames_before = int(np.round(offset * sample_rate))
+            else:
+                samples = int(np.round(duration * sample_rate))
+                frames_before = int(np.round(offset * sample_rate))
 
-        data = np.empty((channels, samples), dtype=np.float32, order='F')
-        wav_reader.seek(frames_before)
-        wav_reader.read(data)
-        return np.squeeze(data), sample_rate
+            data = np.empty((channels, samples), dtype=np.float32, order='F')
+            wav_reader.seek(frames_before)
+            wav_reader.read(data)
+            return np.squeeze(data), sample_rate
+    except OSError as e:
+        from nt.utils.process_caller import run_process
+        cp = run_process(f'file {path}')
+        stdout = cp.stdout
+        raise OSError(f'{stdout}')
+
 
 
 def audio_length(path, unit='samples'):
-    # ToDo: unit == 'seconds'
+    """
+
+    Args:
+        path:
+        unit:
+
+    Returns:
+
+    >>> path = '/net/fastdb/chime3/audio/16kHz/isolated/dt05_caf_real/F01_050C0102_CAF.CH1.wav'
+    >>> audio_length(path)
+    122111
+    """
 
     # params = soundfile.info(str(path))
     # return int(params.samplerate * params.duration)
 
     if unit == 'samples':
+        with soundfile.SoundFile(str(path)) as f:
+            return len(f)
+    elif unit == 'seconds':
         with soundfile.SoundFile(str(path)) as f:
             return len(f) / f.samplerate
     else:

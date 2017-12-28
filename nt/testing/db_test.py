@@ -1,6 +1,7 @@
 import unittest
 
 import pathlib
+from natsort import natsorted, ns
 
 from nt.io.data_dir import database_jsons as database_jsons_dir
 from nt.database.keys import *
@@ -14,7 +15,11 @@ class DatabaseTest(unittest.TestCase):
 
     @property
     def json(self):
-        raise NotImplementedError()
+        return self._json
+
+    @json.setter
+    def json(self, value):
+        self._json = value
 
     def _check_audio_file_exists(self, wav_path):
         wav_path = pathlib.Path(wav_path)
@@ -56,6 +61,22 @@ class DatabaseTest(unittest.TestCase):
         for key in keys:
             self.assertIn(key, example,
                           f'The key "{key}" should be present in examples')
+
+    #def test_natsorted(self):
+    #    """
+    #    Tests if datasets and examples in datasets are natsorted.
+    #    """
+    #    datasets = list(self.json[DATASETS].keys())
+    #    natsorted_datasets = natsorted(datasets)
+    #    self.assertEqual(datasets, natsorted_datasets,
+    #                     "Datasets are not natsorted!")
+    #    for ds in datasets:
+    #        examples = list(self.json[DATASETS][ds].keys())
+    #        natsorted_examples = natsorted(examples)
+    #        self.assertEqual(examples, natsorted_examples,
+    #                        f'Examples in dataset {ds} are not natsorted!')
+
+
 
     def assert_in_datasets(self, datasets):
         """

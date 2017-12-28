@@ -112,12 +112,15 @@ class Options:
 
     def __getattr__(self, name):
         if not name == '_init_done':
-            if not name in self._params:
-                msg = f'{name} is not a valid parameter. ' \
-                    f'Possible are {list(self._params.keys())}'
-                raise KeyError(msg)
-            else:
-                return self._params[name]
+            return self[name]
+
+    def __getitem__(self, item):
+        if not item in self._params:
+            msg = f'{item} is not a valid parameter. ' \
+                f'Possible are {list(self._params.keys())}'
+            raise KeyError(msg)
+        else:
+            return self._params[item]
 
     def __setattr__(self, name, value):
         # We need to check if the name is _params because this need to be

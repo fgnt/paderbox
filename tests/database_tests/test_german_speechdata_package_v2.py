@@ -5,6 +5,7 @@ from nt.io import load_json
 from nt.database.keys import *
 
 ger_json = db_test.ROOT / "german.json"
+#ger_json = "german.json"
 
 class TestGermanDatabase(db_test.DatabaseTest):
 

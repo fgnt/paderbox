@@ -5,6 +5,7 @@ from nt.testing import db_test
 from nt.database.keys import *
 
 NoiseX_92_json = db_test.ROOT / "NoiseX_92.json"
+#NoiseX_92_json = "NoiseX_92.json"
 
 class TestNoiseX92Database(db_test.DatabaseTest):
 
