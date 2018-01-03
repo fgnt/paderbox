@@ -95,8 +95,7 @@ def audioread(path, offset=0.0, duration=None, expected_sample_rate=None):
         from nt.utils.process_caller import run_process
         cp = run_process(f'file {path}')
         stdout = cp.stdout
-        raise OSError(f'{stdout}')
-
+        raise OSError(f'{stdout}') from e
 
 
 def audio_length(path, unit='samples'):

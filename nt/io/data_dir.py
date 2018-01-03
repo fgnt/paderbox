@@ -114,6 +114,10 @@ wsj_mc = _get_path(
     'NT_WSJ_MC_DIR',
     db_dir / 'wsj_mc_complete'
 )
+librispeech = _get_path(
+    'NT_LIBRISPEECH_DIR',
+    db_dir / 'LibriSpeech'
+)
 
 if __name__ == "__main__":
     import doctest
