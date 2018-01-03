@@ -98,9 +98,9 @@ wsj_corrected_paths = _get_path(
     'NT_WSJ_DIR',
     db_dir / 'wsj_corrected_paths'
 )
-tut_sound_events_2017 = _get_path(
-    'NT_TUT_SOUND_EVENTS_2017_DIR',
-    db_dir / 'dcase17_task4',
+tut_sound_events = _get_path(
+    'NT_TUT_SOUND_EVENTS_DIR',
+    db_dir / 'tut_sound_events',
 )
 wsjcam0 = _get_path(
     'NT_WSJCAM0_DIR',
@@ -113,6 +113,10 @@ language_model = _get_path(
 wsj_mc = _get_path(
     'NT_WSJ_MC_DIR',
     db_dir / 'wsj_mc_complete'
+)
+librispeech = _get_path(
+    'NT_LIBRISPEECH_DIR',
+    db_dir / 'LibriSpeech'
 )
 
 if __name__ == "__main__":
