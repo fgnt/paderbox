@@ -42,7 +42,7 @@ class Options:
                 f'{_all_allowed}. Type of {name} is {_type}'
             )
 
-    def update_param(self, name, value):
+    def update_param(self, name, value, allow_add=False):
         """Updates a single parameter value."""
         splitted = name.split(DELIMITER)
         path = splitted[:-1]
@@ -55,11 +55,14 @@ class Options:
             else:
                 root = path[level_idx]
                 _dict = _dict[path[level_idx]]._params
-        if not key in _dict:
-            raise KeyError(f"{key} not in {root}")
-        _dict[key] = value
+        if key in _dict or allow_add:
+            _dict[key] = value
+        else:
+            raise KeyError(
+                f"{key} not in {root} and adding a value was not allowed"
+            )
 
-    def update_params(self, nested_dict):
+    def update_params(self, nested_dict, allow_add=False):
         """Updates parameter values with a nested dict."""
         def _update_recursive(d, path):
             for k, v in d.items():
@@ -68,7 +71,7 @@ class Options:
                     _update_recursive(v, new_path)
                 else:
                     name = DELIMITER.join([*path, k])
-                    self.update_param(name, v)
+                    self.update_param(name, v, allow_add)
         _update_recursive(nested_dict, [])
         return self
 
