@@ -100,7 +100,7 @@ wsj_corrected_paths = _get_path(
 )
 tut_sound_events = _get_path(
     'NT_TUT_SOUND_EVENTS_DIR',
-    db_dir / 'tut_sound_events',
+    db_dir / 'TUT-sound-events',
 )
 wsjcam0 = _get_path(
     'NT_WSJCAM0_DIR',
