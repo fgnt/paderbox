@@ -42,12 +42,11 @@ class Options:
                 f'{_all_allowed}. Type of {name} is {_type}'
             )
 
-    def update_param(self, name, value, allow_add=False):
-        """Updates a single parameter value."""
+    @staticmethod
+    def traverse_nested(name, _dict):
         splitted = name.split(DELIMITER)
         path = splitted[:-1]
         key = splitted[-1]
-        _dict = self._params
         root = 'root'
         for level_idx in range(len(path)):
             if not path[level_idx] in _dict:
@@ -55,6 +54,11 @@ class Options:
             else:
                 root = path[level_idx]
                 _dict = _dict[path[level_idx]]._params
+        return root, _dict, key
+
+    def update_param(self, name, value, allow_add=False):
+        """Updates a single parameter value."""
+        root, _dict, key = self.traverse_nested(name, self._params)
         if key in _dict or allow_add:
             _dict[key] = value
         else:
