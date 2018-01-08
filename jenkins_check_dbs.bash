@@ -4,7 +4,7 @@
 source "`dirname "$0"`/jenkins_common.bash"
 
 # execute test and create xml for jenkins
-nosetests --with-xunit -s "${TOOLBOX}/check_json_wavs.py"
+nosetests --with-xunit -s "${TOOLBOX}/test_database_jsons"
 
 
 pip freeze > pip.txt
