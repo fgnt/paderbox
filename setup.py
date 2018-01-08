@@ -105,7 +105,8 @@ setup(
         'pysoundfile',  # for german speech database
         'wavefile',  # for reading .flac audio
         'nose',
-        'nose_parameterized'
+        'nose_parameterized',
+        'sh'
     ],
 
     # Installation problems in a clean, new environment:
