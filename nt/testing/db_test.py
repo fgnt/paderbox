@@ -5,7 +5,7 @@ from natsort import natsorted, ns
 
 from nt.io.data_dir import database_jsons as database_jsons_dir
 from nt.database.keys import *
-from nt.database.reader import recursive_transform, ExamplesIterator, \
+from nt.database.iterator import recursive_transform, ExamplesIterator, \
     AudioReader
 
 ROOT = database_jsons_dir

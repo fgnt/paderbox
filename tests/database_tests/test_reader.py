@@ -1,6 +1,6 @@
 import unittest
-from nt.database.reader import JsonDatabase
-from nt.database.reader import DictDatabase
+from nt.database import JsonDatabase
+from nt.database import DictDatabase
 from pathlib import Path
 import shutil
 import tempfile
