@@ -19,7 +19,7 @@ def _get_path(environment_name, default):
 
 database_jsons = _get_path(
     'NT_DATABASE_JSONS_DIR',
-    '/net/storage/database_jsons'
+    '/net/vol/jenkins/jsons'
 )
 db_dir = _get_path(
     'NT_DB_DIR',
