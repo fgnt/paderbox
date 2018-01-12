@@ -32,9 +32,13 @@ class TestNoiseMethods(unittest.TestCase):
 
 
 class TestNoiseGeneratorWhite(unittest.TestCase):
-    n_gen = noise.NoiseGeneratorWhite()
+    n_gen_cls = noise.NoiseGeneratorWhite
+    n_gen_cls_args = list()
     slope_dB_expected = 0
     slope_dB_atol = .01
+
+    def setUp(self):
+        m_gen = self.n_gen_cls(*self.n_gen_cls_args)
 
     @tc.retry(3)
     def test_single_channel(self):
@@ -70,13 +74,14 @@ class TestNoiseGeneratorWhite(unittest.TestCase):
 
 
 class TestNoiseGeneratorPink(TestNoiseGeneratorWhite):
-    n_gen = noise.NoiseGeneratorPink()
+    n_gen_cls = noise.NoiseGeneratorPink
     slope_dB_atol = .1
     slope_dB_expected = -1
 
 
 class TestNoiseGeneratorNoisex92(TestNoiseGeneratorWhite):
-    n_gen = noise.NoiseGeneratorNoisex92('destroyerengine')
+    n_gen_cls = noise.NoiseGeneratorNoisex92
+    n_gen_cls_args = ['destroyerengine']
 
     def test_multi_channel(self):
         pass  # currently only single channel supported
@@ -89,7 +94,8 @@ class TestNoiseGeneratorSpherical(TestNoiseGeneratorWhite):
     x1, y1, z1 = sph2cart(0, 0, 0.1)  # Sensor position 1
     x2, y2, z2 = sph2cart(0, 0, 0.2)  # Sensor position 2
     P = np.array([[0, x1, x2], [0, y1, y2], [0, z1, z2]])  # Construct position matrix
-    n_gen = noise.NoiseGeneratorSpherical(P)
+    n_gen_cls = noise.NoiseGeneratorSpherical
+    n_gen_cls_args = [P]
     slope_dB_expected = 0
     slope_dB_atol = 0.7  # ToDo: analyse, why atol is so high
 
