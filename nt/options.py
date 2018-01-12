@@ -1,11 +1,9 @@
 import json
-import logging
 from nt.io.json_module import dump_json, Encoder
 
 DELIMITER = '/'
 ALLOWED_TYPES = (list, tuple, int, float, str, type(None))
 
-LOG = logging.getLogger('Options')
 
 class Options:
     _init_done = False
@@ -71,7 +69,6 @@ class Options:
             _dict[key] = value
         elif 'kwargs' in name:
             _dict[key] = value
-            LOG.warn(f'Updating kwargs values for key {key}')
         else:
             raise KeyError(
                 f"{key} not in {root} and adding a value was not allowed"
