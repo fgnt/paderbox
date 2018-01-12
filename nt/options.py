@@ -1,8 +1,11 @@
 import json
+import logging
+from nt.io.json_module import dump_json, Encoder
 
 DELIMITER = '/'
 ALLOWED_TYPES = (list, tuple, int, float, str, type(None))
 
+LOG = logging.getLogger('Options')
 
 class Options:
     _init_done = False
@@ -28,19 +31,23 @@ class Options:
             self.add_param(k, v)
         return self
 
-    def add_param(self, name, value):
-        """Adds a parameter."""
+    def _check_allowed_type(self, name, value):
         _all_allowed = ALLOWED_TYPES + (type(self), dict)
-        if isinstance(value, dict):
-            self._params[name] = Options(**value)
-        elif isinstance(value, _all_allowed):
-            self._params[name] = value
+        if isinstance(value, _all_allowed):
+            return True
         else:
             _type = type(value)
             raise ValueError(
                 f'Parameter {name} has an unknown type. Allowed types are '
                 f'{_all_allowed}. Type of {name} is {_type}'
             )
+
+    def add_param(self, name, value):
+        """Adds a parameter."""
+        if isinstance(value, dict):
+            self._params[name] = Options(**value)
+        elif self._check_allowed_type(name, value):
+            self._params[name] = value
 
     @staticmethod
     def traverse_nested(name, _dict):
@@ -59,8 +66,12 @@ class Options:
     def update_param(self, name, value, allow_add=False):
         """Updates a single parameter value."""
         root, _dict, key = self.traverse_nested(name, self._params)
+        assert self._check_allowed_type(name, value)
         if key in _dict or allow_add:
             _dict[key] = value
+        elif 'kwargs' in name:
+            _dict[key] = value
+            LOG.warn(f'Updating kwargs values for key {key}')
         else:
             raise KeyError(
                 f"{key} not in {root} and adding a value was not allowed"
@@ -86,20 +97,17 @@ class Options:
             indent=indent,
             separators=separators,
             sort_keys=sort_keys,
+            cls=Encoder
         )
 
     def to_json_file(
             self, json_path, indent=2, separators=None, sort_keys=True
     ):
         """Serializes the hyperparameters to a json file."""
-        with open(json_path, 'w') as fid:
-            json.dump(
-                self.to_nested_dict(),
-                fid,
-                indent=indent,
-                separators=separators,
-                sort_keys=sort_keys,
-            )
+        dump_json(
+            self.to_nested_dict(), json_path, indent=indent,
+            separators=separators, sort_keys=sort_keys
+        )
 
     @staticmethod
     def from_json_file(json_path):
@@ -135,8 +143,9 @@ class Options:
         if self._init_done:
             if not name in self._params:
                 raise ValueError(
-                    'Cannot set parameter. Please use "update_param" to update '
-                    'a parameter or "add_param" to add a parameter'
+                    'Cannot update parameter because it does not exists. '
+                    'Please use "add_param" to add a parameter. '
+                    f'Available parameters are {self._params}'
                 )
             else:
                 self.update_param(name, value)
