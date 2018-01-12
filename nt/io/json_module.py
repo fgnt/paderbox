@@ -52,7 +52,8 @@ class SummaryEncoder(Encoder):
             return super().default(obj)
 
 
-def dump_json(obj, path, *, indent=2, create_path=True, **kwargs):
+def dump_json(
+        obj, path, *, indent=2, create_path=True, sort_keys=True, **kwargs):
     """
     Numpy types will be converted to the equivalent Python type for dumping the
     object.
@@ -75,7 +76,7 @@ def dump_json(obj, path, *, indent=2, create_path=True, **kwargs):
 
         with path.open('w') as f:
             json.dump(obj, f, cls=Encoder, indent=indent,
-                      sort_keys=True, **kwargs)
+                      sort_keys=sort_keys, **kwargs)
     else:
         raise TypeError(path)
 
