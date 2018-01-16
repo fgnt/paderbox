@@ -35,8 +35,7 @@ testing = _get_path(
 )
 kaldi_root = _get_path(
     'KALDI_ROOT',
-    '/ERROR/KALDI_ROOT/Has/be/set/by/user/as/an/environment/variable/i.e._in_.env_file_or_bashrc'  # Has be set by user as an environment variable, i.e. in `.env` file.
-)
+    '/net/vol/jenkins/kaldi/2018-01-10_15-43-29_a0b71317df1035bd3c6fa49a2b6bb33c801b56ac')
 matlab_toolbox = _get_path(
     'MATLAB_TOOLBOX_DIR',
     '/net/ssd/software/matlab_toolbox'
