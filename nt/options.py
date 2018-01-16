@@ -85,7 +85,6 @@ class Options:
                     name = DELIMITER.join([*path, k])
                     self.update_param(name, v, allow_add)
         _update_recursive(nested_dict, [])
-        return self
 
     def to_json(self, indent=2, separators=None, sort_keys=True):
         """Serializes the hyperparameters into json."""
