@@ -110,7 +110,7 @@ def audio_to_html(data_or_str, embed=False, max_audio_length=20):
     return html
 
 
-def plot_to_html(data_or_str, image_width=None):
+def plot_to_html(data_or_str, image_width=None, max_audio_length=20):
     dst_path = pathlib.Path('images')
     if isinstance(data_or_str, str):
         dst_path /= (str(pathlib.Path(data_or_str)) + '.png')[1:]
@@ -123,16 +123,21 @@ def plot_to_html(data_or_str, image_width=None):
         dst_path.parent.mkdir(parents=True, exist_ok=True)
         audio_data, sample_rate = data_or_str
 
-        from nt.visualization.plot import spectrogram as plot_spectrogram
-        from matplotlib import pyplot as plt
+        if audio_data.shape[0] / sample_rate <= max_audio_length:
 
-        to_plot = spectrogram(audio_data)
-        with context_manager():
-            plot_spectrogram(to_plot)
-            plt.savefig(str(dst_path), pad_inches=0, bbox_inches='tight')
-            plt.close()
+            from nt.visualization.plot import spectrogram as plot_spectrogram
+            from matplotlib import pyplot as plt
 
-    return Image(url=str(dst_path), width=image_width)._repr_html_()
+            to_plot = spectrogram(audio_data)
+            with context_manager():
+                plot_spectrogram(to_plot)
+                plt.savefig(str(dst_path), pad_inches=0, bbox_inches='tight')
+                plt.close()
+
+    if dst_path.exists():
+        return Image(url=str(dst_path), width=image_width)._repr_html_()
+    else:
+        return None
 
 
 def cache_audio_local(path, max_audio_length, cache_dir=pathlib.Path('./audio')):
@@ -164,17 +169,18 @@ def create_from_dict(d, embed_audio=False, max_audio_length=20, depth=0,
     html = ''
     for k, v in d.items():
         if isinstance(v, (dict, list)):
-            html += Templates.li.format(content=f'{k}:' + example_to_html(v, max_audio_length, embed_audio, depth+1,
+            html += Templates.li.format(content=f'{k}: ' + example_to_html(v, max_audio_length, embed_audio, depth+1,
                             image_width))
         else:
             html += Templates.li.format(content=f'{k}: ' +
                                     audio_to_html(v, embed=embed_audio,
                                           max_audio_length=max_audio_length))
     to_image = list(d.items())[0]
+    image = plot_to_html(to_image[1], image_width, max_audio_length)
     html = Templates.horizontal_divided_cell.format(
         left=Templates.ul.format(args=f'id=level{depth}', content=html),
-        right=f'<h3>Spectrogram of channel {to_image[0]}</h3>' +
-              plot_to_html(to_image[1], image_width))
+        right='' if image is None else
+                f'<h3>Spectrogram of channel {to_image[0]}</h3>' + image)
     return html
 
 
@@ -219,7 +225,7 @@ def example_to_html(audio_dict, max_audio_length=None, embed_audio=False,
             for k, v in audio_dict.items():
                 if not (embed_audio and k == AUDIO_PATH):
                     tmp += Templates.li.format(
-                        content=f'{k}:' +
+                        content=f'{k}: ' +
                                 example_to_html(v, max_audio_length,
                                                 embed_audio, depth+1,
                                                 image_width=image_width))
