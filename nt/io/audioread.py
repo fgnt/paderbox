@@ -110,6 +110,12 @@ def audio_length(path, unit='samples'):
     >>> path = '/net/fastdb/chime3/audio/16kHz/isolated/dt05_caf_real/F01_050C0102_CAF.CH1.wav'
     >>> audio_length(path)
     122111
+    >>> path = '/net/db/voiceHome/audio/noises/dev/home3_room2_arrayGeo3_arrayPos2_noiseCond1.wav'
+    >>> audio_length(path)  # correct for multichannel
+    960000
+    >>> with soundfile.SoundFile(str(path)) as f:
+    ...     print(f.read().shape)
+    (960000, 8)
     """
 
     # params = soundfile.info(str(path))
@@ -123,6 +129,40 @@ def audio_length(path, unit='samples'):
             return len(f) / f.samplerate
     else:
         return ValueError(unit)
+
+
+def audio_channels(path):
+    """
+
+    >>> path = '/net/fastdb/chime3/audio/16kHz/isolated/dt05_caf_real/F01_050C0102_CAF.CH1.wav'
+    >>> audio_channels(path)
+    1
+    >>> path = '/net/db/voiceHome/audio/noises/dev/home3_room2_arrayGeo3_arrayPos2_noiseCond1.wav'
+    >>> audio_channels(path)  # correct for multichannel
+    8
+    """
+    with soundfile.SoundFile(str(path)) as f:
+        return f.channels
+
+
+def audio_shape(path):
+    """
+
+    >>> path = '/net/fastdb/chime3/audio/16kHz/isolated/dt05_caf_real/F01_050C0102_CAF.CH1.wav'
+    >>> audio_shape(path)
+    122111
+    >>> path = '/net/db/voiceHome/audio/noises/dev/home3_room2_arrayGeo3_arrayPos2_noiseCond1.wav'
+    >>> audio_shape(path)  # correct for multichannel
+    (8, 960000)
+    >>> audioread(path)[0].shape
+    (8, 960000)
+    """
+    with soundfile.SoundFile(str(path)) as f:
+        channels = f.channels
+        if channels == 1:
+            return len(f)
+        else:
+            return channels, len(f)
 
 
 def read_nist_wsj(path, audioread_function=audioread, **kwargs):
