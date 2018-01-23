@@ -16,7 +16,8 @@ class Templates:
         <div class="card">
             <div class="cardheader">
                 <h2>{header}</h2>
-                {example_key}
+                <div>(dataset size: {size})</div>
+                <div>(example: {example_key})</div>
             </div>
             <div class="cardcontents">
                 {content}
@@ -169,8 +170,10 @@ def create_from_dict(d, embed_audio=False, max_audio_length=20, depth=0,
     html = ''
     for k, v in d.items():
         if isinstance(v, (dict, list)):
-            html += Templates.li.format(content=f'{k}: ' + example_to_html(v, max_audio_length, embed_audio, depth+1,
-                            image_width))
+            html += Templates.li.format(
+                content=f'{k}: ' + example_to_html(v, max_audio_length,
+                                                   embed_audio, depth+1,
+                                                   image_width))
         else:
             html += Templates.li.format(content=f'{k}: ' +
                                     audio_to_html(v, embed=embed_audio,
@@ -187,9 +190,8 @@ def create_from_dict(d, embed_audio=False, max_audio_length=20, depth=0,
 def is_dict_of_audio(d):
     first_key = list(d.keys())[0]
     v = d[first_key]
-    a = isinstance(v, str) and v.endswith('.wav') or \
+    return isinstance(v, str) and v.endswith('.wav') or \
            isinstance(v, np.ndarray) and v.shape[0] <= 2
-    return a
 
 
 def example_to_html(audio_dict, max_audio_length=None, embed_audio=False,
@@ -256,9 +258,8 @@ def dataset_to_html_card(dataset_key, dataset, embed_audio, max_audio_length,
             except Exception as e:
                 content = Templates.error.format(
                     content=f'ERROR: {type(e)}: {e}')
-                raise
     return Templates.card.format(header=dataset_key, example_key=example_key,
-                                 content=content)
+                                 content=content, size=len(dataset))
 
 
 def database_to_html(database_dict, embed_audio,
