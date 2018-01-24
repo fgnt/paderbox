@@ -87,7 +87,7 @@ class Options:
         _update_recursive(nested_dict, [])
 
     def to_json(self, indent=2, separators=None, sort_keys=True):
-        """Serializes the hyperparameters into json."""
+        """Serializes the parameters into json."""
         return json.dumps(
             self.to_nested_dict(),
             indent=indent,
