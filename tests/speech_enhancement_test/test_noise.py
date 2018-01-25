@@ -38,7 +38,7 @@ class TestNoiseGeneratorWhite(unittest.TestCase):
     slope_dB_atol = .01
 
     def setUp(self):
-        m_gen = self.n_gen_cls(*self.n_gen_cls_args)
+        self.n_gen = self.n_gen_cls(*self.n_gen_cls_args)
 
     @tc.retry(3)
     def test_single_channel(self):
