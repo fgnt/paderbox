@@ -174,6 +174,11 @@ def create_from_dict(d, embed_audio=False, max_audio_length=20, depth=0,
                 content=f'{k}: ' + example_to_html(v, max_audio_length,
                                                    embed_audio, depth+1,
                                                    image_width))
+        elif is_audio(v):
+            html += Templates.li.format(
+                content=f'{k}: ' + audio_to_html(v, embed_audio,
+                                                 max_audio_length)
+            )
         else:
             html += Templates.li.format(content=f'{k}: ' +
                                     audio_to_html(v, embed=embed_audio,
@@ -187,11 +192,14 @@ def create_from_dict(d, embed_audio=False, max_audio_length=20, depth=0,
     return html
 
 
+def is_audio(v):
+    return isinstance(v, str) and v.endswith('.wav') or \
+           isinstance(v, np.ndarray) and v.shape[0] <= 2
+
 def is_dict_of_audio(d):
     first_key = list(d.keys())[0]
     v = d[first_key]
-    return isinstance(v, str) and v.endswith('.wav') or \
-           isinstance(v, np.ndarray) and v.shape[0] <= 2
+    return is_audio(v)
 
 
 def example_to_html(audio_dict, max_audio_length=None, embed_audio=False,
@@ -232,6 +240,11 @@ def example_to_html(audio_dict, max_audio_length=None, embed_audio=False,
                                                 embed_audio, depth+1,
                                                 image_width=image_width))
             html += Templates.ul.format(args=f'id=level{depth}', content=tmp)
+    elif is_audio(audio_dict):
+        html += Templates.horizontal_divided_cell.format(
+            left=audio_to_html(audio_dict, embed_audio, max_audio_length),
+            right=plot_to_html(audio_dict, image_width, max_audio_length)
+        )
     else:
         html += str(audio_dict)
     return html
