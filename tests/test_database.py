@@ -127,6 +127,43 @@ class IteratorTest(unittest.TestCase):
         )
         _ = iterator[:1][0]
 
+    def test_zip_iterator(self):
+        import numpy as np
+        train_iterator = self.db.get_iterator_by_names('train')
+
+        # Change the key order
+        np.random.seed(2)
+        train_iterator_2 = train_iterator.shuffle(False)
+
+        iterator = train_iterator.zip(train_iterator_2)
+        iterator_2 = train_iterator_2.zip(train_iterator)
+
+        example_ids = [e['example_id'] for e in train_iterator]
+        self.assertListEqual(
+            example_ids,
+            'a b'.split()
+        )
+
+        example_ids = [e['example_id'] for e in train_iterator_2]
+        self.assertListEqual(
+            example_ids,
+            'b a'.split()  # train_iterator_2 has swapped keys
+        )
+        self.assertEqual(  # iterator defined order
+            list(iterator),
+            [({'dataset': 'train', 'example_id': 'a'},
+              {'dataset': 'train', 'example_id': 'a'}),
+             ({'dataset': 'train', 'example_id': 'b'},
+              {'dataset': 'train', 'example_id': 'b'})]
+        )
+        self.assertEqual(  # train_iterator_2 defined order
+            list(iterator_2),
+            [({'dataset': 'train', 'example_id': 'b'},
+              {'dataset': 'train', 'example_id': 'b'}),
+             ({'dataset': 'train', 'example_id': 'a'},
+              {'dataset': 'train', 'example_id': 'a'})]
+        )
+
     def test_slice_iterator(self):
         base_iterator = self.db.get_iterator_by_names('train')
         base_iterator = base_iterator.concatenate(base_iterator)
