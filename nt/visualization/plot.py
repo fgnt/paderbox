@@ -616,10 +616,10 @@ def labeled_line_plot(probabilities, label_handler=None, ax=None, batch=0):
         else:
             return str(char)
 
-    for char in range(decode.shape[-1]):
+    for char in range(probabilities.shape[-1]):
         _ = ax.plot(probabilities[:, char], label=_get_label(char))
     plt.legend(loc='lower center',
-               ncol=decode.shape[-1] // 3,
+               ncol=probabilities.shape[-1] // 3,
                bbox_to_anchor=[0.5, -0.35])
     ax.set_xlabel('Time frame index')
     ax.set_ylabel('Probability')
