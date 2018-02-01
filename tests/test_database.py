@@ -7,7 +7,7 @@ import tempfile
 from nt.io import dump_json
 
 
-class ReaderTest(unittest.TestCase):
+class IteratorTest(unittest.TestCase):
     def setUp(self):
         self.json = dict(
             datasets=dict(
@@ -156,7 +156,7 @@ class ReaderTest(unittest.TestCase):
     #     shutil.rmtree(str(self.temp_directory))
 
 
-class UniqueIDReaderTest(unittest.TestCase):
+class UniqueIDIteratorTest(unittest.TestCase):
     def setUp(self):
         self.d = dict(
             datasets=dict(
@@ -174,7 +174,8 @@ class UniqueIDReaderTest(unittest.TestCase):
 
     def test_duplicate_id(self):
         with self.assertRaises(AssertionError):
-            _ = self.db.get_iterator_by_names('train test'.split())
+            iterator = self.db.get_iterator_by_names('train test'.split())
+            _ = iterator.keys()
 
     def test_duplicate_id_with_prepend_dataset_name(self):
-        _ = self.db.get_iterator_by_names('train test'.split(), prepend_dataset_name=True)
+        _ = self.db.get_iterator_by_names('train test'.split())
