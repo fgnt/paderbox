@@ -7,7 +7,7 @@ import tempfile
 from nt.io import dump_json
 
 
-class ReaderTest(unittest.TestCase):
+class IteratorTest(unittest.TestCase):
     def setUp(self):
         self.json = dict(
             datasets=dict(
@@ -127,6 +127,43 @@ class ReaderTest(unittest.TestCase):
         )
         _ = iterator[:1][0]
 
+    def test_zip_iterator(self):
+        import numpy as np
+        train_iterator = self.db.get_iterator_by_names('train')
+
+        # Change the key order
+        np.random.seed(2)
+        train_iterator_2 = train_iterator.shuffle(False)
+
+        iterator = train_iterator.zip(train_iterator_2)
+        iterator_2 = train_iterator_2.zip(train_iterator)
+
+        example_ids = [e['example_id'] for e in train_iterator]
+        self.assertListEqual(
+            example_ids,
+            'a b'.split()
+        )
+
+        example_ids = [e['example_id'] for e in train_iterator_2]
+        self.assertListEqual(
+            example_ids,
+            'b a'.split()  # train_iterator_2 has swapped keys
+        )
+        self.assertEqual(  # iterator defined order
+            list(iterator),
+            [({'dataset': 'train', 'example_id': 'a'},
+              {'dataset': 'train', 'example_id': 'a'}),
+             ({'dataset': 'train', 'example_id': 'b'},
+              {'dataset': 'train', 'example_id': 'b'})]
+        )
+        self.assertEqual(  # train_iterator_2 defined order
+            list(iterator_2),
+            [({'dataset': 'train', 'example_id': 'b'},
+              {'dataset': 'train', 'example_id': 'b'}),
+             ({'dataset': 'train', 'example_id': 'a'},
+              {'dataset': 'train', 'example_id': 'a'})]
+        )
+
     def test_slice_iterator(self):
         base_iterator = self.db.get_iterator_by_names('train')
         base_iterator = base_iterator.concatenate(base_iterator)
@@ -156,7 +193,7 @@ class ReaderTest(unittest.TestCase):
     #     shutil.rmtree(str(self.temp_directory))
 
 
-class UniqueIDReaderTest(unittest.TestCase):
+class UniqueIDIteratorTest(unittest.TestCase):
     def setUp(self):
         self.d = dict(
             datasets=dict(
@@ -174,7 +211,8 @@ class UniqueIDReaderTest(unittest.TestCase):
 
     def test_duplicate_id(self):
         with self.assertRaises(AssertionError):
-            _ = self.db.get_iterator_by_names('train test'.split())
+            iterator = self.db.get_iterator_by_names('train test'.split())
+            _ = iterator.keys()
 
     def test_duplicate_id_with_prepend_dataset_name(self):
-        _ = self.db.get_iterator_by_names('train test'.split(), prepend_dataset_name=True)
+        _ = self.db.get_iterator_by_names('train test'.split())
