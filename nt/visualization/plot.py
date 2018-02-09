@@ -92,8 +92,8 @@ def _get_batch(signal, batch):
 
 @allow_dict_input_and_colorize
 @create_subplot
-def line(*signal, ax=None, xlim=None, ylim=None, label=None, color=None,
-         logx=False, logy=False):
+def line(*signal, ax: plt.Axes=None, xlim=None, ylim=None, label=None, color=None,
+         logx=False, logy=False, xlabel=None, ylabel=None, **kwargs):
     """
     Use together with facet_grid().
 
@@ -137,18 +137,29 @@ def line(*signal, ax=None, xlim=None, ylim=None, label=None, color=None,
         signal = signal[0]
 
     if color is not None:
-        plt_fcn(*signal, label=label, color=color)
+        plt_fcn(*signal, label=label, color=color, **kwargs)
     else:
-        plt_fcn(*signal, label=label)
+        plt_fcn(*signal, label=label, **kwargs)
 
     if label is not None:
-        ax.legend()
+        if ax.get_legend() and ax.get_legend()._legend_title_box.get_visible():
+            title = ax.get_legend().get_title().get_text()
+        else:
+            title = None
+        ax.legend(title=title)
 
     if xlim is not None:
         ax.set_xlim(xlim)
 
     if ylim is not None:
         ax.set_ylim(ylim)
+
+    if xlabel is not None:
+        ax.set_xlabel(xlabel)
+
+    if ylabel is not None:
+        ax.set_ylabel(ylabel)
+
     return ax
 
 
