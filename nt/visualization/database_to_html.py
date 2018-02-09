@@ -276,13 +276,15 @@ def dataset_to_html_card(dataset_key, dataset, embed_audio, max_audio_length,
 
 
 def database_to_html(database_dict, embed_audio,
-                     max_audio_length=20, image_width=None):
+                     max_audio_length=20, image_width=None,
+                     datasets=None):
     try:
         html = ''
 
         # read single example for each dataset
         for dataset_key, dataset in database_dict[DATASETS].items():
-            html += dataset_to_html_card(dataset_key, dataset,
+            if datasets is None or dataset_key in datasets:
+                html += dataset_to_html_card(dataset_key, dataset,
                                          embed_audio=embed_audio,
                                          max_audio_length=max_audio_length,
                                          image_width=image_width)
@@ -293,7 +295,7 @@ def database_to_html(database_dict, embed_audio,
 
 
 def display_database_html(db, embed_audio=False, max_audio_length=20,
-                          image_width=200):
+                          image_width=200, datasets=None):
     """
     Creates an example html representation for this database and displays it
     using `IPython.display.display_html`. Creates an html
@@ -309,7 +311,10 @@ def display_database_html(db, embed_audio=False, max_audio_length=20,
             Audio files that exceed this limit are either truncated
             (if `embed_audio` is True) or not displayed (if `embed_audio` is
             False).
+    :param datasets:
     """
     display_html(HTML(Templates.style + database_to_html(
         db.database_dict, embed_audio=embed_audio,
-        max_audio_length=max_audio_length, image_width=image_width)))
+        max_audio_length=max_audio_length, image_width=image_width,
+        datasets=datasets
+    )))
