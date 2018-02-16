@@ -29,8 +29,24 @@ class Options:
             self.add_param(k, v)
         return self
 
-    def _check_allowed_type(self, name, value):
-        _all_allowed = ALLOWED_TYPES + (type(self), dict)
+    def find_param(self, name):
+        def _find_recursive(path, d):
+            found = None
+            for k in d:
+                if isinstance(d[k], dict):
+                    found = _find_recursive(path + [k], d[k])
+                    if found:
+                        return found
+                else:
+                    if k == name:
+                        return DELIMITER.join(path + [name])
+            return found
+        return _find_recursive([], self.to_nested_dict())
+
+    def _check_allowed_type(self, name, value, allow_dict=False):
+        _all_allowed = ALLOWED_TYPES + (Options,)
+        if allow_dict:
+            _all_allowed = _all_allowed + (dict,)
         if isinstance(value, _all_allowed):
             return True
         else:
@@ -55,7 +71,10 @@ class Options:
         root = 'root'
         for level_idx in range(len(path)):
             if not path[level_idx] in _dict:
-                raise KeyError(f"{path[level_idx]} not in {root}")
+                raise KeyError(
+                    f"{path[level_idx]} not in {root}. "
+                    f"Possible are: {_dict.keys()}."
+                )
             else:
                 root = path[level_idx]
                 _dict = _dict[path[level_idx]]._params
@@ -64,11 +83,17 @@ class Options:
     def update_param(self, name, value, allow_add=False):
         """Updates a single parameter value."""
         root, _dict, key = self.traverse_nested(name, self._params)
-        assert self._check_allowed_type(name, value)
-        if key in _dict or allow_add:
-            _dict[key] = value
-        elif 'kwargs' in name:
-            _dict[key] = value
+        def _update(k, v):
+            if isinstance(v, dict):
+                _dict[key] = Options(**v)
+            else:
+                _dict[key] = v
+        if key in _dict or allow_add or 'kwargs' in name:
+            if 'kwargs' in name:
+                assert self._check_allowed_type(name, value, True)
+            else:
+                assert self._check_allowed_type(name, value)
+            _update(key, value)
         else:
             raise KeyError(
                 f"{key} not in {root} and adding a value was not allowed"
@@ -126,12 +151,13 @@ class Options:
             return self[name]
 
     def __getitem__(self, item):
-        if not item in self._params:
+        root, _dict, key = self.traverse_nested(item, self._params)
+        if not key in _dict:
             msg = f'{item} is not a valid parameter. ' \
                 f'Possible are {list(self._params.keys())}'
             raise KeyError(msg)
         else:
-            return self._params[item]
+            return _dict[key]
 
     def __setattr__(self, name, value):
         # We need to check if the name is _params because this need to be
