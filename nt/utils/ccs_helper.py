@@ -105,16 +105,25 @@ def idle_while_array_jobs_are_running(
     regex_running = re.compile(r'Running\s*subjobs\s*\:\s([0-9]*)')
     regex_planned = re.compile(r'Planned\s*subjobs\s*\:\s([0-9]*)')
     regex_waiting = re.compile(r'Waiting\s*subjobs\s*\:\s([0-9]*)')
+    regex_states = re.compile(r'State\s*\:\s(.*)')
+    regex_names = re.compile(r'Name\s*\:\s(.*)')
+    first_call = True
+
+    completed = len(job_ids) * [0]
+    running = len(job_ids) * [0]
+    planned = len(job_ids) * [0]
+    waiting = len(job_ids) * [0]
+    states = len(job_ids) * ['UNKOWN']
+    names = len(job_ids) * ['UNKOWN']
 
     while len(job_ids):
-        time.sleep(sleep_time)
+        if not first_call:
+            time.sleep(sleep_time)
+        else:
+            time.sleep(5)
 
-        completed = 0
-        running = 0
-        planned = 0
-        waiting = 0
         remaining_job_ids = []
-        for job_id in job_ids:
+        for idx, job_id in enumerate(job_ids):
             try:
                 if use_ssh:
                     res = sh.ssh(host, 'ccsinfo', job_id)
@@ -125,27 +134,60 @@ def idle_while_array_jobs_are_running(
                 if re.search(regex_completed, res) is not None:
                     jobs_completed = int(
                         re.search(regex_completed, res).groups()[0])
-                    completed += jobs_completed
+                    completed[idx] = jobs_completed
+                else:
+                    print(f'Could not parse completed jobs. Output was {res}')
+
                 if re.search(regex_running, res) is not None:
                     jobs_running = int(
                         re.search(regex_running, res).groups()[0])
-                    running += jobs_running
+                    running[idx] = jobs_running
+                else:
+                    print(f'Could not parse running jobs. Output was {res}')
+
                 if re.search(regex_planned, res) is not None:
                     jobs_planned = int(
                         re.search(regex_planned, res).groups()[0])
-                    planned += jobs_planned
+                    planned[idx] = jobs_planned
+                else:
+                    print(f'Could not parse planned jobs. Output was {res}')
+
                 if re.search(regex_waiting, res) is not None:
                     jobs_waiting = int(
                         re.search(regex_waiting, res).groups()[0])
-                    waiting += jobs_waiting
-                if np.sum([jobs_running, jobs_planned, jobs_waiting]) > 0:
+                    waiting[idx] = jobs_waiting
+                else:
+                    print(f'Could not parse waiting jobs. Output was {res}')
+
+                if re.search(regex_states, res) is not None:
+                    job_state = re.search(regex_states, res).groups()[0]
+                    states[idx] = job_state
+                else:
+                    print(f'Could not parse completed jobs. Output was {res}')
+
+                if re.search(regex_names, res) is not None:
+                    job_name = re.search(regex_names, res).groups()[0]
+                    names[idx] = job_name
+                else:
+                    print(f'Could not parse completed jobs. Output was {res}')
+                if np.sum([jobs_running, jobs_planned, jobs_waiting]) > 0 \
+                        and not 'STOPPED' in states[idx]:
                     remaining_job_ids.append(job_id)
 
             except Exception as e:
                 message = 'Could not parse stats for job id {}: {}'
                 print(message.format(job_id, e))
 
-        print('Completed: {}\nRunning: {}\nPlanned: {}\nWaiting: {}'.format(
-            completed, running, planned, waiting
+        for idx in range(len(job_ids)):
+            print(f'{names[idx]} [{states[idx]}]:', end=' ')
+            print(f'completed: {completed[idx]}', end=' ')
+            print(f'running: {running[idx]}', end=' ')
+            print(f'planned: {planned[idx]}', end=' ')
+            print(f'waiting: {waiting[idx]}')
+
+        print('Total: Completed: {} Running: {} Planned: {} Waiting: {}'.format(
+            sum(completed), sum(running), sum(planned), sum(waiting)
         ))
+
         job_ids = remaining_job_ids
+        first_call = False
