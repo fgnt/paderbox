@@ -109,18 +109,18 @@ def idle_while_array_jobs_are_running(
     regex_names = re.compile(r'Name\s*\:\s(.*)')
     first_call = True
 
-    completed = len(job_ids) * [0]
-    running = len(job_ids) * [0]
-    planned = len(job_ids) * [0]
-    waiting = len(job_ids) * [0]
-    states = len(job_ids) * ['UNKOWN']
-    names = len(job_ids) * ['UNKOWN']
-
     while len(job_ids):
         if not first_call:
             time.sleep(sleep_time)
         else:
             time.sleep(5)
+
+        completed = len(job_ids) * [0]
+        running = len(job_ids) * [0]
+        planned = len(job_ids) * [0]
+        waiting = len(job_ids) * [0]
+        states = len(job_ids) * ['UNKOWN']
+        names = len(job_ids) * ['UNKOWN']
 
         remaining_job_ids = []
         for idx, job_id in enumerate(job_ids):
