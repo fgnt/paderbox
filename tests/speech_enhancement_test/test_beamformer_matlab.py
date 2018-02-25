@@ -123,7 +123,7 @@ class TestBeamformerMethods(unittest.TestCase):
         speaker_files = testing_dir / 'timit' / 'data'
         speakers = np.array(
             [audioread(str(speaker_files / f'sample_{num+1}.wav'),
-                       expected_sampling_rate=samplingRate)[0][:secs*samplingRate]
+                       expected_sample_rate=samplingRate)[0][:secs*samplingRate]
              for num in range(K)]
         )
         speakers = convolve(speakers, rir, truncate=True)

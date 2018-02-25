@@ -13,6 +13,15 @@ class Options:
         self.add_nested_params(kwargs)
         self._init_done = True
 
+    def keys(self):
+        return self._params.keys()
+
+    def items(self):
+        return self._params.items()
+
+    def __contains__(self, key):
+        return key in self._params.keys()
+
     def to_nested_dict(self):
         """Converts structure to a nested dict."""
         nested_dict = dict()
@@ -83,11 +92,13 @@ class Options:
     def update_param(self, name, value, allow_add=False):
         """Updates a single parameter value."""
         root, _dict, key = self.traverse_nested(name, self._params)
+
         def _update(k, v):
             if isinstance(v, dict):
-                _dict[key] = Options(**v)
+                _dict[k] = Options(**v)
             else:
-                _dict[key] = v
+                _dict[k] = v
+
         if key in _dict or allow_add or 'kwargs' in name:
             if 'kwargs' in name:
                 assert self._check_allowed_type(name, value, True)
