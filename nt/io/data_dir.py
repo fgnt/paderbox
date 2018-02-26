@@ -57,6 +57,10 @@ audioset = _get_path(
     'NT_AUDIOSET_DIR',
     db_dir / 'AudioSet'
 )
+dcase_2017_task_4 = _get_path(
+    'NT_DCASE_2017_TASK_4_DIR',
+    db_dir / 'DCASE_2017_Task_4'
+)
 timit = _get_path(
     'NT_TIMIT_DIR',
     db_dir / 'timit'
