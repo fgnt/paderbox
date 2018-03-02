@@ -42,13 +42,12 @@ class Options:
         def _find_recursive(path, d):
             found = None
             for k in d:
+                if k == name:
+                    return DELIMITER.join(path + [name])
                 if isinstance(d[k], dict):
                     found = _find_recursive(path + [k], d[k])
                     if found:
                         return found
-                else:
-                    if k == name:
-                        return DELIMITER.join(path + [name])
             return found
         return _find_recursive([], self.to_nested_dict())
 
