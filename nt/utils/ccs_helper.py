@@ -1,4 +1,5 @@
 import sh
+import os
 import pandas as pd
 from io import StringIO
 import re
@@ -191,3 +192,33 @@ def idle_while_array_jobs_are_running(
 
         job_ids = remaining_job_ids
         first_call = False
+
+
+def force_ncpus(ncpus=None):
+    """
+    The PC2 does not assign cores to a process. This function can force a
+    already started python program to use only n cpus.
+
+    When "ncpus" is not specified, use the environment variable NCPUS
+    (provided from PC2).
+
+    In Linux it is not possible to limit a process to use only n cpus.
+    But it is possible to say use only specific cores
+    (e.g [0,2] mean use core with id 0 and core with id 2).
+    For more information search for the linux utility "taskset".
+
+    This function selects random core IDs and limits the current program to use
+    it.
+
+    See psutil.Process.cpu_affinity
+    """
+    import psutil
+
+    if ncpus is None:
+        ncpus = int(os.environ['NCPUS'])
+
+    # Force NCPUS, by limiting this process to random selected cores.
+    p = psutil.Process()
+    p.cpu_affinity(list(sorted(
+        np.random.choice(p.cpu_affinity(), ncpus, replace=False)
+    )))
