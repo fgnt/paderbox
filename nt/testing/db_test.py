@@ -71,9 +71,8 @@ class DatabaseTest(unittest.TestCase):
         """
         assert isinstance(datasets, list), "Datasets is not a list!"
 
-        for dataset in datasets:
-            self.assertIn(dataset, self.json[DATASETS],
-                          f'"{dataset}" should be in DATASETS')
+        self.assertSetEqual(set(datasets), set(self.json[DATASETS].keys()),
+                            msg=f'"{dataset}" should be in DATASETS')
 
     def test_examples(self):
         self.assert_in_example([AUDIO_PATH, ])
