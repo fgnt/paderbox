@@ -186,3 +186,6 @@ class Options:
 
     def __len__(self):
         return len(self._params)
+
+    def __dir__(self):
+        return super().__dir__() + [str(k) for k in self._params.keys()]
