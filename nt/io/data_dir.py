@@ -77,6 +77,10 @@ chime_4 = _get_path(
     'NT_CHIME_4_DIR',
     fast_db_dir / 'chime4'
 )
+chime_5 = _get_path(
+    'NT_CHIME_5_DIR',
+    fast_db_dir / 'chime5'
+)
 merl_mixtures = _get_path(
     'NT_MERL_MIXTURES_DIR',
     '/net/db/merl_speaker_mixtures'
