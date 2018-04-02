@@ -51,7 +51,7 @@ matlab_license = _get_path(
 
 ami = _get_path(
     'NT_AMI_DIR',
-    fast_db_dir / 'ami'
+    db_dir / 'ami'
 )
 audioset = _get_path(
     'NT_AUDIOSET_DIR',
@@ -95,7 +95,7 @@ noisex92 = _get_path(
 )
 reverb = _get_path(
     'NT_REVERB_DIR',
-    db_dir / 'reverb'
+    fast_db_dir / 'reverb'
 )
 wsj = _get_path(
     'NT_WSJ_DIR',
