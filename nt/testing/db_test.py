@@ -99,10 +99,10 @@ class DatabaseTest(unittest.TestCase):
 
 class DatabaseClassTest(unittest.TestCase):
 
-    def check_data_available(self, database, expected_example_keys):
-
-        iterator = database.get_iterator_by_names(
-            database.dataset_names
-        )
+    def check_data_available(self, database, expected_example_keys,
+                             dataset_names=None):
+        if not dataset_names:
+            dataset_names = database.dataset_names
+        iterator = database.get_iterator_by_names(dataset_names)
         for example in iterator:
             self.assertEqual(sorted(example.keys()), expected_example_keys)
