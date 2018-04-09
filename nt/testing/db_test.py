@@ -102,34 +102,7 @@ class DatabaseClassTest(unittest.TestCase):
     def check_data_available(self, database, expected_example_keys):
 
         iterator = database.get_iterator_by_names(
-            database.datasets_train
+            database.dataset_names
         )
-        example = iterator[0]
-        self.assertEqual(
-            expected_example_keys,
-            sorted(example.keys())
-        )
-
-    def check_fr_dependent_files(self, database, lfr=False):
-        fr_dirs = [
-            database.ali_path_train,
-            database.ali_path_eval
-        ]
-        fr_files = [
-            database.hclg_path,
-            pathlib.Path(database.occs_file)
-        ]
-
-        for fr_file in fr_dirs+fr_files:
-            self.assertTrue(fr_file.exists(), f'{fr_file} DOES NOT EXIST')
-
-        if lfr:
-            for lfr_dir in fr_dirs:
-                self.assertTrue(lfr_dir.stem.endswith('lfr'),
-                                f'{lfr_dir} DOES NOT END WITH "lfr"'
-                                )
-
-            for lfr_file in fr_files:
-                self.assertTrue(lfr_file.parent.stem.endswith('lfr'),
-                                f'{lfr_file.parent} DOES NOT END WITH "lfr"'
-                                )
+        for example in iterator:
+            self.assertEqual(sorted(example.keys()), expected_example_keys)
