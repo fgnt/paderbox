@@ -45,6 +45,12 @@ class IteratorTest(unittest.TestCase):
         _ = iterator[1]
         _ = iterator[:1][0]
 
+    def test_iterator_contains(self):
+        iterator = self.db.get_iterator_by_names('train')
+        with self.assertRaises(Exception):
+            # contains should be unsupported
+            'a' in iterator
+
     def test_map_iterator(self):
         iterator = self.db.get_iterator_by_names('train')
 
