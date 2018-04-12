@@ -103,3 +103,30 @@ class TestReshape(unittest.TestCase):
 
     def test_all_space(self):
         tc.assert_equal(reshape(A, 't b f -> f1b*t').shape, (F, 1, B*T))
+
+    def test_ellipsis_3(self):
+        tc.assert_equal(reshape(A, '...->...').shape, (T, B, F))
+
+    def test_ellipsis_2(self):
+        tc.assert_equal(reshape(A, '...F->...F').shape, (T, B, F))
+
+    def test_ellipsis_2_begin(self):
+        tc.assert_equal(reshape(A, 'T...->T...').shape, (T, B, F))
+
+    def test_ellipsis_2_letter_conflict(self):
+        tc.assert_equal(reshape(A, 'a...->a...').shape, (T, B, F))
+
+    def test_ellipsis_1(self):
+        tc.assert_equal(reshape(A, '...BF->...FB').shape, (T, F, B))
+
+    def test_ellipsis_1_begin(self):
+        tc.assert_equal(reshape(A, 'TB...->BT...').shape, (B, T, F))
+
+    def test_ellipsis_1_mid(self):
+        tc.assert_equal(reshape(A, 'T...F->F...T').shape, (F, B, T))
+
+    def test_ellipsis_0(self):
+        tc.assert_equal(reshape(A, '...TBF->...TFB').shape, (T, F, B))
+
+    def test_ellipsis_0_begin(self):
+        tc.assert_equal(reshape(A, 'TBF...->TFB...').shape, (T, F, B))
