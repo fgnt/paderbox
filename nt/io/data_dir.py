@@ -57,9 +57,13 @@ audioset = _get_path(
     'NT_AUDIOSET_DIR',
     db_dir / 'AudioSet'
 )
+dcase_2017_task_3 = _get_path(
+    'NT_DCASE_2017_TASK_3_DIR',
+    db_dir / 'DCASE_2017' / 'Task3'
+)
 dcase_2017_task_4 = _get_path(
     'NT_DCASE_2017_TASK_4_DIR',
-    db_dir / 'DCASE_2017_Task_4'
+    db_dir / 'DCASE_2017' / 'Task4'
 )
 timit = _get_path(
     'NT_TIMIT_DIR',
@@ -104,10 +108,6 @@ wsj = _get_path(
 wsj_corrected_paths = _get_path(
     'NT_WSJ_DIR',
     db_dir / 'wsj_corrected_paths'
-)
-tut_sound_events = _get_path(
-    'NT_TUT_SOUND_EVENTS_DIR',
-    db_dir / 'TUT-sound-events',
 )
 wsjcam0 = _get_path(
     'NT_WSJCAM0_DIR',
