@@ -27,15 +27,13 @@ class TestLabelHandler(unittest.TestCase):
 
     def test_segmentation(self):
         segmentation = [('a', 0, 3), ('c', 1, 3), ('b', 0, 1)]
-        target = self.lh.process_segmentation(segmentation)
-        self.assertEqual(target.tolist(), [[1, 1, 0,],[1, 0, 1],[1, 0, 1]])
-        target = self.lh.process_segmentation(segmentation, seq_len=4)
+        target = self.lh.prepare_n_hot(segmentation, num_frames=4)
         self.assertEqual(
             target.tolist(), [[1, 1, 0,],[1, 0, 1],[1, 0, 1],[0, 0, 0]])
 
     def test_tags(self):
         tags = ['b', 'a']
-        target = self.lh.process_tags(tags)
+        target = self.lh.prepare_n_hot(tags)
         self.assertEqual(target.tolist(), [1, 1, 0,])
 
     def test_src_mapping(self):
@@ -61,22 +59,22 @@ class TestLabelHandler(unittest.TestCase):
         self.assertEqual(lh.num_labels, 4)
 
     def test_read(self):
-        lh = LabelHandler(label_type='chars')
+        lh = LabelHandler(label_key='chars')
         examples = [
             {
-                keys.TRANSCRIPTION: {'chars': ['a', 'b',]},
-                keys.TAGS: {'chars': ['c', 'd',]},
-                keys.SEGMENTATION: {'chars': [('e', 0, 2), ('f', 1, 4)]}
+                'chars': ['a', 'b',],
             }
         ]
         self.assertEqual(lh.num_labels, 0)
-        lh.read_transcriptions(examples)
+        lh.read_labels(examples)
         self.assertEqual(lh.num_labels, 2)
-        lh.read_segmentations(examples)
+        examples = [
+            {
+                'chars': [('c', 0., 2.), ('d', 0.5, 1.5)],
+            }
+        ]
+        lh.read_labels(examples)
         self.assertEqual(lh.num_labels, 4)
-        lh.read_tags(examples)
-        self.assertEqual(lh.num_labels, 6)
-
 
 
 if __name__ == '__main__':
