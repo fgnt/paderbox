@@ -1,6 +1,7 @@
-import numpy
 import numpy as np
-from nt.transform.module_fbank import fbank
+from nt.transform.module_stft import stft
+from nt.transform.module_fbank import logfbank
+from nt.utils.numpy_utils import segment_axis
 import scipy.signal
 from scipy.fftpack import dct
 
@@ -44,10 +45,10 @@ def mfcc(time_signal, sample_rate=16000,
     :returns: A numpy array of size (NUMFRAMES by numcep) containing features.
         Each row holds 1 feature vector.
     """
-    feat = fbank(time_signal, sample_rate, window_length, stft_shift,
-                       number_of_filters, stft_size, lowest_frequency,
-                       highest_frequency, preemphasis_factor, window)
-    feat = numpy.log(feat)
+    feat = logfbank(
+        time_signal, sample_rate, window_length, stft_shift,
+        number_of_filters, stft_size, lowest_frequency,
+        highest_frequency, preemphasis_factor, window)
     feat = dct(feat, type=2, axis=-1, norm='ortho')[..., :numcep]
     feat = _lifter(feat, ceplifter)
 
@@ -69,9 +70,9 @@ def _lifter(cepstra, L=22):
         machine-learning/guide-mel-frequency-cepstral-coefficients-mfccs/
     """
     if L > 0:
-        nframes,ncoeff = numpy.shape(cepstra)[-2:]
-        n = numpy.arange(ncoeff)
-        lift = 1+ (L/2)*numpy.sin(numpy.pi*n/L)
+        nframes,ncoeff = np.shape(cepstra)[-2:]
+        n = np.arange(ncoeff)
+        lift = 1+ (L/2)*np.sin(np.pi*n/L)
         return lift*cepstra
     else:
         # values of L <= 0, do nothing
@@ -99,7 +100,6 @@ def mfcc_velocity_acceleration(time_signal, *args, **kwargs):
         (mfcc_signal, delta_mfcc_signal, delta_delta_mfcc_signal),
         axis=1
     )
-
 
 
 def delta(data, width=9, order=1, axis=-1, trim=True):
@@ -163,3 +163,64 @@ def delta(data, width=9, order=1, axis=-1, trim=True):
         delta_x = delta_x[idx]
 
     return delta_x
+
+
+def modmfcc(
+        time_signal, sample_rate=16000,
+        stft_win_len=400, stft_shift=160, numcep=30,
+        number_of_filters=40, stft_size=512,
+        lowest_frequency=0, highest_frequency=None,
+        preemphasis_factor=0.97, ceplifter=22,
+        stft_window=scipy.signal.hamming,
+        mod_length=16, mod_shift=8, mod_window=scipy.signal.hamming,
+        avg_length=1, avg_shift=1
+):
+    """
+    Compute Mod-MFCC features from an audio signal.
+
+    :param time_signal: the audio signal from which to compute features.
+        Should be an channels x samples array.
+    :param sample_rate: the sample rate of the signal we are working with.
+        Default is 16000.
+    :param stft_win_len: the length of the analysis window. In samples.
+        Default is 400 (25 milliseconds @ 16kHz).
+    :param stft_shift: the step between successive windows. In samples.
+        Default is 160 (10 milliseconds @ 16kHz).
+    :param numcep: the number of cepstrum to return, Default is 20.
+    :param number_of_filters: number of filters in the filterbank,
+        Default is 40.
+    :param stft_size: the FFT size. Default is 512.
+    :param lowest_frequency: lowest band edge of mel filters. In Hz,
+        Default is 0.
+    :param highest_frequency: highest band edge of mel filters. In Hz,
+        Default is samplerate/2.
+    :param preemphasis_factor: apply preemphasis filter with preemphasis_factor
+        as coefficient. 0 is no filter. Default is 0.97.
+    :param ceplifter: the liftering coefficient to use.
+        ceplifter <= 0 disables lifter.
+        Default is 22.
+    :param stft_window: the window function to use for fbank features. Default is
+        hamming window.
+    :returns: A numpy array of size (NUMFRAMES by numcep) containing features.
+        Each row holds 1 feature vector.
+    """
+    x = mfcc(
+        time_signal, sample_rate=sample_rate, window_length=stft_win_len,
+        window=stft_window, stft_shift=stft_shift, stft_size=stft_size,
+        number_of_filters=number_of_filters, lowest_frequency=lowest_frequency,
+        highest_frequency=highest_frequency,
+        preemphasis_factor=preemphasis_factor,
+        ceplifter=ceplifter, numcep=numcep)
+
+    x = np.abs(stft(
+        x,
+        size=mod_length, shift=mod_shift, window=mod_window,
+        axis=-2, fading=False
+    ))
+    assert avg_length >= avg_shift
+    if avg_length > 1:
+        x = segment_axis(
+            x, length=avg_length, overlap=avg_length - avg_shift, end='pad',
+            axis=-3)
+        x = np.mean(x, axis=-3)
+    return x
