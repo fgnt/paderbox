@@ -124,7 +124,7 @@ class NoiseGeneratorChimeBackground(NoiseGeneratorTemplate):
 
     def _get_noise(self, shape, rng_state=np.random):
         D, T = shape[-2:]
-        assert np.prod(shape[:-2]) == 1, shape
+        assert np.prod(shape[:-2]) == 1
 
         channels = rng_state.choice(self.max_channels, D, replace=False)
         utt_id = rng_state.randint(len(self.flist))
@@ -139,7 +139,7 @@ class NoiseGeneratorChimeBackground(NoiseGeneratorTemplate):
                 offset=start / self.sampling_rate,
                 duration=T / self.sampling_rate,
                 expected_sample_rate=self.sampling_rate
-            )[0])
+            ))
 
         # Reshape to deal with singleton dimensions
         return np.stack(noise_list).reshape(shape)
@@ -199,9 +199,7 @@ class NoiseGeneratorNoisex92(NoiseGeneratorTemplate):
         self.audio_datas = list()
         for l in self.labels:
             path = helper.get_path_for_label(l, sample_rate)
-            self.audio_datas += [
-                ar.audioread(path, expected_sample_rate=sample_rate)[0]
-            ]
+            self.audio_datas += [ar.audioread(path)[0]]
 
         self.sample_rate = sample_rate
 
@@ -292,7 +290,6 @@ class NoiseGeneratorSpherical(NoiseGeneratorTemplate):
 
 
         """
-        assert len(shape) == 2, shape
         tc.assert_equal(shape[self.channel_axis], self.number_of_channels)
 
         noise_signal = _sinf_3D_py(self.sensor_positions,
