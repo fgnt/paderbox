@@ -99,7 +99,7 @@ class TestBeamformerMethods(unittest.TestCase):
     @staticmethod
     def generate_source_file():
         import nt.transform as transform
-        from nt.speech_enhancement.noise.Generator import NoiseGeneratorSpherical
+        from nt.speech_enhancement.noise.generator import NoiseGeneratorSpherical
         from nt.reverb.reverb_utils import generate_rir, convolve
         from nt.reverb.scenario import generate_sensor_positions, generate_source_positions_on_circle
 

@@ -1,4 +1,4 @@
-from nt.speech_enhancement.noise.Generator import (
+from nt.speech_enhancement.noise.generator import (
     NoiseGeneratorWhite,
     NoiseGeneratorChimeBackground,
     NoiseGeneratorPink,
