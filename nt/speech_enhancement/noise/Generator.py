@@ -292,6 +292,7 @@ class NoiseGeneratorSpherical(NoiseGeneratorTemplate):
 
 
         """
+        assert len(shape) == 2, shape
         tc.assert_equal(shape[self.channel_axis], self.number_of_channels)
 
         noise_signal = _sinf_3D_py(self.sensor_positions,
