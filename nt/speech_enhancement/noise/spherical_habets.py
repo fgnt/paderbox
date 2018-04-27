@@ -147,7 +147,8 @@ def _sinf_3D_py(positions, signal_length, sample_rate=8000, c=340, N=256):
     >>> M = 4 # Number of sensors
     >>> P = randn(3, M)
     >>> signal_length = 300
-    >>> _sinf_3D(P, signal_length);
+    >>> _sinf_3D(P, signal_length).shape
+    (4, 300)
 
     """
 
