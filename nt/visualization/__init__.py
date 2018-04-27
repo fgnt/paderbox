@@ -4,8 +4,11 @@ from nt.visualization.context_manager import context_manager
 from nt.visualization.context_manager import LatexContextManager
 from nt.visualization.display_pdf import PDF
 
+from . import matplotlib_fix
+
 facet_grid = facet_grid
 time_series = time_series
 context_manager = context_manager
 LatexContextManager = LatexContextManager
 PDF = PDF
+
