@@ -17,5 +17,5 @@ class TestSTFTMethods(unittest.TestCase):
         y = audioread(path)[0]
         yFilterd = transform.ssc(y)
 
-        tc.assert_equal(yFilterd.shape, (295, 26))
+        tc.assert_equal(yFilterd.shape, (294, 26))
         tc.assert_isreal(yFilterd)

@@ -99,7 +99,7 @@ class TestBeamformerMethods(unittest.TestCase):
     @staticmethod
     def generate_source_file():
         import nt.transform as transform
-        from nt.speech_enhancement.noise.Generator import NoiseGeneratorSpherical
+        from nt.speech_enhancement.noise.generator import NoiseGeneratorSpherical
         from nt.reverb.reverb_utils import generate_rir, convolve
         from nt.reverb.scenario import generate_sensor_positions, generate_source_positions_on_circle
 
@@ -130,8 +130,11 @@ class TestBeamformerMethods(unittest.TestCase):
         generator = NoiseGeneratorSpherical(sensor_positions,
                                             sample_rate=samplingRate)
 
-        noise = generator.get_noise_for_signal(speakers, snr=SNR, rng_state=noisetype)
-
+        noise = generator.get_noise_for_signal(
+            np.sum(speakers, axis=0),  # sum above the speakers
+            snr=SNR,
+            rng_state=noisetype,
+        )
 
         Speakers = transform.stft(speakers).transpose(1,2,3,0)
         Noise = transform.stft(noise)

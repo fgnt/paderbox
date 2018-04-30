@@ -124,6 +124,63 @@ class TestSTFTMethods(unittest.TestCase):
         tc.assert_isreal(energy)
         tc.assert_array_greater_equal(energy, 0)
 
+    def test_stft_frame_count(self):
+
+        stft_params = dict(size=1024, shift=256, fading=False)
+
+        x = np.random.normal(size=[1023])
+        X = stft(x, **stft_params)
+        tc.assert_equal(X.shape, (1, 513))
+
+        x = np.random.normal(size=[1024])
+        X = stft(x, **stft_params)
+        tc.assert_equal(X.shape, (1, 513))
+
+        x = np.random.normal(size=[1025])
+        X = stft(x, **stft_params)
+        tc.assert_equal(X.shape, (2, 513))
+
+        stft_params = dict(size=1024, shift=256, fading=True)
+
+        x = np.random.normal(size=[1023])
+        X = stft(x, **stft_params)
+        tc.assert_equal(X.shape, (7, 513))
+
+        x = np.random.normal(size=[1024])
+        X = stft(x, **stft_params)
+        tc.assert_equal(X.shape, (7, 513))
+
+        x = np.random.normal(size=[1025])
+        X = stft(x, **stft_params)
+        tc.assert_equal(X.shape, (8, 513))
+
+        stft_params = dict(size=512, shift=160, window_length=400, fading=False)
+
+        x = np.random.normal(size=[399])
+        X = stft(x, **stft_params)
+        tc.assert_equal(X.shape, (1, 257))
+
+        x = np.random.normal(size=[400])
+        X = stft(x, **stft_params)
+        tc.assert_equal(X.shape, (1, 257))
+
+        x = np.random.normal(size=[401])
+        X = stft(x, **stft_params)
+        tc.assert_equal(X.shape, (2, 257))
+
+        x = np.random.normal(size=[559])
+        X = stft(x, **stft_params)
+        tc.assert_equal(X.shape, (2, 257))
+
+        x = np.random.normal(size=[560])
+        X = stft(x, **stft_params)
+        tc.assert_equal(X.shape, (2, 257))
+
+        x = np.random.normal(size=[561])
+        X = stft(x, **stft_params)
+        tc.assert_equal(X.shape, (3, 257))
+
+
     def test_compare_both_biorthogonal_window_variants(self):
         window = signal.blackman(1024)
         shift = 256
