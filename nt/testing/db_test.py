@@ -105,4 +105,6 @@ class DatabaseClassTest(unittest.TestCase):
             dataset_names = database.dataset_names
         iterator = database.get_iterator_by_names(dataset_names)
         for example in iterator:
-            self.assertEqual(sorted(example.keys()), expected_example_keys)
+            self.assertEqual(sorted(example.keys()),
+                             sorted(expected_example_keys)
+                             )
