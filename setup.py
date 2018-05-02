@@ -12,8 +12,8 @@ from distutils.core import setup
 from os import path
 
 import numpy
-from Cython.Build import cythonize
 from setuptools import find_packages
+from Cython.Build import cythonize
 
 here = path.abspath(path.dirname(__file__))
 
@@ -102,7 +102,7 @@ setup(
         'pymongo',
         'coverage',  # for nosetests --with-coverage
         'bs4',
-        'pysoundfile',  # for german speech database
+        'pysoundfile',  # for German speech database
         'wavefile',  # for reading .flac audio
         'nose',
         'nose_parameterized',
