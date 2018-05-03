@@ -87,7 +87,7 @@ def audioread(path, offset=0.0, duration=None, expected_sample_rate=None):
                 samples = int(np.round(duration * sample_rate))
                 frames_before = int(np.round(offset * sample_rate))
 
-            data = np.empty((channels, samples), dtype=np.float32, order='F')
+            data = np.zeros((channels, samples), dtype=np.float32, order='F')
             wav_reader.seek(frames_before)
             wav_reader.read(data)
             return np.squeeze(data), sample_rate
