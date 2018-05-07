@@ -78,7 +78,7 @@ def load_hdf5(filename, path='/'):
     ...    }
     ... }
     >>> dump_hdf5(ex, 'tmp_foo.hdf5', True)
-    >>> ex_load = load_hdf5('tmp_foo.hdf5', True)
+    >>> ex_load = load_hdf5('tmp_foo.hdf5')
     >>> from pprint import pprint
     >>> ex_load.fav_tensors.kronecker2d[0, 0]
     1.0
@@ -86,12 +86,13 @@ def load_hdf5(filename, path='/'):
     {'age': 24,
      'age2': 25,
      'age3': 25j,
-     'fav_numbers': array([ 2. ,  4. ,  4.3]),
-     'fav_numbers2': array([ 2. ,  4. ,  4.3]),
-     'fav_numbers3': array([ 2. ,  4. ,  4.3]),
-     'fav_tensors': {'kronecker2d': array([[ 1.,  0.,  0.],
-           [ 0.,  1.,  0.],
-           [ 0.,  0.,  1.]]),
+     'fav_numbers': array([2. , 4. , 4.3]),
+     'fav_numbers2': [2, 4, 4.3],
+     'fav_numbers3': array([2. , 4. , 4.3]),
+     'fav_numbers5': [[2], 1],
+     'fav_tensors': {'kronecker2d': array([[1., 0., 0.],
+           [0., 1., 0.],
+           [0., 0., 1.]]),
                      'levi_civita3d': array([[[ 0,  0,  0],
             [ 0,  0,  1],
             [ 0, -1,  0]],
@@ -141,8 +142,8 @@ class _ReportInterface(object):
         """..."""
         # argument type checking
         if not isinstance(dic, dict):
-            raise ValueError("must provide a dictionary, not "
-                             "{}".format(type(dict)))
+            raise ValueError(f"must provide a dictionary, not "
+                             f"{type(dict)}")
         if not isinstance(path, str):
             raise ValueError("path must be a string")
         if not isinstance(h5file, h5py._hl.files.File):
@@ -153,9 +154,9 @@ class _ReportInterface(object):
             cur_path = os.path.join(path, key)
             if not isinstance(key, str):
                 cls._dump_warning(
-                    "dict keys must be strings (and not {}) to save to hdf5. "
-                    "Skip this item."
-                    "".format(key)
+                    f"dict keys must be strings (and not {key}) "
+                    f"to save to hdf5. "
+                    f"Skip this item."
                 )
                 continue
             # save strings, numpy.int64, and numpy.float64 types
@@ -178,9 +179,9 @@ class _ReportInterface(object):
                     h5file[cur_path] = item
                 except TypeError as e:
                     cls._dump_warning(
-                        'Cannot save {} type for key {}. Error msg: {}. '
-                        'Skip this item.'
-                        ''.format(type(item), key, ' '.join(e.args))
+                        f'Cannot save {type(item)} type for key {key}. '
+                        f'Error msg: {" ".join(e.args)}. '
+                        f'Skip this item.'
                     )
                     continue
                 try:
@@ -201,13 +202,13 @@ class _ReportInterface(object):
             elif isinstance(item, list):
                 cls.__recursively_save_dict_contents_to_group__(
                     h5file, cur_path + "_<class 'list'>",
-                    {'{}'.format(k): v for k, v in enumerate(item)}
+                    {f'{k}': v for k, v in enumerate(item)}
                 )
             # other types cannot be saved and will result in an error
             else:
                 cls._dump_warning(
-                    'Cannot save {} type for key "{}". Skip this item.'
-                    ''.format(type(item), key)
+                    f'Cannot save {type(item)} type for key "{key}". '
+                    f'Skip this item.'
                 )
                 continue
 
