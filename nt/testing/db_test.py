@@ -44,8 +44,10 @@ class DatabaseTest(unittest.TestCase):
             if not self._wav_complete:
                 successful = False
 
-        assert successful, 'Some *.wav file referenced in the database '\
-                           f'json are not available: \n{self.missing_wav}'
+        self.assertTrue(successful, 'Some *.wav files referenced in the '
+                                    'database json are not available:\n'
+                                    f'{self.missing_wav}'
+                        )
 
     def test_structure(self):
         self.assertIn(DATASETS, self.json)
