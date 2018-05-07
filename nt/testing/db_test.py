@@ -1,7 +1,6 @@
 import unittest
 
 import pathlib
-from natsort import natsorted, ns
 
 from nt.io.data_dir import database_jsons as database_jsons_dir
 from nt.database.keys import *
@@ -26,7 +25,7 @@ class DatabaseTest(unittest.TestCase):
         if wav_path.exists() and wav_path.is_file():
             return True
         else:
-            print(f'  {wav_path}')
+            self.missing_wav.append(f'{wav_path}')
             self._wav_complete = False
             return False
 
@@ -35,8 +34,8 @@ class DatabaseTest(unittest.TestCase):
         Tests if all audio files mentioned in the datasets are available.
         """
         successful = True
+        self.missing_wav = list()
         for dataset_key, dataset_examples in self.json[DATASETS].items():
-            print(f'{dataset_key}:')
             self._wav_complete = True
             for example_key, example in dataset_examples.items():
                 recursive_transform(self._check_audio_file_exists,
@@ -44,12 +43,9 @@ class DatabaseTest(unittest.TestCase):
 
             if not self._wav_complete:
                 successful = False
-                print('  is not complete!')
-            else:
-                print('  is complete!')
 
         assert successful, 'Some *.wav file referenced in the database '\
-                           'json are not available!'
+                           f'json are not available: \n{self.missing_wav}'
 
     def test_structure(self):
         self.assertIn(DATASETS, self.json)
@@ -72,7 +68,7 @@ class DatabaseTest(unittest.TestCase):
         assert isinstance(datasets, list), "Datasets is not a list!"
 
         self.assertSetEqual(set(datasets), set(self.json[DATASETS].keys()),
-                            msg=f'"{dataset}" should be in DATASETS')
+                            msg=f'"{datasets}" should be in DATASETS')
 
     def test_examples(self):
         self.assert_in_example([AUDIO_PATH, ])
