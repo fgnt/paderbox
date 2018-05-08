@@ -12,6 +12,9 @@ __all__ = ['dump_hdf5', 'update_hdf5', 'load_hdf5']
 def dump_hdf5(obj, filename, force=True):
     """
 
+    ToDo:
+        - Discuss default value for force (CB: should be False)
+
     >>> from contextlib import redirect_stderr
     >>> import sys
     >>> ex = {
@@ -49,10 +52,49 @@ def dump_hdf5(obj, filename, force=True):
     _ReportInterface.__save_dict_to_hdf5__(obj, filename, force=force)
 
 
-def update_hdf5(obj, filename, path='/'):
+def update_hdf5(
+        obj,
+        filename,
+        path='/',
+        allow_overwrite=False,
+):
     """
+    ToDO:
+        - Discuss name allow_overwrite
+        - Discuss default value for allow_overwrite
+        - Discuss error handling when allow_overwrite is False
+           - throw an exception
+           - print a warning and do not write
+
+    >>> from pprint import pprint
+    >>> ex = {
+    ...    'name': 'stefan',
+    ... }
+    >>> dump_hdf5(ex, 'tmp_foo.hdf5', True)
+    >>> pprint(load_hdf5('tmp_foo.hdf5'))
+    {'name': 'stefan'}
+    >>> update_hdf5('peter', 'tmp_foo.hdf5', '/name')
+    Traceback (most recent call last):
+    ...
+    Exception: Path '/name' already exists.Set allow_overwrite to True if you want to overwrite the value.
+    >>> update_hdf5('peter', 'tmp_foo.hdf5', '/name', allow_overwrite=True)
+    >>> pprint(load_hdf5('tmp_foo.hdf5'))
+    {'name': 'peter'}
+    >>> update_hdf5({'name': 1}, 'tmp_foo.hdf5', '/', allow_overwrite=True)
+    >>> pprint(load_hdf5('tmp_foo.hdf5'))
+    {'name': 1}
     """
-    _ReportInterface.__update_hdf5_from_dict__(obj, filename, path)
+    if not isinstance(obj, dict):
+        path_split = os.path.split(path)
+        if len(path_split) > 1:
+            obj = {path_split[-1]: obj}
+            path = os.path.join(*path_split[:-1])
+    _ReportInterface.__update_hdf5_from_dict__(
+        dic=obj,
+        filename=filename,
+        path=path,
+        allow_overwrite=allow_overwrite
+    )
 
 
 def load_hdf5(filename, path='/'):
@@ -122,23 +164,50 @@ class _ReportInterface(object):
         if not force and os.path.exists(filename):
             raise ValueError('File %s exists, will not overwrite.' % filename)
         with h5py.File(filename, 'w') as h5file:
-            cls.__recursively_save_dict_contents_to_group__(h5file, '/', dic)
+            cls.__recursively_save_dict_contents_to_group__(
+                h5file,
+                '/',
+                dic,
+                allow_overwrite=False,
+            )
 
     @classmethod
-    def __update_hdf5_from_dict__(cls, dic, filename, path='/'):
+    def __update_hdf5_from_dict__(
+            cls,
+            dic,
+            filename,
+            path='/',
+            allow_overwrite=False,
+    ):
         """..."""
         if isinstance(filename, h5py.File):
-            cls.__recursively_save_dict_contents_to_group__(filename, path, dic)
+            cls.__recursively_save_dict_contents_to_group__(
+                filename,
+                path,
+                dic,
+                allow_overwrite=allow_overwrite,
+            )
         else:
             with h5py.File(filename, 'a') as h5file:
-                cls.__recursively_save_dict_contents_to_group__(h5file, path, dic)
+                cls.__recursively_save_dict_contents_to_group__(
+                    h5file,
+                    path,
+                    dic,
+                    allow_overwrite=allow_overwrite,
+                )
 
     @classmethod
     def _dump_warning(cls, msg):
         warnings.warn(msg, Hdf5DumpWarning, stacklevel=2)
 
     @classmethod
-    def __recursively_save_dict_contents_to_group__(cls, h5file, path, dic):
+    def __recursively_save_dict_contents_to_group__(
+            cls,
+            h5file,
+            path,
+            dic,
+            allow_overwrite,
+    ):
         """..."""
         # argument type checking
         if not isinstance(dic, dict):
@@ -163,6 +232,15 @@ class _ReportInterface(object):
             if isinstance(item, (np.int64, np.float64, np.float32,
                                  np.complex64, np.complex128,
                                  str, complex, int, float)):
+                if cur_path in h5file:
+                    if allow_overwrite:
+                        del h5file[cur_path]
+                    else:
+                        raise Exception(
+                            f'Path {cur_path!r} already exists.'
+                            'Set allow_overwrite to True if you want to '
+                            'overwrite the value.'
+                        )
                 h5file[cur_path] = item
 
                 # NaN compares negative in Python.
@@ -197,12 +275,18 @@ class _ReportInterface(object):
             # save dictionaries
             elif isinstance(item, dict):
                 cls.__recursively_save_dict_contents_to_group__(
-                    h5file, cur_path, item)
+                    h5file,
+                    cur_path,
+                    item,
+                    allow_overwrite=allow_overwrite,
+                )
             # save lists
             elif isinstance(item, list):
                 cls.__recursively_save_dict_contents_to_group__(
-                    h5file, cur_path + "_<class 'list'>",
-                    {f'{k}': v for k, v in enumerate(item)}
+                    h5file,
+                    cur_path + "_<class 'list'>",
+                    {f'{k}': v for k, v in enumerate(item)},
+                    allow_overwrite=allow_overwrite,
                 )
             # other types cannot be saved and will result in an error
             else:
