@@ -57,8 +57,14 @@ def update_hdf5(
         filename,
         path='/',
         allow_overwrite=False,
+        rewrite=False,
 ):
     """
+
+    ATTENTION: 'allow_overwrite' mean overwrite the index,
+               not the data. The data can never be erased.
+               Use rewrite==True to delete overwitten data.
+
     ToDO:
         - Discuss name allow_overwrite
         - Discuss default value for allow_overwrite
@@ -76,7 +82,7 @@ def update_hdf5(
     >>> update_hdf5('peter', 'tmp_foo.hdf5', '/name')
     Traceback (most recent call last):
     ...
-    Exception: Path '/name' already exists.Set allow_overwrite to True if you want to overwrite the value.
+    Exception: Path '/name' already exists. Set allow_overwrite to True if you want to overwrite the value. ATTENTION: Overwrite mean overwrite the index, not the data. The data can never be erased.
     >>> update_hdf5('peter', 'tmp_foo.hdf5', '/name', allow_overwrite=True)
     >>> pprint(load_hdf5('tmp_foo.hdf5'))
     {'name': 'peter'}
@@ -95,6 +101,22 @@ def update_hdf5(
         path=path,
         allow_overwrite=allow_overwrite
     )
+    if rewrite:
+        rewrite_hdf5(filename)
+
+
+def rewrite_hdf5(filename):
+    """
+
+    load and dump filename
+
+    The reason for this function is that deleting an element in an hdf5 file
+    only deletes the pointer to the data not the data itself. Since the pointer
+    is deleted, the data cannot be loaded and consecutively a load dump deletes
+    the data.
+
+    """
+    dump_hdf5(load_hdf5(filename), filename)
 
 
 def load_hdf5(filename, path='/'):
@@ -149,6 +171,66 @@ def load_hdf5(filename, path='/'):
      'name': 'stefan'}
     """
     return _ReportInterface.__load_dict_from_hdf5__(filename, path=path)
+
+
+def tree_hdf5(
+        filename,
+):
+    """
+
+    ToDo:
+        Handle list in the same way as load and dump
+
+    >>> from IPython.lib.pretty import pprint
+    >>> ex = {
+    ...    'name': 'stefan',
+    ...    'age':  np.int64(24),
+    ...    'age2':  25,
+    ...    'age3':  25j,
+    ...    'fav_numbers': np.array([2,4,4.3]),
+    ...    'fav_numbers2': [2,4,4.3],
+    ...    'fav_numbers3': (2,4,4.3),
+    ...    # 'fav_numbers4': {2,4,4.3}, # currently not supported
+    ...    'fav_numbers5': [[2], 1],
+    ...    'fav_tensors': {
+    ...        'levi_civita3d': np.array([
+    ...            [[0,0,0],[0,0,1],[0,-1,0]],
+    ...            [[0,0,-1],[0,0,0],[1,0,0]],
+    ...            [[0,1,0],[-1,0,0],[0,0,0]]
+    ...        ]),
+    ...        'kronecker2d': np.identity(3)
+    ...    }
+    ... }
+    >>> dump_hdf5(ex, 'tmp_foo.hdf5', True)
+    >>> pprint(tree_hdf5('tmp_foo.hdf5'))
+    ['/age',
+     '/age2',
+     '/age3',
+     '/fav_numbers',
+     "/fav_numbers2_<class 'list'>/0",
+     "/fav_numbers2_<class 'list'>/1",
+     "/fav_numbers2_<class 'list'>/2",
+     '/fav_numbers3',
+     "/fav_numbers5_<class 'list'>/0_<class 'list'>/0",
+     "/fav_numbers5_<class 'list'>/1",
+     '/fav_tensors/kronecker2d',
+     '/fav_tensors/levi_civita3d',
+     '/name']
+    """
+    path = '/'
+    l = []
+
+    def tree(h5file, path):
+        for k, v in h5file.items():
+            key = os.path.join(path, k)
+            if isinstance(v, h5py._hl.group.Group):
+                tree(v, key)
+            else:
+                l.append(key)
+
+    with h5py.File(filename, 'r') as h5file:
+        tree(h5file, path)
+        return l
 
 
 class Hdf5DumpWarning(UserWarning):
@@ -228,19 +310,26 @@ class _ReportInterface(object):
                     f"Skip this item."
                 )
                 continue
-            # save strings, numpy.int64, and numpy.float64 types
-            if isinstance(item, (np.int64, np.float64, np.float32,
-                                 np.complex64, np.complex128,
-                                 str, complex, int, float)):
+
+            def ckeck_exists():
                 if cur_path in h5file:
                     if allow_overwrite:
                         del h5file[cur_path]
                     else:
                         raise Exception(
-                            f'Path {cur_path!r} already exists.'
+                            f'Path {cur_path!r} already exists. '
                             'Set allow_overwrite to True if you want to '
-                            'overwrite the value.'
+                            'overwrite the value. '
+                            'ATTENTION: Overwrite mean overwrite the index, '
+                            'not the data. The data can never be erased.'
                         )
+
+            # save strings, numpy.int64, and numpy.float64 types
+            if isinstance(item, (np.int64, np.float64, np.float32,
+                                 np.complex64, np.complex128,
+                                 str, complex, int, float)):
+                ckeck_exists()
+
                 h5file[cur_path] = item
 
                 # NaN compares negative in Python.
@@ -250,9 +339,13 @@ class _ReportInterface(object):
                     raise ValueError('The data representation in the HDF5 '
                                      'file does not match the original dict.')
             elif isinstance(item, type(None)):
+                ckeck_exists()
+
                 h5file[cur_path] = 'None'
             # save numpy arrays
             elif isinstance(item, (np.ndarray, tuple)):
+                ckeck_exists()
+
                 try:
                     h5file[cur_path] = item
                 except TypeError as e:
