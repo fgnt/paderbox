@@ -75,7 +75,6 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
         'numpy',
-        'bokeh',
         'tabulate',
         'scipy',
         'seaborn',
@@ -89,19 +88,17 @@ setup(
         'h5py',
         'line_profiler',
         'memory_profiler',
-        'pycallgraph',
         'cached_property',
-        'tabulate',
         'editdistance',
-        'Pyro4',
-        'psutil',
-        'plumbum',
+        # 'Pyro4',
+        # 'psutil',
+        # 'plumbum',
         'click',
         'typecheck-decorator',
         'natsort',
-        'pymongo',
+        # 'pymongo',
         'coverage',  # for nosetests --with-coverage
-        'bs4',
+        # 'bs4',
         'pysoundfile',  # for German speech database
         'wavefile',  # for reading .flac audio
         'nose',
