@@ -14,9 +14,175 @@ import wavefile
 
 import nt.utils.process_caller as pc
 
-UTILS_DIR = os.path.join(os.path.dirname(os.path.abspath(
-    inspect.getfile(inspect.currentframe()))), 'utils'
-)
+UTILS_DIR = os.path.join(os.path.dirname(__file__), 'utils')
+
+
+def load_audio(
+        path,
+        *,
+        frames=-1,
+        start=0,
+        stop=None,
+        # dtype='float64',
+        fill_value=None,
+        expected_sample_rate=None,
+        unit='samples',
+        return_sample_rate=False,
+):
+    """
+    Difference to soundfile.read:
+     - Default: Return only signal
+     - With the argument "unit" the unit of frames, start and stop can be
+       changed (stop currently unsupported).
+     - With given expected_sample_rate an assert is included (recommented)
+
+    soundfile.read doc text and some examples:
+
+    Provide audio data from a sound file as NumPy array.
+
+    By default, the whole file is read from the beginning, but the
+    position to start reading can be specified with `start` and the
+    number of frames to read can be specified with `frames`.
+    Alternatively, a range can be specified with `start` and `stop`.
+
+    If there is less data left in the file than requested, the rest of
+    the frames are filled with `fill_value`.
+    If no `fill_value` is specified, a smaller array is returned.
+
+    Parameters
+    ----------
+    file : str or int or file-like object
+        The file to read from.  See :class:`SoundFile` for details.
+    frames : int, optional
+        The number of frames to read. If `frames` is negative, the whole
+        rest of the file is read.  Not allowed if `stop` is given.
+    start : int, optional
+        Where to start reading.  A negative value counts from the end.
+    stop : int, optional
+        The index after the last frame to be read.  A negative value
+        counts from the end.  Not allowed if `frames` is given.
+    dtype : {'float64', 'float32', 'int32', 'int16'}, optional
+        Data type of the returned array, by default ``'float64'``.
+        Floating point audio data is typically in the range from
+        ``-1.0`` to ``1.0``.  Integer data is in the range from
+        ``-2**15`` to ``2**15-1`` for ``'int16'`` and from ``-2**31`` to
+        ``2**31-1`` for ``'int32'``.
+
+        .. note:: Reading int values from a float file will *not*
+            scale the data to [-1.0, 1.0). If the file contains
+            ``np.array([42.6], dtype='float32')``, you will read
+            ``np.array([43], dtype='int32')`` for ``dtype='int32'``.
+
+    Returns
+    -------
+    audiodata : numpy.ndarray or type(out)
+        A two-dimensional (frames x channels) NumPy array is returned.
+        If the sound file has only one channel, a one-dimensional array
+        is returned.  Use ``always_2d=True`` to return a two-dimensional
+        array anyway.
+
+        If `out` was specified, it is returned.  If `out` has more
+        frames than available in the file (or if `frames` is smaller
+        than the length of `out`) and no `fill_value` is given, then
+        only a part of `out` is overwritten and a view containing all
+        valid frames is returned.
+
+    Other Parameters
+    ----------------
+    always_2d : bool, optional
+        By default, reading a mono sound file will return a
+        one-dimensional array.  With ``always_2d=True``, audio data is
+        always returned as a two-dimensional array, even if the audio
+        file has only one channel.
+    fill_value : float, optional
+        If more frames are requested than available in the file, the
+        rest of the output is be filled with `fill_value`.  If
+        `fill_value` is not specified, a smaller array is returned.
+    out : numpy.ndarray or subclass, optional
+        If `out` is specified, the data is written into the given array
+        instead of creating a new array.  In this case, the arguments
+        `dtype` and `always_2d` are silently ignored!  If `frames` is
+        not given, it is obtained from the length of `out`.
+    samplerate, channels, format, subtype, endian, closefd
+        See :class:`SoundFile`.
+
+    Examples
+    --------
+    >>> from nt.io import load_audio
+    >>> path = '/net/db/timit/pcm/train/dr1/fcjf0/sa1.wav'
+    >>> data = load_audio(path)
+    >>> data.shape
+    (46797,)
+
+    Say you load audio examples from a very long audio, you can provide a
+    start position and a duration in samples or seconds.
+
+    >>> path = '/net/db/timit/pcm/train/dr1/fcjf0/sa1.wav'
+    >>> signal = load_audio(path, start=0, frames=16_000)
+    >>> signal.shape
+    (16000,)
+    >>> signal = load_audio(path, start=0, frames=1, unit='seconds')
+    >>> signal.shape
+    (16000,)
+
+    If the audio file is to short, only return the defined part:
+
+    >>> signal = load_audio(path, start=0, frames=160_000)
+    >>> signal.shape
+    (46797,)
+
+    >>> path = '/net/db/tidigits/tidigits/test/man/ah/111a.wav'
+    >>> load_audio(path)  #doctest: +ELLIPSIS
+    Traceback (most recent call last):
+    ...
+    RuntimeError: /net/db/tidigits/tidigits/test/man/ah/111a.wav: NIST SPHERE file
+    <BLANKLINE>
+
+    """
+    path = Path(path).expanduser().resolve()
+
+    if unit == 'samples':
+        pass
+    elif unit == 'seconds':
+        if stop is not None:
+            raise NotImplementedError(unit, stop)
+        with soundfile.SoundFile(str(path)) as f:
+            # total_samples = len(f)
+            samplerate = f.samplerate
+        start = np.round(start * samplerate)
+        if frames > 0:
+            frames = np.round(frames * samplerate)
+    else:
+        raise ValueError(unit)
+
+    try:
+        signal, sample_rate = soundfile.read(
+            str(path),
+            frames=frames,
+            start=start,
+            stop=stop,
+            # dtype=dtype,
+            fill_value=fill_value,
+        )
+    except RuntimeError as e:
+        # Improve exception msg for NIST SPHERE files.
+        from nt.utils.process_caller import run_process
+        cp = run_process(f'file {path}')
+        stdout = cp.stdout
+        raise RuntimeError(f'{stdout}') from e
+
+    if expected_sample_rate is not None:
+        if expected_sample_rate == sample_rate:
+            raise ValueError(
+                'Requested sampling rate is {} but the audiofile has {}'.format(
+                    expected_sample_rate, sample_rate
+                )
+            )
+
+    if return_sample_rate:
+        return signal, sample_rate
+    else:
+        return signal
 
 
 def audioread(path, offset=0.0, duration=None, expected_sample_rate=None):
@@ -51,12 +217,19 @@ def audioread(path, offset=0.0, duration=None, expected_sample_rate=None):
 
         >>> path = '/net/db/timit/pcm/train/dr1/fcjf0/sa1.wav'
         >>> signal, sample_rate = audioread(path)
+        >>> signal.shape
+        (46797,)
 
         Say you load audio examples from a very long audio, you can provide a
         start position and a duration in seconds.
 
         >>> path = '/net/db/timit/pcm/train/dr1/fcjf0/sa1.wav'
         >>> signal, sample_rate = audioread(path, offset=0, duration=1)
+        >>> signal.shape
+        (16000,)
+        >>> signal, sample_rate = audioread(path, offset=0, duration=10)
+        >>> signal.shape
+        (160000,)
 
         >>> path = '/net/db/tidigits/tidigits/test/man/ah/111a.wav'
         >>> audioread(path)  #doctest: +ELLIPSIS
