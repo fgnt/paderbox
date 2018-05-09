@@ -149,9 +149,9 @@ def load_audio(
         with soundfile.SoundFile(str(path)) as f:
             # total_samples = len(f)
             samplerate = f.samplerate
-        start = np.round(start * samplerate)
+        start = int(np.round(start * samplerate))
         if frames > 0:
-            frames = np.round(frames * samplerate)
+            frames = int(np.round(frames * samplerate))
     else:
         raise ValueError(unit)
 
