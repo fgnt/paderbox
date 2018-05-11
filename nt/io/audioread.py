@@ -30,6 +30,8 @@ def load_audio(
         return_sample_rate=False,
 ):
     """
+    WIP will deprecate audioread in the future
+
     Difference to soundfile.read:
      - Default: Return only signal
      - With the argument "unit" the unit of frames, start and stop can be
@@ -178,6 +180,11 @@ def load_audio(
                     expected_sample_rate, sample_rate
                 )
             )
+
+    # When signal is multichannel, than soundfile return (samples, channels)
+    # At NT it is more common to have the shape (channels, samples)
+    # => transpose
+    signal = signal.T
 
     if return_sample_rate:
         return signal, sample_rate
