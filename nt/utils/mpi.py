@@ -18,6 +18,7 @@ except ImportError:
 
     MPI = _dummy_MPI()
 
+
 class RankInt(int):
     def __bool__(self):
         raise NotImplementedError(
