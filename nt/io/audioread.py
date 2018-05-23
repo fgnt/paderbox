@@ -147,13 +147,16 @@ def load_audio(
         pass
     elif unit == 'seconds':
         if stop is not None:
-            raise NotImplementedError(unit, stop)
+            if stop < 0:
+                raise NotImplementedError(unit, stop)
         with soundfile.SoundFile(str(path)) as f:
             # total_samples = len(f)
             samplerate = f.samplerate
         start = int(np.round(start * samplerate))
         if frames > 0:
             frames = int(np.round(frames * samplerate))
+        if stop > 0:
+            stop = int(np.round(stop * samplerate))
     else:
         raise ValueError(unit)
 
