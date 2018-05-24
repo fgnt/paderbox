@@ -105,8 +105,14 @@ class Options:
                 assert self._check_allowed_type(name, value)
             _update(key, value)
         else:
+            import difflib
+            similar = difflib.get_close_matches(key, _dict.keys())
+            if len(similar) == 0:
+                similar = list(_dict.keys())
+
             raise KeyError(
-                f"{key} not in {root} and adding a value was not allowed"
+                f"{key!r} not in {root!r} and adding a value was not allowed"
+                f'. Similar keys: {similar}'
             )
 
     def update_params(self, nested_dict, allow_add=False):

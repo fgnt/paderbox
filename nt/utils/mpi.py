@@ -6,6 +6,11 @@ try:
     from mpi4py import MPI
     _mpi_available = False
 except ImportError:
+    import os
+    if 'CCS' in os.environ:
+        # CCS indicate PC2
+        raise
+
     class DUMMY_COMM_WORLD:
         size = 1
         rank = 0
@@ -17,6 +22,7 @@ except ImportError:
         COMM_WORLD = DUMMY_COMM_WORLD()
 
     MPI = _dummy_MPI()
+
 
 class RankInt(int):
     def __bool__(self):
@@ -32,7 +38,7 @@ MASTER = RankInt(0)
 IS_MASTER = (RANK == MASTER)
 
 
-def map_unordered(func, iterator, disable_pbar=True):
+def map_unordered(func, iterator, progress_bar=False):
     """
     A master process push tasks to the workers and receives the result.
     Required at least 2 mpi processes, but to produce a speedup 3 are required.
@@ -49,15 +55,18 @@ def map_unordered(func, iterator, disable_pbar=True):
     from enum import IntEnum, auto
 
     if SIZE == 1:
-        if disable_pbar:
-            return map(func, iterator)
+        if progress_bar:
+            yield from tqdm(map(func, iterator))
+            return
         else:
-            return tqdm(map(func, iterator))
+            yield from map(func, iterator)
+            return
 
     status = MPI.Status()
     workers = SIZE - 1
 
     class tags(IntEnum):
+        """Avoids magic constants."""
         start = auto()
         stop = auto()
         default = auto()
@@ -66,16 +75,16 @@ def map_unordered(func, iterator, disable_pbar=True):
 
     if RANK == 0:
         i = 0
-        with tqdm(total=len(iterator), disable=disable_pbar) as pbar:
+        with tqdm(total=len(iterator), disable=not progress_bar) as pbar:
             pbar.set_description(f'busy: {workers}')
             while workers > 0:
-                res = COMM.recv(
+                result = COMM.recv(
                     source=MPI.ANY_SOURCE,
                     tag=MPI.ANY_TAG,
                     status=status)
                 if status.tag == tags.default:
                     COMM.send(i, dest=status.source)
-                    yield res
+                    yield result
                     i += 1
                     pbar.update()
                 elif status.tag == tags.start:
@@ -95,8 +104,8 @@ def map_unordered(func, iterator, disable_pbar=True):
             next_index = COMM.recv(source=0)
             for i, val in enumerate(iterator):
                 if i == next_index:
-                    res = func(val)
-                    COMM.send(res, dest=0, tag=tags.default)
+                    result = func(val)
+                    COMM.send(result, dest=0, tag=tags.default)
                     next_index = COMM.recv(source=0)
         finally:
             COMM.send(None, dest=0, tag=tags.stop)
