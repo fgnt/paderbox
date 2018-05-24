@@ -4,7 +4,7 @@ import nt.testing as tc
 from nt.utils.numpy_utils import morph
 
 
-T, B, F = 40, 6, 51
+T, B, F = 40, 6, 50
 A = np.random.uniform(size=(T, B, F))
 A2 = np.random.uniform(size=(T, 1, B, F))
 A3 = np.random.uniform(size=(T*B*F,))
@@ -95,6 +95,11 @@ class TestMorph(unittest.TestCase):
         tc.assert_equal(result.shape, (F, B*T))
         tc.assert_equal(result, A.transpose(2, 1, 0).reshape(F, B*T))
 
+    def test_transpose_capital(self):
+        result = morph('tbB->tBb', A)
+        tc.assert_equal(result.shape, (T, F, B))
+        tc.assert_equal(result, A.transpose(0, 2, 1))
+
     def test_all_comma(self):
         tc.assert_equal(morph('T,B,F->F,1,B*T', A).shape, (F, 1, B*T))
 
@@ -133,3 +138,21 @@ class TestMorph(unittest.TestCase):
 
     def test_ellipsis_0_begin(self):
         tc.assert_equal(morph('TBF...->TFB...', A).shape, (T, F, B))
+
+    def test_ellipsis_expand(self):
+        tc.assert_equal(
+            morph(
+                'a*b...->ab...',
+                A,
+                a=T // 2,
+                b=2
+            ).shape, (T // 2, 2, B, F))
+
+    def test_ellipsis_expand(self):
+        tc.assert_equal(
+            morph(
+                '...a*b->...ab',
+                A,
+                a=F // 2,
+                b=2
+            ).shape, (T, B, F // 2, 2))
