@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import nt.testing as tc
-from nt.utils.morph import morph
+from nt.utils.numpy_utils import morph
 
 
 T, B, F = 40, 6, 51
@@ -11,7 +11,7 @@ A3 = np.random.uniform(size=(T*B*F,))
 A4 = np.random.uniform(size=(T, 1, 1, B, 1, F))
 
 
-class TestReshape(unittest.TestCase):
+class TestMorph(unittest.TestCase):
     def test_noop_comma(self):
         result = morph('T,B,F->T,B,F', A)
         tc.assert_equal(result.shape, (T, B, F))
@@ -100,3 +100,36 @@ class TestReshape(unittest.TestCase):
 
     def test_all_space(self):
         tc.assert_equal(morph('t b f -> f1b*t', A).shape, (F, 1, B*T))
+
+    def test_all_comma(self):
+        tc.assert_equal(morph('T,B,F->F,1,B*T', A).shape, (F, 1, B*T))
+
+    def test_all_space(self):
+        tc.assert_equal(morph('t b f -> f1b*t', A).shape, (F, 1, B*T))
+
+    def test_ellipsis_3(self):
+        tc.assert_equal(morph('...->...', A).shape, (T, B, F))
+
+    def test_ellipsis_2(self):
+        tc.assert_equal(morph('...F->...F', A).shape, (T, B, F))
+
+    def test_ellipsis_2_begin(self):
+        tc.assert_equal(morph('T...->T...', A).shape, (T, B, F))
+
+    def test_ellipsis_2_letter_conflict(self):
+        tc.assert_equal(morph('a...->a...', A).shape, (T, B, F))
+
+    def test_ellipsis_1(self):
+        tc.assert_equal(morph('...BF->...FB', A).shape, (T, F, B))
+
+    def test_ellipsis_1_begin(self):
+        tc.assert_equal(morph('TB...->BT...', A).shape, (B, T, F))
+
+    def test_ellipsis_1_mid(self):
+        tc.assert_equal(morph('T...F->F...T', A).shape, (F, B, T))
+
+    def test_ellipsis_0(self):
+        tc.assert_equal(morph('...TBF->...TFB', A).shape, (T, F, B))
+
+    def test_ellipsis_0_begin(self):
+        tc.assert_equal(morph('TBF...->TFB...', A).shape, (T, F, B))
