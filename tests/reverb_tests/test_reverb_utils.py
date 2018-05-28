@@ -349,10 +349,13 @@ class TestConvolution(unittest.TestCase):
         testsignal3 = np.pad(testsignal3,
                              (0, maxlen - len(testsignal3)),
                              'constant')
-        audio = np.vstack([testsignal1,
+        
+        # Numpy version >= 1.14.2 with mkl_fft will have numeric imprecision
+        # with convolution in frequency domain when using 32 bit float
+        audio = np.array(np.vstack([testsignal1,
                            testsignal2,
                            testsignal3]
-                          )
+                          ), dtype=np.float64)
 
         # get source positions for three audio sources and mic positions for
         # 8 mics
