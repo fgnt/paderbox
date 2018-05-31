@@ -23,7 +23,7 @@ def load_audio(
         frames=-1,
         start=0,
         stop=None,
-        # dtype='float64',
+        dtype=np.float64,
         fill_value=None,
         expected_sample_rate=None,
         unit='samples',
@@ -155,20 +155,29 @@ def load_audio(
         start = int(np.round(start * samplerate))
         if frames > 0:
             frames = int(np.round(frames * samplerate))
-        if stop > 0:
+        if stop is not None and stop > 0:
             stop = int(np.round(stop * samplerate))
     else:
         raise ValueError(unit)
 
     try:
-        signal, sample_rate = soundfile.read(
-            str(path),
-            frames=frames,
-            start=start,
-            stop=stop,
-            # dtype=dtype,
-            fill_value=fill_value,
-        )
+        with soundfile.SoundFile(
+                str(path),
+                'r',
+        ) as f:
+            if dtype is None:
+                from nt.utils.mapping import Dispatcher
+                mapping = Dispatcher({
+                    'PCM_16': np.int16,
+                    'FLOAT': np.float32,
+                    'DOUBLE': np.float64,
+                })
+                dtype = mapping[f.subtype]
+
+            frames = f._prepare_read(start=start, stop=stop, frames=frames)
+            data = f.read(frames=frames, dtype=dtype, fill_value=fill_value)
+        signal, sample_rate = data, f.samplerate
+
     except RuntimeError as e:
         # Improve exception msg for NIST SPHERE files.
         from nt.utils.process_caller import run_process
