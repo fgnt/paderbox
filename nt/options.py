@@ -71,6 +71,10 @@ class Options:
         elif self._check_allowed_type(name, value):
             self._params[name] = value
 
+    def rm_param(self, name):
+        assert name in self._params, self._params.keys()
+        del self._params[name]
+
     @staticmethod
     def traverse_nested(name, _dict):
         splitted = name.split(DELIMITER)
