@@ -2,7 +2,6 @@ import io
 import os
 import warnings
 
-import h5py
 import numpy as np
 from nt.utils import AttrDict
 
@@ -217,6 +216,7 @@ def tree_hdf5(
      '/fav_tensors/levi_civita3d',
      '/name']
     """
+    import h5py
     path = '/'
     l = []
 
@@ -243,6 +243,7 @@ class _ReportInterface(object):
     @classmethod
     def __save_dict_to_hdf5__(cls, dic, filename, force=False):
         """..."""
+        import h5py
         if not force and os.path.exists(filename):
             raise ValueError('File %s exists, will not overwrite.' % filename)
         with h5py.File(filename, 'w') as h5file:
@@ -262,6 +263,7 @@ class _ReportInterface(object):
             allow_overwrite=False,
     ):
         """..."""
+        import h5py
         if isinstance(filename, h5py.File):
             cls.__recursively_save_dict_contents_to_group__(
                 filename,
@@ -291,6 +293,7 @@ class _ReportInterface(object):
             allow_overwrite,
     ):
         """..."""
+        import h5py
         # argument type checking
         if not isinstance(dic, dict):
             raise ValueError(f"must provide a dictionary, not "
@@ -392,6 +395,7 @@ class _ReportInterface(object):
     @classmethod
     def __load_dict_from_hdf5__(cls, filename, path='/'):
         """..."""
+        import h5py
         with h5py.File(filename, 'r') as h5file:
             return cls.__recursively_load_dict_contents_from_group__(
                 h5file, path)
@@ -406,6 +410,7 @@ class _ReportInterface(object):
         >>> ex_load
         {'key': [1, 2, 3]}
         """
+        import h5py
         ans = AttrDict()
         for key, item in h5file[path].items():
             if key.endswith("_<class 'list'>"):

@@ -60,17 +60,25 @@ class DatabaseTest(unittest.TestCase):
             self.assertIn(key, example,
                           f'The key "{key}" should be present in examples')
 
-
-    def assert_in_datasets(self, datasets):
+    def assert_in_datasets(self, datasets, full_match=True):
         """
 
         :param datasets: list of keys
+        :param full_match: If True, `datasets` must match with
+            `self.json[DATASETS].keys()`. Else, json dataset list needs only to
+             contain `datasets`.
         :return:
         """
         assert isinstance(datasets, list), "Datasets is not a list!"
 
-        self.assertSetEqual(set(datasets), set(self.json[DATASETS].keys()),
-                            msg=f'"{datasets}" should be in DATASETS')
+        if full_match:
+            self.assertSetEqual(set(datasets), set(self.json[DATASETS].keys()),
+                                msg=f'"{datasets}" should be '
+                                    f'{self.json[DATASETS].keys()}')
+        else:
+            for ds in datasets:
+                self.assertIn(ds, set(self.json[DATASETS].keys()),
+                                    msg=f'"{ds}" should be in DATASETS')
 
     def test_examples(self):
         self.assert_in_example([AUDIO_PATH, ])

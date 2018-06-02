@@ -1,17 +1,17 @@
 import unittest
 import numpy as np
 import nt.testing as tc
-from nt.utils.morph import morph
+from nt.utils.numpy_utils import morph
 
 
-T, B, F = 40, 6, 51
+T, B, F = 40, 6, 50
 A = np.random.uniform(size=(T, B, F))
 A2 = np.random.uniform(size=(T, 1, B, F))
 A3 = np.random.uniform(size=(T*B*F,))
 A4 = np.random.uniform(size=(T, 1, 1, B, 1, F))
 
 
-class TestReshape(unittest.TestCase):
+class TestMorph(unittest.TestCase):
     def test_noop_comma(self):
         result = morph('T,B,F->T,B,F', A)
         tc.assert_equal(result.shape, (T, B, F))
@@ -95,8 +95,64 @@ class TestReshape(unittest.TestCase):
         tc.assert_equal(result.shape, (F, B*T))
         tc.assert_equal(result, A.transpose(2, 1, 0).reshape(F, B*T))
 
+    def test_transpose_capital(self):
+        result = morph('tbB->tBb', A)
+        tc.assert_equal(result.shape, (T, F, B))
+        tc.assert_equal(result, A.transpose(0, 2, 1))
+
     def test_all_comma(self):
         tc.assert_equal(morph('T,B,F->F,1,B*T', A).shape, (F, 1, B*T))
 
     def test_all_space(self):
         tc.assert_equal(morph('t b f -> f1b*t', A).shape, (F, 1, B*T))
+
+    def test_all_comma(self):
+        tc.assert_equal(morph('T,B,F->F,1,B*T', A).shape, (F, 1, B*T))
+
+    def test_all_space(self):
+        tc.assert_equal(morph('t b f -> f1b*t', A).shape, (F, 1, B*T))
+
+    def test_ellipsis_3(self):
+        tc.assert_equal(morph('...->...', A).shape, (T, B, F))
+
+    def test_ellipsis_2(self):
+        tc.assert_equal(morph('...F->...F', A).shape, (T, B, F))
+
+    def test_ellipsis_2_begin(self):
+        tc.assert_equal(morph('T...->T...', A).shape, (T, B, F))
+
+    def test_ellipsis_2_letter_conflict(self):
+        tc.assert_equal(morph('a...->a...', A).shape, (T, B, F))
+
+    def test_ellipsis_1(self):
+        tc.assert_equal(morph('...BF->...FB', A).shape, (T, F, B))
+
+    def test_ellipsis_1_begin(self):
+        tc.assert_equal(morph('TB...->BT...', A).shape, (B, T, F))
+
+    def test_ellipsis_1_mid(self):
+        tc.assert_equal(morph('T...F->F...T', A).shape, (F, B, T))
+
+    def test_ellipsis_0(self):
+        tc.assert_equal(morph('...TBF->...TFB', A).shape, (T, F, B))
+
+    def test_ellipsis_0_begin(self):
+        tc.assert_equal(morph('TBF...->TFB...', A).shape, (T, F, B))
+
+    def test_ellipsis_expand(self):
+        tc.assert_equal(
+            morph(
+                'a*b...->ab...',
+                A,
+                a=T // 2,
+                b=2
+            ).shape, (T // 2, 2, B, F))
+
+    def test_ellipsis_expand(self):
+        tc.assert_equal(
+            morph(
+                '...a*b->...ab',
+                A,
+                a=F // 2,
+                b=2
+            ).shape, (T, B, F // 2, 2))
