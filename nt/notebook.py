@@ -50,6 +50,7 @@ __all__ = [
 
 
 def pprint(obj):
+    """Shortens the np.ndarray representer."""
     np.set_string_function(
         lambda a: f"array(shape={a.shape}, dtype={a.dtype})"
     )
