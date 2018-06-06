@@ -60,7 +60,7 @@ def play(data, channel=0, sample_rate=16000,
     if isinstance(data, str):
         assert os.path.exists(data), ('File does not exist.', data)
         data = audioread(data, expected_sample_rate=sample_rate)[0]
-    elif np.issubdtype(data.dtype, np.complex):
+    elif np.iscomplexobj(data):
         assert data.shape[-1] == size // 2 + \
             1, ('Wrong number of frequency bins', data.shape, size)
 
@@ -68,11 +68,11 @@ def play(data, channel=0, sample_rate=16000,
             data = data[:, channel, :]
 
         data = istft(data, size=size, shift=shift, window=window)
-    elif np.issubdtype(data.dtype, np.float):
+    elif np.isrealobj(data):
         if len(data.shape) == 2:
             data = data[channel, :]
 
-    assert np.issubdtype(data.dtype, np.float), data.dtype
+    assert np.isrealobj(data), data.dtype
     assert len(data.shape) == 1, data.shape
 
     if scale != 1:
