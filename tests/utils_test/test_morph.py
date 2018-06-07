@@ -156,3 +156,45 @@ class TestMorph(unittest.TestCase):
                 a=F // 2,
                 b=2
             ).shape, (T, B, F // 2, 2))
+
+    def test_reduce_mean(self):
+        tc.assert_equal(
+            morph(
+                '...F->...',
+                A,
+                reduce=np.mean
+            ).shape, (T, B))
+        tc.assert_equal(
+            morph(
+                '...F->...',
+                A,
+                reduce=np.mean
+            ), np.mean(A, axis=-1))
+
+    def test_reduce_median(self):
+        tc.assert_equal(
+            morph(
+                '...F->...',
+                A,
+                reduce=np.median
+            ).shape, (T, B))
+        tc.assert_equal(
+            morph(
+                '...F->...',
+                A,
+                reduce=np.median
+            ), np.median(A, axis=-1))
+
+    def test_reduce_sum(self):
+        tc.assert_equal(
+            morph(
+                '...F->...',
+                A,
+                reduce=np.sum
+            ).shape, (T, B))
+        tc.assert_equal(
+            morph(
+                '...F->...',
+                A,
+                reduce=np.sum
+            ), np.sum(A, axis=-1))
