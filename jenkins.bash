@@ -21,3 +21,6 @@ make --directory=./toolbox/doc/ html
 
 pip freeze > pip.txt
 pip uninstall --quiet --yes nt
+
+# copy html code to lighttpd webserver
+rsync -a --delete-after /var/lib/jenkins/jobs/python_toolbox/workspace/toolbox/doc/build/html/ /var/www/doku/html/python_toolbox/

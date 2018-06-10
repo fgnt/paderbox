@@ -54,6 +54,20 @@ class SummaryEncoder(Encoder):
             return super().default(obj)
 
 
+def dumps_json(
+        obj, *, indent=2, create_path=True, sort_keys=True, **kwargs):
+    fd = io.StringIO()
+    dump_json(
+        obj,
+        path=fd,
+        indent=indent,
+        create_path=create_path,
+        sort_keys=sort_keys,
+        **kwargs,
+    )
+    return fd.getvalue()
+
+
 def dump_json(
         obj, path, *, indent=2, create_path=True, sort_keys=True, **kwargs):
     """
@@ -90,7 +104,7 @@ def load_json(path, **kwargs):
     :param kwargs: See ``json.dump()``.
     :return: Content of the JSON file.
     """
-    assert isinstance(path, (str, Path))
+    assert isinstance(path, (str, Path)), path
     path = Path(path).expanduser()
 
     with path.open() as fid:

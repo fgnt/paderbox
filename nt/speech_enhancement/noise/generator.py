@@ -1,4 +1,3 @@
-import json
 from collections import Iterable
 from abc import ABCMeta, abstractmethod
 
