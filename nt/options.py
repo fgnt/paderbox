@@ -52,7 +52,7 @@ class Options:
         return _find_recursive([], self.to_nested_dict())
 
     def _check_allowed_type(self, name, value, allow_dict=False):
-        _all_allowed = ALLOWED_TYPES + (Options,)
+        _all_allowed = ALLOWED_TYPES + (self.__class__,)
         if allow_dict:
             _all_allowed = _all_allowed + (dict,)
         if isinstance(value, _all_allowed):
@@ -67,7 +67,7 @@ class Options:
     def add_param(self, name, value):
         """Adds a parameter."""
         if isinstance(value, dict):
-            self._params[name] = Options(**value)
+            self._params[name] = self.__class__(**value)
         elif self._check_allowed_type(name, value):
             self._params[name] = value
 
@@ -98,7 +98,7 @@ class Options:
 
         def _update(k, v):
             if isinstance(v, dict):
-                _dict[k] = Options(**v)
+                _dict[k] = self.__class__(**v)
             else:
                 _dict[k] = v
 
@@ -150,18 +150,18 @@ class Options:
             separators=separators, sort_keys=sort_keys
         )
 
-    @staticmethod
-    def from_json_file(json_path):
+    @classmethod
+    def from_json_file(cls, json_path):
         """Creates new HParams from json file."""
         with open(json_path) as fid:
             json_values = json.load(fid)
-        return Options(**json_values)
+        return cls(**json_values)
 
-    @staticmethod
-    def from_json(json_values):
+    @classmethod
+    def from_json(cls, json_values):
         """Creates new HParams from json string."""
         json_values = json.loads(json_values)
-        return Options(**json_values)
+        return cls(**json_values)
 
     def __repr__(self):
         return self.to_json()
