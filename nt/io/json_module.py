@@ -55,13 +55,13 @@ class SummaryEncoder(Encoder):
 
 
 def dumps_json(
-        obj, *, indent=2, create_path=True, sort_keys=True, **kwargs):
+        obj, *, indent=2, sort_keys=True, **kwargs):
     fd = io.StringIO()
     dump_json(
         obj,
         path=fd,
         indent=indent,
-        create_path=create_path,
+        create_path=False,
         sort_keys=sort_keys,
         **kwargs,
     )
