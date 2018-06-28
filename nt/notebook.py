@@ -24,6 +24,7 @@ from nt.transform import stft
 from nt.visualization import context_manager
 from nt.visualization import facet_grid
 from nt.visualization import plot
+from nt.utils.numpy_utils import morph
 
 __all__ = [
     "pprint",
@@ -46,6 +47,7 @@ __all__ = [
     "istft",
     "stft",
     "tqdm",
+    "morph",
 ]
 
 
