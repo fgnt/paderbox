@@ -30,10 +30,18 @@ class NamedAudio(Audio):
         """.format(self.name, audio_html)
 
 
-def play(data, channel=0, sample_rate=16000,
-         size=1024, shift=256, window=signal.blackman, *,
-         scale=1,
-         name=None):
+def play(
+        data,
+        channel=0,
+        sample_rate=16000,
+        size=1024,
+        shift=256,
+        window=signal.blackman,
+        *,
+        scale=1,
+        name=None,
+        stereo=False,
+):
     """ Tries to guess, what the input data is. Plays time series and stft.
 
     Provides an easy to use interface to play back sound in an IPython Notebook.
@@ -52,7 +60,11 @@ def play(data, channel=0, sample_rate=16000,
                  displayed
     :return:
     """
-    assert isinstance(channel, int)
+    if stereo:
+        if isinstance(channel, int):
+            channel = (channel, channel+1)
+    else:
+        assert isinstance(channel, int), (type(channel), channel)
 
     if isinstance(data, Path):
         data = str(data)
@@ -73,7 +85,7 @@ def play(data, channel=0, sample_rate=16000,
             data = data[channel, :]
 
     assert np.isrealobj(data), data.dtype
-    assert len(data.shape) == 1, data.shape
+    assert stereo or len(data.shape) == 1, data.shape
 
     if scale != 1:
         assert scale > 1, \
@@ -83,6 +95,10 @@ def play(data, channel=0, sample_rate=16000,
             f'scale={scale}'
         max_abs_data = np.max(np.abs(data))
         data = np.clip(data, -max_abs_data/scale, max_abs_data/scale)
+
+    if stereo:
+        assert len(data.shape) == 2, data.shape
+        assert data.shape[0] == 2, data.shape
 
     if name is None:
         display(Audio(data, rate=sample_rate))
