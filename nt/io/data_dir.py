@@ -91,7 +91,7 @@ merl_mixtures = _get_path(
 )
 merl_mixtures_mc = _get_path(
     'NT_MERL_MIXTURES_MC_DIR',
-    "/net/vol/ldrude/projects/2017/project_dc_storage/merl_mixtures_mc_v2/"
+    "/net/vol/ldrude/projects/2017/project_dc_storage/merl_mixtures_mc_v4/"
 )
 german_speechdata = _get_path(
     'NT_GERMAN_SPEECHDATA_DIR',
