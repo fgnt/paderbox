@@ -1,11 +1,12 @@
-try:
-    from numpy.fft import restore_all as _restore_all
-    # https://github.com/numpy/numpy/issues/11456
-    # https://github.com/ContinuumIO/anaconda-issues/issues/9697
-    # https://github.com/IntelPython/mkl_fft/issues/11
-    _restore_all()
-except ImportError as e:
-    raise ImportError(
-        'You do not use mkl_fft. We do not need to restore anything. Use Numpy'
-        'from Anaconda.'
-    ) from e
+from numpy.fft import __file__ as FFT_FILE
+
+# https://github.com/numpy/numpy/issues/11456
+# https://github.com/ContinuumIO/anaconda-issues/issues/9697
+# https://github.com/IntelPython/mkl_fft/issues/11
+with open(FFT_FILE) as f:
+    if 'patch_fft = True' in f.read():
+        raise Exception(
+            'Your Numpy version uses MKL-FFT. That version causes '
+            f'segmentation faults. To fix it, open {FFT_FILE} and edit '
+            'it such that `patch_fft = True` becomes `patch_fft = False`.'
+        )
