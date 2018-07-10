@@ -8,6 +8,21 @@ def _spectrogram(x):
     return x.real ** 2 + x.imag ** 2
 
 
+def wiener_filter_gain_apriori(observation, s_mask, n_mask, G_min_db=-25,
+                               mask_min=1e-6):
+    G_min = 10 ** (G_min_db / 20)
+    n_mask = np.clip(n_mask, mask_min, (1 - mask_min))
+    s_mask = np.clip(s_mask, mask_min, (1 - mask_min))
+    Phi_SS = _spectrogram(s_mask * observation)
+    Phi_NN = _spectrogram(n_mask * observation)
+
+    Phi_NN = np.maximum(Phi_NN, mask_min)
+    a_priori = Phi_SS / Phi_NN
+    a_priori_SNR = np.maximum(a_priori, mask_min)
+    gain = np.maximum(1 / (1 + a_priori_SNR), G_min)
+    return gain
+
+
 def wiener_filter_gain(observation, n_mask, G_min_db=-25, mask_min=1e-6):
     """
         Wiener filter implementation as suggested in the DSSP script.
