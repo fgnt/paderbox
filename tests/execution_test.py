@@ -35,7 +35,9 @@ class TestImportAndExecution:
     expected_failures = [
         "nt/database/wsj/create_wsj_with_corrected_paths.py",  # no permission
         "nt/database/chime5/get_speaker_activity.py",  # no input arguments
-        "nt/database/wsj/write_wav.py"  # no input arguments
+        "nt/database/wsj/write_wav.py",  # no input arguments
+        "nt/database/audio_set/clean.py",  # no file to clean
+        "nt/database/merl_mixtures_mc/create_files.py"  # no input arguments
     ]
     
     # This test needs to run first to remove files that cannot be imported from
@@ -81,7 +83,7 @@ class TestImportAndExecution:
         # into `tmp_dir`
         to_execute = set(self.python_files) - set(self.failed_on_import)
         for file in to_execute:
-            yield self.check_execution, file, tmp_dir, 5
+            yield self.check_execution, file, tmp_dir, 10
         shutil.rmtree(tmp_dir)  # remove generated output and `tmp_dir`
 
     def check_execution(self, file, cwd, timeout=5):
