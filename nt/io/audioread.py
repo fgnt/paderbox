@@ -177,13 +177,15 @@ def load_audio(
             frames = f._prepare_read(start=start, stop=stop, frames=frames)
             data = f.read(frames=frames, dtype=dtype, fill_value=fill_value)
         signal, sample_rate = data, f.samplerate
-
     except RuntimeError as e:
-        # Improve exception msg for NIST SPHERE files.
-        from nt.utils.process_caller import run_process
-        cp = run_process(f'file {path}')
-        stdout = cp.stdout
-        raise RuntimeError(f'{stdout}') from e
+        if path.suffix == '.wav':
+            # Improve exception msg for NIST SPHERE files.
+            from nt.utils.process_caller import run_process
+            cp = run_process(f'file {path}')
+            stdout = cp.stdout
+            raise RuntimeError(f'{stdout}') from e
+        else:
+            raise RuntimeError(f'Wrong suffix {path.suffix} in {path}') from e
 
     if expected_sample_rate is not None:
         if expected_sample_rate == sample_rate:
