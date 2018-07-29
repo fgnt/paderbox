@@ -89,6 +89,10 @@ merl_mixtures = _get_path(
     'NT_MERL_MIXTURES_DIR',
     '/net/db/merl_speaker_mixtures'
 )
+merl_mixtures_mc = _get_path(
+    'NT_MERL_MIXTURES_MC_DIR',
+    "/net/vol/ldrude/projects/2017/project_dc_storage/merl_mixtures_mc_v6/"
+)
 german_speechdata = _get_path(
     'NT_GERMAN_SPEECHDATA_DIR',
     '/net/storage/jheymann/speech_db/german-speechdata-package-v2/'
