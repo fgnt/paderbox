@@ -36,7 +36,7 @@ def _get_import_name(py_file, return_suffix=False):
 
 
 class TestImport:
-    
+    # TODO: Change to https://docs.python.org/3/library/pathlib.html
     TOOLBOX_PATH = Path(
         os.path.dirname(  # <path_to_toolbox>/toolbox
             os.path.dirname(  # <path_to_toolbox>/toolbox/tests
