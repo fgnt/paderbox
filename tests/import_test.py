@@ -9,29 +9,27 @@ from parameterized import parameterized, param
 
 
 def _custom_name_func(testcase_func, _, param):
-    import_name = _get_import_name(param.args[0])
-    # TODO: Need save testcase function name for Jenkins.
-    sep = '_'  # ': ' works
-    return f"%s%s%s" % (
+    import_name = _get_import_name(param.args[0], concat='_')
+    return f"%s_%s" % (
         testcase_func.__name__,
-        sep,
         import_name
     )
 
 
-def _get_import_name(py_file, return_suffix=False):
+def _get_import_name(py_file, concat='.', return_suffix=False):
     """
     Convert path to Python's import notation, i.e. "x.y.z"
     :param py_file: Path object to python file
+    :param concat: String that concatenates modules. Default to '.'
     :param return_suffix: If True, return additionally `py_file.suffix`. Either
         '.py' or '' (if `py_file` is path to a package, i.e. '__init__.py')
     :return:
     """
     if py_file.stem == '__init__':
         py_file = py_file.parents[0]  # replace __init__.py with package path
-    import_name = '.'.join(py_file.parts[py_file.parts.index('nt'):-1] +
-                           (py_file.stem,)
-                           )
+    import_name = concat.join(py_file.parts[py_file.parts.index('nt'):-1] +
+                              (py_file.stem,)
+                              )
     if not return_suffix:
         return import_name
     return import_name, py_file.suffix
