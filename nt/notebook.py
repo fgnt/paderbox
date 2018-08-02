@@ -15,6 +15,7 @@ import seaborn as sns
 from IPython.display import HTML
 from IPython.display import display
 from tqdm import tqdm
+from datetime import datetime
 
 from nt.io import load_json
 from nt.io.play import play
@@ -48,7 +49,8 @@ __all__ = [
     "stft",
     "tqdm",
     "morph",
-    "np"
+    "np",
+    "datetime"
 ]
 
 
