@@ -9,26 +9,24 @@ from parameterized import parameterized, param
 
 
 def _custom_name_func(testcase_func, _, param):
-    import_name, suffix = _get_import_name(param.args[0], concat='/',
-                                           return_suffix=True)
-    return f"%s: %s%s" % (
+    import_name= _get_import_name(param.args[0])
+    return f"%s.%s" % (
         testcase_func.__name__,
-        import_name, suffix
+        import_name
     )
 
 
-def _get_import_name(py_file, concat='.', return_suffix=False):
+def _get_import_name(py_file, return_suffix=False):
     """
     Convert path to Python's import notation, i.e. "x.y.z"
     :param py_file: Path object to python file
-    :param: concat: String that concatenates modules. Defaults to '.'
     :param return_suffix: If True, return additionally `py_file.suffix`. Either
         '.py' or '' (if `py_file` is path to a package, i.e. '__init__.py')
     :return:
     """
     if py_file.stem == '__init__':
         py_file = py_file.parents[0]  # replace __init__.py with package path
-    import_name = concat.join(py_file.parts[py_file.parts.index('nt'):-1] +
+    import_name = '.'.join(py_file.parts[py_file.parts.index('nt'):-1] +
                               (py_file.stem,)
                               )
     if not return_suffix:
@@ -62,7 +60,7 @@ class TestImport:
              readable test output
         :raise: `AssertionError` if file cannot be imported
         """
-        import_name = _get_import_name(py_file)
+        import_name, suffix = _get_import_name(py_file, return_suffix=True)
         try:
             if with_importlib:
                 _ = importlib.import_module(import_name)
@@ -77,5 +75,5 @@ class TestImport:
                 err = e.stderr.decode('utf-8')
             except AttributeError:
                 err = 'See Traceback above'
-            assert False, f'Cannot import "{import_name}" \n\n' \
+            assert False, f'Cannot import file "{import_name}{suffix}" \n\n' \
                           f'stderr: {err}'
