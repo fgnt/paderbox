@@ -8,7 +8,7 @@ import importlib
 from parameterized import parameterized, param
 
 
-def _custom_name_func(testcase_func, param_num, param):
+def _custom_name_func(testcase_func, _, param):
     import_name, suffix = _get_import_name(param.args[0], concat='/',
                                            return_suffix=True)
     return f"%s: %s%s" % (
@@ -37,7 +37,6 @@ def _get_import_name(py_file, concat='.', return_suffix=False):
 
 
 class TestImport:
-    # TODO: Change to https://docs.python.org/3/library/pathlib.html
     TOOLBOX_PATH = Path(
         inspect.getfile(inspect.currentframe())
     ).absolute().parents[1]
