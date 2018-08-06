@@ -1,78 +1,22 @@
-from pathlib import Path
-import tqdm
-from shutil import copytree, copyfile
-from nt.utils.process_caller import run_process
 import os
-from functools import partial
 import stat
+from pathlib import Path
+from shutil import copytree, copyfile
+
 import sacred
-import gzip
-from nt.database import JsonDatabase, keys
-from chime5.scripts.kaldi import check_dest_dir, ORG_DIR
-from nt.database.chime5 import Chime5, adjust_start_end
+
 from chime5.scripts.create_mapping_json import Chime5KaldiIdMapping
-import codecs
+from chime5.scripts.kaldi import ORG_DIR
+from nt.database.chime5 import Chime5
+from nt.io.file_handling import mkdir_p
+from nt.utils.process_caller import run_process
+
 ex = sacred.Experiment('Kaldi array')
-db = Chime5()
-mapping = Chime5KaldiIdMapping()
-chime5_it = db.get_iterator_by_names('train')
+db = Chime5('/net/vol/jenkins/jsons/chime5_orig.json')
 
-def multiply_alignments(org_ali_dir, out_ali_dir, utt2split_dict,
-                        id_map_fun: mapping.get_array_id_from_inear_id, num_jobs=16):
-    assert not out_ali_dir.exists() or len(list(org_ali_dir.glob('*.gz'))) == 0,\
-        f'The destination dir {out_ali_dir} already exists, please choose a' \
-        f' different dir'
-    num_alis = list(org_ali_dir.glob('ali.*.gz'))
-    assert len(num_alis) == num_jobs, \
-        f'number of alignment files {len(num_alis)} does not match,' \
-        f'the number of jobs {num_jobs}'
-    copytree(str(org_ali_dir), str(out_ali_dir), symlinks=True)
-    [file.unlink() for file in out_ali_dir.glob('ali.*.gz')]
+NEEDED_FILES = ['cmd.sh', 'path.sh', 'get_model.bash']
+NEEDED_DIRS = ['data/lang', 'data/local', 'data/srilm', 'conf', 'local']
 
-    def read_alignments(file):
-        ali_decompressed = gzip.decompress(file.read_bytes())
-        # ali_decompressed = codecs.getreader('utf-8')(ali_decompressed)
-        split_dict = {str(idx): list() for idx in range(1, num_jobs + 1)}
-        for ex in ali_decompressed.decode().split('\n'):
-            if ex == '':
-                break
-            utt, utt_ali = ex.split(' ', maxsplit=1)
-            utt = utt.replace('.R', '.L')
-            new_utts = id_map_fun(utt)
-            for utt in new_utts:
-                if utt in utt2split_dict:
-                    split_dict[utt2split_dict[utt]].append(f'{utt} {utt_ali}')
-                    del utt2split_dict[utt]
-        return split_dict
-
-    global_split_dict = {str(idx): list() for idx in range(1, num_jobs + 1)}
-    from concurrent.futures import ThreadPoolExecutor
-    with ThreadPoolExecutor(os.cpu_count()) as ex:
-        for split_dict in tqdm.tqdm(
-                ex.map(
-                    read_alignments,
-                    org_ali_dir.glob('ali*.gz'),
-                ),
-                total=num_jobs,
-        ):
-            for key in global_split_dict.keys():
-                global_split_dict[key] += split_dict[key]
-    global_split_dict = {key: set(value)
-                         for key, value in global_split_dict.items()}
-    def write_alignments(split):
-        (out_ali_dir / f'ali.{split}.gz').write_bytes(gzip.compress(
-            '\n'.join(global_split_dict[split]).encode()))
-
-    global_split_dict = {key: sorted(value)
-                         for key, value in global_split_dict.items()}
-    with ThreadPoolExecutor(os.cpu_count()) as ex:
-            list(tqdm.tqdm(
-                    ex.map(
-                        write_alignments,
-                        global_split_dict.keys(),
-                    ),
-                    total=num_jobs
-            ))
 
 def get_files(base_dir, train_set, dev_set, org_dir=ORG_DIR):
     if not (base_dir / 'data' / train_set).exists():
@@ -82,224 +26,246 @@ def get_files(base_dir, train_set, dev_set, org_dir=ORG_DIR):
         copytree(str(org_dir / 'data' / dev_set),
                  str(base_dir / 'data' / dev_set))
     if not (base_dir / 'get_array_model.bash').exists():
-        file = str(base_dir / 'get_model.bash')
+        file = str(base_dir / 'get_array_model.bash')
         copyfile(str(org_dir / 'get_array_model.bash'), file)
         st = os.stat(file)
         os.chmod(file, st.st_mode | stat.S_IEXEC)
 
+
 def calculate_mfccs(base_dir, dataset, num_jobs=20, config='mfcc.conf',
                     recalc=False):
-    if not (base_dir / 'data' / dataset / 'feats.scp').exists() or recalc:
-            run_process([
-                f'{base_dir}/steps/make_mfcc.sh', '--nj', str(num_jobs),
-                '--mfcc-config', f'{base_dir}/conf/{config}',
-                '--cmd', 'run.pl', f'data/{dataset}',
-                f'exp/make_mfcc/{dataset}', 'mfcc'],
-                cwd=str(base_dir), stdout=None, stderr=None
-            )
+    '''
 
-    if not (base_dir / 'data' / dataset / 'cmvn.scp').exists() or recalc:
+    :param base_dir: kaldi egs directory with steps and utils dir
+    :param dataset: name of folder in data
+    :param num_jobs: number of parallel jobs
+    :param config: mfcc config
+    :param recalc: recalc feats if already calculated
+    :return:
+    '''
+    if isinstance(dataset, str):
+        dataset = base_dir / 'data' / dataset
+    assert dataset.exists()
+    if not (dataset / 'feats.scp').exists() or recalc:
+        run_process([
+            f'{base_dir}/steps/make_mfcc.sh', '--nj', str(num_jobs),
+            '--mfcc-config', f'{base_dir}/conf/{config}',
+            '--cmd', 'run.pl', f'{dataset}',
+            f'{dataset}/make_mfcc', f'{dataset}/mfcc'],
+            cwd=str(base_dir), stdout=None, stderr=None
+        )
+
+    if not (dataset / 'cmvn.scp').exists() or recalc:
         run_process([
             f'{base_dir}/steps/compute_cmvn_stats.sh',
-            f'data/{dataset}', f'exp/make_mfcc/{dataset}', 'mfcc'],
+            f'{dataset}', f'{dataset}/make_mfcc', f'{dataset}/mfcc'],
             cwd=str(base_dir), stdout=None, stderr=None
         )
     run_process([
-        f'{base_dir}/utils/fix_data_dir.sh', f'data/{dataset}'],
-        cwd=str(base_dir), stdout=None, stderr=None
-    )
-
-def calculate_alignments(base_dir, hmm_dir, train_set,
-                         org_dir, ali_dir, num_jobs=16):
-    if not (base_dir / 'data' / train_set).exists():
-        copytree(str(org_dir / 'data' / train_set),
-                 str(base_dir / 'data' / train_set))
-
-    calculate_mfccs(base_dir, train_set)
-
-    run_process([
-        f'{base_dir}/steps/align_si.sh', '--nj', str(num_jobs), '--cmd', 'run.pl',
-        f'data/{train_set}', 'data/lang',
-        f'exp/{hmm_dir}', str(ali_dir)],
+        f'{base_dir}/utils/fix_data_dir.sh', f'{dataset}'],
         cwd=str(base_dir), stdout=None, stderr=None
     )
 
 
-def train_hmm_array(base_dir: Path, train_set='train_uall',
-                    dev_set='dev_beamformit_ref',  org_hmm='tri3_worn',
-                    org_train_set='train_worn', org_dir=ORG_DIR,
-                    num_arrays=6, num_channels=4, num_jobs=16):
-    get_files(base_dir, train_set, dev_set, org_dir)
-    check_dest_dir(base_dir)
-    train_dir = base_dir / 'data' / train_set
-    out_ali_dir = base_dir / 'exp' / f'{org_hmm}_{train_set}_ali'
-    if not (train_dir / 'feats.scp').exists():
-        print('calculating mfcc features')
-        calculate_mfccs(base_dir, train_set)
-    if not (train_dir / f'split{num_jobs}').exists():
-        run_process([
-            f'{base_dir}/utils/split_data.sh',
-            f'{train_dir}', f'{num_jobs}'],
-            cwd=str(base_dir), stdout=None, stderr=None)
-    if not out_ali_dir.exists() or len(list(out_ali_dir.glob('*.gz'))) == 0:
-        org_ali_dir = base_dir / 'exp' / f'{org_hmm}_{org_train_set}_ali'
-        print(f'{out_ali_dir} not found, creating it from {org_ali_dir}')
-        if not org_ali_dir.exists():
-            print(f'{org_ali_dir} not found, calculating alignments')
-            calculate_alignments(base_dir, org_hmm, org_train_set,
-                                 org_dir, org_ali_dir, num_jobs)
-        assert len(list(org_ali_dir.glob('*.gz'))) != 0, f'No alignments found' \
-                                                         f'in org_dir {org_ali_dir}'
-        map_fun = partial(mapping.get_array_id_from_inear_id, arrays=num_arrays, channels=num_channels)
-        utt2split_dict = get_utt2split_dict(train_dir, num_jobs)
-        multiply_alignments(org_ali_dir, out_ali_dir, utt2split_dict, map_fun)
-    else:
-        alis = list(out_ali_dir.glob('ali.*.gz'))
-        assert len(alis) == num_jobs, \
-            f'number of alignment files {len(alis)} does not match,' \
-            f'the number of jobs {num_jobs}'
-    # fix_segment_file(base_dir / 'data' / train_set)
-    run_process([
-        f'{base_dir}/get_array_model.bash',
-        '--train_set', f'{train_set}',
-        '--dev_sets', f'{dev_set}',
-        '--org_hmm', f'{org_hmm}'],
-        cwd=str(base_dir),
-        stdout=None, stderr=None
-    )
-
-def get_utt2split_dict(train_dir, num_jobs=16):
-    split_dir = train_dir / f'split{num_jobs}'
-    assert split_dir.exists()
-    utt2split_dict = dict()
-    for dirs in split_dir.glob('*'):
-        ids = [lines.split(' ', maxsplit=1)[0]
-               for lines in (dirs / 'text').open().readlines()]
-        utt2split_dict.update({_id: dirs.name for _id in ids})
-    return utt2split_dict
-
-
-
-def fix_segment_file(train_set):
-    print('fix the segment file ')
-
-    segment_file = train_set / 'segments'
-    assert segment_file.exists(), f'No segments file in {train_set}, please' \
-                                  f' make sure the training directory exists'
-    segment_zw = segment_file.parents[0] / ('zw_' + segment_file.name)
-    segment_file.rename(segment_zw)
-
-    it_mapped = chime5_it.map(adjust_start_end)
-    mapping_inv = mapping.get_inverted_mapping_array()
-    segment_list = []
-    for line in segment_zw.open().readlines():
-        example_id, info, start, end = line.split(' ')
-        array = info.split('.')[0].split('_')[1]
-        channel = int(info[-1]) - 1
-        nt_id = mapping_inv[example_id]
-        nt_example = it_mapped[nt_id]
-        start_sample = nt_example['start']['observation'][array][channel]
-        end_sample = nt_example['end']['observation'][array][channel]
-        start_new = '%013.7f' % (float(start_sample) / 16000)
-        end_new = '%013.7f' % (float(end_sample) / 16000)
-        segment_list.append(
-            ' '.join([example_id, info, start_new, end_new + '\n']))
-    segment_file.open('w').writelines(segment_list)
-    segment_zw.unlink()
-
-def get_ivector(ivector_dir, dest_dir, train_affix, dev_dir, num_jobs=8):
+def calculate_ivectors(ivector_dir, base_dir, train_affix, dataset_dir,
+                       extractor_dir, num_jobs=8):
+    '''
+    
+    :param ivector_dir: ivector directory may be a string, bool or Path
+    :param base_dir: kaldi egs directory with steps and utils dir
+    :param train_affix: dataset specifier (dataset name without train or dev)
+    :param dataset_dir: kaldi dataset dir
+    :param extractor_dir: directory of the ivector extractor (may be None)
+    :param num_jobs: number of parallel jobs
+    :return: 
+    '''
     if isinstance(ivector_dir, str):
-        ivector_dir = dest_dir / 'exp' / ('nnet3_' + train_affix) / ivector_dir
+        ivector_dir = base_dir / 'exp' / ('nnet3_' + train_affix) / ivector_dir
     elif isinstance(ivector_dir, bool):
-        ivector_dir = dest_dir / 'exp' / ('nnet3_' + train_affix) / (
-            'ivector_' + dev_dir.name)
+        ivector_dir = base_dir / 'exp' / ('nnet3_' + train_affix) / (
+            'ivectors_' + dataset_dir.name)
     elif isinstance(ivector_dir, Path):
         ivector_dir = ivector_dir
     else:
         raise ValueError(f'ivector_dir {ivector_dir} has to be either'
                          f' a Path, a string or bolean')
     if not ivector_dir.exists():
+        if extractor_dir is None:
+            extractor_dir = base_dir / f'exp/nnet3_{train_affix}/extractor'
+        else:
+            if isinstance(extractor_dir, str):
+                extractor_dir = base_dir / f'exp/{extractor_dir}'
+        assert extractor_dir.exists()
         print(f'Directory {ivector_dir} not found, estimating ivectors')
         run_process([
-            'steps/online/nnet2/extract_ivectors_online.sh',
-            '--cmd', 'run.pl', '--nj', f'{num_jobs}', f'{dev_dir}',
-            f'{dest_dir}/exp/nnet3_{train_affix}/extractor', ivector_dir],
-            cwd=str(dest_dir),
+            f'steps/online/nnet2/extract_ivectors_online.sh',
+            '--cmd', 'run.pl', '--nj', f'{num_jobs}', f'{dataset_dir}',
+            f'{extractor_dir}', str(ivector_dir)],
+            cwd=str(base_dir),
             stdout=None, stderr=None
         )
     return ivector_dir
 
-def copy_ref_dir(dev_dir, ref_dev_dir, audio_dir):
-    text = (ref_dev_dir / 'text').open().readlines()
-    ref_ids = [line.split(' ', maxsplit=1)[0] for line in text]
-    copytree(str(ref_dev_dir), str(dev_dir))
-    (dev_dir / 'segments').unlink()
-    (dev_dir / 'wav.scp').unlink()
-    ids = {wav_file: mapping.get_array_ids_from_nt_id(wav_file.name.split('.')[0], channels='ENH')
-           for wav_file in audio_dir.glob('*')}
-    print(list(ids.values())[0])
+
+def copy_ref_dir(dev_dir, ref_dev_dir, audio_dir, allow_missing_files=True):
+    mapping = Chime5KaldiIdMapping()
+    required_files = ['utt2spk', 'text']
+    with (ref_dev_dir / 'text').open() as file:
+        text = file.readlines()
+    ref_ids = [line.split(' ', maxsplit=1)[0].strip() for line in text]
+    mkdir_p(dev_dir)
+    for files in required_files:
+        copyfile(str(ref_dev_dir / files), str(dev_dir / files))
+    ids = {
+    wav_file: mapping.get_array_ids_from_nt_id(wav_file.name.split('.')[0],
+                                               channels='ENH')
+    for wav_file in audio_dir.glob('*')}
     used_ids = {kaldi_id: wav_file for wav_file, kaldi_ids in ids.items()
                 for kaldi_id in kaldi_ids if kaldi_id in ref_ids}
     assert len(used_ids) > 0
     if len(used_ids) < len(ids):
         print(f'Not all files in {audio_dir} were used, '
               f'{len(ids)-len(used_ids)} ids are not used in kaldi')
+    elif len(used_ids) < len(ref_ids):
+        if not allow_missing_files:
+            raise ValueError(
+                f'{len(ref_ids)-len(used_ids)} files are missing in {audio_dir}.'
+                f' We found only {len(used_ids)} files but expect {len(ref_ids)}'
+                f' files')
+        print(f'{len(ref_ids)-len(used_ids)} files are missing in {audio_dir}.'
+              f' We found only {len(used_ids)} files but expect {len(ref_ids)}'
+              f' files. Still continuing to decode the remaining files')
+        ref_ids = [_id for _id in used_ids.keys()]
+        ref_ids.sort()
+        for files in ['utt2spk', 'text']:
+            with (dev_dir / files).open() as fd:
+                lines = fd.readlines()
+                lines = [line for line in lines
+                         if line.split(' ')[0] in used_ids]
+            (dev_dir / files).unlink()
+            with (dev_dir / files).open('w') as fd:
+                fd.writelines(lines)
+
     wavs = [' '.join([kaldi_id, str(used_ids[kaldi_id])]) + '\n'
             for kaldi_id in ref_ids]
-    (dev_dir / 'wav.scp').open('w').writelines(wavs)
+    with (dev_dir / 'wav.scp').open('w') as file:
+        file.writelines(wavs)
 
-def get_dev_dir(dest_dir: Path, enh='bss_beam', hires=True,
-                ref_dev_dir='dev_beamformit_ref', audio_dir=None, num_jobs=8):
+
+def get_dev_dir(base_dir: Path, org_dir: Path, enh='bss_beam',
+                hires=True, ref_dev_dir='dev_beamformit_ref',
+                audio_dir=None, num_jobs=8):
     if isinstance(enh, Path):
         dev_dir = enh
     elif 'hires' in enh and hires:
-        dev_dir = dest_dir / 'data' / f'dev_{enh}'
+        dev_dir = base_dir / 'data' / f'dev_{enh}'
     elif hires:
-        dev_dir = dest_dir / 'data' / f'dev_{enh}_hires'
+        dev_dir = base_dir / 'data' / f'dev_{enh}_hires'
     else:
-        dev_dir = dest_dir / 'data' / f'dev_{enh}'
+        dev_dir = base_dir / 'data' / f'dev_{enh}'
     config = 'mfcc_hires.conf' if hires else 'mfcc.conf'
     if not dev_dir.exists():
         print(f'Directory {dev_dir} not found creating data directory')
         if isinstance(ref_dev_dir, str):
-            ref_dev_dir = dest_dir / 'data' / ref_dev_dir
+            ref_dev_dir = org_dir / 'data' / ref_dev_dir
         assert ref_dev_dir.exists()
-        copy_ref_dir(dev_dir, ref_dev_dir, audio_dir)
-        calculate_mfccs(dest_dir, dev_dir.name, num_jobs=num_jobs,
+        if audio_dir is None:
+            copytree(str(ref_dev_dir), str(dev_dir))
+        else:
+            copy_ref_dir(dev_dir, ref_dev_dir, audio_dir)
+        run_process([
+            f'{base_dir}/utils/fix_data_dir.sh', str(dev_dir)],
+            cwd=str(base_dir), stdout=None, stderr=None
+        )
+        calculate_mfccs(org_dir, dev_dir, num_jobs=num_jobs,
                         config=config, recalc=True)
     return dev_dir
 
 
-def decode(model_dir, dest_dir, audio_dir: Path, ref_dev_dir='dev_beamformit_ref',
-           ivector_dir=False, hires=True, enh='bss_beam', num_jobs=8):
+def create_dest_dir(dest_dir, org_dir=ORG_DIR):
+    dest_dir.mkdir(exist_ok=True)
+    for file in NEEDED_FILES:
+        copyfile(str(org_dir / file), str(dest_dir / file))
+    for dirs in NEEDED_DIRS:
+        copytree(str(org_dir / dirs), str(dest_dir / dirs), symlinks=True)
+    for symlinks in ['steps', 'utils']:
+        linkto = os.readlink(str(org_dir / symlinks))
+        os.symlink(linkto, str(dest_dir / symlinks))
+
+
+def decode(model_dir, dest_dir, org_dir, audio_dir: Path,
+           ref_dev_dir='dev_beamformit_ref',
+           ivector_dir=False, extractor_dir=None,
+           hires=True, enh='bss_beam', num_jobs=8):
+    '''
+
+    :param model_dir: name of model or Path to model_dir
+    :param dest_dir: kaldi egs dir for the decoding
+    :param org_dir: kaldi egs dir from which information for decoding are gathered
+    :param audio_dir: directory of audio files to decode (may be None)
+    :param ref_dev_dir: reference kaldi dataset directory or name for decode dataset
+    :param ivector_dir: directory or name for the ivectors (may be None or False)
+    :param extractor_dir: directory of the ivector extractor (maybe None)
+    :param hires: flag for using high resolution mfcc features (True / False)
+    :param enh: name of the enhancement method, used for creating dataset name
+    :param num_jobs: number of parallel jobs
+    :return:
+    '''
+    decode_dir = None
     if isinstance(model_dir, str):
-        model_dir = dest_dir / 'exp' / model_dir
-    assert model_dir.exists()
+        model_dir = org_dir / 'exp' / model_dir
+        assert model_dir.exists(), f'{model_dir} does not exist'
+    elif isinstance(model_dir, Path):
+        if 'tdnn1a' in model_dir.name:
+            copytree(str(model_dir), str(
+                dest_dir / 'exp' / 'model' / model_dir.parents[0].name))
+            model_dir = model_dir.parents[0]
+        else:
+            if ivector_dir:
+                copytree(str(model_dir / 'tdnn1a_sp'),
+                         str(dest_dir / 'exp' / 'model' / model_dir.name))
+            else:
+                copytree(str(model_dir / 'tdnn1a'),
+                         str(dest_dir / 'exp' / 'model' / model_dir.name))
+        decode_dir = dest_dir / 'exp' / 'model' / model_dir.name / f'decode_{enh}'
+    if org_dir and not org_dir == dest_dir:
+        create_dest_dir(dest_dir, org_dir)
+        os.environ['PATH'] = f'{dest_dir}/utils:{os.environ["PATH"]}'
     train_affix = model_dir.name.split('_', maxsplit=1)[1]
-    dev_dir = get_dev_dir(dest_dir, enh, hires, ref_dev_dir,
+    dev_dir = get_dev_dir(dest_dir, org_dir, enh, hires, ref_dev_dir,
                           audio_dir, num_jobs)
     if ivector_dir:
-        ivector_dir = get_ivector(ivector_dir, dest_dir, train_affix,
-                                  dev_dir, num_jobs)
+        ivector_dir = calculate_ivectors(ivector_dir, dest_dir, train_affix,
+                                  dev_dir, extractor_dir, num_jobs)
+        if decode_dir is None:
+            decode_dir = f'{model_dir}/tdnn1a_sp/decode_{enh}'
+        os.makedirs(decode_dir)
         run_process([
-            'steps/nnet3/decode.sh', '--acwt', '1.0', '--post-decode-acwt', '10.0',
+            f'{org_dir}/steps/nnet3/decode.sh', '--acwt', '1.0',
+            '--post-decode-acwt', '10.0',
             '--extra-left-context', '0', '--extra-right-context', '0',
-            '--extra-left-context-initial', '0', '--extra-right-context-final', '0',
-            '--frames-per-chunk', '140', '--nj', '8', '--cmd', '"run.pl --mem 4G"',
+            '--extra-left-context-initial', '0', '--extra-right-context-final',
+            '0',
+            '--frames-per-chunk', '140', '--nj', '8', '--cmd',
+            '"run.pl --mem 4G"',
             '--num-threads', '4', '--online-ivector-dir', str(ivector_dir),
-            f'{model_dir}/tree_sp/graph', str(dev_dir), f'{model_dir}/tdnn1a_sp/decode_{enh}'],
+            f'{model_dir}/tree_sp/graph', str(dev_dir), str(decode_dir)],
             cwd=str(dest_dir),
             stdout=None, stderr=None
         )
     else:
+        decode_dir = f'{model_dir}/tdnn1a/decode_{enh}'
+        os.makedirs(decode_dir)
         run_process([
-            'steps/nnet3/decode.sh', '--acwt', '1.0', '--post-decode-acwt', '10.0',
+            f'{org_dir}/steps/nnet3/decode.sh', '--acwt', '1.0',
+            '--post-decode-acwt', '10.0',
             '--extra-left-context', '0', '--extra-right-context', '0',
-            '--extra-left-context-initial', '0', '--extra-right-context-final', '0',
+            '--extra-left-context-initial', '0', '--extra-right-context-final',
+            '0',
             '--frames-per-chunk', '140', '--nj', '8', '--cmd',
             '"run.pl --mem 4G"', '--num-threads', '4',
             f'{model_dir}/tree_/graph', str(dev_dir),
-            f'{model_dir}/tdnn1a/decode_{enh}'],
+            str(decode_dir)],
             cwd=str(dest_dir),
             stdout=None, stderr=None
         )
@@ -309,19 +275,27 @@ def decode(model_dir, dest_dir, audio_dir: Path, ref_dev_dir='dev_beamformit_ref
 def default():
     train_set = 'train_uall'
     dev_set = 'dev_beamformit_ref'
-    org_hmm = 'tri3_worn'
-    org_train_set = 'train_worn'
     org_dir = ORG_DIR
-    num_arrays = None
-    num_channels = None
-    decode = False
     model_dir = 'chain_train_worn_u100k_cleaned'
     audio_dir = None
+    ivector_dir = False
     ref_dev_dir = 'dev_beamformit_ref'
     enh = 'bss_beam'
-    ivector_dir = False
+    extractor_dir = None
     hires = True
     num_jobs = 8
+
+
+def check_config_element(element):
+    if element is not None and not isinstance(element, bool):
+        element_path = element
+        if Path(element_path).exists():
+            element_path = Path(element_path)
+    elif isinstance(element, bool):
+        element_path = element
+    else:
+        element_path = None
+    return element_path
 
 
 @ex.automain
@@ -330,24 +304,18 @@ def run(_config):
         'FileObserver` missing. Add a `FileObserver` with `-F foo/bar/`.'
     )
     base_dir = ex.current_run.observers[0].basedir
-    if not _config['decode']:
-        train_hmm_array(Path(base_dir), train_set=_config['train_set'],
-                    dev_set=_config['dev_set'], org_hmm=_config['org_hmm'],
-                    org_train_set=_config['org_train_set'],
-                    org_dir=_config['org_dir'],
-                    num_arrays=_config['num_arrays'],
-                    num_channels=_config['num_channels'])
+    if isinstance(_config['org_dir'], bool):
+        org_dir = base_dir
     else:
-        if _config['audio_dir'] is not None:
-            audio_dir = Path(_config['audio_dir'])
-        else:
-            audio_dir = None
-        decode(model_dir=_config['model_dir'],
-               dest_dir=Path(base_dir),
-               audio_dir=audio_dir,
-               ref_dev_dir=_config['ref_dev_dir'],
-               ivector_dir=_config['ivector_dir'],
-               hires=_config['hires'],
-               enh=_config['enh'],
-               num_jobs=_config['num_jobs']
-               )
+        org_dir = _config['org_dir']
+    decode(model_dir=check_config_element(_config['model_dir']),
+           dest_dir=Path(base_dir),
+           org_dir=Path(org_dir),
+           audio_dir=check_config_element(_config['audio_dir']),
+           ref_dev_dir=check_config_element(_config['ref_dev_dir']),
+           ivector_dir=check_config_element(_config['ivector_dir']),
+           extractor_dir=check_config_element(_config['extractor_dir']),
+           hires=_config['hires'],
+           enh=check_config_element(_config['enh']),
+           num_jobs=_config['num_jobs']
+           )
