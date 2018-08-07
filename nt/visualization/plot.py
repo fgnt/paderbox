@@ -753,9 +753,7 @@ def seq2seq_alignment(alignment, targets=None, decode=None, ax=None,
 
 __all__ = [
     'seq2seq_alignment',
-    'ctc_label_probabilities',
     'beampattern',
-    'ctc_decode',
     'tf_symlog',
     'phone_alignment',
     'mask',
