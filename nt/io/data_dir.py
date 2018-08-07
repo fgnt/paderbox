@@ -117,6 +117,10 @@ wsjcam0 = _get_path(
     'NT_WSJCAM0_DIR',
     db_dir / 'wsjcam0'
 )
+wsj_bss = _get_path(
+    'NT_WSJ_BSS_DIR',
+    '/net/vol/ldrude/projects/2017/project_dc_storage/wsj_bss/'
+)
 language_model = _get_path(
     'LANGUAGE_MODEL',
     '/net/storage/jheymann/__share/ldrude/2016/2016-05-10_lm'
