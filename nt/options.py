@@ -163,8 +163,27 @@ class Options:
         return self.to_json()
 
     def __getattr__(self, name):
-        if not name == '_init_done':
-            return self[name]
+        """
+        >>> import pickle
+        >>> o = Options(a=1)
+        >>> o
+        {
+          "a": 1
+        }
+        >>> pickle.loads(pickle.dumps(o))
+        {
+          "a": 1
+        }
+        """
+        if not name in ['_init_done', '_params']:
+            try:
+                return self[name]
+            except KeyError as e:
+                if len(e.args) == 1:
+                    raise AttributeError(e.args[0])
+                else:
+                    raise
+        raise AttributeError(name)
 
     def __getitem__(self, item):
         root, _dict, key = self.traverse_nested(item, self._params)
