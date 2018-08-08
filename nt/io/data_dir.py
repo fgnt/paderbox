@@ -119,7 +119,7 @@ wsjcam0 = _get_path(
 )
 wsj_bss = _get_path(
     'NT_WSJ_BSS_DIR',
-    '/net/vol/ldrude/projects/2017/project_dc_storage/wsj_bss/'
+    '/net/vol/ldrude/projects/2017/project_dc_storage/data/wsj_bss/'
 )
 language_model = _get_path(
     'LANGUAGE_MODEL',
