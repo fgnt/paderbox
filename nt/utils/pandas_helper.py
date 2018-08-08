@@ -215,9 +215,8 @@ def squeeze_df(
     1  {1: 1}
 
     """
-    from cbj.viz.pd_plot import _py_query
     if query:
-        df_tmp = _py_query(df, query=query, use_pd_query=use_pd_query).copy()
+        df_tmp = py_query(df, query=query, use_pd_query=use_pd_query).copy()
     else:
         df_tmp = df.copy()
 
