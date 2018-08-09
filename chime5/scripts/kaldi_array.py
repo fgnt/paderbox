@@ -9,7 +9,7 @@ from chime5.scripts.create_mapping_json import Chime5KaldiIdMapping
 from chime5.scripts.kaldi import ORG_DIR
 from nt.database.chime5 import Chime5
 from nt.utils.process_caller import run_process
-from nt.io.data_dir import database_jsons
+from nt.io.data_dir import database_jsons, kaldi_root
 from nt.io import symlink, mkdir_p
 
 ex = sacred.Experiment('Kaldi array')
@@ -170,17 +170,20 @@ def get_dev_dir(base_dir: Path, org_dir: Path, enh='bss_beam',
                         config=config, recalc=True)
     return dev_dir
 
-
-def create_dest_dir(dest_dir, org_dir=ORG_DIR):
+@ex.capture
+def create_dest_dir(dest_dir, org_dir=ORG_DIR, kaldi_root=kaldi_root):
     dest_dir.mkdir(exist_ok=True)
     (dest_dir / 'data').mkdir(exist_ok=True)
     for file in NEEDED_FILES:
         symlink(org_dir / file, dest_dir / file)
     for dirs in NEEDED_DIRS:
         symlink(org_dir / dirs, dest_dir / dirs)
-    for symlinks in ['steps', 'utils']:
-        linkto = os.readlink(org_dir / symlinks)
-        symlink(linkto, dest_dir / symlinks)
+    for link in ['steps', 'utils']:
+        if (org_dir / link).exists():
+            linkto = os.readlink(org_dir / link)
+        else:
+            linkto = kaldi_root / f'egs/wsj/s5/{link}'
+        symlink(linkto, dest_dir / link)
 
 
 def decode(model_dir, dest_dir, org_dir, audio_dir: Path,
@@ -250,6 +253,9 @@ def decode(model_dir, dest_dir, org_dir, audio_dir: Path,
             cwd=str(dest_dir),
             stdout=None, stderr=None
         )
+    print((
+              decode_dir / f'decode_{enh}' / 'scoring_kaldi' / 'best_wer'
+          ).read_text())
 
 
 @ex.config
@@ -310,7 +316,6 @@ def check_config_element(element):
 
 @ex.automain
 def run(_config, audio_dir, kaldi_root):
-
     assert Path(kaldi_root).exists(), kaldi_root
     os.environ['KALDI_ROOT'] = kaldi_root
 
