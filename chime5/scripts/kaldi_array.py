@@ -10,9 +10,10 @@ from chime5.scripts.kaldi import ORG_DIR
 from nt.database.chime5 import Chime5
 from nt.io.file_handling import mkdir_p
 from nt.utils.process_caller import run_process
+from nt.io.data_dir import database_jsons
 
 ex = sacred.Experiment('Kaldi array')
-db = Chime5('~/vol/jenkins/jsons/chime5_orig.json')
+db = Chime5(database_jsons / 'chime5_orig.json')
 
 NEEDED_FILES = ['cmd.sh', 'path.sh', 'get_model.bash']
 NEEDED_DIRS = ['data/lang', 'data/local', 'data/srilm', 'conf', 'local']
