@@ -221,6 +221,7 @@ def decode(model_dir, dest_dir, org_dir, audio_dir: Path,
             f'final.mdl not in decode_dir: {decode_dir},'
             f' maybe using worn org_dir: {org_dir}?'
         )
+    os.makedirs(str(decode_dir / f'decode_{enh}'))
     if ivector_dir:
         ivector_dir = calculate_ivectors(ivector_dir, dest_dir, org_dir,
                                          train_affix, dataset_dir,
