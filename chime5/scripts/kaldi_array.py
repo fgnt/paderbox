@@ -160,7 +160,7 @@ def get_dev_dir(base_dir: Path, org_dir: Path, enh='bss_beam',
         if audio_dir is None:
             copytree(str(ref_dev_dir), str(dev_dir))
         else:
-            assert audio_dir.exists()
+            assert audio_dir.exists(), audio_dir
             copy_ref_dir(dev_dir, ref_dev_dir, audio_dir)
         run_process([
             f'{base_dir}/utils/fix_data_dir.sh', str(dev_dir)],
@@ -263,6 +263,17 @@ def decode(model_dir, dest_dir, org_dir, audio_dir: Path,
 
 @ex.config
 def default():
+    """
+    audio_dir: Dir to decode. The path can be absolute or relative to the sacred
+        base folder. If None take the ref_dev_dir as audio_dir. Note when
+        ref_dev_dir is a relative path, it is relative to org_dir and not sacred
+        base folder.
+
+    org_dir/model_dir: Folder of the trained model
+
+    enh: Name of this experiment for the kaldi folders
+
+    """
     org_dir = ORG_DIR
     model_dir = 'chain_train_worn_u100k_cleaned'
     audio_dir = None
@@ -273,13 +284,15 @@ def default():
     hires = True
     num_jobs = os.cpu_count()
 
+
 @ex.named_config
 def baseline():
     org_dir = '/net/vol/jensheit/kaldi/egs/chime5/baseline'
-    model_dir = 'chain_train_worn_u100k_cleaned'
+    model_dir = 'chain_train_worn_u100k'
     ivector_dir = True
     extractor_dir = None
     hires = True
+
 
 @ex.named_config
 def inear():
@@ -288,7 +301,6 @@ def inear():
     ivector_dir = False
     extractor_dir = None
     hires = True
-
 
 
 def check_config_element(element):
