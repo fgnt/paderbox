@@ -275,6 +275,7 @@ def default():
     extractor_dir = None
     hires = True
     num_jobs = os.cpu_count()
+    kaldi_root = '/net/vol/jenkins/kaldi/2018-03-21_08-33-34_eba50e4420cfc536b68ca7144fac3cd29033adbb/'
 
 
 @ex.named_config
@@ -308,7 +309,11 @@ def check_config_element(element):
 
 
 @ex.automain
-def run(_config, audio_dir):
+def run(_config, audio_dir, kaldi_root):
+
+    assert Path(kaldi_root).exists(), kaldi_root
+    os.environ['KALDI_ROOT'] = kaldi_root
+
     assert len(ex.current_run.observers) == 1, (
         'FileObserver` missing. Add a `FileObserver` with `-F foo/bar/`.'
     )
