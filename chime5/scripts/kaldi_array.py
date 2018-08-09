@@ -182,7 +182,7 @@ def create_dest_dir(dest_dir, org_dir=ORG_DIR, kaldi_root=kaldi_root):
         if (org_dir / link).exists():
             linkto = os.readlink(org_dir / link)
         else:
-            linkto = kaldi_root / f'egs/wsj/s5/{link}'
+            linkto = Path(kaldi_root) / f'egs/wsj/s5/{link}'
         symlink(linkto, dest_dir / link)
 
 
@@ -281,7 +281,7 @@ def default():
     extractor_dir = None
     hires = True
     num_jobs = os.cpu_count()
-    kaldi_root = '/net/vol/jenkins/kaldi/2018-03-21_08-33-34_eba50e4420cfc536b68ca7144fac3cd29033adbb/'
+    kaldi_root = None
 
 
 @ex.named_config
@@ -291,6 +291,7 @@ def baseline():
     ivector_dir = True
     extractor_dir = None
     hires = True
+    kaldi_root = '/net/vol/jenkins/kaldi/2018-03-21_08-33-34_eba50e4420cfc536b68ca7144fac3cd29033adbb/'
 
 
 @ex.named_config
@@ -300,6 +301,7 @@ def inear():
     ivector_dir = True
     extractor_dir = None
     hires = True
+    kaldi_root = '/net/vol/jenkins/kaldi/2018-03-21_08-33-34_eba50e4420cfc536b68ca7144fac3cd29033adbb/'
 
 
 def check_config_element(element):
@@ -316,6 +318,8 @@ def check_config_element(element):
 
 @ex.automain
 def run(_config, audio_dir, kaldi_root):
+    if kaldi_root is None:
+        kaldi_root = os.environ['KALDI_ROOT']
     assert Path(kaldi_root).exists(), kaldi_root
     os.environ['KALDI_ROOT'] = kaldi_root
 
