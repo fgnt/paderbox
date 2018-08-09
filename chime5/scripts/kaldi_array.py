@@ -173,6 +173,7 @@ def get_dev_dir(base_dir: Path, org_dir: Path, enh='bss_beam',
 
 def create_dest_dir(dest_dir, org_dir=ORG_DIR):
     dest_dir.mkdir(exist_ok=True)
+    mkdir_p(dest_dir / 'data')
     for file in NEEDED_FILES:
         symlink(str(org_dir / file), str(dest_dir / file))
     for dirs in NEEDED_DIRS:
