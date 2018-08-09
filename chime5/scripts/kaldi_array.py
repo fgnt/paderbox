@@ -20,6 +20,10 @@ NEEDED_FILES = ['cmd.sh', 'path.sh', 'get_model.bash']
 NEEDED_DIRS = ['data/lang', 'data/local', 'data/srilm', 'conf', 'local']
 
 
+def check_dest_dir(dir):
+
+
+
 def calculate_mfccs(base_dir, dataset, num_jobs=20, config='mfcc.conf',
                     recalc=False):
     '''
@@ -203,9 +207,8 @@ def decode(model_dir, dest_dir, org_dir, audio_dir: Path,
     model_dir = org_dir / 'exp' / model_dir
     assert model_dir.exists(), f'{model_dir} does not exist'
 
-    if org_dir.exists() and not dest_dir.exists():
-        create_dest_dir(dest_dir, org_dir)
-        os.environ['PATH'] = f'{dest_dir}/utils:{os.environ["PATH"]}'
+    create_dest_dir(dest_dir, org_dir)
+    os.environ['PATH'] = f'{dest_dir}/utils:{os.environ["PATH"]}'
     train_affix = model_dir.name.split('_', maxsplit=1)[1]
     dataset_dir = get_dev_dir(dest_dir, org_dir, enh, hires, ref_dir,
                           audio_dir, num_jobs)
