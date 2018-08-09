@@ -13,6 +13,7 @@ from nt.utils.process_caller import run_process
 from nt.io.data_dir import database_jsons
 
 ex = sacred.Experiment('Kaldi array')
+
 db = Chime5(database_jsons / 'chime5_orig.json')
 
 NEEDED_FILES = ['cmd.sh', 'path.sh', 'get_model.bash']
@@ -262,8 +263,6 @@ def decode(model_dir, dest_dir, org_dir, audio_dir: Path,
 
 @ex.config
 def default():
-    train_set = 'train_uall'
-    dev_set = 'dev_beamformit_ref'
     org_dir = ORG_DIR
     model_dir = 'chain_train_worn_u100k_cleaned'
     audio_dir = None
@@ -273,6 +272,23 @@ def default():
     extractor_dir = None
     hires = True
     num_jobs = os.cpu_count()
+
+@ex.named_config
+def baseline():
+    org_dir = '/net/vol/jensheit/kaldi/egs/chime5/baseline'
+    model_dir = 'chain_train_worn_u100k_cleaned'
+    ivector_dir = True
+    extractor_dir = None
+    hires = True
+
+@ex.named_config
+def inear():
+    org_dir = '/net/vol/jensheit/kaldi/egs/chime5/inear_bss_cacgmm_v3/finetune_0/kaldi'
+    model_dir = 'chain_worn_bss_stereo_cleaned'
+    ivector_dir = False
+    extractor_dir = None
+    hires = True
+
 
 
 def check_config_element(element):
