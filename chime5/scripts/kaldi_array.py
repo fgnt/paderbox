@@ -20,10 +20,6 @@ NEEDED_FILES = ['cmd.sh', 'path.sh', 'get_model.bash']
 NEEDED_DIRS = ['data/lang', 'data/local', 'data/srilm', 'conf', 'local']
 
 
-def check_dest_dir(dir):
-
-
-
 def calculate_mfccs(base_dir, dataset, num_jobs=20, config='mfcc.conf',
                     recalc=False):
     '''
