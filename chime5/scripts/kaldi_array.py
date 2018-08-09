@@ -173,14 +173,14 @@ def get_dev_dir(base_dir: Path, org_dir: Path, enh='bss_beam',
 
 def create_dest_dir(dest_dir, org_dir=ORG_DIR):
     dest_dir.mkdir(exist_ok=True)
-    mkdir_p(dest_dir / 'data')
+    (dest_dir / 'data').mkdir(exist_ok=True)
     for file in NEEDED_FILES:
-        symlink(str(org_dir / file), str(dest_dir / file))
+        symlink(org_dir / file, dest_dir / file)
     for dirs in NEEDED_DIRS:
-        symlink(str(org_dir / dirs), str(dest_dir / dirs))
+        symlink(org_dir / dirs, dest_dir / dirs)
     for symlinks in ['steps', 'utils']:
-        linkto = os.readlink(str(org_dir / symlinks))
-        os.symlink(linkto, str(dest_dir / symlinks))
+        linkto = os.readlink(org_dir / symlinks)
+        symlink(linkto, dest_dir / symlinks)
 
 
 def decode(model_dir, dest_dir, org_dir, audio_dir: Path,
@@ -218,7 +218,7 @@ def decode(model_dir, dest_dir, org_dir, audio_dir: Path,
             f'final.mdl not in decode_dir: {decode_dir},'
             f' maybe using worn org_dir: {org_dir}?'
         )
-    os.makedirs(str(decode_dir / f'decode_{enh}'))
+    (decode_dir / f'decode_{enh}').mkdir(exist_ok=False)
     if ivector_dir:
         ivector_dir = calculate_ivectors(ivector_dir, dest_dir, org_dir,
                                          train_affix, dataset_dir,
@@ -229,10 +229,9 @@ def decode(model_dir, dest_dir, org_dir, audio_dir: Path,
             '--extra-left-context', '0', '--extra-right-context', '0',
             '--extra-left-context-initial', '0', '--extra-right-context-final',
             '0',
-            '--frames-per-chunk', '140', '--nj', '8', '--cmd',
-            '"run.pl --mem 4G"',
-            '--num-threads', '4', '--online-ivector-dir', str(ivector_dir),
-            f'{model_dir}/tree_sp/graph', str(dataset_dir),
+            '--frames-per-chunk', '140', '--nj', str(num_jobs), '--cmd',
+            '"run.pl --mem 4G"', '--online-ivector-dir',
+            str(ivector_dir), f'{model_dir}/tree_sp/graph', str(dataset_dir),
             str(decode_dir / f'decode_{enh}')],
             cwd=str(dest_dir),
             stdout=None, stderr=None
@@ -244,9 +243,9 @@ def decode(model_dir, dest_dir, org_dir, audio_dir: Path,
             '--extra-left-context', '0', '--extra-right-context', '0',
             '--extra-left-context-initial', '0', '--extra-right-context-final',
             '0',
-            '--frames-per-chunk', '140', '--nj', '8', '--cmd',
+            '--frames-per-chunk', '140', '--nj', str(num_jobs), '--cmd',
             '"run.pl --mem 4G"', '--num-threads', '4',
-            f'{model_dir}/tree_/graph', str(dataset_dir),
+            f'{model_dir}/tree/graph', str(dataset_dir),
             str(decode_dir)],
             cwd=str(dest_dir),
             stdout=None, stderr=None
@@ -291,7 +290,7 @@ def baseline():
 def inear():
     org_dir = '/net/vol/jensheit/kaldi/egs/chime5/inear_bss_cacgmm_v3/finetune_0/kaldi'
     model_dir = 'chain_worn_bss_stereo_cleaned'
-    ivector_dir = False
+    ivector_dir = True
     extractor_dir = None
     hires = True
 
