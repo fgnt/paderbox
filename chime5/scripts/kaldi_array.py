@@ -1,5 +1,5 @@
 import os
-import stat
+
 from pathlib import Path
 from shutil import copytree, copyfile
 
@@ -12,24 +12,10 @@ from nt.io.file_handling import mkdir_p
 from nt.utils.process_caller import run_process
 
 ex = sacred.Experiment('Kaldi array')
-db = Chime5('/net/vol/jenkins/jsons/chime5_orig.json')
+db = Chime5('~/vol/jenkins/jsons/chime5_orig.json')
 
 NEEDED_FILES = ['cmd.sh', 'path.sh', 'get_model.bash']
 NEEDED_DIRS = ['data/lang', 'data/local', 'data/srilm', 'conf', 'local']
-
-
-def get_files(base_dir, train_set, dev_set, org_dir=ORG_DIR):
-    if not (base_dir / 'data' / train_set).exists():
-        copytree(str(org_dir / 'data' / train_set),
-                 str(base_dir / 'data' / train_set))
-    if not (base_dir / 'data' / dev_set).exists():
-        copytree(str(org_dir / 'data' / dev_set),
-                 str(base_dir / 'data' / dev_set))
-    if not (base_dir / 'get_array_model.bash').exists():
-        file = str(base_dir / 'get_array_model.bash')
-        copyfile(str(org_dir / 'get_array_model.bash'), file)
-        st = os.stat(file)
-        os.chmod(file, st.st_mode | stat.S_IEXEC)
 
 
 def calculate_mfccs(base_dir, dataset, num_jobs=20, config='mfcc.conf',
@@ -67,7 +53,7 @@ def calculate_mfccs(base_dir, dataset, num_jobs=20, config='mfcc.conf',
     )
 
 
-def calculate_ivectors(ivector_dir, base_dir, train_affix, dataset_dir,
+def calculate_ivectors(ivector_dir, dest_dir, org_dir, train_affix, dataset_dir,
                        extractor_dir, num_jobs=8):
     '''
     
@@ -80,9 +66,9 @@ def calculate_ivectors(ivector_dir, base_dir, train_affix, dataset_dir,
     :return: 
     '''
     if isinstance(ivector_dir, str):
-        ivector_dir = base_dir / 'exp' / ('nnet3_' + train_affix) / ivector_dir
+        ivector_dir = dest_dir / 'exp' / ('nnet3_' + train_affix) / ivector_dir
     elif isinstance(ivector_dir, bool):
-        ivector_dir = base_dir / 'exp' / ('nnet3_' + train_affix) / (
+        ivector_dir = dest_dir / 'exp' / ('nnet3_' + train_affix) / (
             'ivectors_' + dataset_dir.name)
     elif isinstance(ivector_dir, Path):
         ivector_dir = ivector_dir
@@ -91,17 +77,17 @@ def calculate_ivectors(ivector_dir, base_dir, train_affix, dataset_dir,
                          f' a Path, a string or bolean')
     if not ivector_dir.exists():
         if extractor_dir is None:
-            extractor_dir = base_dir / f'exp/nnet3_{train_affix}/extractor'
+            extractor_dir = org_dir / f'exp/nnet3_{train_affix}/extractor'
         else:
             if isinstance(extractor_dir, str):
-                extractor_dir = base_dir / f'exp/{extractor_dir}'
+                extractor_dir = org_dir / f'exp/{extractor_dir}'
         assert extractor_dir.exists()
         print(f'Directory {ivector_dir} not found, estimating ivectors')
         run_process([
-            f'steps/online/nnet2/extract_ivectors_online.sh',
+            f'{dest_dir}/steps/online/nnet2/extract_ivectors_online.sh',
             '--cmd', 'run.pl', '--nj', f'{num_jobs}', f'{dataset_dir}',
             f'{extractor_dir}', str(ivector_dir)],
-            cwd=str(base_dir),
+            cwd=str(dest_dir),
             stdout=None, stderr=None
         )
     return ivector_dir
@@ -172,6 +158,7 @@ def get_dev_dir(base_dir: Path, org_dir: Path, enh='bss_beam',
         if audio_dir is None:
             copytree(str(ref_dev_dir), str(dev_dir))
         else:
+            assert audio_dir.exists()
             copy_ref_dir(dev_dir, ref_dev_dir, audio_dir)
         run_process([
             f'{base_dir}/utils/fix_data_dir.sh', str(dev_dir)],
@@ -228,15 +215,16 @@ def decode(model_dir, dest_dir, org_dir, audio_dir: Path,
                 copytree(str(model_dir / 'tdnn1a'),
                          str(dest_dir / 'exp' / 'model' / model_dir.name))
         decode_dir = dest_dir / 'exp' / 'model' / model_dir.name / f'decode_{enh}'
-    if org_dir and not org_dir == dest_dir:
+    if org_dir.exists() and not dest_dir.exists():
         create_dest_dir(dest_dir, org_dir)
         os.environ['PATH'] = f'{dest_dir}/utils:{os.environ["PATH"]}'
     train_affix = model_dir.name.split('_', maxsplit=1)[1]
     dev_dir = get_dev_dir(dest_dir, org_dir, enh, hires, ref_dev_dir,
                           audio_dir, num_jobs)
     if ivector_dir:
-        ivector_dir = calculate_ivectors(ivector_dir, dest_dir, train_affix,
-                                  dev_dir, extractor_dir, num_jobs)
+        ivector_dir = calculate_ivectors(ivector_dir, dest_dir, org_dir,
+                                         train_affix,dev_dir, extractor_dir,
+                                         num_jobs)
         if decode_dir is None:
             decode_dir = f'{model_dir}/tdnn1a_sp/decode_{enh}'
         os.makedirs(decode_dir)
@@ -257,7 +245,7 @@ def decode(model_dir, dest_dir, org_dir, audio_dir: Path,
         decode_dir = f'{model_dir}/tdnn1a/decode_{enh}'
         os.makedirs(decode_dir)
         run_process([
-            f'{org_dir}/steps/nnet3/decode.sh', '--acwt', '1.0',
+            f'{dest_dir}/steps/nnet3/decode.sh', '--acwt', '1.0',
             '--post-decode-acwt', '10.0',
             '--extra-left-context', '0', '--extra-right-context', '0',
             '--extra-left-context-initial', '0', '--extra-right-context-final',
@@ -283,7 +271,7 @@ def default():
     enh = 'bss_beam'
     extractor_dir = None
     hires = True
-    num_jobs = 8
+    num_jobs = os.cpu_count()
 
 
 def check_config_element(element):
