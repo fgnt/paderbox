@@ -95,15 +95,15 @@ def calculate_ivectors(ivector_dir, dest_dir, org_dir, train_affix, dataset_dir,
     return ivector_dir
 
 
-def copy_ref_dir(dev_dir, ref_dev_dir, audio_dir, allow_missing_files=True):
+def copy_ref_dir(dev_dir, ref_dir, audio_dir, allow_missing_files=True):
     mapping = Chime5KaldiIdMapping()
     required_files = ['utt2spk', 'text']
-    with (ref_dev_dir / 'text').open() as file:
+    with (ref_dir / 'text').open() as file:
         text = file.readlines()
     ref_ids = [line.split(' ', maxsplit=1)[0].strip() for line in text]
     mkdir_p(dev_dir)
     for files in required_files:
-        copyfile(str(ref_dev_dir / files), str(dev_dir / files))
+        copyfile(str(ref_dir / files), str(dev_dir / files))
     ids = {
     wav_file: mapping.get_array_ids_from_nt_id(wav_file.name.split('.')[0],
                                                channels='ENH')
@@ -141,7 +141,7 @@ def copy_ref_dir(dev_dir, ref_dev_dir, audio_dir, allow_missing_files=True):
 
 
 def get_dev_dir(base_dir: Path, org_dir: Path, enh='bss_beam',
-                hires=True, ref_dev_dir='dev_beamformit_ref',
+                hires=True, ref_dir='dev_beamformit_ref',
                 audio_dir=None, num_jobs=8):
     if isinstance(enh, Path):
         dev_dir = enh
@@ -154,14 +154,14 @@ def get_dev_dir(base_dir: Path, org_dir: Path, enh='bss_beam',
     config = 'mfcc_hires.conf' if hires else 'mfcc.conf'
     if not dev_dir.exists():
         print(f'Directory {dev_dir} not found creating data directory')
-        if isinstance(ref_dev_dir, str):
-            ref_dev_dir = org_dir / 'data' / ref_dev_dir
-        assert ref_dev_dir.exists()
+        if isinstance(ref_dir, str):
+            ref_dir = org_dir / 'data' / ref_dir
+        assert ref_dir.exists()
         if audio_dir is None:
-            copytree(str(ref_dev_dir), str(dev_dir))
+            copytree(str(ref_dir), str(dev_dir))
         else:
-            assert audio_dir.exists(), audio_dir
-            copy_ref_dir(dev_dir, ref_dev_dir, audio_dir)
+            assert audio_dir.exists()
+            copy_ref_dir(dev_dir, ref_dir, audio_dir)
         run_process([
             f'{base_dir}/utils/fix_data_dir.sh', str(dev_dir)],
             cwd=str(base_dir), stdout=None, stderr=None
@@ -183,7 +183,7 @@ def create_dest_dir(dest_dir, org_dir=ORG_DIR):
 
 
 def decode(model_dir, dest_dir, org_dir, audio_dir: Path,
-           ref_dev_dir='dev_beamformit_ref',
+           ref_dir='dev_beamformit_ref',
            ivector_dir=False, extractor_dir=None,
            hires=True, enh='bss_beam', num_jobs=8):
     '''
@@ -192,7 +192,7 @@ def decode(model_dir, dest_dir, org_dir, audio_dir: Path,
     :param dest_dir: kaldi egs dir for the decoding
     :param org_dir: kaldi egs dir from which information for decoding are gathered
     :param audio_dir: directory of audio files to decode (may be None)
-    :param ref_dev_dir: reference kaldi dataset directory or name for decode dataset
+    :param ref_dir: reference kaldi dataset directory or name for decode dataset
     :param ivector_dir: directory or name for the ivectors (may be None or False)
     :param extractor_dir: directory of the ivector extractor (maybe None)
     :param hires: flag for using high resolution mfcc features (True / False)
@@ -221,12 +221,12 @@ def decode(model_dir, dest_dir, org_dir, audio_dir: Path,
         create_dest_dir(dest_dir, org_dir)
         os.environ['PATH'] = f'{dest_dir}/utils:{os.environ["PATH"]}'
     train_affix = model_dir.name.split('_', maxsplit=1)[1]
-    dev_dir = get_dev_dir(dest_dir, org_dir, enh, hires, ref_dev_dir,
+    dataset_dir = get_dev_dir(dest_dir, org_dir, enh, hires, ref_dir,
                           audio_dir, num_jobs)
     if ivector_dir:
         ivector_dir = calculate_ivectors(ivector_dir, dest_dir, org_dir,
-                                         train_affix,dev_dir, extractor_dir,
-                                         num_jobs)
+                                         train_affix, dataset_dir,
+                                         extractor_dir, num_jobs)
         if decode_dir is None:
             decode_dir = f'{model_dir}/tdnn1a_sp/decode_{enh}'
         os.makedirs(decode_dir)
@@ -239,7 +239,7 @@ def decode(model_dir, dest_dir, org_dir, audio_dir: Path,
             '--frames-per-chunk', '140', '--nj', '8', '--cmd',
             '"run.pl --mem 4G"',
             '--num-threads', '4', '--online-ivector-dir', str(ivector_dir),
-            f'{model_dir}/tree_sp/graph', str(dev_dir), str(decode_dir)],
+            f'{model_dir}/tree_sp/graph', str(dataset_dir), str(decode_dir)],
             cwd=str(dest_dir),
             stdout=None, stderr=None
         )
@@ -254,7 +254,7 @@ def decode(model_dir, dest_dir, org_dir, audio_dir: Path,
             '0',
             '--frames-per-chunk', '140', '--nj', '8', '--cmd',
             '"run.pl --mem 4G"', '--num-threads', '4',
-            f'{model_dir}/tree_/graph', str(dev_dir),
+            f'{model_dir}/tree_/graph', str(dataset_dir),
             str(decode_dir)],
             cwd=str(dest_dir),
             stdout=None, stderr=None
@@ -275,10 +275,10 @@ def default():
 
     """
     org_dir = ORG_DIR
-    model_dir = 'chain_train_worn_u100k_cleaned'
+    model_dir = 'chain_train_worn_u100k'
     audio_dir = None
     ivector_dir = False
-    ref_dev_dir = 'dev_beamformit_ref'
+    ref_dir = 'dev_beamformit_ref'
     enh = 'bss_beam'
     extractor_dir = None
     hires = True
@@ -316,20 +316,25 @@ def check_config_element(element):
 
 
 @ex.automain
-def run(_config):
-    assert len(ex.current_run.observers) > 0, (
+def run(_config, audio_dir):
+    assert len(ex.current_run.observers) == 1, (
         'FileObserver` missing. Add a `FileObserver` with `-F foo/bar/`.'
     )
-    base_dir = ex.current_run.observers[0].basedir
+    base_dir = Path(ex.current_run.observers[0].basedir)
+    if audio_dir is not None:
+        audio_dir = base_dir / audio_dir
+        assert audio_dir.exists()
     if isinstance(_config['org_dir'], bool):
         org_dir = base_dir
     else:
-        org_dir = _config['org_dir']
+        org_dir = Path(_config['org_dir'])
+        assert org_dir.exists()
+
     decode(model_dir=check_config_element(_config['model_dir']),
-           dest_dir=Path(base_dir),
-           org_dir=Path(org_dir),
-           audio_dir=check_config_element(_config['audio_dir']),
-           ref_dev_dir=check_config_element(_config['ref_dev_dir']),
+           dest_dir=base_dir,
+           org_dir=org_dir,
+           audio_dir=audio_dir,
+           ref_dir=check_config_element(_config['ref_dir']),
            ivector_dir=check_config_element(_config['ivector_dir']),
            extractor_dir=check_config_element(_config['extractor_dir']),
            hires=_config['hires'],
