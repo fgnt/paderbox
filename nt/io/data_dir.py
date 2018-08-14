@@ -107,7 +107,7 @@ reverb = _get_path(
 )
 wsj = _get_path(
     'NT_WSJ_DIR',
-    db_dir / 'wsj'
+    fast_db_dir / 'wsj'
 )
 wsj_corrected_paths = _get_path(
     'NT_WSJ_DIR',
@@ -119,7 +119,7 @@ wsjcam0 = _get_path(
 )
 wsj_bss = _get_path(
     'NT_WSJ_BSS_DIR',
-    '/net/vol/ldrude/projects/2017/project_dc_storage/data/wsj_bss/'
+    fast_db_dir / 'wsj_bss'
 )
 language_model = _get_path(
     'LANGUAGE_MODEL',
