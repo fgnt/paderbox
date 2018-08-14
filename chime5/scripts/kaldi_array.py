@@ -166,7 +166,7 @@ def get_dev_dir(base_dir: Path, org_dir: Path, enh='bss_beam',
             f'{base_dir}/utils/fix_data_dir.sh', str(dev_dir)],
             cwd=str(base_dir), stdout=None, stderr=None
         )
-        calculate_mfccs(org_dir, dev_dir, num_jobs=num_jobs,
+        calculate_mfccs(base_dir, dev_dir, num_jobs=num_jobs,
                         config=config, recalc=True)
     return dev_dir
 
@@ -206,8 +206,8 @@ def decode(model_dir, dest_dir, org_dir, audio_dir: Path,
     '''
     model_dir = org_dir / 'exp' / model_dir
     assert model_dir.exists(), f'{model_dir} does not exist'
-
-    create_dest_dir(dest_dir, org_dir)
+    if not dest_dir == org_dir:
+        create_dest_dir(dest_dir, org_dir)
     os.environ['PATH'] = f'{dest_dir}/utils:{os.environ["PATH"]}'
     train_affix = model_dir.name.split('_', maxsplit=1)[1]
     dataset_dir = get_dev_dir(dest_dir, org_dir, enh, hires, ref_dir,
