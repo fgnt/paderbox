@@ -1,10 +1,8 @@
-import collections
 import concurrent.futures
 import fnmatch
 import os
 import re
 from collections import OrderedDict
-from pathlib import Path
 
 import numpy as np
 import soundfile as sf
@@ -13,8 +11,10 @@ from nt.dataset.callback_dataset import UtteranceCallbackDataset
 from nt.database.helper import *
 from nt.io import load_json
 from nt.io.audioread import audioread, read_nist_wsj
+from nt.utils.deprecated import deprecated
 
 
+@deprecated
 def get_matching_names(names, glob, regex):
     """
     Should this function moved to nt.utils? Rename something?
@@ -136,6 +136,7 @@ class UtteranceJsonCallbackDataset(UtteranceCallbackDataset):
         sample rate.
     """
 
+    @deprecated
     def __init__(self, json_src, flist, feature_channels, *,
                  transformation_callback=None,
                  transformation_kwargs=None, sample_rate=None):
@@ -160,6 +161,7 @@ class UtteranceJsonCallbackDataset(UtteranceCallbackDataset):
             transformation_kwargs=transformation_kwargs
         )
 
+    @deprecated
     def _get_utterance_list(self):
         """ Returns a list with utterance ids
 
@@ -173,6 +175,7 @@ class UtteranceJsonCallbackDataset(UtteranceCallbackDataset):
         # is the same sorting mechanism which is used in Kaldi.
         return sorted([utt_id for utt_id in common_utt_ids])
 
+    @deprecated
     def sort_by_file_size(self, reverse=False):
         """Sort the utterances by file size.
 
@@ -221,10 +224,12 @@ class UtteranceJsonCallbackDataset(UtteranceCallbackDataset):
         # The iterators access entries by order in self.utterances.
         self.utterances = list(self.flist.keys())
 
+    @deprecated
     def _read_audio(self, wav_file, utt):
         return audioread(wav_file, expected_sample_rate=self.sample_rate)[0]
         # return audioread(wav_file)
 
+    @deprecated
     def _read_utterance(self, utt):
 
         data_dict = dict()
@@ -246,6 +251,7 @@ class UtteranceJsonCallbackDataset(UtteranceCallbackDataset):
 
         return data_dict
 
+    @deprecated
     def sort(self, key='nsamples', reverse=False):
         """
         Sort `utterances` by a key given in the annotations of the json
@@ -288,17 +294,20 @@ class UtteranceJsonCallbackDataset(UtteranceCallbackDataset):
 
 
 class NistUtteranceJsonCallbackDataset(UtteranceJsonCallbackDataset):
+    @deprecated
     def _read_audio(self, wav_file, utt):
         return read_nist_wsj(wav_file)
 
 
 class FlacUtteranceJsonCallbackDataset(UtteranceJsonCallbackDataset):
+    @deprecated
     def _read_audio(self, flac_file, utt):
         data, sample_rate = sf.read(flac_file, dtype=np.float32)
         return data
 
 
 class ContextUtteranceJsonCallbackDataset(UtteranceJsonCallbackDataset):
+    @deprecated
     def __init__(self, json_src, flist, feature_channels, annotations,
                  audio_start_key=None,
                  audio_end_key=None, context_length=None,
@@ -328,6 +337,7 @@ class ContextUtteranceJsonCallbackDataset(UtteranceJsonCallbackDataset):
                          sample_rate=sample_rate
                          )
 
+    @deprecated
     def _read_utterance(self, utt):
 
         data_dict = dict()

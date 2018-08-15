@@ -1,6 +1,8 @@
 import random
+from nt.utils.deprecated import deprecated
 
 
+@deprecated
 def _identity_callback(data, **kwargs):
     return data
 
@@ -9,7 +11,7 @@ class UtteranceCallbackDataset():
     """ A template for a callback fetcher.
 
     """
-
+    @deprecated
     def __init__(self, transformation_callback=None,
                  transformation_kwargs=None):
 
@@ -24,6 +26,7 @@ class UtteranceCallbackDataset():
 
         self.utterances = self._get_utterance_list()
 
+    @deprecated
     def __getitem__(self, index):
         """
         Returns an example or a sequence of examples.
@@ -46,12 +49,14 @@ class UtteranceCallbackDataset():
         else:
             return self.get_example(index)
 
+    @deprecated
     def __contains__(self, key):
         if isinstance(key, str):
             return key in self.utterances
         else:
             raise TypeError(type(key), key, 'Expect str')
 
+    @deprecated
     def _get_utterance_list(self):
         """ Returns a list with utterance ids
 
@@ -59,6 +64,7 @@ class UtteranceCallbackDataset():
         """
         raise NotImplementedError
 
+    @deprecated
     def _read_utterance(self, utt):
         """ Reads the (untransformed) data for utterance `utt`
 
@@ -67,15 +73,19 @@ class UtteranceCallbackDataset():
         """
         raise NotImplementedError
 
+    @deprecated
     def __len__(self):
         return len(self.utterances)
 
+    @deprecated
     def get_example(self, i):
         return self._get_utterance_for_idx(i)
 
+    @deprecated
     def _get_utterance_for_idx(self, i):
         return self._get_utterance_for_utt(self.utterances[i], i)
 
+    @deprecated
     def _get_utterance_for_utt(self, utt, utt_idx):
         """
 
@@ -90,6 +100,7 @@ class UtteranceCallbackDataset():
         data = self.callback(data, **self.callback_kwargs)
         return data
 
+    @deprecated
     def shuffle_utterances(self):
         """ Shuffles utterance list again.
 
