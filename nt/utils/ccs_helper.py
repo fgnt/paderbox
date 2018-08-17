@@ -6,6 +6,7 @@ import re
 import time
 import numpy as np
 from tqdm import tqdm
+from pathlib import Path
 
 
 def ccsinfo(host=None, use_ssh=True):
@@ -13,16 +14,25 @@ def ccsinfo(host=None, use_ssh=True):
 
     :param host: PC2 ssh host alias.
     """
-    common_args = ['-s', '--mine', '--fmt=%.R%.60N%.4w%P%D%v', '--raw']
+    common_args = ['-s', '--mine', '--fmt=%.R%.60N%.4w%P%D%v%o', '--raw']
     if use_ssh:
         host = 'pc2' if host is None else host
         ret = sh.ssh(host, 'ccsinfo', *common_args)
     else:
         ret = sh.ccsinfo(*common_args)
-    return pd.read_csv(StringIO(ret.stdout.decode('utf-8')),
-                       delim_whitespace=True,
-                       names=['id', 'name', 'status', 'start_time',
-                              'time_limit', 'runtime'])
+
+    names = [
+        'id', 'name', 'status', 'start_time', 'time_limit', 'runtime', 'stdout'
+    ]
+    df = pd.read_csv(
+        StringIO(ret.stdout.decode('utf-8')),
+        delim_whitespace=True,
+        names=names
+    )
+
+    df['experiment_dir'] = df['stdout'].apply(lambda x: Path(x).parent)
+    del df['stdout']
+    return df
 
 
 def ccskill(request_id, host=None):
