@@ -1,3 +1,11 @@
+"""
+
+
+Example call on pc2:
+ccsalloc --group=hpc-prf-nt1 --res=rset=64:vmem=2G:mem=2G:ncpus=1 -t 6h python -m chime5.scripts.kaldi_array -F ~/sacred/chime5/arrayBSS/54/kaldi/inear with inear audio_dir=../../audio/dev num_jobs=64
+
+"""
+
 import os
 
 from pathlib import Path
@@ -20,8 +28,10 @@ NEEDED_FILES = ['cmd.sh', 'path.sh', 'get_model.bash']
 NEEDED_DIRS = ['data/lang', 'data/local', 'data/srilm', 'conf', 'local']
 
 
+
+@ex.capture
 def calculate_mfccs(base_dir, dataset, num_jobs=20, config='mfcc.conf',
-                    recalc=False):
+                    recalc=False, kaldi_cmd='run.pl'):
     '''
 
     :param base_dir: kaldi egs directory with steps and utils dir
@@ -38,7 +48,7 @@ def calculate_mfccs(base_dir, dataset, num_jobs=20, config='mfcc.conf',
         run_process([
             'steps/make_mfcc.sh', '--nj', str(num_jobs),
             '--mfcc-config', f'{base_dir}/conf/{config}',
-            '--cmd', 'run.pl', f'{dataset}',
+            '--cmd', f'{kaldi_cmd}', f'{dataset}',
             f'{dataset}/make_mfcc', f'{dataset}/mfcc'],
             cwd=str(base_dir), stdout=None, stderr=None
         )
@@ -55,8 +65,9 @@ def calculate_mfccs(base_dir, dataset, num_jobs=20, config='mfcc.conf',
     )
 
 
+@ex.capture
 def calculate_ivectors(ivector_dir, dest_dir, org_dir, train_affix, dataset_dir,
-                       extractor_dir, num_jobs=8):
+                       extractor_dir, num_jobs=8, kaldi_cmd='run.pl'):
     '''
     
     :param ivector_dir: ivector directory may be a string, bool or Path
@@ -87,7 +98,7 @@ def calculate_ivectors(ivector_dir, dest_dir, org_dir, train_affix, dataset_dir,
         print(f'Directory {ivector_dir} not found, estimating ivectors')
         run_process([
             'steps/online/nnet2/extract_ivectors_online.sh',
-            '--cmd', 'run.pl', '--nj', f'{num_jobs}', f'{dataset_dir}',
+            '--cmd', f'{kaldi_cmd}', '--nj', f'{num_jobs}', f'{dataset_dir}',
             f'{extractor_dir}', str(ivector_dir)],
             cwd=str(dest_dir),
             stdout=None, stderr=None
@@ -170,6 +181,7 @@ def get_dev_dir(base_dir: Path, org_dir: Path, enh='bss_beam',
                         config=config, recalc=True)
     return dev_dir
 
+
 @ex.capture
 def create_dest_dir(dest_dir, org_dir=ORG_DIR, kaldi_root=kaldi_root):
     dest_dir.mkdir(exist_ok=True)
@@ -185,11 +197,17 @@ def create_dest_dir(dest_dir, org_dir=ORG_DIR, kaldi_root=kaldi_root):
             linkto = Path(kaldi_root) / f'egs/wsj/s5/{link}'
         symlink(linkto, dest_dir / link)
 
+    if 'CCS_NODEFILE' in os.environ:
+        CCS_NODEFILE = Path(os.environ['CCS_NODEFILE'])
+        (dest_dir / '.queue').mkdir()
+        (dest_dir / '.queue' / 'machines').write_text(CCS_NODEFILE.read_text())
 
+
+@ex.capture
 def decode(model_dir, dest_dir, org_dir, audio_dir: Path,
            ref_dir='dev_beamformit_ref', model_type='tdnn1a_sp',
            ivector_dir=False, extractor_dir=None,
-           hires=True, enh='bss_beam', num_jobs=8):
+           hires=True, enh='bss_beam', num_jobs=8, kaldi_cmd='run.pl'):
     '''
 
     :param model_dir: name of model or Path to model_dir
@@ -233,7 +251,9 @@ def decode(model_dir, dest_dir, org_dir, audio_dir: Path,
             '--extra-left-context-initial', '0', '--extra-right-context-final',
             '0',
             '--frames-per-chunk', '140', '--nj', str(num_jobs), '--cmd',
-            '"run.pl --mem 4G"', '--online-ivector-dir',
+            # f'{kaldi_cmd} --mem 4G',
+            f'{kaldi_cmd}',
+            '--online-ivector-dir',
             str(ivector_dir), f'{model_dir}/tree_sp/graph', str(dataset_dir),
             str(decode_dir / f'decode_{enh}')],
             cwd=str(dest_dir),
@@ -247,7 +267,7 @@ def decode(model_dir, dest_dir, org_dir, audio_dir: Path,
             '--extra-left-context-initial', '0', '--extra-right-context-final',
             '0',
             '--frames-per-chunk', '140', '--nj', str(num_jobs), '--cmd',
-            '"run.pl --mem 4G"', '--num-threads', '4',
+            f'"{kaldi_cmd} --mem 4G"', '--num-threads', '4',
             f'{model_dir}/tree/graph', str(dataset_dir),
             str(decode_dir)],
             cwd=str(dest_dir),
@@ -256,6 +276,14 @@ def decode(model_dir, dest_dir, org_dir, audio_dir: Path,
     print((
               decode_dir / f'decode_{enh}' / 'scoring_kaldi' / 'best_wer'
           ).read_text())
+
+
+def on_pc2():
+    # len(Path(os.environ["CCS_NODEFILE"]).read_text().strip().split("\n"))
+    if 'CCS_NODEFILE' in os.environ:
+        return True
+    else:
+        return False
 
 
 @ex.config
@@ -283,25 +311,38 @@ def default():
     num_jobs = os.cpu_count()
     kaldi_root = None
 
+    if on_pc2():
+        kaldi_cmd = 'ssh.pl'
+    else:
+        kaldi_cmd = 'run.pl'
+
 
 @ex.named_config
 def baseline():
-    org_dir = '/net/vol/jensheit/kaldi/egs/chime5/baseline'
+    if on_pc2():
+        kaldi_root = '/scratch/hpc-prf-nt1/fgnt/kaldi_2018-03-21_08-33-34_eba50e4420cfc536b68ca7144fac3cd29033adbb'
+        org_dir = '/scratch/hpc-prf-nt1/jensheit/software/kaldi/egs/chime5/baseline'
+    else:
+        kaldi_root = '/net/vol/jenkins/kaldi/2018-03-21_08-33-34_eba50e4420cfc536b68ca7144fac3cd29033adbb/'
+        org_dir = '/net/vol/jensheit/kaldi/egs/chime5/baseline'
     model_dir = 'chain_train_worn_u100k'
     ivector_dir = True
     extractor_dir = None
     hires = True
-    kaldi_root = '/net/vol/jenkins/kaldi/2018-03-21_08-33-34_eba50e4420cfc536b68ca7144fac3cd29033adbb/'
 
 
 @ex.named_config
 def inear():
-    org_dir = '/net/vol/jensheit/kaldi/egs/chime5/inear_bss_cacgmm_v3/finetune_0/kaldi'
+    if on_pc2():
+        kaldi_root = '/scratch/hpc-prf-nt1/fgnt/kaldi_2018-03-21_08-33-34_eba50e4420cfc536b68ca7144fac3cd29033adbb'
+        org_dir = '/scratch/hpc-prf-nt1/jensheit/software/kaldi/egs/chime5/inear'
+    else:
+        kaldi_root = '/net/vol/jenkins/kaldi/2018-03-21_08-33-34_eba50e4420cfc536b68ca7144fac3cd29033adbb/'
+        org_dir = '/net/vol/jensheit/kaldi/egs/chime5/inear_bss_cacgmm_v3/finetune_0/kaldi'
     model_dir = 'chain_worn_bss_stereo_cleaned'
     ivector_dir = True
     extractor_dir = None
     hires = True
-    kaldi_root = '/net/vol/jenkins/kaldi/2018-03-21_08-33-34_eba50e4420cfc536b68ca7144fac3cd29033adbb/'
 
 
 def check_config_element(element):
