@@ -14,7 +14,7 @@ def ccsinfo(host=None, use_ssh=True):
 
     :param host: PC2 ssh host alias.
     """
-    common_args = ['-s', '--mine', '--fmt=%.R%.60N%.4w%P%D%v%o', '--raw']
+    common_args = ['-s', '--mine', '--fmt=%.R%o%.60N%.4w%P%D%v%u', '--raw']
     if use_ssh:
         host = 'pc2' if host is None else host
         ret = sh.ssh(host, 'ccsinfo', *common_args)
@@ -22,7 +22,8 @@ def ccsinfo(host=None, use_ssh=True):
         ret = sh.ccsinfo(*common_args)
 
     names = [
-        'id', 'name', 'status', 'start_time', 'time_limit', 'runtime', 'stdout'
+        'id', 'stdout', 'name', 'status', 'start_time', 'time_limit', 'runtime',
+        'resource_set'
     ]
     df = pd.read_csv(
         StringIO(ret.stdout.decode('utf-8')),
@@ -30,9 +31,15 @@ def ccsinfo(host=None, use_ssh=True):
         names=names
     )
 
-    df['experiment_dir'] = df['stdout'].apply(lambda x: Path(x).parent)
+    def _format(x):
+        try:
+            return Path(x).parent
+        except TypeError:
+            return x
+
+    df['experiment_dir'] = df['stdout'].apply(_format)
     del df['stdout']
-    return df
+    return df.fillna('')
 
 
 def ccskill(request_id, host=None):
