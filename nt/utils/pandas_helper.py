@@ -4,7 +4,9 @@ from IPython.display import display
 import pandas as pd
 
 
-def py_query(data: pd.DataFrame, query, use_pd_query=False):
+def py_query(
+        data: pd.DataFrame, query, use_pd_query=False, allow_empty_result=False
+):
     """
     Alternative: pd.DataFrame.query: supports a subset of this function,
                                      but is faster
@@ -74,7 +76,7 @@ def func({', '.join(list(data))}):
     selection = data.apply(lambda row: func(**row), axis=1)
     data = data[selection]
 
-    assert len(data) > 0, len(data)
+    assert allow_empty_result or len(data) > 0, len(data)
     return data
 
 
