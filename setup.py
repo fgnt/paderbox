@@ -103,7 +103,8 @@ setup(
         'wavefile',  # for reading .flac audio
         'nose',
         'nose_parameterized',
-        'sh'
+        'sh',
+        'pycallgraph'  # Used in profiling module
     ],
 
     # Installation problems in a clean, new environment:
