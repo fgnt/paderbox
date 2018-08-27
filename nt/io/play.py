@@ -49,7 +49,8 @@ def play(
     :param data: Time series with shape (frames,)
         or stft with shape (frames, channels, bins) or (frames, bins)
         or string containing path to audio file.
-    :param channel: Channel, if you have a multichannel stft signal.
+    :param channel: Channel, if you have a multichannel stft signal or a
+        multichannel audio file.
     :param sample_rate: Sampling rate in Hz.
     :param size: STFT window size
     :param shift: STFT shift
@@ -58,6 +59,8 @@ def play(
         is supported.
     :param name: If name is set, then in ipynb table with name and audio is
                  displayed
+    :param stereo: If set to true, you can listen to channel as defined by
+        `channel` parameter and the next channel at the same time.
     :return:
     """
     if stereo:
@@ -72,6 +75,8 @@ def play(
     if isinstance(data, str):
         assert os.path.exists(data), ('File does not exist.', data)
         data = audioread(data, expected_sample_rate=sample_rate)[0]
+        if len(data.shape) == 2:
+            data = data[channel, :]
     elif np.iscomplexobj(data):
         assert data.shape[-1] == size // 2 + \
             1, ('Wrong number of frequency bins', data.shape, size)

@@ -4,6 +4,7 @@ import h5py
 import numpy as np
 from natsort import natsorted
 from nt.dataset.callback_dataset import UtteranceCallbackDataset
+from nt.utils.deprecated import deprecated
 
 
 class UtteranceHDF5Dataset(UtteranceCallbackDataset):
@@ -23,6 +24,7 @@ class UtteranceHDF5Dataset(UtteranceCallbackDataset):
             transformation_kwargs=transformation_kwargs
         )
 
+    @deprecated
     @property
     def data(self):
         """
@@ -35,9 +37,11 @@ class UtteranceHDF5Dataset(UtteranceCallbackDataset):
             db = db[subtree]
         return db
 
+    @deprecated
     def _get_utterance_list(self):
         return natsorted(list(self.data.keys()))
 
+    @deprecated
     def _read_utterance(self, utt):
         ret_data = dict()
         for key in self.data_list:

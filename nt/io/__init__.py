@@ -13,23 +13,34 @@ from pathlib import Path
 from nt.io import audioread
 from nt.io import hdf5
 from nt.io import play
-from nt.io.json_module import load_json, dump_json
+from nt.io.json_module import (
+    load_json,
+    loads_json,
+    dump_json,
+    dumps_json,
+)
 from nt.io.json_module import SummaryEncoder
 from nt.io.audioread import load_audio
 from nt.io.audiowrite import dump_audio
-from nt.io.file_handling import mkdir_p
+from nt.io.file_handling import (
+    mkdir_p,
+    symlink,
+)
 
 __all__ = [
     "load_audio",
     "dump_audio",
     "load_json",
+    "loads_json",
     "dump_json",
+    "dumps_json",
     "load_hdf5",
     "dump_hdf5",
     "update_hdf5",
     "load_pickle",
     "dump_pickle",
     "mkdir_p",
+    "symlink",
     "SummaryEncoder",
 ]
 

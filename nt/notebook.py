@@ -15,8 +15,10 @@ import seaborn as sns
 from IPython.display import HTML
 from IPython.display import display
 from tqdm import tqdm
+from datetime import datetime
 
 from nt.io import load_json
+from nt.io import dump_json
 from nt.io.play import play
 from nt.transform import fbank
 from nt.transform import istft
@@ -39,6 +41,7 @@ __all__ = [
     "display",
     "plt",
     "load_json",
+    "dump_json",
     "play",
     "context_manager",
     "facet_grid",
@@ -48,6 +51,8 @@ __all__ = [
     "stft",
     "tqdm",
     "morph",
+    "np",
+    "datetime"
 ]
 
 
