@@ -43,7 +43,7 @@ def calculate_mfccs(base_dir, dataset, num_jobs=20, config='mfcc.conf',
     '''
     if isinstance(dataset, str):
         dataset = base_dir / 'data' / dataset
-    assert dataset.exists()
+    assert dataset.exists(), dataset
     if not (dataset / 'feats.scp').exists() or recalc:
         run_process([
             'steps/make_mfcc.sh', '--nj', str(num_jobs),
@@ -94,7 +94,7 @@ def calculate_ivectors(ivector_dir, dest_dir, org_dir, train_affix, dataset_dir,
         else:
             if isinstance(extractor_dir, str):
                 extractor_dir = org_dir / f'exp/{extractor_dir}'
-        assert extractor_dir.exists()
+        assert extractor_dir.exists(), extractor_dir
         print(f'Directory {ivector_dir} not found, estimating ivectors')
         run_process([
             'steps/online/nnet2/extract_ivectors_online.sh',
@@ -121,7 +121,7 @@ def copy_ref_dir(dev_dir, ref_dir, audio_dir, allow_missing_files=False):
     for wav_file in audio_dir.glob('*')}
     used_ids = {kaldi_id: wav_file for wav_file, kaldi_ids in ids.items()
                 for kaldi_id in kaldi_ids if kaldi_id in ref_ids}
-    assert len(used_ids) > 0
+    assert len(used_ids) > 0, used_ids
     if len(used_ids) < len(ids):
         print(f'Not all files in {audio_dir} were used, '
               f'{len(ids)-len(used_ids)} ids are not used in kaldi')
@@ -167,11 +167,11 @@ def get_dev_dir(base_dir: Path, org_dir: Path, enh='bss_beam',
         print(f'Directory {dev_dir} not found creating data directory')
         if isinstance(ref_dir, str):
             ref_dir = org_dir / 'data' / ref_dir
-        assert ref_dir.exists()
+        assert ref_dir.exists(), ref_dir
         if audio_dir is None:
             copytree(str(ref_dir), str(dev_dir))
         else:
-            assert audio_dir.exists()
+            assert audio_dir.exists(), audio_dir
             copy_ref_dir(dev_dir, ref_dir, audio_dir)
         run_process([
             f'{base_dir}/utils/fix_data_dir.sh', str(dev_dir)],
@@ -321,7 +321,8 @@ def default():
 def baseline():
     if on_pc2():
         kaldi_root = '/scratch/hpc-prf-nt1/fgnt/kaldi_2018-03-21_08-33-34_eba50e4420cfc536b68ca7144fac3cd29033adbb'
-        org_dir = '/scratch/hpc-prf-nt1/jensheit/software/kaldi/egs/chime5/baseline'
+        # org_dir = '/scratch/hpc-prf-nt1/jensheit/software/kaldi/egs/chime5/base'
+        org_dir = '/upb/departments/pc2/users/c/cbj/net/vol/jenkins/models_kaldi/chime5/baseline'
     else:
         kaldi_root = '/net/vol/jenkins/kaldi/2018-03-21_08-33-34_eba50e4420cfc536b68ca7144fac3cd29033adbb/'
         org_dir = '/net/vol/jensheit/kaldi/egs/chime5/baseline'
@@ -370,12 +371,12 @@ def run(_config, audio_dir, kaldi_root):
     base_dir = Path(ex.current_run.observers[0].basedir)
     if audio_dir is not None:
         audio_dir = base_dir / audio_dir
-        assert audio_dir.exists()
+        assert audio_dir.exists(), audio_dir
     if isinstance(_config['org_dir'], bool):
         org_dir = base_dir
     else:
         org_dir = Path(_config['org_dir'])
-        assert org_dir.exists()
+        assert org_dir.exists(), org_dir
 
     decode(model_dir=check_config_element(_config['model_dir']),
            dest_dir=base_dir,
