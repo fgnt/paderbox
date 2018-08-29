@@ -27,6 +27,7 @@ from nt.visualization import context_manager
 from nt.visualization import facet_grid
 from nt.visualization import plot
 from nt.utils.numpy_utils import morph
+from nt.utils.pandas_helper import py_query
 
 __all__ = [
     "pprint",
@@ -52,7 +53,8 @@ __all__ = [
     "tqdm",
     "morph",
     "np",
-    "datetime"
+    "datetime",
+    "py_query"
 ]
 
 
