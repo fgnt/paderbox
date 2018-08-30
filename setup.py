@@ -96,7 +96,7 @@ setup(
         'click',
         'typecheck-decorator',
         'natsort',
-        # 'pymongo',
+        # 'pymongo',  # Used to generate and check Sacred IDs
         'coverage',  # for nosetests --with-coverage
         # 'bs4',
         'pysoundfile',  # for German speech database
@@ -105,7 +105,6 @@ setup(
         'nose_parameterized',
         'sh',
         'pycallgraph',  # Used in profiling module
-        'bson'
     ],
 
     # Installation problems in a clean, new environment:
