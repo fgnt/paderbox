@@ -104,7 +104,8 @@ setup(
         'nose',
         'nose_parameterized',
         'sh',
-        'pycallgraph'  # Used in profiling module
+        'pycallgraph',  # Used in profiling module
+        'bson'
     ],
 
     # Installation problems in a clean, new environment:
