@@ -28,9 +28,9 @@ class IteratorTest(unittest.TestCase):
 
     def test_dataset_names(self):
         self.assertListEqual(
-            self.db.dataset_names,
+            list(self.db.dataset_names),
             list(self.json['datasets'].keys())
-        )  # fails because dump_json sorts keys
+        )
 
     def test_iterator(self):
         iterator = self.db.get_iterator_by_names('train')
