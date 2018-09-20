@@ -29,14 +29,14 @@ class TestLexicon(unittest.TestCase):
         self.int_eos_word = self.lh.process_transcription(
             self.special_symbols['eos'])[0]
 
-        self.int_eps = self.lh.process_label(self.special_symbols['eps'])
-        self.int_eow = self.lh.process_label(self.special_symbols['eow'])
-        self.int_phi = self.lh.process_label(self.special_symbols['phi'])
-        self.int_sow = self.lh.process_label(self.special_symbols['sow'])
-        self.int_eoc = self.lh.process_label(self.special_symbols['eoc'])
-        self.int_eos_label = self.lh.process_label(self.special_symbols['eos'])
+        self.int_eps = self.lh.prepare_int(self.special_symbols['eps'])
+        self.int_eow = self.lh.prepare_int(self.special_symbols['eow'])
+        self.int_phi = self.lh.prepare_int(self.special_symbols['phi'])
+        self.int_sow = self.lh.prepare_int(self.special_symbols['sow'])
+        self.int_eoc = self.lh.prepare_int(self.special_symbols['eoc'])
+        self.int_eos_label = self.lh.prepare_int(self.special_symbols['eos'])
         self.int_label = [
-            self.lh.process_label(label) for label in self.lh.labels
+            self.lh.prepare_int(label) for label in self.lh.labels
             if label not in self.special_symbols.values()]
 
     def _test_write_fst(self, class_type, add_word_mode,
