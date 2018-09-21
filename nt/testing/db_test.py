@@ -1,6 +1,8 @@
 import unittest
 
 import pathlib
+from parameterized import parameterized
+
 
 from nt.io.data_dir import database_jsons as database_jsons_dir
 from nt.database.keys import *
@@ -91,6 +93,18 @@ class DatabaseTest(unittest.TestCase):
         self.assertEqual(total_length, _total_length,
                          f'The database should contain exactly {total_length} '
                          f'examples in total, but contains {_total_length}')
+        
+    def assert_len_for_dataset(self, dataset, expected_len):
+        if dataset == 'total':
+            self.assert_total_length(expected_len)
+        elif dataset == 'num_datasets':
+            self.assertEqual(len(list(self.json[DATASETS])), expected_len)
+        else:
+            actual = len(self.json[DATASETS][dataset])
+            self.assertEqual(actual, expected_len,
+                             f'{dataset}\nActual examples: {actual}\n'
+                             f'Expected examples: {expected_len}'
+                             )
 
     def test_reader(self):
         reader = AudioReader()
@@ -101,6 +115,13 @@ class DatabaseTest(unittest.TestCase):
 
             # check if audio data was loaded
             self.assertIn(AUDIO_DATA, example)
+            
+    @classmethod
+    def db_sub_test(cls, test_inputs):
+        return parameterized.expand(test_inputs,
+                                    name_func=lambda func, _, p:
+                                    f'{func.__name__}_{p.args[0]}'
+                                    )
 
 
 class DatabaseClassTest(unittest.TestCase):
