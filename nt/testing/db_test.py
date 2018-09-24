@@ -1,6 +1,7 @@
 import unittest
-
+import functools
 import pathlib
+
 from parameterized import parameterized
 
 
@@ -80,7 +81,8 @@ class DatabaseTest(unittest.TestCase):
         else:
             for ds in datasets:
                 self.assertIn(ds, set(self.json[DATASETS].keys()),
-                                    msg=f'"{ds}" should be in DATASETS')
+                              msg=f'"{ds}" should be in DATASETS'
+                              )
 
     def test_examples(self):
         self.assert_in_example([AUDIO_PATH, ])
@@ -120,8 +122,44 @@ class DatabaseTest(unittest.TestCase):
     def db_parameterized(cls, test_inputs):
         return parameterized.expand(test_inputs,
                                     name_func=lambda func, _, p:
-                                    f'{func.__name__}_{p.args[0]}'
+                                    f'{func.__name__}_'
+                                    f'{"_".join(str(arg) for arg in p.args)}'
                                     )
+    
+    @classmethod
+    def db_expect_failure(cls, *params,
+                          desc='No failure description provided',
+                          **kwparams,
+                          ):
+        def decorator_expect_failure(func):
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                print(kwparams.items())
+                # Skip unconditionally if `params` and `kwparams` is not given
+                # or skip only if all expected parameters in `params`
+                # are provided within `args` and `kwparams` match with `kwargs`
+                cond = (
+                    not (params or kwparams) or
+                    (
+                        all(param in args for param in params) and
+                        all(v == kwargs[k] for k, v in kwparams.items())
+                    )
+                )
+                try:
+                    func(*args, **kwargs)
+                except Exception as e:
+                    if cond:
+                        unittest.TestCase.skipTest(func,
+                                                   '"Ran into expected failure:'
+                                                   f' {desc}"'
+                                                   )
+                    else:
+                        raise e
+                else:
+                    if cond:
+                        assert False, f'"Expected a failure: {desc}"!'
+            return wrapper
+        return decorator_expect_failure
 
 
 class DatabaseClassTest(unittest.TestCase):
