@@ -117,7 +117,7 @@ class DatabaseTest(unittest.TestCase):
             self.assertIn(AUDIO_DATA, example)
             
     @classmethod
-    def db_sub_test(cls, test_inputs):
+    def db_parameterized(cls, test_inputs):
         return parameterized.expand(test_inputs,
                                     name_func=lambda func, _, p:
                                     f'{func.__name__}_{p.args[0]}'
