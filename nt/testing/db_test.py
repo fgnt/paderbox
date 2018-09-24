@@ -123,14 +123,35 @@ class DatabaseTest(unittest.TestCase):
         return parameterized.expand(test_inputs,
                                     name_func=lambda func, _, p:
                                     f'{func.__name__}_'
-                                    f'{"_".join(str(arg) for arg in p.args)}'
+                                    f'{"_".join(str(arg) for arg in p.args)}',
+                                    doc_func=(lambda func, num, p: None)
                                     )
     
     @classmethod
     def db_expect_failure(cls, *params,
-                          desc='No failure description provided',
+                          desc=None,
                           **kwparams,
                           ):
+        
+        """
+        A decorator which marks tests that are expected to fail. Increases
+        transparency as to why a test should actually fail. Decorated test
+        cases will not be counted as FAILURE but as SKIPPED. It is designed to
+        work with `parameterized` test cases specified by `params` and
+        `kwparams`. If neither of both is given then any failing test case will
+        be skipped.
+        
+        :param params: Arguments (*args) that characterize failing parameterized
+            test
+        :param desc: A description of the expected error that would be thrown.
+            Increases transparency why this test is expected to fail.
+        :param kwparams: Keyword arguments (**kwargs) that characterize failing
+            parameterized test
+        """
+        
+        assert desc, 'Please provide a failure description to explain why you' \
+                     ' expect this test case to fail!'
+        
         def decorator_expect_failure(func):
             @functools.wraps(func)
             def wrapper(*args, **kwargs):
