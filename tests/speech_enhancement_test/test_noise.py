@@ -26,8 +26,6 @@ class TestNoiseMethods(unittest.TestCase):
         set_snr(X, N, snr)
         calculated_snr = get_snr(X, N)
 
-        print(calculated_snr)
-        print(snr)
         tc.assert_allclose(calculated_snr, snr, atol=1e-3)
 
 
