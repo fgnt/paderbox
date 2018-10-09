@@ -1,11 +1,6 @@
 import numpy as np
-from nt.utils.deprecated import deprecated
 
 
-@deprecated(
-    'Easily leads to mistakes when using multichannel data. '
-    'It is recommended to use `get_variance_for_zero_mean_signal()` instead.'
-)
 def get_energy(x, axis=None, keepdims=False):
     return np.sum(np.abs(x * x.conj()), axis=axis, keepdims=keepdims)
 
