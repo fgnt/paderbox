@@ -93,6 +93,10 @@ def get_filterbanks(number_of_filters=20, nfft=1024, sample_rate=16000,
     :returns: A numpy array of size nfilt by (nfft/2 + 1) containing filterbank.
         Each row holds 1 filter.
     """
+    raise AssertionError('This function is wrong. Use e.g. librosa. '
+                         'See http://ntjenkins.upb.de:8082/'
+                         'python_toolbox_notebooks/build/toolbox_examples/'
+                         'transform/06%20-%20Additional%20features.html')
     highfreq = highfreq or sample_rate / 2
     assert highfreq <= sample_rate / 2, "highfreq is greater than samplerate/2"
 
