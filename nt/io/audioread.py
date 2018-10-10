@@ -36,7 +36,7 @@ def load_audio(
      - Default: Return only signal
      - With the argument "unit" the unit of frames, start and stop can be
        changed (stop currently unsupported).
-     - With given expected_sample_rate an assert is included (recommented)
+     - With given expected_sample_rate an assert is included (recommended)
 
     soundfile.read doc text and some examples:
 
@@ -188,7 +188,7 @@ def load_audio(
             raise RuntimeError(f'Wrong suffix {path.suffix} in {path}') from e
 
     if expected_sample_rate is not None:
-        if expected_sample_rate == sample_rate:
+        if expected_sample_rate != sample_rate:
             raise ValueError(
                 'Requested sampling rate is {} but the audiofile has {}'.format(
                     expected_sample_rate, sample_rate

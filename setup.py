@@ -102,7 +102,7 @@ setup(
         'pysoundfile',  # for German speech database
         'wavefile',  # for reading .flac audio
         'nose',
-        'nose_parameterized',
+        'parameterized',
         'sh',
         'pycallgraph',  # Used in profiling module
     ],

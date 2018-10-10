@@ -10,9 +10,9 @@ class InputSXRTest(unittest.TestCase):
     @condition.retry(10)
     def test_for_single_input(self):
         expected_snr = numpy.array(10)
-        size = (10000, 1, 1)
+        size = (1, 1, 10000)
         x = numpy.random.normal(0, 1, size)
-        noise = 10**(-expected_snr/20) * numpy.random.normal(0, 1, size)
+        noise = 10**(-expected_snr/20) * numpy.random.normal(0, 1, size[1:])
 
         SDR, SIR, SNR = input_sxr(x, noise)
 
@@ -23,10 +23,10 @@ class InputSXRTest(unittest.TestCase):
     @condition.retry(10)
     def test_two_inputs_no_noise_no_average(self):
         expected_sir = numpy.array(10)
-        size = (10000, 1, 2)
+        size = (2, 1, 10000)
         x = numpy.random.normal(0, 1, size)
-        x[:, 0, 0] *= 10**(expected_sir/20)
-        noise = numpy.zeros((10000, 1, 1))
+        x[0, 0, :] *= 10**(expected_sir/20)
+        noise = numpy.zeros((1, 10000))
 
         SDR, SIR, SNR = input_sxr(x, noise, average_sources=False)
 
@@ -38,10 +38,10 @@ class InputSXRTest(unittest.TestCase):
     @condition.retry(10)
     def test_two_different_inputs_no_noise(self):
         expected_sir = numpy.array(10)
-        size = (10000, 1, 2)
+        size = (2, 1, 10000)
         x = numpy.random.normal(0, 1, size)
         x[:, 0, 0] *= 10**(expected_sir/20)
-        noise = numpy.zeros((10000, 1, 1))
+        noise = numpy.zeros((1, 10000))
 
         SDR, SIR, SNR = input_sxr(x, noise)
 
@@ -52,9 +52,9 @@ class InputSXRTest(unittest.TestCase):
 
     @condition.retry(10)
     def test_two_equal_inputs_equal_noise(self):
-        size = (10000, 1, 2)
+        size = (2, 1, 10000)
         x = numpy.random.normal(0, 1, size)
-        noise = numpy.random.normal(0, 1, (10000, 1))
+        noise = numpy.random.normal(0, 1, (1, 10000))
 
         SDR, SIR, SNR = input_sxr(x, noise)
 
@@ -68,9 +68,9 @@ class OutputSXRTest(unittest.TestCase):
     @condition.retry(10)
     def test_for_single_input(self):
         expected_snr = numpy.array(10)
-        size = (10000, 1, 1)
+        size = (1, 1, 10000)
         x = numpy.random.normal(0, 1, size)
-        noise = 10**(-expected_snr/20) * numpy.random.normal(0, 1, size)
+        noise = 10**(-expected_snr/20) * numpy.random.normal(0, 1, size[1:])
 
         SDR, SIR, SNR = output_sxr(x, noise)
 
@@ -81,12 +81,12 @@ class OutputSXRTest(unittest.TestCase):
     @condition.retry(10)
     def test_two_equal_inputs_no_noise(self):
         expected_sir = numpy.array(20)
-        size = (10000, 2, 2)
+        size = (2, 2, 10000)
         x = numpy.random.normal(0, 1, size)
-        x[:, 0, 1] = 10**(-expected_sir/20) * x[:, 0, 0]
-        x[:, 1, 1] = x[:, 0, 1]
-        x[:, 1, 0] = 10**(-expected_sir/20) * x[:, 0, 1]
-        noise = numpy.zeros((10000, 2))
+        x[0, 1, :] = 10**(-expected_sir/20) * x[0, 0, :]
+        x[1, 1, :] = x[0, 1, :]
+        x[1, 0, :] = 10**(-expected_sir/20) * x[0, 1, :]
+        noise = numpy.zeros((2, 10000))
 
         SDR, SIR, SNR = output_sxr(x, noise)
 
@@ -96,9 +96,9 @@ class OutputSXRTest(unittest.TestCase):
 
     @condition.retry(10)
     def test_two_equal_inputs_equal_noise(self):
-        size = (10000, 2, 2)
+        size = (2, 2, 10000)
         x = numpy.random.normal(0, 1, size)
-        noise = numpy.random.normal(0, 1, (10000, 2))
+        noise = numpy.random.normal(0, 1, (2, 10000))
 
         SDR, SIR, SNR = output_sxr(x, noise)
 

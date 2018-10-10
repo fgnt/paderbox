@@ -64,21 +64,21 @@ class NoiseGeneratorWhite(NoiseGeneratorTemplate):
     >>> time_signal = np.random.normal(size=(1000,))
     >>> ng = NoiseGeneratorWhite()
     >>> n = ng.get_noise_for_signal(time_signal, snr=20)
-    >>> SDR, SIR, SNR = input_sxr(time_signal[:, None, None], n[:, None, None])
+    >>> SDR, SIR, SNR = input_sxr(time_signal[None, None, :], n[None, :])
     >>> round(SNR, 1)
     20.0
 
-    >>> time_signal = np.random.normal(size=(1000, 2))
+    >>> time_signal = np.random.normal(size=(2, 1000))
     >>> ng = NoiseGeneratorWhite()
     >>> n = ng.get_noise_for_signal(time_signal, snr=20)
     >>> n.shape
-    (1000, 2)
+    (2, 1000)
 
     >>> time_signal.shape
-    (1000, 2)
+    (2, 1000)
 
     >>> from nt.evaluation.sxr import input_sxr
-    >>> SDR, SIR, SNR = input_sxr(time_signal[:, :, None], n)
+    >>> SDR, SIR, SNR = input_sxr(time_signal[None, :, :], n)
     >>> round(SNR, 1)
     20.0
     """

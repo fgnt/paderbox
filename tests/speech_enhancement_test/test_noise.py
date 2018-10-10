@@ -26,8 +26,6 @@ class TestNoiseMethods(unittest.TestCase):
         set_snr(X, N, snr)
         calculated_snr = get_snr(X, N)
 
-        print(calculated_snr)
-        print(snr)
         tc.assert_allclose(calculated_snr, snr, atol=1e-3)
 
 
@@ -46,7 +44,7 @@ class TestNoiseGeneratorWhite(unittest.TestCase):
         n = self.n_gen.get_noise_for_signal(time_signal, snr=20)
         tc.assert_equal(n.shape, (1000,))
 
-        SDR, SIR, SNR = sxr.input_sxr(time_signal[:, None, None], n[:, None])
+        SDR, SIR, SNR = sxr.input_sxr(time_signal[None, None, :], n[None, :])
         tc.assert_almost_equal(SNR, 20, decimal=4)
 
     @tc.retry(3)
@@ -55,7 +53,7 @@ class TestNoiseGeneratorWhite(unittest.TestCase):
         n = self.n_gen.get_noise_for_signal(time_signal, snr=20)
         tc.assert_equal(n.shape, (3, 1000))
 
-        SDR, SIR, SNR = sxr.input_sxr(time_signal[:, :, None], n)
+        SDR, SIR, SNR = sxr.input_sxr(time_signal[None, :, :], n)
         tc.assert_almost_equal(SNR, 20, decimal=6)
 
     @tc.retry(5)

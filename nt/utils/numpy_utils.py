@@ -599,7 +599,13 @@ def _shrinking_reshape(array, source, target):
 
 def _expanding_reshape(array, source, target, **shape_hints):
 
-    assert len(re.sub(r'.\*', '', source.replace(' ', ''))) == array.ndim, (array.shape, source, target)
+    try:  # Check number of inputs for unflatten operations
+        assert len(re.sub(r'.\*', '', source.replace(' ', ''))) == array.ndim, \
+            (array.shape, source, target)
+    except AssertionError:  # Check number of inputs for ellipses operations
+        assert len(re.sub(r'(\.\.\.)|(.\*)', '', source.replace(' ', ''))) <= \
+               array.ndim,(array.shape, source, target)
+        
 
     def _get_source_grouping(source):
         """
@@ -821,7 +827,7 @@ def roll_zeropad(a, shift, axis=None):
 
 def labels_to_one_hot(
         labels: np.ndarray, categories: int, axis: int = 0,
-        keepdims=False, dtype=np.float32
+        keepdims=False, dtype=np.bool
 ):
     """ Translates an arbitrary ndarray with labels to one hot coded array.
 
@@ -883,13 +889,17 @@ class Cutter:
 
     >>> c.overwrite(array, axis=1)
     array([[0, 2, 0, 0]])
+
+    >>> c = Cutter(0, None)
+    >>> c.cut(array, axis=1)
+    array([[1, 2, 3, 4]])
     """
     low_cut: int
     high_cut: int
 
     def __post_init__(self):
-        assert self.low_cut >= 0, 'Positive or zero starting index'
-        assert self.high_cut <= 0, 'Negative or zero ending index'
+        assert self.low_cut >= 0, 'Zero or positive'
+        assert self.high_cut is None or self.high_cut <= 0, 'None or negative'
 
     def cut(self, array, *, axis):
         """Cuts start and end."""
@@ -901,7 +911,11 @@ class Cutter:
     def expand(self, array, *, axis):
         """Pads to reverse the cut."""
         assert isinstance(axis, int), axis
-        return pad_axis(array, (self.low_cut, -self.high_cut), axis=axis)
+        if self.high_cut is None:
+            upper_pad = 0
+        else:
+            upper_pad = -self.high_cut
+        return pad_axis(array, (self.low_cut, upper_pad), axis=axis)
 
     def overwrite(self, array, *, axis):
         """Returns a copy with start end end filled with zeros."""

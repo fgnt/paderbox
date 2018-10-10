@@ -3,7 +3,7 @@
 renice -n 20 $$
 
 # paths
-TOOLBOX=./toolbox
+TOOLBOX=$(readlink -f ./toolbox)
 
 source /net/ssd/software/conda/bin/activate
 

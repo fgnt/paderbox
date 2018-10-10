@@ -9,7 +9,7 @@ class TestReadWriteKeyedTextFile(unittest.TestCase):
     def check(data_dict, as_list: bool):
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_file = Path(temp_dir) / 'text'
-            write_keyed_text_file(temp_file, data_dict, from_list=as_list)
+            write_keyed_text_file(temp_file, data_dict)
             result = read_keyed_text_file(temp_file, to_list=as_list)
         assert isinstance(result, dict), type(result)
         assert data_dict.keys() == result.keys(), (data_dict, result)

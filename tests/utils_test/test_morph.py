@@ -106,12 +106,6 @@ class TestMorph(unittest.TestCase):
     def test_all_space(self):
         tc.assert_equal(morph('t b f -> f1b*t', A).shape, (F, 1, B*T))
 
-    def test_all_comma(self):
-        tc.assert_equal(morph('T,B,F->F,1,B*T', A).shape, (F, 1, B*T))
-
-    def test_all_space(self):
-        tc.assert_equal(morph('t b f -> f1b*t', A).shape, (F, 1, B*T))
-
     def test_ellipsis_3(self):
         tc.assert_equal(morph('...->...', A).shape, (T, B, F))
 
@@ -139,7 +133,7 @@ class TestMorph(unittest.TestCase):
     def test_ellipsis_0_begin(self):
         tc.assert_equal(morph('TBF...->TFB...', A).shape, (T, F, B))
 
-    def test_ellipsis_expand(self):
+    def test_ellipsis_expand_0(self):
         tc.assert_equal(
             morph(
                 'a*b...->ab...',
@@ -148,7 +142,7 @@ class TestMorph(unittest.TestCase):
                 b=2
             ).shape, (T // 2, 2, B, F))
 
-    def test_ellipsis_expand(self):
+    def test_ellipsis_expand_1(self):
         tc.assert_equal(
             morph(
                 '...a*b->...ab',
