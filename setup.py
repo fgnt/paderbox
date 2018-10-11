@@ -105,6 +105,7 @@ setup(
         'parameterized',
         'sh',
         'pycallgraph',  # Used in profiling module
+        'pafy',  # Download Youtube files for some databases
     ],
 
     # Installation problems in a clean, new environment:
