@@ -75,11 +75,10 @@ class TestBeamformerMethods(unittest.TestCase):
         self.W_gev = get_gev_vector(self.Phi_XX, self.Phi_NN)
 
         with np.load(datafile_multi_speaker) as data:
-            X = data['X'].transpose(0,2,3,1)  # K F D T
-            Y = data['Y'].transpose(1,2,0)  # F D T
-            N = data['N'].transpose(1,2,0)  # F D T
+            X = data['X']  # K F D T
+            Y = data['Y']  # F D T
+            N = data['N']  # F D T
             self.data_multi_speaker = {'X': data['X'], 'Y': data['Y'], 'N': data['N']}
-
         masks = wiener_like_mask(np.concatenate([X, N[None, ...]]),
                                  sensor_axis=-2)
         X_mask, N_mask = np.split(masks, (X.shape[0],))
@@ -139,9 +138,9 @@ class TestBeamformerMethods(unittest.TestCase):
         Speakers = transform.stft(speakers).transpose(1,2,3,0)
         Noise = transform.stft(noise)
 
-        Y = np.sum(np.concatenate((Speakers, Noise[:, :, :, np.newaxis]), axis=3), axis=3).transpose(1, 2, 0).copy()
-        X = Speakers.transpose(3, 1, 2, 0).copy()
-        N = Noise.transpose(1, 2, 0).copy()
+        Y = np.sum(np.concatenate((Speakers, Noise[:, :, :, np.newaxis]), axis=3), axis=3).transpose(2, 0, 1).copy()
+        X = Speakers.transpose(3, 2, 0, 1).copy()
+        N = Noise.transpose(2, 0, 1).copy()
 
         datafile_multi_speaker = path.join(
             path.dirname(
@@ -212,12 +211,11 @@ class TestBeamformerMethods(unittest.TestCase):
         N = data['N']  # F D T
 
         # Caculate masks
-        # X_mask.shape = (2, 513, 316)
-        # N_mask.shape = (513, 316)
+        # X_mask.shape = (2, 513, 128)
+        # N_mask.shape = (513, 128)
         *X_mask, N_mask = wiener_like_mask([*X, N],
                                            source_axis=0,
                                            sensor_axis=-2)
-
         # Phi_XX.shape = (2, 513, 6, 6)
         # Phi_NN.shape = (513, 6, 6)
         Phi_XX = get_power_spectral_density_matrix(Y, X_mask, source_dim=0)  # K F D D
@@ -252,18 +250,24 @@ class TestBeamformerMethods(unittest.TestCase):
         assert (np.sum(failing) == 0.0)
 
         def sxr_output(W):
-            Shat = np.zeros((2, 2, 513, 316), dtype=complex)
-            Shat[0, 0, :, :] = apply_beamforming_vector(W[0, :, :], X[0, :, :, :])
-            Shat[1, 1, :, :] = apply_beamforming_vector(W[1, :, :], X[1, :, :, :])
-            Shat[0, 1, :, :] = apply_beamforming_vector(W[1, :, :], X[0, :, :, :])
-            Shat[1, 0, :, :] = apply_beamforming_vector(W[0, :, :], X[1, :, :, :])
+            num_frames = 128
+            try:
+                Shat = np.zeros((2, 2, num_frames, 513), dtype=complex)
+                Shat[0, 0, :, :] = apply_beamforming_vector(W[0, :, :], X[0, :, :, :]).T
+            except ValueError:
+                num_frames = 316
+                Shat = np.zeros((2, 2, 513, num_frames), dtype=complex)
+                Shat[0, 0, :, :] = apply_beamforming_vector(W[0, :, :], X[0, :, :, :]).T
+            Shat[1, 1, :, :] = apply_beamforming_vector(W[1, :, :], X[1, :, :, :]).T
+            Shat[0, 1, :, :] = apply_beamforming_vector(W[1, :, :], X[0, :, :, :]).T
+            Shat[1, 0, :, :] = apply_beamforming_vector(W[0, :, :], X[1, :, :, :]).T
 
-            Nhat = np.zeros((2, 513, 316), dtype=complex)
-            Nhat[0, :, :] = apply_beamforming_vector(W[0, :, :], N)
-            Nhat[0, :, :] = apply_beamforming_vector(W[0, :, :], N)
-            shat = istft(Shat.T)
-            nhat = istft(Nhat.T)
-            return sxr.output_sxr(shat.transpose(2, 0, 1), nhat.transpose())
+            Nhat = np.zeros((2, num_frames, 513), dtype=complex)
+            Nhat[0, :, :] = apply_beamforming_vector(W[0, :, :], N).T
+            Nhat[0, :, :] = apply_beamforming_vector(W[0, :, :], N).T
+            shat = istft(Shat)
+            nhat = istft(Nhat)
+            return sxr.output_sxr(shat, nhat)
 
         W_matlab_tmp = W_matlab.transpose(2, 0, 1)
         W_lcmv_tmp = W_lcmv
