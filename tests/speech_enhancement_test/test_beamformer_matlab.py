@@ -75,9 +75,9 @@ class TestBeamformerMethods(unittest.TestCase):
         self.W_gev = get_gev_vector(self.Phi_XX, self.Phi_NN)
 
         with np.load(datafile_multi_speaker) as data:
-            X = data['X']  # K F D T
-            Y = data['Y']  # F D T
-            N = data['N']  # F D T
+            X = data['X'].transpose(0,2,3,1)  # K F D T
+            Y = data['Y'].transpose(1,2,0)  # F D T
+            N = data['N'].transpose(1,2,0)  # F D T
             self.data_multi_speaker = {'X': data['X'], 'Y': data['Y'], 'N': data['N']}
 
         masks = wiener_like_mask(np.concatenate([X, N[None, ...]]),
@@ -203,7 +203,7 @@ class TestBeamformerMethods(unittest.TestCase):
     @tc.attr.matlab
     def test_compare_lcmv_beamformer(self):
         from nt.speech_enhancement.beamformer import apply_beamforming_vector
-        from nt.transform.module_stft import istft_loop
+        from nt.transform.module_stft import istft
         from nt.evaluation import sxr
 
         data = self.data_multi_speaker
@@ -261,8 +261,8 @@ class TestBeamformerMethods(unittest.TestCase):
             Nhat = np.zeros((2, 513, 316), dtype=complex)
             Nhat[0, :, :] = apply_beamforming_vector(W[0, :, :], N)
             Nhat[0, :, :] = apply_beamforming_vector(W[0, :, :], N)
-            shat = istft_loop(Shat, time_dim=-1, freq_dim=-2)
-            nhat = istft_loop(Nhat, time_dim=-1, freq_dim=-2)
+            shat = istft(Shat.T)
+            nhat = istft(Nhat.T)
             return sxr.output_sxr(shat.transpose(2, 0, 1), nhat.transpose())
 
         W_matlab_tmp = W_matlab.transpose(2, 0, 1)
@@ -274,3 +274,7 @@ class TestBeamformerMethods(unittest.TestCase):
         tc.assert_almost_equal(sxr_matlab, sxr_py)
 
         tc.assert_cosine_similarity(W_matlab_tmp, W_lcmv_tmp)
+
+
+if __name__ == '__main__':
+    unittest.main()
