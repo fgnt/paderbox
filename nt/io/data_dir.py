@@ -134,6 +134,11 @@ librispeech = _get_path(
     db_dir / 'LibriSpeech'
 )
 
+mird = _get_path(
+    'NT_MIRD_DIR',
+    db_dir / 'Multichannel_Impulse_Response_Database'
+)
+
 if __name__ == "__main__":
     import doctest
 
