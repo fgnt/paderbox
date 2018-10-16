@@ -11,7 +11,7 @@ from nt.io.data_dir import testing as testing_dir
 
 
 class TestSTFTMethods(unittest.TestCase):
-
+    @unittest.skip("Not used at the moment, switch to e.g. librosa")
     def test_mfcc(self):
         path = testing_dir / 'timit' / 'data' / 'sample_1.wav'
         y = audioread(path)[0]

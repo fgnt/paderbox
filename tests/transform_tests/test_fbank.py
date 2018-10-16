@@ -14,6 +14,7 @@ from nt.io.data_dir import testing as testing_dir
 
 class TestSTFTMethods(unittest.TestCase):
 
+    @unittest.skip("Not used at the moment, switch to e.g. librosa")
     def test_fbank(self):
         path = testing_dir / 'timit' / 'data' / 'sample_1.wav'
         y = audioread(path)[0]
@@ -23,6 +24,7 @@ class TestSTFTMethods(unittest.TestCase):
         tc.assert_isreal(feature)
         tc.assert_array_greater_equal(feature, 0)
 
+    @unittest.skip("Not used at the moment, switch to e.g. librosa")
     def test_get_filterbanks(self):
         fbank = transform.module_fbank.get_filterbanks()
 
