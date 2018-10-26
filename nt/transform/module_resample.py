@@ -37,13 +37,33 @@ def resample_sox(signal: np.ndarray, *, in_rate, out_rate):
             binary = candidate
             break
 
-    command = (
-        f'{binary} -N -V1 -t f32 -r {in_rate} -c 1 - '
-        f'-t f32 -r {out_rate} -c 1 -'
-    )
+    # sox --help
+    # -V[LEVEL]              Increment or set verbosity level (default 2); levels:
+    #                          1: failure messages
+    #                          2: warnings
+    #                          3: details of processing
+    #                          4-6: increasing levels of debug messages
+    # -t|--type FILETYPE     File type of audio
+    # -N|--reverse-nibbles   Encoded nibble-order
+    # -c|--channels CHANNELS Number of channels of audio data; e.g. 2 = stereo
+    # -r|--rate RATE         Sample rate of audio
+
+    command = [
+        binary,
+        '-N',
+        '-V1',
+        '-t', 'f32',
+        '-r', f'{in_rate}',
+        '-c', '1',
+        '-',
+        '-t', 'f32',
+        '-r', f'{out_rate}',
+        '-c', '1',
+        '-'
+    ]
     process = subprocess.run(
         command,
-        shell=True,
+        shell=False,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         input=signal.tobytes(order="f")
