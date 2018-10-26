@@ -21,6 +21,7 @@ from nt.transform.module_bark_fbank import bark_fbank
 from nt.transform.module_rastaplp import rasta_plp
 from nt.transform.module_ams import ams
 import numpy as np
+from nt.transform.module_resample import resample_sox
 
 
 def normalize_mean_variance(data, axis=0, eps=1e-6):
