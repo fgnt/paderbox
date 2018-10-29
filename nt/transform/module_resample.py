@@ -100,6 +100,6 @@ def resample_sox(signal: np.ndarray, *, in_rate, out_rate):
     )
 
     if has_channel:
-        signal_resampled = np.reshape(signal_resampled, (-1, channels)).T
+        signal_resampled = signal_resampled.reshape(channels, -1, order='F')
 
     return signal_resampled
