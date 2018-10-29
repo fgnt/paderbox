@@ -27,16 +27,6 @@ def resample_sox(signal: np.ndarray, *, in_rate, out_rate):
     assert signal.dtype == np.float32, \
         "The call to SOX just implements float32."
 
-    candidates = [
-        Path('/usr/local/bin/sox'),
-        Path('/usr/bin/sox')
-    ]
-    binary = 'sox'
-    for candidate in candidates:
-        if candidate.is_file():
-            binary = candidate
-            break
-
     # sox --help
     # -V[LEVEL]              Increment or set verbosity level (default 2); levels:
     #                          1: failure messages
@@ -49,7 +39,7 @@ def resample_sox(signal: np.ndarray, *, in_rate, out_rate):
     # -r|--rate RATE         Sample rate of audio
 
     command = [
-        binary,
+        'sox',
         '-N',
         '-V1',
         '-t', 'f32',
