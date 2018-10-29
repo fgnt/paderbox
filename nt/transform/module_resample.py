@@ -2,19 +2,33 @@
 This module contains resampling methods.
 """
 import subprocess
-from pathlib import Path
 import numpy as np
 
 
 def resample_sox(signal: np.ndarray, *, in_rate, out_rate):
-    """Resample using the Swiss Army knife of sound processing programs (SOX).
+    """Resample using the Swiss Army knife of sound processing programs (SoX).
 
     This function exists to mimic as closely as possible how resampling would
     be realized in a `wav.scp` file in Kaldi.
 
+    We assume SoX version v14.4.1.
+
     >>> signal = np.array([1, -1, 1, -1], dtype=np.float32)
     >>> resample_sox(signal, in_rate=2, out_rate=1)
-    array([ 0.28615326, -0.13513082], dtype=float32)
+    array([ 0.28635263, -0.13530457], dtype=float32)
+
+    >>> signal = np.array([1, -1, 1, -1], dtype=np.float32)
+    >>> resample_sox(signal, in_rate=1, out_rate=1)
+    array([ 1., -1.,  1., -1.], dtype=float32)
+
+    >>> signal = np.random.normal(size=(2, 30)).astype(np.float32)
+    >>> a = resample_sox(signal[0], in_rate=1, out_rate=2)
+    >>> b = resample_sox(signal[1], in_rate=1, out_rate=2)
+    >>> c = resample_sox(signal, in_rate=1, out_rate=2)
+    >>> np.testing.assert_allclose([a, b], c)
+
+    >>> signal = np.random.normal(size=(20, 30)).astype(np.float32)
+    >>> c = resample_sox(signal, in_rate=1, out_rate=2)
 
     Args:
         signal: Signal as one-dimensional np.ndarray: Shape (T,)
@@ -24,8 +38,10 @@ def resample_sox(signal: np.ndarray, *, in_rate, out_rate):
     Returns: Resampled version with same dtype as input.
 
     """
-    assert signal.dtype == np.float32, \
-        "The call to SOX just implements float32."
+    assert signal.dtype == np.float32, (
+        f"The call to SOX just has float32, but signal.dtype={signal.dtype}."
+    )
+    # assert signal.ndim == 1, f"signal.ndim={signal.ndim} but only supports 1."
 
     # sox --help
     # -V[LEVEL]              Increment or set verbosity level (default 2); levels:
@@ -38,17 +54,30 @@ def resample_sox(signal: np.ndarray, *, in_rate, out_rate):
     # -c|--channels CHANNELS Number of channels of audio data; e.g. 2 = stereo
     # -r|--rate RATE         Sample rate of audio
 
+    if signal.ndim == 1:
+        channels = 1
+        has_channel = False
+    elif signal.ndim == 2:
+        channels = signal.shape[-2]
+        assert channels < 30, (
+            "More channels than expected:\n"
+            f"channels={channels}, signal.shape={signal.shape}"
+        )
+        has_channel = True
+    else:
+        raise NotImplementedError(signal.shape)
+
     command = [
         'sox',
         '-N',
         '-V1',
-        '-t', 'f32',
-        '-r', f'{in_rate}',
-        '-c', '1',
+        '--type', 'f32',
+        '--rate', f'{in_rate}',
+        '--channels', str(channels),
         '-',
-        '-t', 'f32',
-        '-r', f'{out_rate}',
-        '-c', '1',
+        '--type', 'f32',
+        '--rate', f'{out_rate}',
+        '--channels', str(channels),
         '-'
     ]
     process = subprocess.run(
@@ -69,4 +98,8 @@ def resample_sox(signal: np.ndarray, *, in_rate, out_rate):
         'Check that sox is installed.\n'
         'OSX: brew update && brew install sox'
     )
+
+    if has_channel:
+        signal_resampled = np.reshape(signal_resampled, (-1, channels)).T
+
     return signal_resampled
