@@ -4,6 +4,8 @@ import numpy as np
 from nt.math.correlation import covariance
 from pathlib import Path
 
+from nt.utils import deprecated
+
 try:
     from nt.utils.matlab import Mlab
 
@@ -84,6 +86,7 @@ def dereverb(settings_file_path, x, stop_mlab=True):
     return y
 
 
+@deprecated('use nara_wpe')
 def wpe(Y, epsilon=1e-6, order=15, delay=1, iterations=10):
     """
 
@@ -128,6 +131,7 @@ def wpe(Y, epsilon=1e-6, order=15, delay=1, iterations=10):
     return dereverberated
 
 
+@deprecated('use nara_wpe')
 def scaled_full_correlation_matrix(X, iterations=4, trace_one_constraint=True):
     """ Scaled full correlation matrix.
 
@@ -171,6 +175,7 @@ def scaled_full_correlation_matrix(X, iterations=4, trace_one_constraint=True):
     return covariance_matrix, power
 
 
+@deprecated('use nara_wpe')
 def _dereverberate(y, G_hat, K, Delta):
     L, N, T = y.shape
     dtype = y.dtype
@@ -183,6 +188,7 @@ def _dereverberate(y, G_hat, K, Delta):
     return x_hat
 
 
+@deprecated('use nara_wpe')
 def _dereverberate_vectorized(y, G_hat, K, Delta):
     x_hat = np.copy(y)
     for tau in range(Delta, Delta + K):
@@ -192,6 +198,7 @@ def _dereverberate_vectorized(y, G_hat, K, Delta):
     return x_hat
 
 
+@deprecated('use nara_wpe')
 def _get_spatial_correlation_matrix_inverse(y):
     L, N, T = y.shape
     correlation_matrix, power = scaled_full_correlation_matrix(y)
@@ -208,6 +215,7 @@ def _get_spatial_correlation_matrix_inverse(y):
     return inverse
 
 
+@deprecated('use nara_wpe')
 def _get_crazy_matrix(Y, K, Delta):
     # A view may possibly be enough as well.
     L, N, T = Y.shape
@@ -224,12 +232,14 @@ def _get_crazy_matrix(Y, K, Delta):
     return psi_bar
 
 
+@deprecated('use nara_wpe')
 def _get_Phi_YY(Y, l, t_1, t_2):
     phi_yy = np.outer(Y[l, :, t_1], Y[l, :, t_2].conj())
     assert np.all(np.abs(phi_yy) > 0)
     return phi_yy
 
 
+@deprecated('use nara_wpe')
 def _get_T_segmented(Y, l, t, K):
     assert Y.ndim == 3
     N = Y.shape[1]
@@ -243,6 +253,7 @@ def _get_T_segmented(Y, l, t, K):
     return T
 
 
+@deprecated('use nara_wpe')
 def _get_T_segmented_prediction(Y, l, t_m_delta, t, K):
     assert Y.ndim == 3
     N = Y.shape[1]
@@ -254,6 +265,7 @@ def _get_T_segmented_prediction(Y, l, t_m_delta, t, K):
     return T
 
 
+@deprecated('use nara_wpe')
 def _get_global_T_segmented(Y, K, Delta):
     L, N, T = Y.shape
     global_T = np.zeros((L, N * N * K, N * N * K, T - K - Delta), dtype=Y.dtype)
@@ -266,6 +278,7 @@ def _get_global_T_segmented(Y, K, Delta):
     return global_T
 
 
+@deprecated('use nara_wpe')
 def _get_global_T_segmented_prediction(Y, K, Delta):
     L, N, T = Y.shape
     global_T = np.zeros((L, N * N * K, N * N, T - K - Delta), dtype=Y.dtype)
@@ -277,6 +290,8 @@ def _get_global_T_segmented_prediction(Y, K, Delta):
     assert np.all(np.abs(global_T) > 0)
     return global_T
 
+
+@deprecated('use nara_wpe')
 def _y_tilde(Y, l, t):
     L, N, T = Y.shape
     y_tilde = np.zeros((N*N, N), dtype=Y.dtype)
@@ -284,6 +299,8 @@ def _y_tilde(Y, l, t):
         y_tilde[n*N:(n+1)*N, n] = Y[l, :, t]
     return y_tilde
 
+
+@deprecated('use nara_wpe')
 def _psi(Y, l, t, K):
     assert t>=K-1
     L, N, T = Y.shape
@@ -293,6 +310,7 @@ def _psi(Y, l, t, K):
     return psi
 
 
+@deprecated('use nara_wpe')
 def multichannel_wpe(Y, K, Delta, iterations=4):
     # K: regression_order (possibly frequency dependent)
     # Delta: prediction_delay

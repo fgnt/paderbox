@@ -9,6 +9,13 @@ from nt.io.data_dir import testing as testing_dir
 from nt.io.data_dir import testing as data_dir
 
 
+unittest.SkipTest(
+    "Skip wpe tests. "
+    "Some are unstable. "
+    "ToDo: move matlab test to nara_wpe"
+)
+
+
 class TestWPEWrapper(unittest.TestCase):
     @classmethod
     def setUpClass(self):
