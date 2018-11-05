@@ -1,6 +1,7 @@
 import unittest
 import functools
 import pathlib
+from collections import Counter
 
 from parameterized import parameterized
 
@@ -185,12 +186,54 @@ class DatabaseTest(unittest.TestCase):
 
 class DatabaseClassTest(unittest.TestCase):
 
-    def check_data_available(self, database, expected_example_keys,
-                             dataset_names=None):
+    def check_data_available(
+            self,
+            database,
+            expected_example_keys,
+            optional_example_keys=set(),
+            dataset_names=None,
+    ):
         if not dataset_names:
             dataset_names = database.dataset_names
         iterator = database.get_iterator_by_names(dataset_names)
-        for example in iterator:
-            self.assertEqual(sorted(example.keys()),
-                             sorted(expected_example_keys)
-                             )
+
+        all_keys = [
+            key
+            for example in iterator
+            for key in set(example.keys())
+        ]
+        num_examples = len(iterator)
+        counter = Counter(all_keys)
+
+        diff = set.symmetric_difference(
+            set(counter.keys()),
+            {*expected_example_keys, *optional_example_keys},
+        )
+        if len(diff) > 0:
+            all_keys = {*expected_example_keys, *optional_example_keys}
+            raise Exception(
+                f'The datasets does not have the expected keys:\n'
+                f'Diff: {diff}\n'
+                f'Found: {set(counter.keys())}\n'
+                f'Expected: {all_keys}'
+            )
+        for key in expected_example_keys:
+            if counter[key] != num_examples:
+                raise Exception(
+                    f'Expected key "{key}" to occur {num_examples} times in '
+                    f'the dataset, but found it {counter[key]} times.\n'
+                    f'Other entries: {counter}'
+                )
+
+        for key in optional_example_keys:
+            if counter[key] >= num_examples:
+                raise Exception(
+                    f'Expected key "{key}" to be optional and occur less than '
+                    f'{num_examples} times in the dataset, but found it '
+                    f'{counter[key]} times.\n'
+                    f'Other entries: {counter}'
+                )
+            if counter[key] <= 0:
+                raise Exception(
+                    'Can not happen', key, counter[key], num_examples, counter
+                )
