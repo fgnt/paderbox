@@ -22,6 +22,6 @@ def covariance(x, mask=None, normalize=True, force_hermitian=False):
         if normalize:
             normalization = np.sum(mask, axis=-1, keepdims=True)
             psd /= normalization
-        if force_hermitian:
-            psd = 0.5 * (psd + np.conj(psd.swapaxes(-1, -2)))
+    if force_hermitian:
+        psd = 0.5 * (psd + np.conj(psd.swapaxes(-1, -2)))
     return psd
