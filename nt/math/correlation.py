@@ -1,6 +1,6 @@
 import numpy as np
 
-def covariance(x, mask=None, normalize=True):
+def covariance(x, mask=None, normalize=True, force_hermitian=False):
     """ Calculate the covariance of a zero mean signal.
 
     The leading dimensions are independent and can be arbitrary.
@@ -10,7 +10,6 @@ def covariance(x, mask=None, normalize=True):
     :param mask: Mask with dimensions ... times T.
     :return: Covariance matrices with dimensions ... times M times M.
     """
-
     if mask is None:
         psd = np.einsum('...dt,...et->...de', x, x.conj())
         if normalize:
@@ -23,5 +22,6 @@ def covariance(x, mask=None, normalize=True):
         if normalize:
             normalization = np.sum(mask, axis=-1, keepdims=True)
             psd /= normalization
-
+        if force_hermitian:
+            psd = 0.5 * (psd + np.conj(psd.swapaxes(-1, -2)))
     return psd
