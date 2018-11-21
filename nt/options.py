@@ -22,6 +22,7 @@ class Options:
     def __contains__(self, key):
         return key in self._params.keys()
 
+    @property
     def as_nested_dict(self):
         return self.to_nested_dict()
 
