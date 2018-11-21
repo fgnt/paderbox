@@ -22,6 +22,9 @@ class Options:
     def __contains__(self, key):
         return key in self._params.keys()
 
+    def as_nested_dict(self):
+        return self.to_nested_dict()
+
     def to_nested_dict(self):
         """Converts structure to a nested dict."""
         nested_dict = dict()
@@ -204,7 +207,7 @@ class Options:
         if self._init_done:
             if not name in self._params:
                 raise ValueError(
-                    'Cannot update parameter because it does not exists. '
+                    f'Cannot update {name} because it does not exists. '
                     'Please use "add_param" to add a parameter. '
                     f'Available parameters are {self._params}'
                 )
