@@ -132,4 +132,9 @@ setup(
         annotate=True,
     ),
     include_dirs=[numpy.get_include()],
+    entry_points={
+        "console_scripts": [
+            'nt.strip_solution = nt.utils.strip_solution:entry_point',
+        ]
+    },
 )
