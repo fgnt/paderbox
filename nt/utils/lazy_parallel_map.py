@@ -68,7 +68,7 @@ def lazy_parallel_map(
 
     elif backend in [
             "t",
-            "thread"
+            "thread",
             "concurrent_mp"
     ]:
         if backend in ['t', 'thread']:
