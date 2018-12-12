@@ -1,8 +1,8 @@
 """
 Run this either with
-$ python -m nt.utils.strip_solution name_template.ipynb name_solution.ipynb
+$ python -m paderbox.utils.strip_solution name_template.ipynb name_solution.ipynb
 or directly with
-$ nt.strip_solution name_template.ipynb name_solution.ipynb
+$ paderbox.strip_solution name_template.ipynb name_solution.ipynb
 """
 from pathlib import Path
 import re

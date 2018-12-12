@@ -86,7 +86,7 @@ def get_gpu_list(print_error = True):
             except NVMLError as e:
                 if print_error:
                     # ToDo: make a better print.
-                    print('ERROR in nt.utils.nvidia_helper.get_gpu_list for '
+                    print('ERROR in paderbox.utils.nvidia_helper.get_gpu_list for '
                           '{}: {}'.format(str(nvmlDeviceGetName(handle))[2:-1], e))
     return gpu_list
 

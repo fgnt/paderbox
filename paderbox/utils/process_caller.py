@@ -122,7 +122,7 @@ def run_processes(cmds, sleep_time=None, ignore_return_code=False,
     # ToDo: remove sleep_time
     if sleep_time is not None:
         import warnings
-        warnings.warn('Call nt.utils.process_caller.run_processes(..., '
+        warnings.warn('Call paderbox.utils.process_caller.run_processes(..., '
                       'sleep_time={}, ...) is deprecated. sleep_time will be '
                       'removed in the future'.format(sleep_time))
 

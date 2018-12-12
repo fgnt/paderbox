@@ -94,7 +94,7 @@ class NoiseGeneratorChimeBackground(NoiseGeneratorTemplate):
     Shape of your input signal is assumed to be (channels, samples).
     Possible leading dimensions have to be singleton.
     You can create the file by running this code:
-    ``python -m nt.database.chime.create_background_json``
+    ``python -m paderbox.database.chime.create_background_json``
 
     >>> ng = NoiseGeneratorChimeBackground(database_jsons / 'chime_backgrounds.json', flist='train')
     >>> noise = ng.get_noise((3, 16000), np.random)

@@ -22,7 +22,7 @@ with open(path.join(here, 'DESCRIPTION.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='nt',
+    name='paderbox',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
@@ -124,17 +124,17 @@ setup(
     },
 
     ext_modules=cythonize([
-        'nt/reverb/CalcRIR_Simple_C.pyx',
-        'nt/speech_enhancement/cythonized/get_gev_vector.pyx',
-        'nt/speech_enhancement/cythonized/c_eig.pyx',
-        'nt/reverb/rirgen/pyrirgen.pyx'
+        'paderbox/reverb/CalcRIR_Simple_C.pyx',
+        'paderbox/speech_enhancement/cythonized/get_gev_vector.pyx',
+        'paderbox/speech_enhancement/cythonized/c_eig.pyx',
+        'paderbox/reverb/rirgen/pyrirgen.pyx'
     ],
         annotate=True,
     ),
     include_dirs=[numpy.get_include()],
     entry_points={
         "console_scripts": [
-            'nt.strip_solution = nt.utils.strip_solution:entry_point',
+            'paderbox.strip_solution = paderbox.utils.strip_solution:entry_point',
         ]
     },
 )

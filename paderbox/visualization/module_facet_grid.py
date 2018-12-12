@@ -73,7 +73,7 @@ def facet_grid_zero_space_time_frequency_plot(
     """
     This Function is a wrapper around facet_grid. It assumes,
     that function_list is a list of one plot function. This
-    function has a parameter colorbar, like nt.visualisation.plot.mask.
+    function has a parameter colorbar, like paderbox.visualisation.plot.mask.
     All inner xlabel, xticklabel, ylabel, yticklabel and title will be removed.
     The space between the figures will be set zu 0.01
     """

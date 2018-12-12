@@ -6,21 +6,21 @@ source "`dirname "$0"`/jenkins_common.bash"
 # Unittets
 # It seems, that jenkins currentliy does not work with matlab: Error: Segmentation violation
 
-nosetests -a '!matlab' --with-xunit --with-coverage --cover-package=nt -v -w "${TOOLBOX}/tests" # --processes=-1
+nosetests -a '!matlab' --with-xunit --with-coverage --cover-package=paderbox -v -w "${TOOLBOX}/tests" # --processes=-1
 # Use as many processes as you have cores: --processes=-1
 
 # Export coverage
-python -m coverage xml --include="${TOOLBOX}/nt*"
+python -m coverage xml --include="${TOOLBOX}/paderbox*"
 
 # Pylint tests
-pylint --rcfile="${TOOLBOX}/pylint.cfg" -f parseable nt > pylint.txt
+pylint --rcfile="${TOOLBOX}/pylint.cfg" -f parseable paderbox > pylint.txt
 # --files-output=y is a bad option, because it produces hundreds of files
 
 make --directory=./toolbox/doc/ clean
 make --directory=./toolbox/doc/ html
 
 pip freeze > pip.txt
-pip uninstall --quiet --yes nt
+pip uninstall --quiet --yes paderbox
 
 # copy html code to lighttpd webserver
 rsync -a --delete-after /var/lib/jenkins/jobs/python_toolbox/workspace/toolbox/doc/build/html/ /var/www/doku/html/python_toolbox/
