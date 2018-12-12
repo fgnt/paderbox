@@ -8,10 +8,10 @@ import matplotlib.colors
 import matplotlib.pyplot as plt
 import numpy as np
 
-import nt.transform
-from nt.math.misc import softmax
-from nt.speech_enhancement.beamform_utils import *
-from nt.visualization import module_facet_grid
+import paderbox.transform
+from paderbox.math.misc import softmax
+from paderbox.speech_enhancement.beamform_utils import *
+from paderbox.visualization import module_facet_grid
 
 # from chainer import Variable  # see line 281
 
@@ -493,7 +493,7 @@ def stft(
         time
     :return: axes
     """
-    signal = nt.transform.stft_to_spectrogram(signal)
+    signal = paderbox.transform.stft_to_spectrogram(signal)
     return spectrogram(**locals())
 
 
@@ -560,7 +560,7 @@ def phone_alignment(
     ax.vlines(_switch_indices(phone_alignment), 0, signal.shape[1],
               linestyle='dotted', color='r', alpha=.75)
     del phone_alignment
-    signal = nt.transform.stft_to_spectrogram(signal)
+    signal = paderbox.transform.stft_to_spectrogram(signal)
     ax = _time_frequency_plot(**locals())
     return ax
 

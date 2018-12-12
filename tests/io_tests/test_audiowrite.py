@@ -3,8 +3,8 @@ import numpy.testing as nptest
 import unittest
 import os
 import time
-from nt.io.audioread import audioread
-from nt.io.audiowrite import audiowrite
+from paderbox.io.audioread import audioread
+from paderbox.io.audiowrite import audiowrite
 
 signal = numpy.random.uniform(-1, 1, size=(10000,))
 path = 'audiowrite_test.wav'

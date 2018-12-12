@@ -3,22 +3,22 @@ import unittest
 import numpy as np
 from scipy import signal
 
-import nt.testing as tc
-from nt.io.audioread import audioread
-from nt.io.data_dir import testing as testing_dir
-from nt.transform.module_stft import _biorthogonal_window
-from nt.transform.module_stft import _biorthogonal_window_loopy
-from nt.transform.module_stft import _biorthogonal_window_brute_force
-from nt.transform.module_stft import _biorthogonal_window_fastest
-from nt.transform.module_stft import _samples_to_stft_frames
-from nt.transform.module_stft import _stft_frames_to_samples
-from nt.transform.module_stft import get_stft_center_frequencies
-from nt.transform.module_stft import istft
-from nt.transform.module_stft import spectrogram_to_energy_per_frame
-from nt.transform.module_stft import stft
-from nt.transform.module_stft import stft_to_spectrogram
-from nt.transform.module_stft import stft_with_kaldi_dimensions
-from nt.utils.matlab import Mlab
+import paderbox.testing as tc
+from paderbox.io.audioread import audioread
+from paderbox.io.data_dir import testing as testing_dir
+from paderbox.transform.module_stft import _biorthogonal_window
+from paderbox.transform.module_stft import _biorthogonal_window_loopy
+from paderbox.transform.module_stft import _biorthogonal_window_brute_force
+from paderbox.transform.module_stft import _biorthogonal_window_fastest
+from paderbox.transform.module_stft import _samples_to_stft_frames
+from paderbox.transform.module_stft import _stft_frames_to_samples
+from paderbox.transform.module_stft import get_stft_center_frequencies
+from paderbox.transform.module_stft import istft
+from paderbox.transform.module_stft import spectrogram_to_energy_per_frame
+from paderbox.transform.module_stft import stft
+from paderbox.transform.module_stft import stft_to_spectrogram
+from paderbox.transform.module_stft import stft_with_kaldi_dimensions
+from paderbox.utils.matlab import Mlab
 from numpy.fft import rfft
 import numpy
 
@@ -194,7 +194,7 @@ class TestSTFTMethods(unittest.TestCase):
         tc.assert_equal(for_result.shape, (1024,))
 
     def test_biorthogonal_window_inverts_analysis_window(self):
-        from nt.utils.numpy_utils import roll_zeropad
+        from paderbox.utils.numpy_utils import roll_zeropad
 
         def inf_shift_add(analysis_window, shift):
             influence_width = ((len(analysis_window) - 1) // shift)
@@ -214,7 +214,7 @@ class TestSTFTMethods(unittest.TestCase):
         tc.assert_allclose(s, 1)
 
     def test_biorthogonal_window_inverts_analysis_window_kaldi_parameter(self):
-        from nt.utils.numpy_utils import roll_zeropad
+        from paderbox.utils.numpy_utils import roll_zeropad
 
         def inf_shift_add(analysis_window, shift):
             influence_width = ((len(analysis_window) - 1) // shift)
@@ -234,7 +234,7 @@ class TestSTFTMethods(unittest.TestCase):
         tc.assert_allclose(s, 1)
 
     def test_biorthogonal_window_fastest_is_fastest(self):
-        from nt.utils.timer import TimerDict
+        from paderbox.utils.timer import TimerDict
         timer = TimerDict()
 
         window = signal.blackman(1024)

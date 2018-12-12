@@ -3,7 +3,7 @@ from cached_property import cached_property
 import socket
 import warnings
 import os.path
-from nt.io.data_dir import matlab_toolbox, matlab_r2015a, matlab_license
+from paderbox.io.data_dir import matlab_toolbox, matlab_r2015a, matlab_license
 
 
 class Mlab:

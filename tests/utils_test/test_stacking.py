@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from nt.utils.numpy_utils import stack_context, unstack_context
+from paderbox.utils.numpy_utils import stack_context, unstack_context
 
 T, B, F = 400, 6, 513
 A = np.random.uniform(size=(T, B, F)) + 1j * np.random.uniform(size=(T, B, F))

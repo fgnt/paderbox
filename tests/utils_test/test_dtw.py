@@ -1,5 +1,5 @@
 import unittest
-from nt.utils.dtw import dtw
+from paderbox.utils.dtw import dtw
 from numpy.testing import assert_equal
 import numpy as np
 

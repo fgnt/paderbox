@@ -149,7 +149,7 @@ if __name__ == '__main__':
         print(i, end=' ')
     print()
 
-    from nt.utils.timer import Timer
+    from paderbox.utils.timer import Timer
     t = Timer(verbose=True)
 
     print(f'Serial time: ')

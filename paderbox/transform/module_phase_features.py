@@ -1,7 +1,7 @@
 from copy import deepcopy
 
 import numpy as np
-import nt.math.directional as directional
+import paderbox.math.directional as directional
 
 
 def transform_to_baseband(X, size, shift):

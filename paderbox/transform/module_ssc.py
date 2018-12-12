@@ -3,11 +3,11 @@ Provides ssc features.
 """
 
 import numpy
-from nt.transform.module_filter import offset_compensation
-from nt.transform.module_filter import preemphasis
-from nt.transform.module_stft import stft
-from nt.transform.module_stft import stft_to_spectrogram
-from nt.transform.module_fbank import get_filterbanks
+from paderbox.transform.module_filter import offset_compensation
+from paderbox.transform.module_filter import preemphasis
+from paderbox.transform.module_stft import stft
+from paderbox.transform.module_stft import stft_to_spectrogram
+from paderbox.transform.module_fbank import get_filterbanks
 import scipy.signal
 
 def ssc(time_signal, sample_rate=16000, window_length=400, stft_shift=160,

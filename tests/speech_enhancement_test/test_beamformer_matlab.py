@@ -3,18 +3,18 @@ from os import path
 
 import numpy as np
 
-import nt.testing as tc
-from nt.io.data_dir import testing as testing_dir
-from nt.io.audioread import audioread
-from nt.speech_enhancement.beamformer import get_gev_vector
-from nt.speech_enhancement.beamformer import get_lcmv_vector
-from nt.speech_enhancement.beamformer import get_mvdr_vector
-from nt.speech_enhancement.beamformer import get_pca_vector
-from nt.speech_enhancement.beamformer import get_power_spectral_density_matrix
-from nt.speech_enhancement.mask_module import biased_binary_mask, \
+import paderbox.testing as tc
+from paderbox.io.data_dir import testing as testing_dir
+from paderbox.io.audioread import audioread
+from paderbox.speech_enhancement.beamformer import get_gev_vector
+from paderbox.speech_enhancement.beamformer import get_lcmv_vector
+from paderbox.speech_enhancement.beamformer import get_mvdr_vector
+from paderbox.speech_enhancement.beamformer import get_pca_vector
+from paderbox.speech_enhancement.beamformer import get_power_spectral_density_matrix
+from paderbox.speech_enhancement.mask_module import biased_binary_mask, \
     wiener_like_mask
-from nt.math.vector import vector_H_vector
-from nt.utils.matlab import Mlab
+from paderbox.math.vector import vector_H_vector
+from paderbox.utils.matlab import Mlab
 
 # uncomment, if you want to test matlab functions
 # matlab_test = unittest.skipUnless(True,'matlab-test')
@@ -97,10 +97,10 @@ class TestBeamformerMethods(unittest.TestCase):
 
     @staticmethod
     def generate_source_file():
-        import nt.transform as transform
-        from nt.speech_enhancement.noise.generator import NoiseGeneratorSpherical
-        from nt.reverb.reverb_utils import generate_rir, convolve
-        from nt.reverb.scenario import generate_sensor_positions, generate_source_positions_on_circle
+        import paderbox.transform as transform
+        from paderbox.speech_enhancement.noise.generator import NoiseGeneratorSpherical
+        from paderbox.reverb.reverb_utils import generate_rir, convolve
+        from paderbox.reverb.scenario import generate_sensor_positions, generate_source_positions_on_circle
 
         # ToDo: replace with Python funktions (current missing)
         D = 6
@@ -201,9 +201,9 @@ class TestBeamformerMethods(unittest.TestCase):
 
     @tc.attr.matlab
     def test_compare_lcmv_beamformer(self):
-        from nt.speech_enhancement.beamformer import apply_beamforming_vector
-        from nt.transform.module_stft import istft
-        from nt.evaluation import sxr
+        from paderbox.speech_enhancement.beamformer import apply_beamforming_vector
+        from paderbox.transform.module_stft import istft
+        from paderbox.evaluation import sxr
 
         data = self.data_multi_speaker
         X = data['X']  # K F D T

@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
-import nt.testing as tc
-from nt.math.correlation import covariance
+import paderbox.testing as tc
+from paderbox.math.correlation import covariance
 
 def rand(*shape, data_type=np.float64):
     if not shape:

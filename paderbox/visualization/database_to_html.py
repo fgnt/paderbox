@@ -1,12 +1,12 @@
 import numpy as np
 from IPython.display import HTML, Audio, display_html, Image
 import shutil
-from nt.database.keys import *
-from nt.io.audioread import audioread, audio_length
+from paderbox.database.keys import *
+from paderbox.io.audioread import audioread, audio_length
 import pathlib
 
-from nt.transform import spectrogram
-from nt.visualization import context_manager
+from paderbox.transform import spectrogram
+from paderbox.visualization import context_manager
 
 
 class Templates:
@@ -126,7 +126,7 @@ def plot_to_html(data_or_str, image_width=None, max_audio_length=20):
 
         if audio_data.shape[0] / sample_rate <= max_audio_length:
 
-            from nt.visualization.plot import spectrogram as plot_spectrogram
+            from paderbox.visualization.plot import spectrogram as plot_spectrogram
             from matplotlib import pyplot as plt
 
             to_plot = spectrogram(audio_data)

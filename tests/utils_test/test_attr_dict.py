@@ -1,4 +1,4 @@
-from nt.utils import AttrDict
+from paderbox.utils import AttrDict
 import unittest
 
 class ContainerTest(unittest.TestCase):

@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
-import nt.testing as tc
-from nt.math.vector import cos_similarity
+import paderbox.testing as tc
+from paderbox.math.vector import cos_similarity
 
 
 class TestCosineSimilarity(unittest.TestCase):

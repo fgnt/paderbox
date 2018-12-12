@@ -1,8 +1,8 @@
 import unittest
 
 import numpy as np
-from nt.reverb.reverb_utils import convolve
-import nt.testing as tc
+from paderbox.reverb.reverb_utils import convolve
+import paderbox.testing as tc
 
 
 class TestConvolution(unittest.TestCase):

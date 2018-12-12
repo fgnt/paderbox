@@ -3,7 +3,7 @@ import os
 import warnings
 
 import numpy as np
-from nt.utils import AttrDict
+from paderbox.utils import AttrDict
 
 __all__ = ['dump_hdf5', 'update_hdf5', 'load_hdf5']
 

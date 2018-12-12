@@ -1,12 +1,12 @@
 import unittest
 import os.path
 import numpy as np
-from nt.io import audioread, audiowrite
-from nt.speech_enhancement import wpe
+from paderbox.io import audioread, audiowrite
+from paderbox.speech_enhancement import wpe
 import time
-from nt import testing
-from nt.io.data_dir import testing as testing_dir
-from nt.io.data_dir import testing as data_dir
+from paderbox import testing
+from paderbox.io.data_dir import testing as testing_dir
+from paderbox.io.data_dir import testing as data_dir
 
 
 unittest.SkipTest(

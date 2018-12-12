@@ -2,7 +2,7 @@
 This module simply wraps all numpy.testing functions and provides additional
 assertions for our cases.
 """
-from nt.testing.module_asserts import *
+from paderbox.testing.module_asserts import *
 from numpy.testing import *
-from nt.testing.condition import retry
-import nt.testing.attr
+from paderbox.testing.condition import retry
+import paderbox.testing.attr

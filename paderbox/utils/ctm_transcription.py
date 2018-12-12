@@ -1,6 +1,6 @@
 import operator
 import numpy as np
-from nt.utils.dtw import dtw
+from paderbox.utils.dtw import dtw
 
 
 class Evaluate:

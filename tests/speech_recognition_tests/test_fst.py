@@ -1,7 +1,7 @@
 import tempfile
 import unittest
 
-from nt.TODO.kaldi.fst import build_monophone_fst, draw
+from paderbox.TODO.kaldi.fst import build_monophone_fst, draw
 
 
 class TestFST(unittest.TestCase):

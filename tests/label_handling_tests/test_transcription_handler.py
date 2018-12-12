@@ -2,8 +2,8 @@ import tempfile
 import unittest
 from os import path
 
-import nt.testing as tc
-from nt.label_handling.transcription_handler import WordTranscriptionHandler
+import paderbox.testing as tc
+from paderbox.label_handling.transcription_handler import WordTranscriptionHandler
 
 
 class TestTransHandler(unittest.TestCase):

@@ -1,5 +1,5 @@
 import json
-from nt.io.json_module import dump_json, Encoder
+from paderbox.io.json_module import dump_json, Encoder
 
 DELIMITER = '/'
 ALLOWED_TYPES = (list, tuple, int, float, str, type(None))

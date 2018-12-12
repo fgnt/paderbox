@@ -7,8 +7,8 @@ import subprocess
 import platform
 import os
 from os import path
-from nt.visualization.new_cm import cmaps
-from nt.io.file_handling import mkdir_p
+from paderbox.visualization.new_cm import cmaps
+from paderbox.io.file_handling import mkdir_p
 
 
 mpl_ge_150 = LooseVersion(mpl.__version__) >= '1.5.0'

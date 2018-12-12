@@ -1,5 +1,5 @@
 from pprint import pprint
-from nt.utils.pynvml import *
+from paderbox.utils.pynvml import *
 import pwd
 from contextlib import contextmanager
 from subprocess import PIPE, run

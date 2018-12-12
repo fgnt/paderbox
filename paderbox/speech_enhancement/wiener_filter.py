@@ -100,11 +100,11 @@ def wiener_filter(observation, n_mask, G_min_db=-25, mask_min=1e-6):
 
 if __name__ == '__main__':
     import asn
-    from nt.speech_enhancement.mask_module import wiener_like_mask
-    from nt.transform.module_stft import stft_v2 as stft, istft_v2 as istft
-    from nt.io import play, audiowrite
-    from nt.speech_enhancement.noise import get_snr
-    from nt.evaluation import pesq
+    from paderbox.speech_enhancement.mask_module import wiener_like_mask
+    from paderbox.transform.module_stft import stft_v2 as stft, istft_v2 as istft
+    from paderbox.io import play, audiowrite
+    from paderbox.speech_enhancement.noise import get_snr
+    from paderbox.evaluation import pesq
 
     dataset = asn.database.chime.Dataset_dt05_simu()
     data = dataset[0]

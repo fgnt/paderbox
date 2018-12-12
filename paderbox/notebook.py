@@ -15,21 +15,21 @@ import pandas as pd
 import seaborn as sns
 from IPython.display import HTML
 from IPython.display import display
-from nt.database.chime import Chime3, Chime4
-from nt.database.reverb import Reverb
-from nt.io import dump_json
-from nt.io import load_json
-from nt.io.play import play
-from nt.transform import fbank
-from nt.transform import istft
-from nt.transform import stft
-from nt.utils.numpy_utils import morph
-from nt.utils.pandas_helper import py_query
-from nt.visualization import context_manager
-from nt.visualization import facet_grid
-from nt.visualization import plot
+from paderbox.database.chime import Chime3, Chime4
+from paderbox.database.reverb import Reverb
+from paderbox.io import dump_json
+from paderbox.io import load_json
+from paderbox.io.play import play
+from paderbox.transform import fbank
+from paderbox.transform import istft
+from paderbox.transform import stft
+from paderbox.utils.numpy_utils import morph
+from paderbox.utils.pandas_helper import py_query
+from paderbox.visualization import context_manager
+from paderbox.visualization import facet_grid
+from paderbox.visualization import plot
 from tqdm import tqdm
-from nt.database.iterator import AudioReader, LimitAudioLength, AlignmentReader
+from paderbox.database.iterator import AudioReader, LimitAudioLength, AlignmentReader
 
 __all__ = [
     "pprint",

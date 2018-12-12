@@ -4,15 +4,15 @@ from abc import ABCMeta, abstractmethod
 import numpy as np
 from scipy.signal import lfilter
 
-import nt.testing as tc
-import nt.io.audioread as ar
-from nt.io.audioread import audioread
-from nt.speech_enhancement.noise.utils import set_snr
-from nt.speech_enhancement.noise.spherical_habets import _sinf_3D_py
-from nt.database.noisex92 import helper
+import paderbox.testing as tc
+import paderbox.io.audioread as ar
+from paderbox.io.audioread import audioread
+from paderbox.speech_enhancement.noise.utils import set_snr
+from paderbox.speech_enhancement.noise.spherical_habets import _sinf_3D_py
+from paderbox.database.noisex92 import helper
 
-from nt.io import load_json
-from nt.io.data_dir import database_jsons
+from paderbox.io import load_json
+from paderbox.io.data_dir import database_jsons
 
 
 class NoiseGeneratorTemplate:
@@ -60,7 +60,7 @@ class NoiseGeneratorWhite(NoiseGeneratorTemplate):
     """
     Example:
 
-    >>> from nt.evaluation.sxr import input_sxr
+    >>> from paderbox.evaluation.sxr import input_sxr
     >>> time_signal = np.random.normal(size=(1000,))
     >>> ng = NoiseGeneratorWhite()
     >>> n = ng.get_noise_for_signal(time_signal, snr=20)
@@ -77,7 +77,7 @@ class NoiseGeneratorWhite(NoiseGeneratorTemplate):
     >>> time_signal.shape
     (2, 1000)
 
-    >>> from nt.evaluation.sxr import input_sxr
+    >>> from paderbox.evaluation.sxr import input_sxr
     >>> SDR, SIR, SNR = input_sxr(time_signal[None, :, :], n)
     >>> round(SNR, 1)
     20.0
@@ -209,7 +209,7 @@ class NoiseGeneratorNoisex92(NoiseGeneratorTemplate):
 
         Example:
 
-        >>> import nt.evaluation.sxr as sxr, numpy as np
+        >>> import paderbox.evaluation.sxr as sxr, numpy as np
         >>> time_signal = np.random.randn(16000)
         >>> ng = NoiseGeneratorNoisex92(sample_rate = 16000)
         >>> n = ng.get_noise_for_signal(time_signal, snr=20, rng_state=np.random.RandomState(1))
@@ -263,8 +263,8 @@ class NoiseGeneratorSpherical(NoiseGeneratorTemplate):
         """
         Example:
 
-        >>> import nt.evaluation.sxr as sxr, numpy
-        >>> from nt.math.vector import sph2cart
+        >>> import paderbox.evaluation.sxr as sxr, numpy
+        >>> from paderbox.math.vector import sph2cart
         >>> time_signal = numpy.random.randn(1000, 3)
         >>> x1,y1,z1 = sph2cart(0,0,0.1)    # Sensor position 1
         >>> x2,y2,z2 = sph2cart(0,0,0.2)    # Sensor position 2

@@ -6,9 +6,9 @@ from collections import Counter
 from parameterized import parameterized
 
 
-from nt.io.data_dir import database_jsons as database_jsons_dir
-from nt.database.keys import *
-from nt.database.iterator import recursive_transform, ExamplesIterator, \
+from paderbox.io.data_dir import database_jsons as database_jsons_dir
+from paderbox.database.keys import *
+from paderbox.database.iterator import recursive_transform, ExamplesIterator, \
     AudioReader
 
 ROOT = database_jsons_dir

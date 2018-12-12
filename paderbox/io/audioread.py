@@ -12,7 +12,7 @@ import numpy as np
 import soundfile
 import wavefile
 
-import nt.utils.process_caller as pc
+import paderbox.utils.process_caller as pc
 
 UTILS_DIR = os.path.join(os.path.dirname(__file__), 'utils')
 
@@ -110,7 +110,7 @@ def load_audio(
 
     Examples
     --------
-    >>> from nt.io import load_audio
+    >>> from paderbox.io import load_audio
     >>> path = '/net/db/timit/pcm/train/dr1/fcjf0/sa1.wav'
     >>> data = load_audio(path)
     >>> data.shape
@@ -166,7 +166,7 @@ def load_audio(
                 'r',
         ) as f:
             if dtype is None:
-                from nt.utils.mapping import Dispatcher
+                from paderbox.utils.mapping import Dispatcher
                 mapping = Dispatcher({
                     'PCM_16': np.int16,
                     'FLOAT': np.float32,
@@ -180,7 +180,7 @@ def load_audio(
     except RuntimeError as e:
         if path.suffix == '.wav':
             # Improve exception msg for NIST SPHERE files.
-            from nt.utils.process_caller import run_process
+            from paderbox.utils.process_caller import run_process
             cp = run_process(f'file {path}')
             stdout = cp.stdout
             raise RuntimeError(f'{stdout}') from e
@@ -286,7 +286,7 @@ def audioread(path, offset=0.0, duration=None, expected_sample_rate=None):
             wav_reader.read(data)
             return np.squeeze(data), sample_rate
     except OSError as e:
-        from nt.utils.process_caller import run_process
+        from paderbox.utils.process_caller import run_process
         cp = run_process(f'file {path}')
         stdout = cp.stdout
         raise OSError(f'{stdout}') from e

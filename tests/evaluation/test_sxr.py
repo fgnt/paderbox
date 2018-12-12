@@ -1,8 +1,8 @@
 import numpy as np
 import unittest
 
-from nt.evaluation.sxr import input_sxr, output_sxr
-from nt.utils.numpy_utils import morph
+from paderbox.evaluation.sxr import input_sxr, output_sxr
+from paderbox.utils.numpy_utils import morph
 
 
 class TestSXR(unittest.TestCase):

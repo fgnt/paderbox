@@ -5,9 +5,9 @@ Provides fbank features and the fbank filterbank.
 import numpy
 import scipy.signal
 
-from nt.transform.module_filter import preemphasis_with_offset_compensation
-from nt.transform.module_stft import stft
-from nt.transform.module_stft import stft_to_spectrogram
+from paderbox.transform.module_filter import preemphasis_with_offset_compensation
+from paderbox.transform.module_stft import stft
+from paderbox.transform.module_stft import stft_to_spectrogram
 
 
 def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,

@@ -1,10 +1,10 @@
 from IPython.display import display
 from IPython.display import Audio
 from scipy import signal
-from nt.transform import istft
+from paderbox.transform import istft
 import numpy as np
 import os
-from nt.io.audioread import audioread
+from paderbox.io.audioread import audioread
 from pathlib import Path
 
 

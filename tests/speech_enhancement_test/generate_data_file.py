@@ -1,10 +1,10 @@
 import numpy as np
 
-from nt.io.data_dir import database_jsons as database_jsons_dir
-from nt.io.data_dir import testing as testing_dir
-from nt.nn import DataProvider
-from nt.nn.data_fetchers import JsonCallbackFetcher
-from nt.transform.module_stft import stft
+from paderbox.io.data_dir import database_jsons as database_jsons_dir
+from paderbox.io.data_dir import testing as testing_dir
+from paderbox.nn import DataProvider
+from paderbox.nn.data_fetchers import JsonCallbackFetcher
+from paderbox.transform.module_stft import stft
 
 
 def main():

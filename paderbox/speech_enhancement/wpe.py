@@ -1,18 +1,18 @@
 import os.path
 
 import numpy as np
-from nt.math.correlation import covariance
+from paderbox.math.correlation import covariance
 from pathlib import Path
 
-from nt.utils import deprecated
+from paderbox.utils import deprecated
 
 try:
-    from nt.utils.matlab import Mlab
+    from paderbox.utils.matlab import Mlab
 
     matlab_available = True
 except ImportError:
     matlab_available = False
-from nt.utils.numpy_utils import segment_axis
+from paderbox.utils.numpy_utils import segment_axis
 
 if matlab_available:
     mlab = Mlab()

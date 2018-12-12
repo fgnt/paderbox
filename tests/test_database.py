@@ -1,10 +1,10 @@
 import unittest
-from nt.database import JsonDatabase
-from nt.database import DictDatabase
+from paderbox.database import JsonDatabase
+from paderbox.database import DictDatabase
 from pathlib import Path
 import shutil
 import tempfile
-from nt.io import dump_json
+from paderbox.io import dump_json
 
 
 class IteratorTest(unittest.TestCase):

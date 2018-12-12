@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from nt.utils.profiling import lprun
+from paderbox.utils.profiling import lprun
 
 #@lprun
 #def foo():

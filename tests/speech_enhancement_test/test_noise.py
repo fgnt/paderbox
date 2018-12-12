@@ -2,14 +2,14 @@ import unittest
 
 import numpy as np
 import scipy
-import nt.evaluation.sxr as sxr
-import nt.speech_enhancement.noise as noise
-import nt.testing as tc
-from nt.speech_enhancement.noise import get_snr
-from nt.speech_enhancement.noise import set_snr
-from nt.math.vector import sph2cart
-import nt.transform as transform
-from nt.speech_enhancement.noise.spherical_habets import _mycohere,_sinf_3D
+import paderbox.evaluation.sxr as sxr
+import paderbox.speech_enhancement.noise as noise
+import paderbox.testing as tc
+from paderbox.speech_enhancement.noise import get_snr
+from paderbox.speech_enhancement.noise import set_snr
+from paderbox.math.vector import sph2cart
+import paderbox.transform as transform
+from paderbox.speech_enhancement.noise.spherical_habets import _mycohere,_sinf_3D
 from math import pi
 from numpy.linalg import norm
 

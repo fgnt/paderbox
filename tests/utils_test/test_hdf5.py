@@ -1,9 +1,9 @@
 import os
 import tempfile
 import parameterized
-import nt.testing as tc
+import paderbox.testing as tc
 import numpy as np
-from nt.io import dump_hdf5, load_hdf5
+from paderbox.io import dump_hdf5, load_hdf5
 
 
 class TestHdf5:

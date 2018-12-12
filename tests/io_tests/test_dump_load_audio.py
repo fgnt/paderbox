@@ -1,8 +1,8 @@
 import numpy as np
 import soundfile
 
-from nt.io import load_audio
-from nt.io.audiowrite import dump_audio
+from paderbox.io import load_audio
+from paderbox.io.audiowrite import dump_audio
 
 from parameterized import parameterized
 

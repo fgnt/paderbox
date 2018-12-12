@@ -1,13 +1,13 @@
 import unittest
 
-from nt.io.audioread import audioread
+from paderbox.io.audioread import audioread
 # from scipy import signal
 
-import nt.testing as tc
-import nt.transform as transform
+import paderbox.testing as tc
+import paderbox.transform as transform
 # from pymatbridge import Matlab
 
-from nt.io.data_dir import testing as testing_dir
+from paderbox.io.data_dir import testing as testing_dir
 
 
 class TestSTFTMethods(unittest.TestCase):

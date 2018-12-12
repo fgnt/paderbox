@@ -1,15 +1,15 @@
 import unittest
 
-import nt.io.audioread as io
-import nt.reverb.reverb_utils as reverb_utils
-import nt.testing as tc
+import paderbox.io.audioread as io
+import paderbox.reverb.reverb_utils as reverb_utils
+import paderbox.testing as tc
 import numpy as np
-import nt.reverb.scenario as scenario
+import paderbox.reverb.scenario as scenario
 import scipy
 import scipy.signal
 from nose_parameterized import parameterized
-from nt.io.data_dir import testing as testing_dir
-from nt.utils.matlab import Mlab
+from paderbox.io.data_dir import testing as testing_dir
+from paderbox.utils.matlab import Mlab
 
 
 def time_convolve(x, impulse_response):

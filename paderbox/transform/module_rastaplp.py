@@ -1,7 +1,7 @@
 import numpy as np
 import scipy
-from nt.transform import bark_fbank
-from nt.transform.module_bark_fbank import bark2hz, hz2bark
+from paderbox.transform import bark_fbank
+from paderbox.transform.module_bark_fbank import bark2hz, hz2bark
 from scipy.signal import lfilter
 
 

@@ -1,7 +1,7 @@
 import numpy as np
-from nt.transform.module_stft import stft
-from nt.transform.module_fbank import logfbank
-from nt.utils.numpy_utils import segment_axis
+from paderbox.transform.module_stft import stft
+from paderbox.transform.module_fbank import logfbank
+from paderbox.utils.numpy_utils import segment_axis
 import scipy.signal
 from scipy.fftpack import dct
 

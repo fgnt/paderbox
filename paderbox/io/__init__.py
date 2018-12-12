@@ -10,19 +10,19 @@ The path should either be a ``pathlib.Path`` object or a string.
 import pickle
 from pathlib import Path
 
-from nt.io import audioread
-from nt.io import hdf5
-from nt.io import play
-from nt.io.json_module import (
+from paderbox.io import audioread
+from paderbox.io import hdf5
+from paderbox.io import play
+from paderbox.io.json_module import (
     load_json,
     loads_json,
     dump_json,
     dumps_json,
 )
-from nt.io.json_module import SummaryEncoder
-from nt.io.audioread import load_audio
-from nt.io.audiowrite import dump_audio
-from nt.io.file_handling import (
+from paderbox.io.json_module import SummaryEncoder
+from paderbox.io.audioread import load_audio
+from paderbox.io.audiowrite import dump_audio
+from paderbox.io.file_handling import (
     mkdir_p,
     symlink,
 )

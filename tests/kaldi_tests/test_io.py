@@ -1,5 +1,5 @@
 import unittest
-from nt.kaldi.io import read_keyed_text_file, write_keyed_text_file
+from paderbox.kaldi.io import read_keyed_text_file, write_keyed_text_file
 import tempfile
 from pathlib import Path
 

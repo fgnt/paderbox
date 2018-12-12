@@ -10,8 +10,8 @@ import numpy as np
 from numpy.fft import rfft, irfft
 from scipy import signal
 
-from nt.utils.numpy_utils import segment_axis_v2
-from nt.utils.numpy_utils import roll_zeropad
+from paderbox.utils.numpy_utils import segment_axis_v2
+from paderbox.utils.numpy_utils import roll_zeropad
 
 
 def stft(

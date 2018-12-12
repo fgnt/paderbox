@@ -1,5 +1,5 @@
 import numpy as np
-from nt.transform.module_stft import stft
+from paderbox.transform.module_stft import stft
 
 
 def sif(time_signal, stft_size=512, stft_shift=160, window_length=None, num_features=52, denoise=True,

@@ -1,8 +1,8 @@
 import unittest
 import numpy as np
-from nt.label_handling.label_handler import LabelHandler
-from nt.database import keys
-import nt.testing as tc
+from paderbox.label_handling.label_handler import LabelHandler
+from paderbox.database import keys
+import paderbox.testing as tc
 import tempfile
 from os import path
 

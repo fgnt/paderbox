@@ -1,7 +1,7 @@
 __author__ = 'walter'
 import unittest
 import tempfile
-from nt.utils.ctm_transcription import read_ctm
+from paderbox.utils.ctm_transcription import read_ctm
 
 class TestReadCTM(unittest.TestCase):
     def setUp(self):

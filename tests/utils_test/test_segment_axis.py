@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 from numpy.testing import assert_equal
 
-from nt.utils.numpy_utils import segment_axis
+from paderbox.utils.numpy_utils import segment_axis
 
 
 class TestSegment(unittest.TestCase):

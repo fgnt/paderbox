@@ -2,10 +2,10 @@ import tempfile
 import unittest
 
 import numpy as np
-from nt.io.data_dir import testing as data_dir
-from nt.TODO.kaldi_tools import (ArkWriter, import_feature_data,
-                           make_mfcc_features, import_feat_scp, make_fbank_features,
-                           compute_mean_and_var_stats, apply_mean_and_var_stats, read_scp_file)
+from paderbox.io.data_dir import testing as data_dir
+from paderbox.TODO.kaldi_tools import (ArkWriter, import_feature_data,
+                                       make_mfcc_features, import_feat_scp, make_fbank_features,
+                                       compute_mean_and_var_stats, apply_mean_and_var_stats, read_scp_file)
 
 WAV_SCP = str(data_dir / 'kaldi_io' / 'wav.scp')
 

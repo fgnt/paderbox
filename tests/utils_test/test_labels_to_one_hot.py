@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
-import nt.testing as tc
-from nt.utils.numpy_utils import labels_to_one_hot
+import paderbox.testing as tc
+from paderbox.utils.numpy_utils import labels_to_one_hot
 
 
 class TestLabelsToOneHot(unittest.TestCase):

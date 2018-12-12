@@ -1,8 +1,8 @@
 import numpy
 import numpy.testing as nptest
-from nt.evaluation.sxr import input_sxr, output_sxr
+from paderbox.evaluation.sxr import input_sxr, output_sxr
 import unittest
-from nt.testing import condition
+from paderbox.testing import condition
 
 
 class InputSXRTest(unittest.TestCase):

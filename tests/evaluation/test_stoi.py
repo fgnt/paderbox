@@ -1,9 +1,9 @@
 import unittest
-from nt.utils.matlab import Mlab
-import nt.testing as tc
-from nt.evaluation.stoi import *
-from nt.io.audioread import audioread
-from nt.io.data_dir import testing as testing_dir
+from paderbox.utils.matlab import Mlab
+import paderbox.testing as tc
+from paderbox.evaluation.stoi import *
+from paderbox.io.audioread import audioread
+from paderbox.io.data_dir import testing as testing_dir
 
 
 class TestSTOI(unittest.TestCase):

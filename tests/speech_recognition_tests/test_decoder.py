@@ -4,11 +4,11 @@ import tempfile
 import unittest
 
 import numpy as np
-from nt.TODO.kaldi.decoder import Decoder
-from nt.io.data_dir import testing as data_dir
-from nt.speech_recognition.utils.utils import write_lattice_file, argmax_decode
-from nt.label_handling.label_handler import LabelHandler
-from nt.label_handling.lexicon import *
+from paderbox.TODO.kaldi.decoder import Decoder
+from paderbox.io.data_dir import testing as data_dir
+from paderbox.speech_recognition.utils.utils import write_lattice_file, argmax_decode
+from paderbox.label_handling.label_handler import LabelHandler
+from paderbox.label_handling.lexicon import *
 
 sys.path.append(str(data_dir / 'speech_recognition'))
 

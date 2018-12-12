@@ -1,5 +1,5 @@
 import numpy as np
-from nt.transform import stft, stft_to_spectrogram, offset_compensation, preemphasis
+from paderbox.transform import stft, stft_to_spectrogram, offset_compensation, preemphasis
 import scipy
 
 

@@ -1,5 +1,5 @@
 import numpy as np
-from nt.transform import stft, bark_fbank
+from paderbox.transform import stft, bark_fbank
 
 def ams(time_signal, version = 1):
     """

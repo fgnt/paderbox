@@ -1,9 +1,9 @@
 import unittest
-from nt.evaluation.pesq import pesq
+from paderbox.evaluation.pesq import pesq
 import numpy
 import numpy.testing as nptest
-from nt.io.audioread import audioread
-from nt.io.data_dir import testing as testing_dir
+from paderbox.io.audioread import audioread
+from paderbox.io.data_dir import testing as testing_dir
 
 
 class TestProposedPESQ(unittest.TestCase):
