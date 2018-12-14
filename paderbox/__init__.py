@@ -10,3 +10,54 @@ with open(FFT_FILE) as f:
             f'segmentation faults. To fix it, open {FFT_FILE} and edit '
             'it such that `patch_fft = True` becomes `patch_fft = False`.'
         )
+
+__all__ = [
+    'database',
+    'evaluation',
+    'io',
+    'kaldi',
+    'label_handling',
+    'math',
+    'nn',
+    'speech_enhancement',
+    'speech_recognition',
+    'testing',
+    'TODO',
+    'transform',
+    'utils',
+    'visualization',
+]
+
+
+# Lazy import all subpackages
+# Note: define all subpackages in __all__
+import sys
+import pkgutil
+import operator
+import importlib.util
+
+_available_submodules = list(map(
+    operator.itemgetter(1),
+    pkgutil.iter_modules(__path__)
+))
+
+
+class _LazySubModule(sys.modules[__name__].__class__):
+    # In py37 is the class is not nessesary and __dir__ and __getattr__ are enough
+    # https://snarky.ca/lazy-importing-in-python-3-7/
+
+    def __dir__(self):
+        ret = super().__dir__()
+        return [*ret, *_available_submodules]
+
+    def __getattr__(self, item):
+        if item in _available_submodules:
+            import importlib
+            return importlib.import_module(f'{__package__}.{item}')
+        else:
+            return super().__getattr__(item)
+
+
+sys.modules[__name__].__class__ = _LazySubModule
+
+del sys, pkgutil, operator, importlib, _LazySubModule
