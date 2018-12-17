@@ -67,7 +67,7 @@ dcase_2017_task_4 = _get_path(
 )
 dcase_2018_task_5 = _get_path(
     'NT_DCASE_2018_TASK_5_DIR',
-    fast_db_dir / 'DCASE2018' / 'Task5'
+    db_dir / 'DCASE2018' / 'Task5'
 )
 timit = _get_path(
     'NT_TIMIT_DIR',
