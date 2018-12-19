@@ -1,7 +1,3 @@
-from paderbox.utils.timer import Timer, timeStamped
-
-from .deprecated import deprecated
-
 __all__ = [
     'deprecated',
     'dtw',

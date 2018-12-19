@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import paderbox.testing as tc
-import paderbox.utils.random_helper as random
+import paderbox.utils.random_utils as random
 
 
 class TestRandom(unittest.TestCase):

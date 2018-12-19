@@ -28,7 +28,7 @@ from paderbox.transform import fbank
 from paderbox.transform import istft
 from paderbox.transform import stft
 from paderbox.utils.numpy_utils import morph
-from paderbox.utils.pandas_helper import py_query
+from paderbox.utils.pandas_utils import py_query
 from paderbox.visualization import context_manager
 from paderbox.visualization import facet_grid
 from paderbox.visualization import plot

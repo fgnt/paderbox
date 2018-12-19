@@ -3,7 +3,6 @@ This file contains the STFT function and related helper functions.
 """
 import typing
 import string
-import itertools
 from math import ceil
 
 import numpy as np
