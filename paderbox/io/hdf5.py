@@ -3,7 +3,7 @@ import os
 import warnings
 
 import numpy as np
-from paderbox.utils import AttrDict
+
 
 __all__ = ['dump_hdf5', 'update_hdf5', 'load_hdf5']
 
@@ -411,7 +411,7 @@ class _ReportInterface(object):
         {'key': [1, 2, 3]}
         """
         import h5py
-        ans = AttrDict()
+        ans = dict()
         for key, item in h5file[path].items():
             if key.endswith("_<class 'list'>"):
                 tmp = cls.__recursively_load_dict_contents_from_group__(

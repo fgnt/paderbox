@@ -1,7 +1,7 @@
 import numpy as np
 from paderbox.transform.module_stft import stft
 from paderbox.transform.module_fbank import logfbank
-from paderbox.utils.numpy_utils import segment_axis
+from paderbox.utils.numpy_utils import segment_axis_v2
 import scipy.signal
 from scipy.fftpack import dct
 
@@ -219,8 +219,8 @@ def modmfcc(
     ))
     assert avg_length >= avg_shift
     if avg_length > 1:
-        x = segment_axis(
-            x, length=avg_length, overlap=avg_length - avg_shift, end='pad',
+        x = segment_axis_v2(
+            x, length=avg_length, shift=avg_shift, end='pad',
             axis=-3)
         x = np.mean(x, axis=-3)
     return x
