@@ -1,5 +1,6 @@
 from numpy import array, zeros, argmin, inf, arange
 
+
 def dtw(x, y, dist, dist_to_cost=None, border=(inf, inf), penalty=(0, 0, 0),
         weight=(1, 1, 1)):
     """
@@ -52,6 +53,7 @@ def dtw(x, y, dist, dist_to_cost=None, border=(inf, inf), penalty=(0, 0, 0),
     path = _traceback(D0, penalty)
 
     return D1[-1, -1], C, D1, path
+
 
 def _traceback(D, penalty=(0, 0, 0)):
     """

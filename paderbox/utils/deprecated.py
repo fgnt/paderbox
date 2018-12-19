@@ -1,7 +1,6 @@
 import functools
 import inspect
 import warnings
-import types
 
 
 # NOTE(kgriffs): We don't want our deprecations to be ignored by default,

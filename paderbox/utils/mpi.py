@@ -12,7 +12,6 @@ If you want to implement Round-Robin execution, you can try this::
         pass
 """
 
-import os
 
 __all__ = [
     'RANK',
@@ -56,7 +55,6 @@ except ImportError:
         COMM_WORLD = DUMMY_COMM_WORLD()
 
     MPI = _dummy_MPI()
-
 
 
 class RankInt(int):

@@ -305,7 +305,7 @@ def summary_df(df, query=None, max_unique_values=3):
     Args:
         df:
         query: See py_query function
-        max_set_len:
+        max_unique_values:
 
     Returns:
 

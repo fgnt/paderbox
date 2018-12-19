@@ -6,7 +6,6 @@ find something useful if you alter it a little bit.
 """
 
 import collections
-import pandas as pd
 
 
 def update_dict(d, u):
@@ -58,29 +57,3 @@ def interleave(*lists):
                 iterators[iter_idx] = None
         if all(i is None for i in iterators):
             raise StopIteration()
-
-
-def dict_info(example):
-    """ Can be used to print info about iterator output dict.
-
-    Args:
-        example: Iterator output dict.
-
-    Returns: Pandas data frame.
-
-    """
-
-    def info(d, k):
-        return_dict = dict()
-        return_dict['key'] = k
-        return_dict['type'] = str(type(d[k]))
-        if isinstance(d[k], list):
-            return_dict['type'] += ' of ' + str(type(d[k][0]))
-        return_dict['shape'] = getattr(d[k], 'shape', '')
-        return_dict['dtype'] = getattr(d[k], 'dtype', '')
-        return return_dict
-
-    return pd.DataFrame.from_dict(
-        {k: info(example, k) for k in sorted(example.keys())},
-        orient='index'
-    )

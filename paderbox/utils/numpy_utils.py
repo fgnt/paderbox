@@ -1,5 +1,4 @@
 import re
-import warnings
 import numpy as np
 import collections
 import numbers
@@ -9,9 +8,7 @@ from dataclasses import dataclass
 
 def segment_axis_v2(x, length: int, shift: int, axis: int=-1,
                     end='pad', pad_mode='constant', pad_value=0):
-    """ !!! WIP !!!
-
-    ToDo: Discuss: Outsource conv_pad?
+    """Originally from http://wiki.scipy.org/Cookbook/SegmentAxis
 
     Generate a new array that chops the given array along the given axis
     into overlapping frames.
@@ -222,137 +219,6 @@ def segment_axis_v2(x, length: int, shift: int, axis: int=-1,
         return x
 
 
-"""
-From http://wiki.scipy.org/Cookbook/SegmentAxis
-"""
-
-
-def segment_axis(a, length, overlap=0, axis=None, end='cut', endvalue=0):
-    """ Generate a new array that chops the given array along the given axis into overlapping frames.
-
-    :param a: The array to segment
-    :param length: The length of each frame
-    :param overlap: The number of array elements by which the frames should overlap
-    :param axis: The axis to operate on; if None, act on the flattened array
-    :param end: What to do with the last frame, if the array is not evenly
-        divisible into pieces. Options are:
-        * 'cut'   Simply discard the extra values
-        * 'wrap'  Copy values from the beginning of the array
-        * 'pad'   Pad with a constant value
-    :param endvalue: The value to use for end='pad'
-    :return:
-
-    The array is not copied unless necessary (either because it is
-    unevenly strided and being flattened or because end is set to
-    'pad' or 'wrap').
-
-    Example
-    -------
-    >>> segment_axis(np.arange(10), 4, 2)
-    array([[0, 1, 2, 3],
-           [2, 3, 4, 5],
-           [4, 5, 6, 7],
-           [6, 7, 8, 9]])
-    >>> segment_axis(np.arange(5).reshape(5), 4, 3, axis=0)
-    array([[0, 1, 2, 3],
-           [1, 2, 3, 4]])
-    >>> segment_axis(np.arange(10).reshape(2, 5), 4, 3, axis=-1)
-    array([[[0, 1, 2, 3],
-            [1, 2, 3, 4]],
-    <BLANKLINE>
-           [[5, 6, 7, 8],
-            [6, 7, 8, 9]]])
-    >>> segment_axis(np.arange(10).reshape(5, 2).T, 4, 3, axis=1)
-    array([[[0, 2, 4, 6],
-            [2, 4, 6, 8]],
-    <BLANKLINE>
-           [[1, 3, 5, 7],
-            [3, 5, 7, 9]]])
-    >>> a = np.arange(5).reshape(5)
-    >>> b = segment_axis(a, 4, 2, axis=0)
-    >>> a += 1  # a and b point to the same memory
-    >>> b
-    array([[1, 2, 3, 4]])
-    """
-
-    if axis is None:
-        a = np.ravel(a)  # may copy
-        axis = 0
-
-    l = a.shape[axis]
-
-    if overlap >= length:
-        raise ValueError(
-            "frames cannot overlap by more than 100%")
-    if overlap < 0 or length <= 0:
-        raise ValueError(
-            "overlap must be nonnegative and length must be positive")
-
-    if l < length or (l - length) % (length - overlap):
-        if l > length:
-            roundup = length + (1 + (l - length) // (length - overlap)) * (
-                length - overlap)
-            rounddown = length + ((l - length) // (length - overlap)) * (
-                length - overlap)
-        else:
-            roundup = length
-            rounddown = 0
-        assert rounddown < l < roundup
-        assert roundup == rounddown + (length - overlap) or (
-            roundup == length and rounddown == 0)
-        a = a.swapaxes(-1, axis)
-
-        if end == 'cut':
-            a = a[..., :rounddown]
-        elif end in ['pad', 'wrap']:  # copying will be necessary
-            s = list(a.shape)
-            s[-1] = roundup
-            b = np.empty(s, dtype=a.dtype)
-            b[..., :l] = a
-            if end == 'pad':
-                b[..., l:] = endvalue
-            elif end == 'wrap':
-                b[..., l:] = a[..., :roundup - l]
-            a = b
-
-        a = a.swapaxes(-1, axis)
-
-    l = a.shape[axis]
-    if l == 0:
-        raise ValueError(
-            "Not enough data points to segment array in 'cut' mode; "
-            "try 'pad' or 'wrap'")
-    assert l >= length
-    assert (l - length) % (length - overlap) == 0
-    n = 1 + (l - length) // (length - overlap)
-
-    axis = axis % a.ndim  # force axis >= 0
-
-    s = a.strides[axis]
-    newshape = a.shape[:axis] + (n, length) + a.shape[axis + 1:]
-    newstrides = a.strides[:axis] + ((length - overlap) * s, s) + a.strides[
-        axis + 1:]
-    if not a.flags.contiguous:
-        a = a.copy()
-        s = a.strides[axis]
-        newstrides = a.strides[:axis] + ((length - overlap) * s, s) + a.strides[
-            axis + 1:]
-        return np.ndarray.__new__(np.ndarray, strides=newstrides,
-                                  shape=newshape, buffer=a, dtype=a.dtype)
-
-    try:
-        return np.ndarray.__new__(np.ndarray, strides=newstrides,
-                                  shape=newshape, buffer=a, dtype=a.dtype)
-    except TypeError or ValueError:
-        warnings.warn("Problem with ndarray creation forces copy.")
-        a = a.copy()
-        # Shape doesn't change but strides does
-        newstrides = a.strides[:axis] + ((length - overlap) * s, s) + a.strides[
-            axis + 1:]
-        return np.ndarray.__new__(np.ndarray, strides=newstrides,
-                                  shape=newshape, buffer=a, dtype=a.dtype)
-
-
 def to_ndarray(data, copy=True):
     if copy:
         cp = lambda x: np.copy(x)
@@ -474,9 +340,9 @@ def tbf_to_tbchw(x, left_context, right_context, step_width,
                ((left_context, right_context), (0, 0), (0, 0)),
                mode=pad_mode, **pad_kwargs)
     window_size = left_context + right_context + 1
-    return segment_axis(
-        x, window_size, window_size - step_width,
-        axis=0, end='cut').transpose(0, 2, 3, 1)[:, :, None, :, :]
+    return segment_axis_v2(
+        x, window_size, step_width, axis=0, end='cut'
+    ).transpose(0, 2, 3, 1)[:, :, None, :, :]
 
 
 def pad_to(array, to, constant_value=0):

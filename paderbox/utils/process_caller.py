@@ -1,6 +1,4 @@
-from time import sleep
 import subprocess
-import numpy as np
 from warnings import warn
 import os
 

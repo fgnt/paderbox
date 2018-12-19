@@ -1,7 +1,6 @@
 import queue
 import concurrent.futures
 from pathos.multiprocessing import ProcessPool as PathosPool
-from contextlib import contextmanager
 import dill
 
 

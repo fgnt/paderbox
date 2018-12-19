@@ -8,6 +8,7 @@ from pycallgraph.output import GraphvizOutput
 from inspect import isclass, isfunction
 from functools import wraps
 
+
 def timefunc(func):
     def profiled_func(*args, **kwargs):
         start = time.time()
