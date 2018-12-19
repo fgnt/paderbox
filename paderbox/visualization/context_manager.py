@@ -8,7 +8,6 @@ import platform
 import os
 from os import path
 from paderbox.visualization.new_cm import cmaps
-from paderbox.io.file_handling import mkdir_p
 
 
 mpl_ge_150 = LooseVersion(mpl.__version__) >= '1.5.0'
@@ -26,7 +25,15 @@ class DollarFormatter(ScalarFormatter):
         self.formatting = formatting
 
     def __call__(self, x, pos=None):
-        'Return the format for tick val *x* at position *pos*'
+        """Return the format for tick val *x* at position *pos*
+
+        Args:
+            x:
+            pos:
+
+        Returns:
+
+        """
         if len(self.locs) == 0:
             return ''
         else:
@@ -47,7 +54,7 @@ class LatexContextManager(object):
     def __init__(
             self,
             filename,
-            export_type=None,  # eps recomented (alternative pdf), because pdf is in Inkscape 0.91 r not working
+            export_type=None,  # eps recommended (alternative pdf), because pdf is in Inkscape 0.91 r not working
             build_folder=None,
             figure_size=(8.0, 6.0),
             formatter=None,
@@ -99,7 +106,7 @@ class LatexContextManager(object):
             'axes.unicode_minus': False
         }
         extra_rc.update(self.extra_rc)
-        return context_manager(
+        return figure_context(
             font_scale=2.5,
             extra_rc=extra_rc,
             figure_size=self.figure_size,
@@ -154,7 +161,7 @@ class LatexContextManager(object):
             #    print('Could not save file {}.'.format(self.filename))
 
 
-def context_manager(
+def figure_context(
     seaborn_axes_style='whitegrid',
     seaborn_plotting_context='notebook',
     font_scale=1.0,
@@ -232,3 +239,7 @@ def context_manager(
     final.update(rc_parameters)
 
     return plt.rc_context(final)
+
+
+def axes_context():
+    raise NotImplementedError('CBJ internal')

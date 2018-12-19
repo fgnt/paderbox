@@ -29,7 +29,7 @@ from paderbox.transform import istft
 from paderbox.transform import stft
 from paderbox.utils.numpy_utils import morph
 from paderbox.utils.pandas_utils import py_query
-from paderbox.visualization import context_manager
+from paderbox.visualization import figure_context
 from paderbox.visualization import facet_grid
 from paderbox.visualization import plot
 from tqdm import tqdm
@@ -50,7 +50,7 @@ __all__ = [
     "load_json",
     "dump_json",
     "play",
-    "context_manager",
+    "figure_context",
     "facet_grid",
     "plot",
     "fbank",

@@ -29,16 +29,13 @@ def toggle_code_button():
         raw=True)
 
 
-def nb_full_width():
-    display(HTML("<style>.container { width:99.5% !important; }</style>"))
-
-
-import ipywidgets as widgets # Loads the Widget framework.
-from IPython.core.magics.namespace import NamespaceMagics # Used to query namespace.
+import ipywidgets as widgets  # Loads the Widget framework.
+from IPython.core.magics.namespace import NamespaceMagics  # Used to query namespace.
 
 # For this example, hide these names, just to avoid polluting the namespace further
 #get_ipython().user_ns_hidden['widgets'] = widgets
 #get_ipython().user_ns_hidden['NamespaceMagics'] = NamespaceMagics
+
 
 class VariableInspectorWindow(object):
     instance = None

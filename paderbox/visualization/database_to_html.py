@@ -6,7 +6,7 @@ from paderbox.io.audioread import audioread, audio_length
 import pathlib
 
 from paderbox.transform import spectrogram
-from paderbox.visualization import context_manager
+from paderbox.visualization import figure_context
 
 
 class Templates:
@@ -130,7 +130,7 @@ def plot_to_html(data_or_str, image_width=None, max_audio_length=20):
             from matplotlib import pyplot as plt
 
             to_plot = spectrogram(audio_data)
-            with context_manager():
+            with figure_context():
                 plot_spectrogram(to_plot)
                 plt.savefig(str(dst_path), pad_inches=0, bbox_inches='tight')
                 plt.close()
