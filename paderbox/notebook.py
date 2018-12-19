@@ -83,10 +83,19 @@ def pprint(obj, verbose=False, max_width=79, newline='\n',
             super().__init__(*args, **kwargs)
 
             def _ipy_pprint_ndarray(obj, p, cycle):
-                p.text(f'{obj.__class__.__name__}(shape={obj.shape})')
+                p.text(
+                    f'{obj.__class__.__name__}'
+                    f'(shape={obj.shape}, dtype={obj.dtype})'
+                )
 
             def _ipy_pprint_tensor(obj, p, cycle):
-                p.text(f'{obj.__class__.__name__}(shape={tuple(obj.shape)})')
+                p.text(
+                    f'{obj.__class__.__name__}'
+                    f'('
+                    f'shape={tuple(obj.shape)}, '
+                    f'dtype={str(obj.dtype).replace("torch.", "")}'
+                    f')'
+                )
 
             self.type_pprinters[np.ndarray] = _ipy_pprint_ndarray
             self.deferred_pprinters[('torch', 'Tensor')] = _ipy_pprint_tensor
