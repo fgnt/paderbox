@@ -7,63 +7,29 @@ import datetime
 from typing import List, Tuple
 import warnings
 import getpass
-
+from sacred.commands import print_config
 from sacred import Experiment, Ingredient
 
-try:
-    from sacred.observers import JsonObserver as Observer
-    HAS_FILE_STORAGE_OBSERVER = False
-except:
-    warnings.warn(' '.join((
-        'Could not import JsonObserver.',
-        'You probably use the official Sacred repository instead of our',
-        'deprecated local version.')))
-    from sacred.observers import FileStorageObserver as Observer
-    HAS_FILE_STORAGE_OBSERVER = True
+
+__all__ = [
+    'get_dir',
+    'print_config',
+    'get_path_by_id'
+]
 
 
-class LocalExperiment(Experiment):
-    """Experiment with automatically added JsonObserver."""
+def get_dir(_run) -> Path:
+    """
+    Gets the current directory from this run, e.g. `pth_models/pit/3/`.
+    Args:
+        _run: From Sacred internal
 
-    def __init__(self,
-                 data_dir: Path,
-                 experiment_name: str,
-                 ingredients: List[Ingredient] or Tuple[Ingredient] = ()):
-        """Simplifies experiment creation. Automatically adds date prefix.
+    Returns:
 
-        Assumes, that you have a data root which may contain more than one
-        experiment.
-        If you need a more generic interface, use Sacred directly.
-
-        Args:
-            data_dir: Can be a format string or a Path object.
-                Possible parts are {id}, {now} and {name}, i.e.
-                'data_root/{name}/{now}_{id}'.
-            experiment_name: String, i.e. 'enhancement'
-            ingredients: Ingredients of this experiment, see :py:class:`sacred.Experiment`
-        Returns:
-            Experiment to be used as decorator in main Sacred file.
-        """
-
-        if HAS_FILE_STORAGE_OBSERVER:
-            data_dir = data_dir.parent / data_dir.name.format(
-                now=datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
-                id='nan',
-                user=getpass.getuser(),
-                name='unknown'
-            )
-
-        super(LocalExperiment, self).__init__(
-            experiment_name, ingredients=ingredients)
-        self.observers.append(Observer.create(data_dir))
-
-    @property
-    def data_dir(self):
-        """Short name to get target folder (use in main function)."""
-        try:
-            return Path(self.observers[0].data_dir)
-        except:
-            return Path(self.observers[0].dir)
+    """
+    assert len(_run.observers) == 1, len(_run.observers)
+    _dir = Path(_run.observers[0].basedir) / str(_run._id)
+    return _dir
 
 
 def get_path_by_id(
