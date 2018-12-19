@@ -2,8 +2,11 @@
 Contains utilities which are mainly useful in a REPL environment.
 """
 import itertools
+import collections
+import functools
 import os
 import re
+import sys
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
@@ -13,6 +16,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import IPython.lib.pretty
 from IPython.display import HTML
 from IPython.display import display
 from paderbox.database.chime import Chime3, Chime4
@@ -66,10 +70,30 @@ __all__ = [
 ]
 
 
-def pprint(obj):
-    """Shortens the np.ndarray representer."""
-    np.set_string_function(
-        lambda a: f"array(shape={a.shape}, dtype={a.dtype})"
-    )
-    original_pprint(obj)
-    np.set_string_function(None)
+def pprint(obj, verbose=False, max_width=79, newline='\n',
+           max_seq_length=IPython.lib.pretty.MAX_SEQ_LENGTH):
+    """
+    Copy of IPython.lib.pretty.pprint.
+    Modifies the __repr__ of np.ndarray and torch.Tensor compared to the
+    original.
+    """
+
+    class MyRepresentationPrinter(IPython.lib.pretty.RepresentationPrinter):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+            def _ipy_pprint_ndarray(obj, p, cycle):
+                p.text(f'{obj.__class__.__name__}(shape={obj.shape})')
+
+            def _ipy_pprint_tensor(obj, p, cycle):
+                p.text(f'{obj.__class__.__name__}(shape={tuple(obj.shape)})')
+
+            self.type_pprinters[np.ndarray] = _ipy_pprint_ndarray
+            self.deferred_pprinters[('torch', 'Tensor')] = _ipy_pprint_tensor
+
+    printer = MyRepresentationPrinter(sys.stdout, verbose, max_width, newline,
+                                      max_seq_length=max_seq_length)
+    printer.pretty(obj)
+    printer.flush()
+    sys.stdout.write(newline)
+    sys.stdout.flush()
