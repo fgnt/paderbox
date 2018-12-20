@@ -63,6 +63,23 @@ def play(
         `channel` parameter and the next channel at the same time.
     :return:
     """
+    if isinstance(data, dict):
+        assert name is None, name
+        for k, v in data.items():
+            play(
+                data=v,
+                name=k,
+
+                channel=channel,
+                sample_rate=sample_rate,
+                size=size,
+                shift=shift,
+                window=window,
+                scale=scale,
+                stereo=stereo,
+            )
+        return
+
     if stereo:
         if isinstance(channel, int):
             channel = (channel, channel+1)
