@@ -12,7 +12,7 @@ try:
     matlab_available = True
 except ImportError:
     matlab_available = False
-from paderbox.utils.numpy_utils import segment_axis
+from paderbox.utils.numpy_utils import segment_axis_v2
 
 if matlab_available:
     mlab = Mlab()
@@ -105,13 +105,13 @@ def wpe(Y, epsilon=1e-6, order=15, delay=1, iterations=10):
     for iteration in range(iterations):
         regression_coefficient = np.zeros((F, order), dtype=dtype)
         Y_norm = Y / np.sqrt(power_spectrum)
-        Y_windowed = segment_axis(
+        Y_windowed = segment_axis_v2(
             Y,
-            order,
-            order - 1,
+            length=order,
+            shift=1,
             axis=0).T[..., :-delay - 1]
-        Y_windowed_norm = segment_axis(Y_norm,
-                                       order, order - 1,
+        Y_windowed_norm = segment_axis_v2(Y_norm,
+                                       length=order, shift=1,
                                        axis=0, ).T[..., :-delay - 1]
         correlation_matrix = np.einsum('...dt,...et->...de', Y_windowed_norm,
                                        Y_windowed_norm.conj())
