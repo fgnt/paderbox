@@ -16,6 +16,7 @@ __all__ = [
     'strip_solution',
     'timer',
     'transcription_handling',
+    'nested'
 ]
 
 # Lazy import all subpackages
