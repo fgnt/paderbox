@@ -257,5 +257,77 @@ def figure_context(
     return plt.rc_context(final)
 
 
-def axes_context():
-    raise NotImplementedError('CBJ internal')
+class _AxesHandler:
+    # See axes_context for use case
+    # Should this class be public?
+    def _new_subplot(self):
+        figure, axis = plt.subplots(1, self._columns, squeeze=False)
+        return figure, axis.flatten()
+
+    def __init__(self, columns):
+        self._columns = columns
+        self.subplots = []
+        self.counter = -1
+
+    def get_axes(self, *, row, col):
+        while row >= len(self.subplots):
+            self.subplots.append(self._new_subplot())
+        axes = self.subplots[row][1]
+        self.counter = max(self.counter, row * self._columns + col)
+        return axes[col]
+
+    @property
+    def new(self):
+        return self[self.counter + 1]
+
+    @property
+    def last(self):
+        return self[self.counter]
+
+    def __getitem__(self, item):
+        if isinstance(item, numbers.Integral):
+            if item < 0:
+                item % self.counter
+            row = item // self._columns
+            col = item % self._columns
+            return self.get_axes(row=row, col=col)
+        elif isinstance(item, (tuple, list)):
+            row, col = item
+            return self.get_axes(row=row, col=col)
+        else:
+            raise TypeError(item)
+
+
+@contextlib.contextmanager
+def axes_context(
+        columns=1,
+        font_scale=1.0,
+        line_width=3,
+        figure_size=(8.0, 6.0),
+):
+    """
+
+    Combine figure_context and _AxesHandler (similar usecase as faced_grid).
+    Note:
+        figure_size will be a the figure size of one plot and not the size of
+        all subplots.
+
+     >>> with axes_context(2) as axes:
+     ...     axes.new.plot([1,2,3])
+     ...     axes.new.plot([1,2,3])
+     ...     axes.last.plot([1,2,4])
+     ...     axes.axes[1].plot([1,2,4])
+     ...     axes.axes[1, 1].plot([1,2,4])
+
+     - integrate context manager
+     - integrate all plot functions
+
+    """
+    figure_size = list(figure_size)
+    figure_size[0] *= columns
+    with figure_context(
+            font_scale=font_scale,
+            line_width=line_width,
+            figure_size=figure_size,
+    ):
+        yield _AxesHandler(columns)
