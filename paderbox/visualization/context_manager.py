@@ -175,6 +175,7 @@ def figure_context(
     figure_size=(8.0, 6.0),
     palette='muted',
     extra_rc=None,
+    color_skip=0,
 ):
     """ Helper to create a plotting style with auto completion.
 
@@ -230,11 +231,11 @@ def figure_context(
         cyl = cycler('color', colors) + cycler(
             'linestyle', [*mul*['-'], *mul*['--'], *mul*[':'], *mul*['-.']])
         rc_parameters.update({
-            'axes.prop_cycle': cyl
+            'axes.prop_cycle': cyl[color_skip:]
         })
     else:
         rc_parameters.update({
-            'axes.prop_cycle': list(colors)
+            'axes.prop_cycle': list(colors)[color_skip:]
         })
 
     rc_parameters.update({
