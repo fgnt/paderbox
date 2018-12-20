@@ -1,15 +1,21 @@
-import seaborn as sns
-import matplotlib.pyplot as plt
-from distutils.version import LooseVersion
-import matplotlib as mpl
-from matplotlib.ticker import ScalarFormatter
-import subprocess
-import platform
 import os
+import platform
+import numbers
+import subprocess
+import contextlib
 from os import path
+
+from distutils.version import LooseVersion
+
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+from matplotlib.ticker import ScalarFormatter
+import seaborn as sns
+
 from paderbox.visualization.new_cm import cmaps
 
 
+# Still necessary?
 mpl_ge_150 = LooseVersion(mpl.__version__) >= '1.5.0'
 
 
@@ -200,6 +206,15 @@ def figure_context(
     :return: A context manager to be used around your plots.
     """
     axes_style = sns.axes_style(seaborn_axes_style)
+
+    if seaborn_axes_style in ['whitegrid', 'darkgrid']:
+        # ToDo: should this be an option?
+        # Fix non visible minor ticks. Important for log plots.
+        axes_style_ticks = sns.axes_style('ticks')
+        axes_style['xtick.minor.size'] = axes_style_ticks['xtick.minor.size']
+        axes_style['ytick.minor.size'] = axes_style_ticks['ytick.minor.size']
+        axes_style['xtick.direction'] = 'in'
+        axes_style['ytick.direction'] = 'in'
 
     rc_parameters = {
         'lines.linewidth': line_width,
