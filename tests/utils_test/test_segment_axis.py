@@ -53,7 +53,7 @@ class TestSegment(unittest.TestCase):
 
         assert_equal(
             segment_axis_v2(np.ones((2, 3, 4, 5, 6)), axis=2, length=3, shift=2,
-                         end='wrap').shape,
+                         end='pad', pad_mode='wrap').shape,
             (2, 3, 2, 3, 5, 6))
 
         assert_equal(
