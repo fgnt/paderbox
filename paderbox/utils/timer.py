@@ -119,9 +119,10 @@ class TimerDict:
         return yaml.dump({k: str(time) for k, time in self.timings.items()},
                          default_flow_style=False)
 
-    def print_as_yaml(self):
-        print('Times are in seconds')
-        print(self.as_yaml)
+    def print_as_yaml(self, file=None):
+        if file is None:
+            print('Times are in seconds')
+        print(self.as_yaml, file=None)
 
     def __repr__(self):
         return 'TimerDict: ' + self.as_dict.__repr__()
