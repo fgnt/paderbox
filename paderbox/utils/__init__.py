@@ -20,5 +20,7 @@ __all__ = [
 ]
 
 from paderbox import _lazy_import_submodules
-_lazy_import_submodules(__name__=__name__, __path__=__path__)
+_lazy_import_submodules(
+    __name__=__name__, __path__=__path__, __package__=__package__
+)
 del _lazy_import_submodules

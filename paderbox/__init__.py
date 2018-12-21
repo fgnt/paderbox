@@ -28,7 +28,7 @@ __all__ = [
 ]
 
 
-def _lazy_import_submodules(__path__, __name__):
+def _lazy_import_submodules(__path__, __name__, __package__):
     # Lazy import all subpackages
     # Note: define all subpackages in __all__
     import sys
@@ -59,4 +59,6 @@ def _lazy_import_submodules(__path__, __name__):
     sys.modules[__name__].__class__ = _LazySubModule
 
 
-_lazy_import_submodules(__name__=__name__, __path__=__path__)
+_lazy_import_submodules(
+    __name__=__name__, __path__=__path__, __package__=__package__
+)
