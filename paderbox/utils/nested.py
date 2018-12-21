@@ -166,7 +166,7 @@ def nested_op(func, arg1, *args, broadcast=False):
             nested_op(
                 func,
                 arg1[j],
-                *[arg[j] if isinstance(arg, list) else arg
+                *[arg[j] if isinstance(arg, (list, tuple)) else arg
                   for arg in args],
                 broadcast=broadcast
             )
