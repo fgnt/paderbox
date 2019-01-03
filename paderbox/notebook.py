@@ -30,10 +30,13 @@ from paderbox.transform import stft
 from paderbox.utils.numpy_utils import morph
 from paderbox.utils.pandas_utils import py_query
 from paderbox.visualization import figure_context
+from paderbox.visualization import axes_context
 from paderbox.visualization import facet_grid
 from paderbox.visualization import plot
 from tqdm import tqdm
-from paderbox.database.iterator import AudioReader, LimitAudioLength, AlignmentReader
+from paderbox.database.iterator import AudioReader
+from paderbox.database.iterator import LimitAudioLength
+from paderbox.database.iterator import AlignmentReader
 
 __all__ = [
     "pprint",
@@ -50,6 +53,7 @@ __all__ = [
     "load_json",
     "dump_json",
     "play",
+    "axes_context",
     "figure_context",
     "facet_grid",
     "plot",

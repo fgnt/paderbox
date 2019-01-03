@@ -208,14 +208,15 @@ def figure_context(
     """
     axes_style = sns.axes_style(seaborn_axes_style)
 
-    if seaborn_axes_style in ['whitegrid', 'darkgrid']:
+    # TODO: Does not work with mpl 3.0.2
+    # if seaborn_axes_style in ['whitegrid', 'darkgrid']:
         # ToDo: should this be an option?
         # Fix non visible minor ticks. Important for log plots.
-        axes_style_ticks = sns.axes_style('ticks')
-        axes_style['xtick.minor.size'] = axes_style_ticks['xtick.minor.size']
-        axes_style['ytick.minor.size'] = axes_style_ticks['ytick.minor.size']
-        axes_style['xtick.direction'] = 'in'
-        axes_style['ytick.direction'] = 'in'
+        # axes_style_ticks = sns.axes_style('ticks')
+        # axes_style['xtick.minor.size'] = axes_style_ticks['xtick.minor.size']
+        # axes_style['ytick.minor.size'] = axes_style_ticks['ytick.minor.size']
+        # axes_style['xtick.direction'] = 'in'
+        # axes_style['ytick.direction'] = 'in'
 
     rc_parameters = {
         'lines.linewidth': line_width,
@@ -307,7 +308,7 @@ def axes_context(
 ):
     """
 
-    Combine figure_context and _AxesHandler (similar usecase as faced_grid).
+    Combine figure_context and _AxesHandler (similar use case as faced_grid).
     Note:
         figure_size will be a the figure size of one plot and not the size of
         all subplots.

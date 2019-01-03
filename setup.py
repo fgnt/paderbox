@@ -80,6 +80,7 @@ setup(
         'seaborn',
         'tqdm',
         'dill',
+        'pathos',  # Multiprocessing alternative
         'pip',
         'IPython',
         'scikit-learn',
