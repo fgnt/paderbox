@@ -2,9 +2,6 @@
 # are most likely the test cases run on Jenkins which call TensorFlow. This file
 # can be sourced in your own .bashrc or .env file.
 
-# CuDNN
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${CUDNN}/lib64
-
 if [[ $(hostname) =~ ^ntsim.*|ntpc9|ntjenkins ]];
 then
     # Cuda libraries for GPU hosts
