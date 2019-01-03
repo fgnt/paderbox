@@ -3,7 +3,6 @@
 # can be sourced in your own .bashrc or .env file.
 
 # CuDNN
-export CUDNN=/net/ssd/software/cudnn/v7
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${CUDNN}/lib64
 
 if [[ $(hostname) =~ ^ntsim.*|ntpc9|ntjenkins ]];
