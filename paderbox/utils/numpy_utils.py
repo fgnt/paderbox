@@ -745,6 +745,9 @@ class Cutter:
     Why do we enforce negative upper end: Positive values can be confusing. You
     may want to cut `n` values or want to keep up to `n`.
 
+    To implement similar behaviour in Torch, you may use `torch.narrow()`:
+    https://pytorch.org/docs/stable/tensors.html#torch.Tensor.narrow
+
     >>> c = Cutter(1, -2)
     >>> array = np.array([[1, 2, 3, 4]])
     >>> c.cut(array, axis=1)
