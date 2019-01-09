@@ -6,6 +6,7 @@ __all__ = [
     'matlab',
     'misc',
     'mpi',
+    'nested',
     'numpy_utils',
     'options',
     'pandas_utils',
