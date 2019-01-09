@@ -1,3 +1,7 @@
+import collections
+import itertools
+
+
 def flatten(d, sep='.', flat_type=dict):
     """Flatten a nested dict using a specific separator.
 
@@ -111,24 +115,104 @@ def nested_update(orig, update):
                 orig[key] = value
 
 
-def nested_op(func, arg1, *args, broadcast=False):
+def nested_merge(default_dict, *update_dicts):
     """
+    Nested updates the first dict with all other dicts.
+    The last dict has the highest priority.
+
+    # Example from: https://stackoverflow.com/q/3232943/5766934
+    >>> dictionary = {'level1': {'level2': {'levelA': 0,'levelB': 1}}}
+    >>> update = {'level1': {'level2': {'levelB': 10, 'levelC': 2}}}
+    >>> new = nested_merge(dictionary, update)
+    >>> print(new)
+    {'level1': {'level2': {'levelA': 0, 'levelB': 10, 'levelC': 2}}}
+    >>> print(dictionary)  # no inplace manipulation
+    {'level1': {'level2': {'levelA': 0, 'levelB': 1}}}
+
+    >>> nested_merge({'foo': 0}, {'foo': {'bar':1}})
+    {'foo': {'bar': 1}}
+
+    >>> nested_merge({'foo': {'bar': 1}}, {'foo': 0})
+    {'foo': 0}
+
+    """
+    if len(update_dicts) == 0:
+        return default_dict.__class__(default_dict)
+
+    dicts = [default_dict, *update_dicts]
+
+    def get_value_for_key(key):
+        values = [
+            d[key]
+            for d in dicts
+            if key in d.keys()
+        ]
+        if isinstance(values[-1], collections.Mapping):
+            return nested_merge(*[
+                v for v in values if isinstance(v, collections.Mapping)
+            ])
+        else:
+            return values[-1]
+
+    keys = itertools.chain(*[
+        d.keys()
+        for d in dicts
+    ])
+
+    return default_dict.__class__({
+        k: get_value_for_key(k)
+        for k in keys
+    })
+
+
+def nested_op(
+        func,
+        arg1, *args,
+        broadcast=False,
+        handle_dataclass=False
+):
+    """
+    Applies the function "func" to the leafs of the nested data structures.
+    This is similar to the map function that applies the function the the
+    elements of an iterable input (e.g. list).
+
+    CB: Should handle_dataclass be True or False?
+        Other suggestions for the name "handle_dataclass"?
+
+    >>> import operator
+    >>> nested_op(operator.add, (3, 5), (7, 11))  # like map
+    (10, 16)
+    >>> nested_op(operator.add, {'a': (3, 5)}, {'a': (7, 11)})  # with nested
+    {'a': (10, 16)}
+
     >>> nested_op(\
     lambda x, y: x + 3*y, dict(a=[1], b=dict(c=4)), dict(a=[0], b=dict(c=1)))
     {'a': [1], 'b': {'c': 7}}
+    >>> arg1, arg2 = dict(a=1, b=dict(c=[1,1])), dict(a=0, b=[1,3])
     >>> nested_op(\
-    lambda x, y: x + 3*y, dict(a=1, b=dict(c=[1,1])), dict(a=0, b=[1,3]))
+    lambda x, y: x + 3*y, arg1, arg2)
     Traceback (most recent call last):
     ...
-    AssertionError: ([1, 3],)
+    AssertionError: ({'c': [1, 1]}, ([1, 3],))
+
+    Note the broadcasting behavior (arg2.b is broadcasted to arg2.b.c)
     >>> nested_op(\
-    lambda x, y: x + 3*y, dict(a=1, b=dict(c=[1,1])), dict(a=0, b=[1,3]), broadcast=True)
+    lambda x, y: x + 3*y, arg1, arg2, broadcast=True)
     {'a': 1, 'b': {'c': [4, 10]}}
+
+    >>> import dataclasses
+    >>> @dataclasses.dataclass
+    ... class Data:
+    ...     a: int
+    ...     b: int
+    >>> nested_op(operator.add, Data(3, 5), Data(7, 11), handle_dataclass=True)
+    Data(a=10, b=16)
 
     :param func:
     :param arg1:
     :param args:
     :param broadcast:
+    :param handle_dataclass:
     :return:
     """
     if isinstance(arg1, dict):
@@ -151,7 +235,7 @@ def nested_op(func, arg1, *args, broadcast=False):
             )
             for key in keys
         })
-    if isinstance(arg1, (list, tuple)):
+    elif isinstance(arg1, (list, tuple)):
         if not broadcast:
             assert all([
                 isinstance(arg, (list, tuple)) and len(arg) == len(arg1)
@@ -172,10 +256,42 @@ def nested_op(func, arg1, *args, broadcast=False):
             )
             for j in range(len(arg1))]
         )
+    elif handle_dataclass and hasattr(arg1, '__dataclass_fields__'):
+        if not broadcast:
+            assert all([
+                hasattr(arg, '__dataclass_fields__')
+                and arg.__dataclass_fields__ == arg1.__dataclass_fields__
+                for arg in args
+            ]), (arg1, args)
+        else:
+            assert all([
+                not hasattr(arg, '__dataclass_fields__')
+                or arg.__dataclass_fields__ == arg1.__dataclass_fields__
+                for arg in args
+            ]), (arg1, args)
+        return arg1.__class__(
+            **{
+                f_key: nested_op(
+                    func,
+                    getattr(arg1, f_key),
+                    *[getattr(arg, f_key)
+                      if hasattr(arg, '__dataclass_fields__')
+                      else arg
+                      for arg in args
+                    ],
+                    broadcast=broadcast
+                )
+                for f_key in arg1.__dataclass_fields__
+            }
+        )
+
     return func(arg1, *args)
 
 
 def squeeze_nested(orig):
+    """
+    CB: What does this function do?
+    """
     if isinstance(orig, (dict, list)):
         keys = list(orig.keys() if isinstance(orig, dict) else range(len(orig)))
         squeezed = True
