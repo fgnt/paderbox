@@ -10,7 +10,6 @@ from pathlib import Path
 
 import numpy as np
 import soundfile
-import wavefile
 
 import paderbox.utils.process_caller as pc
 
@@ -259,6 +258,7 @@ def audioread(path, offset=0.0, duration=None, expected_sample_rate=None):
         OSError: /net/db/tidigits/tidigits/test/man/ah/111a.wav: NIST SPHERE file
         <BLANKLINE>
     """
+    import wavefile
     if isinstance(path, Path):
         path = str(path)
     path = os.path.expanduser(path)

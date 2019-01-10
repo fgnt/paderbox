@@ -104,7 +104,7 @@ def nested_update(orig, update):
             elif i < len(orig):
                 orig[i] = value
             else:
-                assert i == len(orig)
+                assert i == len(orig), (i, len(orig))
                 orig.append(value)
     elif isinstance(orig, dict):
         for key, value in update.items():
@@ -115,10 +115,14 @@ def nested_update(orig, update):
                 orig[key] = value
 
 
-def nested_merge(default_dict, *update_dicts):
+def nested_merge(default_dict, *update_dicts, allow_update=True, inplace=False):
     """
     Nested updates the first dict with all other dicts.
-    The last dict has the highest priority.
+    The last dict has the highest priority when allow_update is True.
+    When allow_update is False, it is assumed, that no values gets overwritten.
+
+    When inplace is True, the default_dict is manypulated inplace. This is
+    useful for `collections.defaultdict`.
 
     # Example from: https://stackoverflow.com/q/3232943/5766934
     >>> dictionary = {'level1': {'level2': {'levelA': 0,'levelB': 1}}}
@@ -128,6 +132,9 @@ def nested_merge(default_dict, *update_dicts):
     {'level1': {'level2': {'levelA': 0, 'levelB': 10, 'levelC': 2}}}
     >>> print(dictionary)  # no inplace manipulation
     {'level1': {'level2': {'levelA': 0, 'levelB': 1}}}
+    >>> new = nested_merge(dictionary, update, inplace=True)
+    >>> print(dictionary)  # with inplace manipulation
+    {'level1': {'level2': {'levelA': 0, 'levelB': 10, 'levelC': 2}}}
 
     >>> nested_merge({'foo': 0}, {'foo': {'bar':1}})
     {'foo': {'bar': 1}}
@@ -135,9 +142,19 @@ def nested_merge(default_dict, *update_dicts):
     >>> nested_merge({'foo': {'bar': 1}}, {'foo': 0})
     {'foo': 0}
 
+    >>> nested_merge({'foo': {'bar': 1}}, {'foo': 0}, allow_update=False)
+    Traceback (most recent call last):
+    ...
+    AssertionError: [{'bar': 1}, 0]
+    >>> nested_merge({'foo': {'bar': 1}}, {'blub': 0}, allow_update=False)
+    {'foo': {'bar': 1}, 'blub': 0}
+
     """
     if len(update_dicts) == 0:
-        return default_dict.__class__(default_dict)
+        if inplace:
+            return default_dict
+        else:
+            return default_dict.__class__(default_dict)
 
     dicts = [default_dict, *update_dicts]
 
@@ -150,8 +167,17 @@ def nested_merge(default_dict, *update_dicts):
         if isinstance(values[-1], collections.Mapping):
             return nested_merge(*[
                 v for v in values if isinstance(v, collections.Mapping)
-            ])
+            ], allow_update=allow_update, inplace=inplace)
         else:
+            if not allow_update:
+                try:
+                    values = set(values)
+                except TypeError:
+                    # set requires hashable, force len 1 when not hashable
+                    # e.g.: TypeError: unhashable type: 'dict'
+                    pass
+                assert len(values) == 1, values
+                values = list(values)
             return values[-1]
 
     keys = itertools.chain(*[
@@ -159,10 +185,15 @@ def nested_merge(default_dict, *update_dicts):
         for d in dicts
     ])
 
-    return default_dict.__class__({
-        k: get_value_for_key(k)
-        for k in keys
-    })
+    if inplace:
+        for k in keys:
+            default_dict[k] = get_value_for_key(k)
+        return default_dict
+    else:
+        return default_dict.__class__({
+            k: get_value_for_key(k)
+            for k in keys
+        })
 
 
 def nested_op(
