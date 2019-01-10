@@ -1,5 +1,5 @@
 import unittest
-from paderbox.kaldi.io import read_keyed_text_file, write_keyed_text_file
+from paderbox.kaldi.io import load_keyed_lines, dump_keyed_lines
 import tempfile
 from pathlib import Path
 
@@ -9,8 +9,8 @@ class TestReadWriteKeyedTextFile(unittest.TestCase):
     def check(data_dict, as_list: bool):
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_file = Path(temp_dir) / 'text'
-            write_keyed_text_file(temp_file, data_dict)
-            result = read_keyed_text_file(temp_file, to_list=as_list)
+            dump_keyed_lines(data_dict, temp_file)
+            result = load_keyed_lines(temp_file, to_list=as_list)
         assert isinstance(result, dict), type(result)
         assert data_dict.keys() == result.keys(), (data_dict, result)
         for k in data_dict.keys():
