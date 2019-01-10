@@ -104,7 +104,7 @@ def nested_update(orig, update):
             elif i < len(orig):
                 orig[i] = value
             else:
-                assert i == len(orig)
+                assert i == len(orig), (i, len(orig))
                 orig.append(value)
     elif isinstance(orig, dict):
         for key, value in update.items():
