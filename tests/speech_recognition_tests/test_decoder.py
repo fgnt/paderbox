@@ -4,7 +4,7 @@ import tempfile
 import unittest
 
 import numpy as np
-from paderbox.TODO.kaldi.decoder import Decoder
+from paderbox.kaldi.decoder import Decoder
 from paderbox.io.data_dir import testing as data_dir
 from paderbox.speech_recognition.utils.utils import write_lattice_file, argmax_decode
 from paderbox.label_handling.label_handler import LabelHandler
