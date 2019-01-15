@@ -18,6 +18,7 @@ __all__ = [
     'kaldi',
     'label_handling',
     'math',
+    'notebook',
     'speech_enhancement',
     'speech_recognition',
     'testing',
