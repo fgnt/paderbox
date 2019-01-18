@@ -11,6 +11,7 @@ If you want to implement Round-Robin execution, you can try this::
     for example in iterator[RANK::SIZE]:
         pass
 """
+from paderbox.utils.parallel_utils import ensure_single_thread_numeric
 
 
 __all__ = [
@@ -24,11 +25,11 @@ __all__ = [
     'map_unordered',
 ]
 
-_mpi_available = True
 
 try:
     from mpi4py import MPI
-    _mpi_available = False
+    if MPI.COMM_WORLD.size > 1:
+        ensure_single_thread_numeric()
 except ImportError:
     import os
 

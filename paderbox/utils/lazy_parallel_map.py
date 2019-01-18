@@ -1,10 +1,42 @@
 import queue
 import concurrent.futures
-from pathos.multiprocessing import ProcessPool as PathosPool
-import dill
+import os
+
+
+def ensure_single_thread_numeric():
+    """
+    When you parallelize your input pipeline you often want each worker to work
+    on a single thread.
+
+    These are all candidates to set to 1, but the ones checked in this
+    function are mandatory as far as we know.
+
+    GOMP_NUM_THREADS
+    OMP_NUM_THREADS
+    OPENBLAS_NUM_THREADS
+    MKL_NUM_THREADS
+    VECLIB_MAXIMUM_THREADS
+    NUMEXPR_NUM_THREADS
+
+    Returns:
+
+    """
+    candidates = 'OMP_NUM_THREADS MKL_NUM_THREADS'.split()
+
+    for key in candidates:
+        if not os.environ.get(key) == '1':
+            raise EnvironmentError(
+                'Make sure to set the following environment variables to '
+                'ensure that each worker works on a single thread:\n'
+                'export OMP_NUM_THREADS=1\n'
+                'export MKL_NUM_THREADS=1\n\n'
+                f'But you use: {key}={os.environ.get(key)}'
+            )
 
 
 def _dill_mp_helper(payload):
+    import dill
+
     fun, args, kwargs = dill.loads(payload)
     return fun(*args, **kwargs)
 
@@ -38,6 +70,9 @@ def lazy_parallel_map(
        usually releases the GIL.
 
     """
+    if max_workers > 1 or backend is False:
+        ensure_single_thread_numeric()
+
     q = queue.Queue()
 
     if backend is not False:
@@ -46,6 +81,7 @@ def lazy_parallel_map(
 
     if backend == "mp":
         # http://stackoverflow.com/a/21345423
+        from pathos.multiprocessing import ProcessPool as PathosPool
         PoolExecutor = PathosPool
 
         def submit(ex, func, *args, **kwargs):
@@ -55,6 +91,8 @@ def lazy_parallel_map(
             return job.get()
 
     elif backend == "dill_mp":
+        import dill
+
         # https://stackoverflow.com/a/24673524
         PoolExecutor = concurrent.futures.ProcessPoolExecutor
 
