@@ -1,7 +1,6 @@
 __all__ = [
     'deprecated',
     'dtw',
-    'lazy_parallel_map',
     'mapping',
     'matlab',
     'misc',
@@ -10,6 +9,7 @@ __all__ = [
     'numpy_utils',
     'options',
     'pandas_utils',
+    'parallel_utils',
     'pc2',
     'process_caller',
     'random_utils',
