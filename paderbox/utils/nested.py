@@ -200,7 +200,11 @@ def nested_op(
         func,
         arg1, *args,
         broadcast=False,
-        handle_dataclass=False
+        handle_dataclass=False,
+        keep_type=True,
+        mapping_type=dict,
+        sequence_type=(tuple, list),
+
 ):
     """
     Applies the function "func" to the leafs of the nested data structures.
@@ -239,54 +243,73 @@ def nested_op(
     >>> nested_op(operator.add, Data(3, 5), Data(7, 11), handle_dataclass=True)
     Data(a=10, b=16)
 
-    :param func:
-    :param arg1:
-    :param args:
-    :param broadcast:
-    :param handle_dataclass:
-    :return:
+    Args:
+        func:
+        arg1:
+        *args:
+        broadcast:
+        handle_dataclass: Treat dataclasses as "nested" type or not
+        keep_type: Keep the types in the nested structure of arg1 for the
+            output or use dict and list as types for the output.
+        mapping_type: Types that are interpreted as mapping.
+        sequence_type: Types that are interpreted as sequence.
+
+    Returns:
+
     """
-    if isinstance(arg1, dict):
+    if isinstance(arg1, mapping_type):
         if not broadcast:
             assert all(
-                [isinstance(arg, dict) and arg.keys() == arg1.keys()
+                [isinstance(arg, mapping_type) and arg.keys() == arg1.keys()
                  for arg in args]), (arg1, args)
         else:
             assert all(
-                [not isinstance(arg, dict) or arg.keys() == arg1.keys()
+                [not isinstance(arg, mapping_type) or arg.keys() == arg1.keys()
                  for arg in args]), (arg1, args)
         keys = arg1.keys()
-        return arg1.__class__({
+        output = {
             key: nested_op(
                 func,
                 arg1[key],
-                *[arg[key] if isinstance(arg, dict) else arg
+                *[arg[key] if isinstance(arg, mapping_type) else arg
                   for arg in args],
-                broadcast=broadcast
+                broadcast=broadcast,
+                mapping_type=mapping_type,
+                sequence_type=sequence_type,
             )
             for key in keys
-        })
-    elif isinstance(arg1, (list, tuple)):
+        }
+        if keep_type:
+            output = arg1.__class__(output)
+        return output
+    elif isinstance(arg1, sequence_type):
         if not broadcast:
             assert all([
-                isinstance(arg, (list, tuple)) and len(arg) == len(arg1)
+                isinstance(arg, sequence_type) and len(arg) == len(arg1)
                 for arg in args
             ]), (arg1, args)
         else:
             assert all([
-                not isinstance(arg, (list, tuple)) or len(arg) == len(arg1)
+                not isinstance(arg, sequence_type) or len(arg) == len(arg1)
                 for arg in args
             ]), (arg1, args)
-        return arg1.__class__([
+        output = [
             nested_op(
                 func,
                 arg1[j],
-                *[arg[j] if isinstance(arg, (list, tuple)) else arg
-                  for arg in args],
-                broadcast=broadcast
+                *[
+                    arg[j] if isinstance(arg, sequence_type) else arg
+                    for arg in args
+                ],
+                broadcast=broadcast,
+                mapping_type=mapping_type,
+                sequence_type=sequence_type,
             )
-            for j in range(len(arg1))]
-        )
+            for j in range(len(arg1))
+        ]
+        if keep_type:
+            output = arg1.__class__(output)
+        return output
     elif handle_dataclass and hasattr(arg1, '__dataclass_fields__'):
         if not broadcast:
             assert all([
@@ -310,7 +333,9 @@ def nested_op(
                       else arg
                       for arg in args
                     ],
-                    broadcast=broadcast
+                    broadcast=broadcast,
+                    mapping_type=mapping_type,
+                    sequence_type=sequence_type,
                 )
                 for f_key in arg1.__dataclass_fields__
             }
