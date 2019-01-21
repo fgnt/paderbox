@@ -56,7 +56,7 @@ def stft(
     :return: Single channel complex STFT signal with dimensions
         AA x ... x AZ x T' times size/2+1 times BA x ... x BZ.
     """
-    time_signal = np.array(time_signal)
+    time_signal = np.asarray(time_signal)
 
     axis = axis % time_signal.ndim
 
