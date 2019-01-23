@@ -71,7 +71,6 @@ def stft_single_channel(time_signal, size=1024, shift=256,
 
 
 class TestSTFTMethods(unittest.TestCase):
-
     @classmethod
     def setUpClass(self):
         path = testing_dir / 'timit' / 'data' / 'sample_1.wav'
@@ -179,7 +178,6 @@ class TestSTFTMethods(unittest.TestCase):
         x = np.random.normal(size=[561])
         X = stft(x, **stft_params)
         tc.assert_equal(X.shape, (3, 257))
-
 
     def test_compare_both_biorthogonal_window_variants(self):
         window = signal.blackman(1024)
@@ -318,3 +316,24 @@ class TestSTFTMethods(unittest.TestCase):
         mlab.run_code('Y = transform.stft(y(:), 1024, 256, @blackman);')
         Y_matlab = mlab.get_variable('Y').T
         tc.assert_almost_equal(Y_matlab, Y_python)
+
+
+class TestSTFTModule(unittest.TestCase):
+    # pad=False, fading=False, additional_pad=0
+    # pad=False, fading=False, additional_pad=10
+    # pad=False, fading=False, additional_pad=(5, 7)
+    def test_fading_and_additional_pad_raises_error(self):
+        pass
+
+    def test_samples_to_stft_frames(self):
+        pass
+
+    def test_stft_frames_to_samples(self):
+        pass
+
+    def test_numeric(self):
+        # manually calculate fft for each frame and compare with stft
+        pass
+
+    def test_against_scipy_with_fixed_parameters(self):
+        pass
