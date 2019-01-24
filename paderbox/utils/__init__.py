@@ -12,6 +12,7 @@ __all__ = [
     'parallel_utils',
     'pc2',
     'process_caller',
+    'profiling',
     'random_utils',
     'sacred_utils',
     'strip_solution',
