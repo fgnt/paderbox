@@ -13,6 +13,6 @@ then
     export CUDA_VISIBLE_DEVICES=0
 else
     # Cuda libraries for non-GPU hosts to allow Tensorflow to run there, too.
-    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/net/ssd/software/nvidia_lib
+    # export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/net/ssd/software/nvidia_lib
     export CUDA_VISIBLE_DEVICES=
 fi
