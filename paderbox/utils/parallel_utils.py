@@ -68,6 +68,10 @@ def lazy_parallel_map(
      - When the function spends a high amount of time in numpy and/or I/O the
        threaded backend ('t') is recommended. The reason for numpy is, that it
        usually releases the GIL.
+     - Do not forget to disable low level parallel execution
+       (see `ensure_single_thread_numeric`) when you have CPU bound code.
+       For bad combinations, the parallel execution can be slower that the
+       serial execution.
 
     """
     if max_workers > 1 or backend is False:
