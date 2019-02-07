@@ -10,6 +10,7 @@ The path should either be a ``pathlib.Path`` object or a string.
 import pickle
 from pathlib import Path
 
+from paderbox.io.path_utils import normalize_path
 from paderbox.io import audioread
 from paderbox.io import hdf5
 from paderbox.io import play
@@ -21,7 +22,7 @@ from paderbox.io.json_module import (
 )
 from paderbox.io.json_module import SummaryEncoder
 from paderbox.io.audioread import load_audio
-from paderbox.io.audiowrite import dump_audio
+from paderbox.io.audiowrite import dump_audio, dumps_audio
 from paderbox.io.file_handling import (
     mkdir_p,
     symlink,
@@ -30,6 +31,7 @@ from paderbox.io.file_handling import (
 __all__ = [
     "load_audio",
     "dump_audio",
+    "dumps_audio",
     "load_json",
     "loads_json",
     "dump_json",
@@ -46,32 +48,34 @@ __all__ = [
 
 
 def load_hdf5(path, internal_path="/"):
-    assert isinstance(path, (str, Path)), path
-    return hdf5.load_hdf5(str(Path(path).expanduser()), str(internal_path))
+    # ToDo: drop this wrapper
+    path = normalize_path(path, as_str=True, allow_fd=False)
+    return hdf5.load_hdf5(path, str(internal_path))
 
 
 def dump_hdf5(data, path):
-    assert isinstance(path, (str, Path)), path
-    hdf5.dump_hdf5(data, str(Path(path).expanduser()))
+    # ToDo: drop this wrapper
+    path = normalize_path(path, as_str=True, allow_fd=False)
+    return hdf5.dump_hdf5(data, path)
 
 
 def update_hdf5(data, path, prefix="/"):
+    # ToDo: drop this wrapper
     assert isinstance(path, (str, Path, hdf5.h5py.File))
     if isinstance(path, hdf5.h5py.File):
         hdf5.update_hdf5(data, path, path=prefix)
     else:
-        hdf5.update_hdf5(data, str(Path(path).expanduser()), path=prefix)
+        path = normalize_path(normalize_path, as_str=True, allow_fd=False)
+        hdf5.update_hdf5(data, path, path=prefix)
 
 
 def load_pickle(path):
-    assert isinstance(path, (str, Path)), path
-    path = Path(path).expanduser()
+    path = normalize_path(normalize_path, allow_fd=False)
     with path.open("rb") as f:
         return pickle.load(f)
 
 
 def dump_pickle(data, path):
-    assert isinstance(path, (str, Path)), path
-    path = Path(path).expanduser()
+    path = normalize_path(normalize_path, allow_fd=False)
     with path.open("wb") as f:
         pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)

@@ -47,19 +47,19 @@ def lazy_parallel_map(
         *,
         args=[],
         kwargs={},
-        backend="mp",
+        backend="t",
         buffer_size=5,
         max_workers=2
 ):
     """
     This is a parallel map where the function is parallel executed and the
-    output is bufferd. Note the generator is executed serial.
+    output is buffered. Note the generator is executed serial.
 
     A serial version of this function is:
         for ele in generator:
             yield function(ele, *args, **kwargs)
     The function is executed in parallel (not the generator) and the output of
-    the function is bufferd.
+    the function is buffered.
 
     Note:
      - The overhead to copy the data from and to the workers can destroy the
@@ -115,7 +115,7 @@ def lazy_parallel_map(
         if backend in ['t', 'thread']:
             PoolExecutor = concurrent.futures.ThreadPoolExecutor
         elif backend == "concurrent_mp":
-            # does not allow to pickle arbitary functions
+            # does not allow to pickle arbitrary functions
             PoolExecutor = concurrent.futures.ProcessPoolExecutor
         else:
             raise ValueError(backend)
