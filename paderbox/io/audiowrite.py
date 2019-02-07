@@ -7,6 +7,7 @@ import soundfile
 from scipy.io.wavfile import write as wav_write
 
 from paderbox.utils.mapping import Dispatcher
+from paderbox.io.path_utils import normalize_path
 
 int16_max = np.iinfo(np.int16).max
 int16_min = np.iinfo(np.int16).min
@@ -20,6 +21,7 @@ def dump_audio(
         dtype=np.int16,
         start=None,
         normalize=True,
+        format=None,
 ):
     """
     If normalize is False and the dytpe is float, the values of obj should be in
@@ -137,9 +139,8 @@ def dump_audio(
     <BLANKLINE>
 
     """
-    assert isinstance(path, (str, Path)), path
-    if isinstance(path, Path):
-        path = str(path)
+    path = normalize_path(path, as_str=True)
+    obj = np.asarray(obj)
 
     if normalize:
         if not obj.dtype.kind in ['f', 'i']:
@@ -159,8 +160,8 @@ def dump_audio(
         correction = (2**15 - 1) / (2**15)
         obj = obj * (correction / np.amax(np.abs(obj)))
 
+    # ToDo: better exception when path is file descriptor
     if start is None or not Path(path).exists():
-        obj = np.asarray(obj)
         if obj.ndim == 1:
             channels = 1
         else:
@@ -175,6 +176,7 @@ def dump_audio(
         sf_args = dict(
             mode='r+'
         )
+    sf_args['format'] = format
 
     dtype_map = Dispatcher({
         np.int16: 'PCM_16',
@@ -203,6 +205,27 @@ def dump_audio(
             f.seek(start)
         f.write(obj.T)
     return
+
+
+def dumps_audio(
+        obj,
+        *,
+        sample_rate=16000,
+        dtype=np.int16,
+        start=None,
+        normalize=True,
+        format='wav',  # see soundfile.available_formats()
+):
+    """
+    >>> dumps_audio([1, 2])
+    b'RIFF(\\x00\\x00\\x00WAVEfmt \\x10\\x00\\x00\\x00\\x01\\x00\\x01\\x00\\x80>\\x00\\x00\\x00}\\x00\\x00\\x02\\x00\\x10\\x00data\\x04\\x00\\x00\\x00\\xff?\\xff\\x7f'
+
+    """
+    path = io.BytesIO()
+    dump_audio(
+        **locals()
+    )
+    return path.getvalue()
 
 
 def audiowrite(data, path, sample_rate=16000, normalize=False, threaded=True):

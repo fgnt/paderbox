@@ -12,6 +12,7 @@ import numpy as np
 import soundfile
 
 import paderbox.utils.process_caller as pc
+from paderbox.io.path_utils import normalize_path
 
 UTILS_DIR = os.path.join(os.path.dirname(__file__), 'utils')
 
@@ -140,7 +141,10 @@ def load_audio(
     <BLANKLINE>
 
     """
-    path = Path(path).expanduser().resolve()
+
+    # soundfile does not support pathlib.Path.
+    # ToDo: Is this sill True?
+    path = normalize_path(path, as_str=True)
 
     if unit == 'samples':
         pass
@@ -148,7 +152,7 @@ def load_audio(
         if stop is not None:
             if stop < 0:
                 raise NotImplementedError(unit, stop)
-        with soundfile.SoundFile(str(path)) as f:
+        with soundfile.SoundFile(path) as f:
             # total_samples = len(f)
             samplerate = f.samplerate
         start = int(np.round(start * samplerate))
@@ -161,7 +165,7 @@ def load_audio(
 
     try:
         with soundfile.SoundFile(
-                str(path),
+                path,
                 'r',
         ) as f:
             if dtype is None:
@@ -177,21 +181,22 @@ def load_audio(
             data = f.read(frames=frames, dtype=dtype, fill_value=fill_value)
         signal, sample_rate = data, f.samplerate
     except RuntimeError as e:
-        if path.suffix == '.wav':
-            # Improve exception msg for NIST SPHERE files.
-            from paderbox.utils.process_caller import run_process
-            cp = run_process(f'file {path}')
-            stdout = cp.stdout
-            raise RuntimeError(f'{stdout}') from e
-        else:
-            raise RuntimeError(f'Wrong suffix {path.suffix} in {path}') from e
+        if isinstance(path, (Path, str)):
+            if Path(path).suffix == '.wav':
+                # Improve exception msg for NIST SPHERE files.
+                from paderbox.utils.process_caller import run_process
+                cp = run_process(f'file {path}')
+                stdout = cp.stdout
+                raise RuntimeError(f'{stdout}') from e
+            else:
+                raise RuntimeError(f'Wrong suffix {path.suffix} in {path}')
+        raise
 
     if expected_sample_rate is not None:
         if expected_sample_rate != sample_rate:
             raise ValueError(
-                'Requested sampling rate is {} but the audiofile has {}'.format(
-                    expected_sample_rate, sample_rate
-                )
+                f'Requested sampling rate is {expected_sample_rate} but the '
+                f'audiofile has {sample_rate}'
             )
 
     # When signal is multichannel, than soundfile return (samples, channels)
