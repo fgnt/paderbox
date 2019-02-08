@@ -1,5 +1,7 @@
 """
-
+Example call on nt:
+Automatically takes all available cores:
+python -m chime5.scripts.kaldi_array -F ~/sacred/chime5/arrayBSS/54/kaldi/inear with inear audio_dir=../../audio/dev
 
 Example call on pc2:
 ccsalloc --group=hpc-prf-nt1 --res=rset=64:vmem=2G:mem=2G:ncpus=1 -t 6h python -m chime5.scripts.kaldi_array -F ~/sacred/chime5/arrayBSS/54/kaldi/inear with inear audio_dir=../../audio/dev num_jobs=64
@@ -105,7 +107,7 @@ def calculate_ivectors(ivector_dir, dest_dir, org_dir, train_affix, dataset_dir,
         )
     return ivector_dir
 
-
+@ex.capture
 def copy_ref_dir(dev_dir, ref_dir, audio_dir, allow_missing_files=False):
     mapping = Chime5KaldiIdMapping()
     required_files = ['utt2spk', 'text']
@@ -251,9 +253,7 @@ def decode(model_dir, dest_dir, org_dir, audio_dir: Path,
             '--extra-left-context-initial', '0', '--extra-right-context-final',
             '0',
             '--frames-per-chunk', '140', '--nj', str(num_jobs), '--cmd',
-            # f'{kaldi_cmd} --mem 4G',
-            f'{kaldi_cmd}',
-            '--online-ivector-dir',
+            f'{kaldi_cmd}', '--online-ivector-dir',
             str(ivector_dir), f'{model_dir}/tree_sp/graph', str(dataset_dir),
             str(decode_dir / f'decode_{enh}')],
             cwd=str(dest_dir),
@@ -310,6 +310,7 @@ def default():
     hires = True
     num_jobs = os.cpu_count()
     kaldi_root = None
+    allow_missing_files = False
 
     if on_pc2():
         kaldi_cmd = 'ssh.pl'
