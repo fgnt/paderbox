@@ -322,11 +322,10 @@ def default():
 def baseline():
     if on_pc2():
         kaldi_root = '/scratch/hpc-prf-nt1/fgnt/kaldi_2018-03-21_08-33-34_eba50e4420cfc536b68ca7144fac3cd29033adbb'
-        # org_dir = '/scratch/hpc-prf-nt1/jensheit/software/kaldi/egs/chime5/base'
-        org_dir = '/upb/departments/pc2/users/c/cbj/net/vol/jenkins/models_kaldi/chime5/baseline'
+        org_dir = '/scratch/hpc-prf-nt1/fgnt/models_kaldi/chime5/baseline'
     else:
         kaldi_root = '/net/vol/jenkins/kaldi/2018-03-21_08-33-34_eba50e4420cfc536b68ca7144fac3cd29033adbb/'
-        org_dir = '/net/vol/jensheit/kaldi/egs/chime5/baseline'
+        org_dir = '/net/vol/jenkins/models_kaldi/chime5/baseline'
     model_dir = 'chain_train_worn_u100k'
     ivector_dir = True
     extractor_dir = None
@@ -337,10 +336,10 @@ def baseline():
 def inear():
     if on_pc2():
         kaldi_root = '/scratch/hpc-prf-nt1/fgnt/kaldi_2018-03-21_08-33-34_eba50e4420cfc536b68ca7144fac3cd29033adbb'
-        org_dir = '/scratch/hpc-prf-nt1/jensheit/software/kaldi/egs/chime5/inear'
+        org_dir = '/scratch/hpc-prf-nt1/fgnt/models_kaldi/chime5/inear'
     else:
         kaldi_root = '/net/vol/jenkins/kaldi/2018-03-21_08-33-34_eba50e4420cfc536b68ca7144fac3cd29033adbb/'
-        org_dir = '/net/vol/jensheit/kaldi/egs/chime5/inear_bss_cacgmm_v3/finetune_0/kaldi'
+        org_dir = '/net/vol/jenkins/models_kaldi/chime5/inear'
     model_dir = 'chain_worn_bss_stereo_cleaned'
     ivector_dir = True
     extractor_dir = None
