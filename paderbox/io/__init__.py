@@ -70,12 +70,12 @@ def update_hdf5(data, path, prefix="/"):
 
 
 def load_pickle(path):
-    path = normalize_path(normalize_path, allow_fd=False)
+    path = normalize_path(path, allow_fd=False)
     with path.open("rb") as f:
         return pickle.load(f)
 
 
 def dump_pickle(data, path):
-    path = normalize_path(normalize_path, allow_fd=False)
+    path = normalize_path(path, allow_fd=False)
     with path.open("wb") as f:
         pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
