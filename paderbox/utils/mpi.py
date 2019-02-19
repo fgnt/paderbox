@@ -86,6 +86,14 @@ def gather(obj, root: int=MASTER):
     return COMM.gather(obj, root=root)
 
 
+def call_on_master_and_broadcast(func, *args, **kwargs):
+    if IS_MASTER:
+        result = func(*args, **kwargs)
+    else:
+        result = None
+    return bcast(result)
+
+
 def map_unordered(func, iterator, progress_bar=False):
     """
     A master process push tasks to the workers and receives the result.
