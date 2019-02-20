@@ -95,7 +95,7 @@ def deflatten(d, sep='.'):
 
 def nested_update(orig, update):
     # Todo:
-    assert isinstance(update, type(orig))
+    assert isinstance(orig, type(update)), (type(orig), type(update))
     if isinstance(orig, list):
         for i, value in enumerate(update):
             if isinstance(value, (dict, list)) \
@@ -346,7 +346,10 @@ def nested_op(
 
 def squeeze_nested(orig):
     """
-    CB: What does this function do?
+    recursively flattens hierarchy if all nested elements have the same value
+
+    >>> squeeze_nested({'a': 1, 'b': 1})
+    1
     """
     if isinstance(orig, (dict, list)):
         keys = list(orig.keys() if isinstance(orig, dict) else range(len(orig)))
