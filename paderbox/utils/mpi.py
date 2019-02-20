@@ -11,6 +11,7 @@ If you want to implement Round-Robin execution, you can try this::
     for example in iterator[RANK::SIZE]:
         pass
 """
+import os
 from paderbox.utils.parallel_utils import ensure_single_thread_numeric
 
 
@@ -31,7 +32,6 @@ try:
     if MPI.COMM_WORLD.size > 1 and 'PC2SYSNAME' not in os.environ:
         ensure_single_thread_numeric()
 except ImportError:
-    import os
 
     if 'PC2SYSNAME' in os.environ:
         # CCS indicate PC2
