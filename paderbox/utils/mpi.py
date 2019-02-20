@@ -28,7 +28,7 @@ __all__ = [
 
 try:
     from mpi4py import MPI
-    if MPI.COMM_WORLD.size > 1:
+    if MPI.COMM_WORLD.size > 1 and 'PC2SYSNAME' not in os.environ:
         ensure_single_thread_numeric()
 except ImportError:
     import os
