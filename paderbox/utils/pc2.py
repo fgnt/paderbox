@@ -234,6 +234,11 @@ def force_ncpus(ncpus=None):
     if ncpus is None:
         ncpus = int(os.environ['NCPUS'])
 
+    # CB: Should we force user to set the env variables?
+    # if ncpus == 1:
+    #     from paderbox.utils.parallel_utils import ensure_single_thread_numeric
+    #     ensure_single_thread_numeric()
+
     # Force NCPUS, by limiting this process to random selected cores.
     p = psutil.Process()
     p.cpu_affinity(list(sorted(

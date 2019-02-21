@@ -29,8 +29,15 @@ __all__ = [
 
 try:
     from mpi4py import MPI
-    if MPI.COMM_WORLD.size > 1 and 'PC2SYSNAME' not in os.environ:
-        ensure_single_thread_numeric()
+    if MPI.COMM_WORLD.size > 1:
+        if 'PC2SYSNAME' in os.environ:
+            pass
+            # Tensorflow may read the environment variables. And since it is
+            # difficult to force TF to a single thread, allow higher ncpus on
+            # PC2 for Tensorflow. Furthermore, TF has better concepts to use
+            # multicores.
+        else:
+            ensure_single_thread_numeric()
 except ImportError:
 
     if 'PC2SYSNAME' in os.environ:
