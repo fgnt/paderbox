@@ -23,8 +23,7 @@ export PYTHONUSERBASE=$(readlink -m venv)
 ls /net/ssd/software/conda/lib/python3.6/lib-dynload/../../ > /dev/null
 
 # Refresh toolbox
-# TODO: install all dependencies and add --no-deps option
 pip uninstall --quiet --yes paderbox
 pip show paderbox
-pip install --quiet --user -e ${TOOLBOX}
+pip install --quiet --user -e --no-deps ${TOOLBOX}
 pip show paderbox
