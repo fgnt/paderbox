@@ -1,4 +1,4 @@
-"""Test whether all files from toolbox/nt are importable"""
+"""Test whether all files from paderbox/nt are importable"""
 
 from pathlib import Path
 import inspect
