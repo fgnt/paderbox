@@ -15,7 +15,6 @@ from shutil import copytree, copyfile
 
 import sacred
 
-from chime5.scripts.create_mapping_json import Chime5KaldiIdMapping
 from chime5.scripts.kaldi import ORG_DIR
 from nt.database.chime5 import Chime5
 from nt.utils.process_caller import run_process
@@ -109,7 +108,7 @@ def calculate_ivectors(ivector_dir, dest_dir, org_dir, train_affix, dataset_dir,
 
 @ex.capture
 def copy_ref_dir(dev_dir, ref_dir, audio_dir, allow_missing_files=False):
-    mapping = Chime5KaldiIdMapping()
+    mapping = db.kaldi_id_mapper()
     required_files = ['utt2spk', 'text']
     with (ref_dir / 'text').open() as file:
         text = file.readlines()
