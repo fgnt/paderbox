@@ -31,7 +31,7 @@ fast_db_dir = _get_path(
 )
 testing = _get_path(
     'NT_TESTING_DIR',
-    '/net/storage/python_unittest_data'
+    '/net/vol/jenkins/python_unittest_data'
 )
 kaldi_root = _get_path(
     'KALDI_ROOT',
@@ -92,10 +92,6 @@ chime_5 = _get_path(
 merl_mixtures = _get_path(
     'NT_MERL_MIXTURES_DIR',
     db_dir / 'merl_speaker_mixtures'
-)
-merl_mixtures_mc = _get_path(
-    'NT_MERL_MIXTURES_MC_DIR',
-    "/net/vol/ldrude/projects/2017/project_dc_storage/merl_mixtures_mc_v6/"
 )
 german_speechdata = _get_path(
     'NT_GERMAN_SPEECHDATA_DIR',
