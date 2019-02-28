@@ -206,7 +206,8 @@ def nested_op(
         sequence_type=(tuple, list),
 
 ):
-    """
+    """This function is `nested_map` with a fancy name.
+
     Applies the function "func" to the leafs of the nested data structures.
     This is similar to the map function that applies the function the the
     elements of an iterable input (e.g. list).
