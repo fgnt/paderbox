@@ -121,10 +121,13 @@ wsj_bss = _get_path(
     'NT_WSJ_BSS_DIR',
     fast_db_dir / 'wsj_bss'
 )
+
+# This language model was used in our CHIME 4 submission.
 language_model = _get_path(
     'LANGUAGE_MODEL',
-    '/net/storage/jheymann/__share/ldrude/2016/2016-05-10_lm'
+    '/net/vol/ldrude/projects/2016/2016-05-10_lm'
 )
+
 wsj_mc = _get_path(
     'NT_WSJ_MC_DIR',
     db_dir / 'wsj_mc_complete'
