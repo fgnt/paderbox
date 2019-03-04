@@ -202,7 +202,7 @@ def nested_op(
         broadcast=False,
         handle_dataclass=False,
         keep_type=True,
-        mapping_type=dict,
+        mapping_type=collections.Mapping,
         sequence_type=(tuple, list),
 
 ):
