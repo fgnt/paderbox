@@ -244,3 +244,58 @@ def force_ncpus(ncpus=None):
     p.cpu_affinity(list(sorted(
         np.random.choice(p.cpu_affinity(), ncpus, replace=False)
     )))
+
+
+def write_ccsinfo_files(
+        log_dir,
+        reqid_file='CCS_REQID',
+        info_file='CCS_INFO',
+):
+    """
+    Writes te following logs to the log dir:
+     - <regid> to reqid_file
+     - ccsinfo <regid> to info_file
+     - STDOUT, STDERR and Trace file symlinks to the original if info_file is
+       not None
+
+
+    # usage
+    def main(...):
+        write_ccsinfo_files(sacred_dir)
+
+        # main code
+        ...
+
+        write_ccsinfo_files(sacred_dir, reqid_file=None, info_file='CCS_INFO_END')
+
+    """
+    import paderbox as pb
+    from paderbox.utils import mpi
+    if mpi.IS_MASTER:
+        CCS_REQID = os.environ.get('CCS_REQID', None)
+        if CCS_REQID is not None:
+            if reqid_file is not None:
+                (Path(log_dir) / reqid_file).write_text(CCS_REQID)
+            if info_file is not None:
+                from paderbox.utils.process_caller import run_process
+                stdout: str = run_process(
+                    [
+                        'ccsinfo',
+                        CCS_REQID,
+                    ],
+                    stderr=None
+                ).stdout
+                (Path(log_dir) / info_file).write_text(stdout)
+
+                lines = stdout.split('\n')
+
+                for line in lines:
+                    if (
+                            line.startswith('STDOUT')
+                            or line.startswith('STDERR')
+                            or line.startswith('Trace file')
+                    ):
+                        file = Path(line.split(':', maxsplit=1)[-1].strip())
+                        pb.io.symlink(file, (Path(log_dir) / file.name))
+                    else:
+                        continue
