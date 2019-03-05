@@ -69,6 +69,10 @@ dcase_2018_task_5 = _get_path(
     'NT_DCASE_2018_TASK_5_DIR',
     db_dir / 'DCASE2018' / 'Task5'
 )
+sins = _get_path(
+    'NT_SINS_DIR',
+    '/net/vol/db/SINS'
+)
 timit = _get_path(
     'NT_TIMIT_DIR',
     db_dir / 'timit'
