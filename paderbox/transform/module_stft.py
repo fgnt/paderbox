@@ -1,16 +1,15 @@
 """
 This file contains the STFT function and related helper functions.
 """
-import typing
 import string
+import typing
 from math import ceil
 
 import numpy as np
 from numpy.fft import rfft, irfft
-from scipy import signal
-
-from paderbox.utils.numpy_utils import segment_axis_v2
 from paderbox.utils.numpy_utils import roll_zeropad
+from paderbox.utils.numpy_utils import segment_axis_v2
+from scipy import signal
 
 
 def stft(
@@ -23,7 +22,7 @@ def stft(
         window_length: int=None,
         fading: bool=True,
         pad: bool=True,
-        symmetric_window: bool=False,
+        symmetric_window: bool=False
 ) -> np.array:
     """
     ToDo: Open points:
@@ -152,6 +151,7 @@ def _samples_to_stft_frames(
         size,
         shift,
         *,
+        pad=True,
         fading=False,
 ):
     """
@@ -205,23 +205,31 @@ def _samples_to_stft_frames(
         samples = samples + 2 * (size - shift)
 
     # I changed this from np.ceil to math.ceil, to yield an integer result.
-    return ceil((samples - size + shift) / shift)
+    frames = (samples - size + shift) / shift
+    if pad:
+        return ceil(frames)
+    return int(frames)
 
 
-def _stft_frames_to_samples(frames, size, shift, fading=False):
+def _stft_frames_to_samples(
+        frames, size, shift, fading=False
+):
     """
     Calculates samples in time domain from STFT frames
     :param frames: Number of STFT frames.
-    :param size: FFT size.
+    :param size: window_length often equal to FFT size.
+                 The name size should be marked as deprecated and replaced with
+                 window_length.
     :param shift: Hop in samples.
     :return: Number of samples in time domain.
 
     >>> _stft_frames_to_samples(2, 16, 4)
     20
     """
+    samples = frames * shift + size - shift
     if fading:
-        assert 'Not implemented'
-    return frames * shift + size - shift
+        samples -= 2*(size - shift)
+    return samples
 
 
 def sample_id_to_stft_frame_id(sample, window_length, shift, fading=True):
@@ -289,6 +297,7 @@ def sample_id_to_stft_frame_id(sample, window_length, shift, fading=True):
         frame = frame + ceil((window_length - shift) / shift)
 
     return frame
+
 
 def _biorthogonal_window_loopy(analysis_window, shift):
     """
@@ -535,3 +544,130 @@ def get_stft_center_frequencies(size=1024, sample_rate=16000):
     """
     frequency_index = np.arange(0, size/2 + 1)
     return frequency_index * sample_rate / size
+
+
+class STFT:
+    def __init__(
+            self,
+            frame_step: int,
+            fft_length: int,
+            frame_length: int = None,
+            window: str = "hann",
+            symmetric_window: bool=False,
+            fading: bool=True,
+            pad: bool=True,
+            always3d: bool = False
+    ):
+        """
+        Transforms audio data to STFT.
+        Also allows to invert stft as well as reconstruct phase information
+        from magnitudes using griffin lim algorithm.
+
+        Args:
+            frame_step:
+            fft_length:
+            frame_length:
+            window:
+            symmetric_window:
+            fading:
+            pad:
+            always3d:
+
+        >>> stft = STFT(160, 512)
+        >>> audio_data=np.zeros(8000)
+        >>> x = stft(audio_data)
+        >>> x.shape
+        (53, 257)
+        >>> reconstruction = stft.griffin_lim(np.abs(x), iterations=5)
+        """
+        self.frame_step = frame_step
+        self.fft_length = fft_length
+        self.frame_length = frame_length if frame_length is not None \
+            else fft_length
+        if isinstance(window, str):
+            window = getattr(signal.windows, window)
+        self.window = window
+        self.symmetric_window = symmetric_window
+        self.fading = fading
+        self.pad = pad
+        self.always3d = always3d
+
+    def __call__(self, x):
+        x = stft(
+            x,
+            size=self.fft_length,
+            shift=self.frame_step,
+            window_length=self.frame_length,
+            window=self.window,
+            symmetric_window=self.symmetric_window,
+            axis=-1,
+            fading=self.fading,
+            pad=self.pad
+        )  # (..., T, F)
+
+        if self.always3d:
+            if x.ndim == 2:
+                x = x[None]  # (C, T, F)
+            assert x.ndim == 3
+
+        return x
+
+    def inverse(self, x):
+        #  x: (C, T, F)
+        return istft(
+            x,
+            size=self.fft_length,
+            shift=self.frame_step,
+            window_length=self.frame_length,
+            window=self.window,
+            symmetric_window=self.symmetric_window,
+            fading=self.fading
+        )
+
+    def samples2frames(self, samples):
+        return _samples_to_stft_frames(
+            samples, self.frame_length, self.frame_step,
+            pad=self.pad, fading=self.fading
+        )
+
+    def sampleid2frameid(self, sampleid):
+        return sample_id_to_stft_frame_id(
+            sampleid, self.frame_length, self.frame_step, fading=self.fading
+        )
+
+    def frames2samples(self, frames):
+        return _stft_frames_to_samples(
+            frames, self.frame_length, self.frame_step, fading=self.fading
+        )
+
+    def griffin_lim(self, x, iterations=100, verbose=False):
+        """
+
+        Args:
+            x: STFT Magnitudes (..., T, F)
+            iterations:
+            verbose:
+
+        Returns:
+
+        """
+        nframes = x.shape[-2]
+        nsamples = int(self.frames2samples(nframes))
+        # Initialize the reconstructed signal.
+        audio = np.random.randn(nsamples)
+        n = iterations  # number of iterations of Griffin-Lim algorithm.
+        while n > 0:
+            n -= 1
+            reconstruction_stft = self(audio)
+            reconstruction_magnitude = np.abs(reconstruction_stft)
+            reconstruction_angle = np.angle(reconstruction_stft)
+            # Discard magnitude part of the reconstruction and use the supplied
+            # magnitude spectrogram instead.
+            diff = (np.sqrt(np.mean((reconstruction_magnitude - x) ** 2)))
+            proposal_spec = x * np.exp(1.0j * reconstruction_angle)
+            audio = self.inverse(proposal_spec)
+
+            if verbose:
+                print('Reconstruction iteration: {}/{} RMSE: {} '.format(
+                    iterations - n, iterations, diff))
+        return audio
