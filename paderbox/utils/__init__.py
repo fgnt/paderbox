@@ -1,4 +1,5 @@
 __all__ = [
+    'debug_utils',
     'deprecated',
     'dtw',
     'mapping',

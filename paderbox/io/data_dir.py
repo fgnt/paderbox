@@ -31,7 +31,7 @@ fast_db_dir = _get_path(
 )
 testing = _get_path(
     'NT_TESTING_DIR',
-    '/net/storage/python_unittest_data'
+    '/net/vol/jenkins/python_unittest_data'
 )
 kaldi_root = _get_path(
     'KALDI_ROOT',
@@ -69,6 +69,10 @@ dcase_2018_task_5 = _get_path(
     'NT_DCASE_2018_TASK_5_DIR',
     db_dir / 'DCASE2018' / 'Task5'
 )
+sins = _get_path(
+    'NT_SINS_DIR',
+    '/net/vol/db/SINS'
+)
 timit = _get_path(
     'NT_TIMIT_DIR',
     db_dir / 'timit'
@@ -92,10 +96,6 @@ chime_5 = _get_path(
 merl_mixtures = _get_path(
     'NT_MERL_MIXTURES_DIR',
     db_dir / 'merl_speaker_mixtures'
-)
-merl_mixtures_mc = _get_path(
-    'NT_MERL_MIXTURES_MC_DIR',
-    "/net/vol/ldrude/projects/2017/project_dc_storage/merl_mixtures_mc_v6/"
 )
 german_speechdata = _get_path(
     'NT_GERMAN_SPEECHDATA_DIR',
@@ -125,10 +125,13 @@ wsj_bss = _get_path(
     'NT_WSJ_BSS_DIR',
     fast_db_dir / 'wsj_bss'
 )
+
+# This language model was used in our CHIME 4 submission.
 language_model = _get_path(
     'LANGUAGE_MODEL',
-    '/net/storage/jheymann/__share/ldrude/2016/2016-05-10_lm'
+    '/net/vol/ldrude/projects/2016/2016-05-10_lm'
 )
+
 wsj_mc = _get_path(
     'NT_WSJ_MC_DIR',
     db_dir / 'wsj_mc_complete'

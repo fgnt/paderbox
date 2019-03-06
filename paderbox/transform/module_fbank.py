@@ -2,12 +2,100 @@
 Provides fbank features and the fbank filterbank.
 """
 
-import numpy
-import scipy.signal
+from typing import Optional
 
-from paderbox.transform.module_filter import preemphasis_with_offset_compensation
+import librosa
+import numpy
+import numpy as np
+import scipy.signal
+from cached_property import cached_property
+from paderbox.transform.module_filter import \
+    preemphasis_with_offset_compensation
 from paderbox.transform.module_stft import stft
 from paderbox.transform.module_stft import stft_to_spectrogram
+
+
+class MelTransform:
+    def __init__(
+            self,
+            sample_rate: int,
+            fft_length: int,
+            n_mels: Optional[int] = 40,
+            fmin: Optional[int] = 20,
+            fmax: Optional[int] = None,
+            log: bool = True,
+            always3d: bool = False
+    ):
+        """
+        Transforms linear spectrogram to (log) mel spectrogram.
+
+        Args:
+            sample_rate: sample rate of audio signal
+            fft_length: fft_length used in stft
+            n_mels: number of filters to be applied
+            fmin: lowest frequency (onset of first filter)
+            fmax: highest frequency (offset of last filter)
+            log: apply log to mel spectrogram
+            always3d: always return 3d array (C, T, F)
+
+        >>> mel_transform = MelTransform(16000, 512)
+        >>> spec = np.zeros((100, 257))
+        >>> logmelspec = mel_transform(spec)
+        >>> logmelspec.shape
+        (100, 40)
+        >>> rec = mel_transform.inverse(logmelspec)
+        >>> rec.shape
+        (100, 257)
+        """
+        self.sample_rate = sample_rate
+        self.fft_length = fft_length
+        self.n_mels = n_mels
+        self.fmin = fmin
+        self.fmax = fmax
+        self.log = log
+        self.always3d = always3d
+
+    @cached_property
+    def fbanks(self):
+        fbanks = librosa.filters.mel(
+            n_mels=self.n_mels,
+            n_fft=self.fft_length,
+            sr=self.sample_rate,
+            fmin=self.fmin,
+            fmax=self.fmax,
+            htk=True,
+            norm=None
+        )
+        fbanks = fbanks / fbanks.sum(axis=-1, keepdims=True)
+        return fbanks.T
+
+    @cached_property
+    def ifbanks(self):
+        filter_norms = self.fbanks.sum(axis=-2, keepdims=True)
+        normed_filters = self.fbanks / filter_norms
+
+        # for each fft bin obtain relevance of each mel bin
+        binwise_norm = normed_filters.sum(axis=-1, keepdims=True)
+        binwise_norm = numpy.where(
+            binwise_norm == 0, 1, binwise_norm
+        )
+        relevance = normed_filters / binwise_norm
+        return (relevance / filter_norms).T
+
+    def __call__(self, x):
+        x = np.dot(x, self.fbanks)
+        if self.log:
+            x = np.log(np.maximum(x, 1e-18))
+        if self.always3d:
+            if x.ndim == 2:
+                x = x[None]
+            assert x.ndim == 3
+        return x
+
+    def inverse(self, x):
+        if self.log:
+            x = np.exp(x)
+        return np.maximum(np.dot(x, self.ifbanks), 0.)
 
 
 def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
@@ -37,11 +125,10 @@ def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
         In Hz, default is 0.
     :param highest_frequency: highest band edge of mel filters.
         In Hz, default is samplerate/2
-    :param preemphasis: apply preemphasis filter with preemph as coefficient.
+    :param preemphasis_factor: apply preemphasis filter with preemph as coefficient.
         0 is no filter. Default is 0.97.
     :param window: window function used for stft
-    :param use_htk_mel: whether to use the htk hz to mel conversion or not
-        (False is Slaney). Default is False.
+    :param denoise: ???.
     :returns: A numpy array of size (frames by number_of_filters) containing the
         Mel filterbank features.
     """
@@ -58,13 +145,16 @@ def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
 
     spectrogram = stft_to_spectrogram(stft_signal) / stft_size
 
-    filterbanks = get_filterbanks(
-            number_of_filters, stft_size, sample_rate,
-            lowest_frequency, highest_frequency
-        )
-
-    # compute the filterbank energies
-    feature = numpy.dot(spectrogram, filterbanks.T)
+    mel_transform = MelTransform(
+        sample_rate=sample_rate,
+        fft_length=stft_size,
+        n_mels=number_of_filters,
+        fmin=lowest_frequency,
+        fmax=highest_frequency,
+        log=False,
+        always3d=False
+    )
+    feature = mel_transform(spectrogram)
 
     if denoise:
         feature -= numpy.min(feature, axis=0)
@@ -92,6 +182,8 @@ def get_filterbanks(number_of_filters=20, nfft=1024, sample_rate=16000,
     :param highfreq: highest band edge of mel filters, Default is samplerate/2.
     :returns: A numpy array of size nfilt by (nfft/2 + 1) containing filterbank.
         Each row holds 1 filter.
+
+    ToDo: Can this function be removed?
     """
     raise AssertionError('This function is wrong. Use e.g. librosa. '
                          'See http://ntjenkins.upb.de:8082/'
