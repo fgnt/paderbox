@@ -4,7 +4,6 @@ Provides fbank features and the fbank filterbank.
 
 from typing import Optional
 
-import librosa
 import numpy
 import numpy as np
 import scipy.signal
@@ -57,6 +56,7 @@ class MelTransform:
 
     @cached_property
     def fbanks(self):
+        import librosa
         fbanks = librosa.filters.mel(
             n_mels=self.n_mels,
             n_fft=self.fft_length,
