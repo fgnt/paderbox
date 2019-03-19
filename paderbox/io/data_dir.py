@@ -117,6 +117,10 @@ wsj_corrected_paths = _get_path(
     'NT_WSJ_DIR',
     db_dir / 'wsj_corrected_paths'
 )
+wsj_8k = _get_path(
+    'NT_WSJ_8K_DIR',
+    fast_db_dir / 'wsj_8k'
+)
 wsjcam0 = _get_path(
     'NT_WSJCAM0_DIR',
     db_dir / 'wsjcam0'
