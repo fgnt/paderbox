@@ -52,7 +52,7 @@ def flatten(d, sep='.', flat_type=dict):
         }
 
 
-def deflatten(d, sep='.'):
+def deflatten(d, sep='.', maxdepth=-1):
     """Build a nested dict from a flat dict respecting a separator.
 
     >>> d_in = {'a': 1, 'c': {'a': 2, 'b': {'x': 5, 'y' : 10}}, 'd': [1, 2, 3]}
@@ -65,10 +65,14 @@ def deflatten(d, sep='.'):
     d [1, 2, 3]
     >>> deflatten(d)
     {'a': 1, 'c': {'a': 2, 'b': {'x': 5, 'y': 10}}, 'd': [1, 2, 3]}
+    >>> deflatten(d, maxdepth=1)
+    {'a': 1, 'c': {'a': 2, 'b.x': 5, 'b.y': 10}, 'd': [1, 2, 3]}
+    >>> deflatten(d, maxdepth=0)
+    {'a': 1, 'c.a': 2, 'c.b.x': 5, 'c.b.y': 10, 'd': [1, 2, 3]}
     >>> d = flatten(d_in, sep='_')
     >>> for k, v in d.items(): print(k, v)
     a 1
-    c.a 2
+    c_a 2
     c_b_x 5
     c_b_y 10
     d [1, 2, 3]
@@ -78,9 +82,10 @@ def deflatten(d, sep='.'):
     {'a': {'b': 'd', 'c': 'e'}}
     """
     ret = {}
+    'abc'.split()
     if sep is not None:
         d = {
-            tuple(k.split(sep)): v for k, v in d.items()
+            tuple(k.split(sep, maxdepth)): v for k, v in d.items()
         }
 
     for keys, v in d.items():
