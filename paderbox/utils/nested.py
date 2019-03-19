@@ -82,7 +82,6 @@ def deflatten(d, sep='.', maxdepth=-1):
     {'a': {'b': 'd', 'c': 'e'}}
     """
     ret = {}
-    'abc'.split()
     if sep is not None:
         d = {
             tuple(k.split(sep, maxdepth)): v for k, v in d.items()
