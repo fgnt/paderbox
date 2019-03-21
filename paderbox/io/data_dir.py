@@ -95,7 +95,7 @@ chime_5 = _get_path(
 )
 merl_mixtures = _get_path(
     'NT_MERL_MIXTURES_DIR',
-    db_dir / 'merl_speaker_mixtures'
+    fast_db_dir / 'merl_speaker_mixtures'
 )
 german_speechdata = _get_path(
     'NT_GERMAN_SPEECHDATA_DIR',
