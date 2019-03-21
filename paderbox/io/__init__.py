@@ -27,6 +27,7 @@ from paderbox.io.file_handling import (
     mkdir_p,
     symlink,
 )
+from paderbox.io import data_dir
 
 __all__ = [
     "load_audio",
@@ -44,6 +45,7 @@ __all__ = [
     "mkdir_p",
     "symlink",
     "SummaryEncoder",
+    "data_dir"
 ]
 
 
