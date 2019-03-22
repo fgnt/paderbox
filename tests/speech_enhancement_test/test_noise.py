@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 import scipy
-import paderbox.evaluation.sxr as sxr
+import paderbox.evaluation.sxr_module as sxr
 import paderbox.speech_enhancement.noise as noise
 import paderbox.testing as tc
 from paderbox.speech_enhancement.noise import get_snr

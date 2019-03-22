@@ -1,7 +1,7 @@
 import numpy as np
 import unittest
 
-from paderbox.evaluation.sxr import input_sxr, output_sxr
+from paderbox.evaluation.sxr_module import input_sxr, output_sxr
 from paderbox.utils.numpy_utils import morph
 
 

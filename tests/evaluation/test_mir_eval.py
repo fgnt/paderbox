@@ -1,7 +1,7 @@
 import numpy as np
 import unittest
 
-from paderbox.evaluation.mir_eval import mir_eval_sources
+from paderbox.evaluation.mir_eval_module import mir_eval_sources
 
 
 class TestMirEval(unittest.TestCase):

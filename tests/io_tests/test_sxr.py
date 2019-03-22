@@ -1,6 +1,6 @@
 import numpy
 import numpy.testing as nptest
-from paderbox.evaluation.sxr import input_sxr, output_sxr
+from paderbox.evaluation.sxr_module import input_sxr, output_sxr
 import unittest
 from paderbox.testing import condition
 

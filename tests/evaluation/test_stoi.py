@@ -1,7 +1,7 @@
 import unittest
 from paderbox.utils.matlab import Mlab
 import paderbox.testing as tc
-from paderbox.evaluation.stoi import *
+from paderbox.evaluation.stoi_module import *
 from paderbox.io.audioread import audioread
 from paderbox.io.data_dir import testing as testing_dir
 

@@ -203,7 +203,7 @@ class TestBeamformerMethods(unittest.TestCase):
     def test_compare_lcmv_beamformer(self):
         from paderbox.speech_enhancement.beamformer import apply_beamforming_vector
         from paderbox.transform.module_stft import istft
-        from paderbox.evaluation import sxr
+        from paderbox.evaluation import sxr_module
 
         data = self.data_multi_speaker
         X = data['X']  # K F D T
@@ -267,7 +267,7 @@ class TestBeamformerMethods(unittest.TestCase):
             Nhat[0, :, :] = apply_beamforming_vector(W[0, :, :], N).T
             shat = istft(Shat)
             nhat = istft(Nhat)
-            return sxr.output_sxr(shat, nhat)
+            return sxr_module.output_sxr(shat, nhat)
 
         W_matlab_tmp = W_matlab.transpose(2, 0, 1)
         W_lcmv_tmp = W_lcmv
