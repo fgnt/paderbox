@@ -35,7 +35,7 @@ testing = _get_path(
 )
 kaldi_root = _get_path(
     'KALDI_ROOT',
-    '/net/vol/jenkins/kaldi/2018-01-10_15-43-29_a0b71317df1035bd3c6fa49a2b6bb33c801b56ac')
+    '/path/to/proper/kaldi_root/check/in/getting/started/how/to/set/it')
 matlab_toolbox = _get_path(
     'MATLAB_TOOLBOX_DIR',
     '/net/ssd/software/matlab_toolbox'
