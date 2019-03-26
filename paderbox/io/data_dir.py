@@ -55,19 +55,19 @@ ami = _get_path(
 )
 audioset = _get_path(
     'NT_AUDIOSET_DIR',
-    fast_db_dir / 'AudioSet'
+    db_dir / 'AudioSet'
 )
 dcase_2017_task_3 = _get_path(
     'NT_DCASE_2017_TASK_3_DIR',
-    fast_db_dir / 'DCASE2017' / 'Task3'
+    db_dir / 'DCASE2017' / 'Task3'
 )
 dcase_2017_task_4 = _get_path(
     'NT_DCASE_2017_TASK_4_DIR',
-    fast_db_dir / 'DCASE2017' / 'Task4'
+    db_dir / 'DCASE2017' / 'Task4'
 )
 dcase_2018_task_5 = _get_path(
     'NT_DCASE_2018_TASK_5_DIR',
-    db_dir / 'DCASE2018' / 'Task5'
+    fast_db_dir / 'DCASE2018' / 'Task5'
 )
 sins = _get_path(
     'NT_SINS_DIR',
