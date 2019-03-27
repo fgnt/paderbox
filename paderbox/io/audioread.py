@@ -364,6 +364,14 @@ def audio_shape(path):
             return channels, len(f)
 
 
+def is_nist_sphere_file(path):
+    """Check if given path is a nist/sphere file"""
+    if not os.path.exists(path):
+        return False
+    cmd = f'file {path}'
+    return 'NIST SPHERE file' in pc.run_process(cmd).stdout
+
+
 def read_nist_wsj(path, audioread_function=audioread, **kwargs):
     """
     Converts a nist/sphere file of wsj and reads it with audioread.
