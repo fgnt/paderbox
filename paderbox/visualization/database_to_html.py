@@ -153,7 +153,7 @@ def cache_audio_local(path, max_audio_length, cache_dir=pathlib.Path('./audio'))
     """
     Copies the file specified by `path` to cache_dir in the same folder
     structure that is present at the source. The file should be in an audio
-    format readable by `nt.io.audioread.audioread`.
+    format readable by `nt.io.audioread.load_audio`.
 
     :param path: Audio file to cache locally
     :param max_audio_length: maximum length of files to be cached in seconds.
@@ -228,8 +228,8 @@ def example_to_html(audio_dict, max_audio_length=None, embed_audio=False,
 
     If `embed_audio` is true, all numpy arrays are assumed to be audio data and
     embedded in the html code. If `embed_audio` is false, all Strings that end
-    with `.wav` are cached locally in a folder besides the notebook and a link
-    to that file is included in the html.
+    with a valid audio extension are cached locally in a folder besides the
+    notebook and a link to that file is included in the html.
 
     :param audio_dict: Example dict
     :param max_audio_length: maximum length of audio files that are displayed.
