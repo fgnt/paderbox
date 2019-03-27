@@ -2,11 +2,14 @@ import numpy as np
 from IPython.display import HTML, Audio, display_html, Image
 import shutil
 from paderbox.database.keys import *
-from paderbox.io.audioread import audioread, audio_length
+from paderbox.io.audioread import load_audio, audio_length
 import pathlib
 
 from paderbox.transform import spectrogram
 from paderbox.visualization import figure_context
+
+
+VALID_AUDIO_EXTENSIONS = ('wav', 'flac', 'ogg')
 
 
 class Templates:
@@ -81,17 +84,17 @@ class Templates:
 def audio_to_html(data_or_str, embed=False, max_audio_length=20):
     html = ''
     if isinstance(data_or_str, str):
-        if not data_or_str.endswith('.wav'):
+        if not is_audio_path(data_or_str):
             raise ValueError(f'Unknown audio format: {data_or_str}')
         if embed:
-            data_or_str = audioread(data_or_str)
+            data_or_str = load_audio(data_or_str)
         else:
             path, length = cache_audio_local(data_or_str, max_audio_length)
             if path is None:
                 html = Templates.warning.format(
                     content=f'Audio too long to display ({length} seconds)')
             else:
-                html = Audio(url=str(path))._repr_html_()
+                html = Audio(filename=str(path))._repr_html_()
     if embed:
         if data_or_str.shape[0] == 2:
             audio_data = data_or_str[0]
@@ -115,14 +118,15 @@ def plot_to_html(data_or_str, image_width=None, max_audio_length=20):
     dst_path = pathlib.Path('images')
     if isinstance(data_or_str, str):
         dst_path /= (str(pathlib.Path(data_or_str)) + '.png')[1:]
-        data_or_str = audioread(data_or_str)
+        audio_data, sample_rate = load_audio(data_or_str,
+                                              return_sample_rate=True)
     else:
         # use a random number to hopefully get distinguishable file names
         dst_path /= str(np.random.randint(0)) + '.png'
+        audio_data, sample_rate = data_or_str
 
     if not dst_path.exists():
         dst_path.parent.mkdir(parents=True, exist_ok=True)
-        audio_data, sample_rate = data_or_str
 
         if audio_data.shape[0] / sample_rate <= max_audio_length:
 
@@ -192,9 +196,14 @@ def create_from_dict(d, embed_audio=False, max_audio_length=20, depth=0,
     return html
 
 
+def is_audio_path(v):
+    return isinstance(v, str) and any(v.endswith(ext) for ext in
+                                      VALID_AUDIO_EXTENSIONS)
+
+
 def is_audio(v):
-    return isinstance(v, str) and v.endswith('.wav') or \
-           isinstance(v, np.ndarray) and v.shape[0] <= 2
+    return is_audio_path(v) or isinstance(v, np.ndarray) and v.shape[0] <= 2
+
 
 def is_dict_of_audio(d):
     first_key = list(d.keys())[0]
