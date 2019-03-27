@@ -10,4 +10,6 @@ if [[ $(hostname) =~ ^ntsim.*|ntpc9|ntjenkins ]]; then
     else
         if [ $1 -eq 1 ]; then
             export KALDI_ROOT=$CURRENT_BUILDING_KALDI_ROOT
+        fi
+    fi
 fi
