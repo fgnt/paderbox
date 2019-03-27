@@ -83,23 +83,15 @@ class Templates:
 
 def audio_to_html(data_or_str, embed=False, max_audio_length=20):
     html = ''
-    if isinstance(data_or_str, str):
-        if not is_audio_path(data_or_str):
-            raise ValueError(f'Unknown audio format: {data_or_str}')
-        if embed:
-            data_or_str = load_audio(data_or_str)
-        else:
-            path, length = cache_audio_local(data_or_str, max_audio_length)
-            if path is None:
-                html = Templates.warning.format(
-                    content=f'Audio too long to display ({length} seconds)')
-            else:
-                html = Audio(filename=str(path))._repr_html_()
+    if not is_audio(data_or_str):
+        raise ValueError(f'Unknown audio format: {data_or_str}')
+
     if embed:
-        if data_or_str.shape[0] == 2:
-            audio_data = data_or_str[0]
-            sample_rate = data_or_str[1]
+        if is_audio_path(data_or_str):
+            audio_data, sample_rate = load_audio(data_or_str,
+                                                 return_sample_rate=True)
         else:
+            assert is_audio_array(data_or_str)
             audio_data = data_or_str
             sample_rate = 16000     # assume sampling rate of 16kHz
 
@@ -110,7 +102,14 @@ def audio_to_html(data_or_str, embed=False, max_audio_length=20):
             audio_data = audio_data[:max_audio_length * sample_rate]
 
         html += Audio(audio_data, rate=sample_rate)._repr_html_()
-
+    else:
+        assert is_audio_path(data_or_str)
+        path, length = cache_audio_local(data_or_str, max_audio_length)
+        if path is None:
+            html = Templates.warning.format(
+                content=f'Audio too long to display ({length} seconds)')
+        else:
+            html = Audio(filename=str(path))._repr_html_()
     return html
 
 
@@ -202,8 +201,12 @@ def is_audio_path(v):
                                       VALID_AUDIO_EXTENSIONS)
 
 
+def is_audio_array(v):
+    return isinstance(v, np.ndarray) and v.shape[0] <= 2
+
+
 def is_audio(v):
-    return is_audio_path(v) or isinstance(v, np.ndarray) and v.shape[0] <= 2
+    return is_audio_path(v) or is_audio_array(v)
 
 
 def is_dict_of_audio(d):
