@@ -303,9 +303,9 @@ def database_to_html(database_dict, embed_audio,
         for dataset_key, dataset in database_dict[DATASETS].items():
             if datasets is None or dataset_key in datasets:
                 html += dataset_to_html_card(dataset_key, dataset,
-                                         embed_audio=embed_audio,
-                                         max_audio_length=max_audio_length,
-                                         image_width=image_width)
+                                             embed_audio=embed_audio,
+                                             max_audio_length=max_audio_length,
+                                             image_width=image_width)
 
     except Exception as e:
         html = Templates.error.format(content=f'ERROR: {type(e)}: {e}')
