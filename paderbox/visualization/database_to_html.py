@@ -2,7 +2,7 @@ import numpy as np
 from IPython.display import HTML, Audio, display_html, Image
 import shutil
 from paderbox.database.keys import *
-from paderbox.io.audioread import load_audio, audio_length
+from paderbox.io.audioread import load_audio, audio_length, is_nist_sphere_file
 import pathlib
 
 from paderbox.transform import spectrogram
@@ -104,6 +104,11 @@ def audio_to_html(data_or_str, embed=False, max_audio_length=20):
         html += Audio(audio_data, rate=sample_rate)._repr_html_()
     else:
         assert is_audio_path(data_or_str)
+        if is_nist_sphere_file(data_or_str):
+            raise ValueError(
+                f'Audio at {data_or_str} is in nist/sphere format, '
+                'which the ipython Audio applet cannot play. '
+                'Use embed_audio=True instead.')
         path, length = cache_audio_local(data_or_str, max_audio_length)
         if path is None:
             html = Templates.warning.format(
