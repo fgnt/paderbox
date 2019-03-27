@@ -183,10 +183,11 @@ def create_from_dict(d, embed_audio=False, max_audio_length=20, depth=0,
                 content=f'{k}: ' + audio_to_html(v, embed_audio,
                                                  max_audio_length)
             )
+        elif isinstance(v, (str, int, float)):
+            html += Templates.li.format(content=f'{k}: {v}')
         else:
-            html += Templates.li.format(content=f'{k}: ' +
-                                    audio_to_html(v, embed=embed_audio,
-                                          max_audio_length=max_audio_length))
+            raise TypeError(f'Unexpected type {type(v)} of element {v}.')
+
     to_image = list(d.items())[0]
     image = plot_to_html(to_image[1], image_width, max_audio_length)
     html = Templates.horizontal_divided_cell.format(
