@@ -21,6 +21,7 @@ export PYTHONUSERBASE=$(readlink -m venv)
 
 # Refresh files...
 ls /net/ssd/software/conda/lib/python3.6/lib-dynload/../../ > /dev/null
+source "`dirname "$0"`/bash/kaldi.bash" # adds a KALDI_ROOT
 
 # Refresh toolbox
 pip uninstall --quiet --yes paderbox
