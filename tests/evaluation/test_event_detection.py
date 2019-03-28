@@ -1,5 +1,6 @@
 import numpy as np
-from paderbox.evaluation.event_detection import hard_metrics, tune_decision_threshold
+from paderbox.evaluation.event_detection import hard_metrics, \
+    tune_decision_threshold
 import paderbox.testing as tc
 
 
