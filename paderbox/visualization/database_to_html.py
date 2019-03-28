@@ -2,11 +2,14 @@ import numpy as np
 from IPython.display import HTML, Audio, display_html, Image
 import shutil
 from paderbox.database.keys import *
-from paderbox.io.audioread import audioread, audio_length
+from paderbox.io.audioread import load_audio, audio_length, is_nist_sphere_file
 import pathlib
 
 from paderbox.transform import spectrogram
 from paderbox.visualization import figure_context
+
+
+VALID_AUDIO_EXTENSIONS = ('wav', 'flac', 'ogg')
 
 
 class Templates:
@@ -80,23 +83,15 @@ class Templates:
 
 def audio_to_html(data_or_str, embed=False, max_audio_length=20):
     html = ''
-    if isinstance(data_or_str, str):
-        if not data_or_str.endswith('.wav'):
-            raise ValueError(f'Unknown audio format: {data_or_str}')
-        if embed:
-            data_or_str = audioread(data_or_str)
-        else:
-            path, length = cache_audio_local(data_or_str, max_audio_length)
-            if path is None:
-                html = Templates.warning.format(
-                    content=f'Audio too long to display ({length} seconds)')
-            else:
-                html = Audio(url=str(path))._repr_html_()
+    if not is_audio(data_or_str):
+        raise ValueError(f'Unknown audio format: {data_or_str}')
+
     if embed:
-        if data_or_str.shape[0] == 2:
-            audio_data = data_or_str[0]
-            sample_rate = data_or_str[1]
+        if is_audio_path(data_or_str):
+            audio_data, sample_rate = load_audio(data_or_str,
+                                                 return_sample_rate=True)
         else:
+            assert is_audio_array(data_or_str)
             audio_data = data_or_str
             sample_rate = 16000     # assume sampling rate of 16kHz
 
@@ -107,7 +102,19 @@ def audio_to_html(data_or_str, embed=False, max_audio_length=20):
             audio_data = audio_data[:max_audio_length * sample_rate]
 
         html += Audio(audio_data, rate=sample_rate)._repr_html_()
-
+    else:
+        assert is_audio_path(data_or_str)
+        if is_nist_sphere_file(data_or_str):
+            raise ValueError(
+                f'Audio at {data_or_str} is in nist/sphere format, '
+                'which the ipython Audio applet cannot play. '
+                'Use embed_audio=True instead.')
+        path, length = cache_audio_local(data_or_str, max_audio_length)
+        if path is None:
+            html = Templates.warning.format(
+                content=f'Audio too long to display ({length} seconds)')
+        else:
+            html = Audio(filename=str(path))._repr_html_()
     return html
 
 
@@ -115,14 +122,15 @@ def plot_to_html(data_or_str, image_width=None, max_audio_length=20):
     dst_path = pathlib.Path('images')
     if isinstance(data_or_str, str):
         dst_path /= (str(pathlib.Path(data_or_str)) + '.png')[1:]
-        data_or_str = audioread(data_or_str)
+        audio_data, sample_rate = load_audio(data_or_str,
+                                              return_sample_rate=True)
     else:
         # use a random number to hopefully get distinguishable file names
         dst_path /= str(np.random.randint(0)) + '.png'
+        audio_data, sample_rate = data_or_str
 
     if not dst_path.exists():
         dst_path.parent.mkdir(parents=True, exist_ok=True)
-        audio_data, sample_rate = data_or_str
 
         if audio_data.shape[0] / sample_rate <= max_audio_length:
 
@@ -145,7 +153,7 @@ def cache_audio_local(path, max_audio_length, cache_dir=pathlib.Path('./audio'))
     """
     Copies the file specified by `path` to cache_dir in the same folder
     structure that is present at the source. The file should be in an audio
-    format readable by `nt.io.audioread.audioread`.
+    format readable by `nt.io.audioread.load_audio`.
 
     :param path: Audio file to cache locally
     :param max_audio_length: maximum length of files to be cached in seconds.
@@ -179,10 +187,11 @@ def create_from_dict(d, embed_audio=False, max_audio_length=20, depth=0,
                 content=f'{k}: ' + audio_to_html(v, embed_audio,
                                                  max_audio_length)
             )
+        elif isinstance(v, (str, int, float)):
+            html += Templates.li.format(content=f'{k}: {v}')
         else:
-            html += Templates.li.format(content=f'{k}: ' +
-                                    audio_to_html(v, embed=embed_audio,
-                                          max_audio_length=max_audio_length))
+            raise TypeError(f'Unexpected type {type(v)} of element {v}.')
+
     to_image = list(d.items())[0]
     image = plot_to_html(to_image[1], image_width, max_audio_length)
     html = Templates.horizontal_divided_cell.format(
@@ -192,9 +201,18 @@ def create_from_dict(d, embed_audio=False, max_audio_length=20, depth=0,
     return html
 
 
+def is_audio_path(v):
+    return isinstance(v, str) and any(v.endswith(ext) for ext in
+                                      VALID_AUDIO_EXTENSIONS)
+
+
+def is_audio_array(v):
+    return isinstance(v, np.ndarray) and v.shape[0] <= 2
+
+
 def is_audio(v):
-    return isinstance(v, str) and v.endswith('.wav') or \
-           isinstance(v, np.ndarray) and v.shape[0] <= 2
+    return is_audio_path(v) or is_audio_array(v)
+
 
 def is_dict_of_audio(d):
     first_key = list(d.keys())[0]
@@ -210,8 +228,8 @@ def example_to_html(audio_dict, max_audio_length=None, embed_audio=False,
 
     If `embed_audio` is true, all numpy arrays are assumed to be audio data and
     embedded in the html code. If `embed_audio` is false, all Strings that end
-    with `.wav` are cached locally in a folder besides the notebook and a link
-    to that file is included in the html.
+    with a valid audio extension are cached locally in a folder besides the
+    notebook and a link to that file is included in the html.
 
     :param audio_dict: Example dict
     :param max_audio_length: maximum length of audio files that are displayed.
@@ -285,9 +303,9 @@ def database_to_html(database_dict, embed_audio,
         for dataset_key, dataset in database_dict[DATASETS].items():
             if datasets is None or dataset_key in datasets:
                 html += dataset_to_html_card(dataset_key, dataset,
-                                         embed_audio=embed_audio,
-                                         max_audio_length=max_audio_length,
-                                         image_width=image_width)
+                                             embed_audio=embed_audio,
+                                             max_audio_length=max_audio_length,
+                                             image_width=image_width)
 
     except Exception as e:
         html = Templates.error.format(content=f'ERROR: {type(e)}: {e}')

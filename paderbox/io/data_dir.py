@@ -35,7 +35,7 @@ testing = _get_path(
 )
 kaldi_root = _get_path(
     'KALDI_ROOT',
-    '/net/vol/jenkins/kaldi/2018-01-10_15-43-29_a0b71317df1035bd3c6fa49a2b6bb33c801b56ac')
+    '/path/to/proper/kaldi_root/check/in/getting/started/how/to/set/it')
 matlab_toolbox = _get_path(
     'MATLAB_TOOLBOX_DIR',
     '/net/ssd/software/matlab_toolbox'
@@ -55,19 +55,19 @@ ami = _get_path(
 )
 audioset = _get_path(
     'NT_AUDIOSET_DIR',
-    fast_db_dir / 'AudioSet'
+    db_dir / 'AudioSet'
 )
 dcase_2017_task_3 = _get_path(
     'NT_DCASE_2017_TASK_3_DIR',
-    fast_db_dir / 'DCASE2017' / 'Task3'
+    db_dir / 'DCASE2017' / 'Task3'
 )
 dcase_2017_task_4 = _get_path(
     'NT_DCASE_2017_TASK_4_DIR',
-    fast_db_dir / 'DCASE2017' / 'Task4'
+    db_dir / 'DCASE2017' / 'Task4'
 )
 dcase_2018_task_5 = _get_path(
     'NT_DCASE_2018_TASK_5_DIR',
-    db_dir / 'DCASE2018' / 'Task5'
+    fast_db_dir / 'DCASE2018' / 'Task5'
 )
 sins = _get_path(
     'NT_SINS_DIR',
@@ -95,7 +95,7 @@ chime_5 = _get_path(
 )
 merl_mixtures = _get_path(
     'NT_MERL_MIXTURES_DIR',
-    db_dir / 'merl_speaker_mixtures'
+    fast_db_dir / 'merl_speaker_mixtures'
 )
 german_speechdata = _get_path(
     'NT_GERMAN_SPEECHDATA_DIR',
@@ -116,6 +116,10 @@ wsj = _get_path(
 wsj_corrected_paths = _get_path(
     'NT_WSJ_DIR',
     db_dir / 'wsj_corrected_paths'
+)
+wsj_8k = _get_path(
+    'NT_WSJ_8K_DIR',
+    fast_db_dir / 'wsj_8k'
 )
 wsjcam0 = _get_path(
     'NT_WSJCAM0_DIR',

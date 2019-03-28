@@ -11,14 +11,13 @@ class Timer(object):
 
         with Timer() as t:
             sleep(10)
-        print(t.secs)
+        print(t)
 
     """
 
     def __init__(self, verbose=False):
         self.verbose = verbose
-        self.secs = 0
-        self.msecs = 0
+        self.secs = None
         self.start = 0
         self.end = 0
 
@@ -27,12 +26,16 @@ class Timer(object):
         return self
 
     def __exit__(self, *args):
-
         self.end = time.time()
         self.secs = self.end - self.start
-        self.msecs = self.secs * 1000  # millisecs
         if self.verbose:
-            print('elapsed time: %f ms' % self.msecs)
+            print(self)
+
+    def __repr__(self):
+        if self.secs is None:
+            return f'{self.__class__}: running...'
+        else:
+            return f'{self.__class__}: {self.secs:.3g} s'
 
 
 class TimerDictEntry:

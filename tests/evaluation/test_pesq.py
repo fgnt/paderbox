@@ -1,5 +1,5 @@
 import unittest
-from paderbox.evaluation.pesq import pesq
+from paderbox.evaluation.pesq_module import pesq
 import numpy
 import numpy.testing as nptest
 from paderbox.io.audioread import audioread

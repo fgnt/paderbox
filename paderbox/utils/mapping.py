@@ -1,11 +1,9 @@
-
-
 class DispatchError(KeyError):
     def __str__(self):
         if len(self.args) == 2:
             item, keys = self.args
             import difflib
-            # suggestions are sorted (similarity)
+            # Suggestions are sorted by their similarity.
             suggestions = difflib.get_close_matches(
                 item, keys, cutoff=0, n=100
             )
