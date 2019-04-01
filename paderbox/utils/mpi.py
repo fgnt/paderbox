@@ -53,6 +53,20 @@ except ImportError:
         )
         raise
 
+    if int(os.environ.get('PMI_SIZE', '1')) != 1:
+        # MPICH_INTERFACE_HOSTNAME=ntws25
+        # PMI_RANK=0
+        # PMI_FD=6
+        # PMI_SIZE=1
+        print(
+            f'WARNING: Something is wrong with your mpi4py installation.\n'
+            f'You use intel mpi while we usually use openmpi.\n'
+            f'This is usually caused from "conda install mpi4py" instead of '
+            f'"pip install mpi4py".\n'
+            f'Try to deinstall mpi4py and install it with "pip install mpi4py"'
+        )
+        raise
+
     class DUMMY_COMM_WORLD:
         size = 1
         rank = 0
