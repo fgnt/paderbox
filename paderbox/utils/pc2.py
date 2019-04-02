@@ -250,6 +250,7 @@ def write_ccsinfo_files(
         log_dir,
         reqid_file='CCS_REQID',
         info_file='CCS_INFO',
+        consider_mpi=True,
 ):
     """
     Writes te following logs to the log dir:
@@ -270,7 +271,12 @@ def write_ccsinfo_files(
 
     """
     import paderbox as pb
-    from paderbox.utils import mpi
+    if consider_mpi:
+        from paderbox.utils import mpi
+    else:
+        class mpi:
+            IS_MASTER = True
+
     if mpi.IS_MASTER:
         CCS_REQID = os.environ.get('CCS_REQID', None)
         if CCS_REQID is not None:
