@@ -5,8 +5,7 @@ import numpy as np
 from scipy.signal import lfilter
 
 import paderbox.testing as tc
-import paderbox.io.audioread as ar
-from paderbox.io.audioread import audioread
+from paderbox.io.audioread import load_audio
 from paderbox.speech_enhancement.noise.utils import set_snr
 from paderbox.speech_enhancement.noise.spherical_habets import _sinf_3D_py
 from paderbox.database.noisex92 import helper
@@ -60,7 +59,7 @@ class NoiseGeneratorWhite(NoiseGeneratorTemplate):
     """
     Example:
 
-    >>> from paderbox.evaluation.sxr import input_sxr
+    >>> from paderbox.evaluation.sxr_module import input_sxr
     >>> time_signal = np.random.normal(size=(1000,))
     >>> ng = NoiseGeneratorWhite()
     >>> n = ng.get_noise_for_signal(time_signal, snr=20)
@@ -77,7 +76,7 @@ class NoiseGeneratorWhite(NoiseGeneratorTemplate):
     >>> time_signal.shape
     (2, 1000)
 
-    >>> from paderbox.evaluation.sxr import input_sxr
+    >>> from paderbox.evaluation.sxr_module import input_sxr
     >>> SDR, SIR, SNR = input_sxr(time_signal[None, :, :], n)
     >>> round(SNR, 1)
     20.0
@@ -133,12 +132,12 @@ class NoiseGeneratorChimeBackground(NoiseGeneratorTemplate):
 
         noise_list = []
         for channel in channels:
-            noise_list.append(audioread(
+            noise_list.append(load_audio(
                 self.flist['wav'][utt_id]['CH{}'.format(channel + 1)],
-                offset=start / self.sampling_rate,
-                duration=T / self.sampling_rate,
+                start=start / self.sampling_rate,
+                frames=T / self.sampling_rate,
                 expected_sample_rate=self.sampling_rate
-            )[0])
+            ))
 
         # Reshape to deal with singleton dimensions
         return np.stack(noise_list).reshape(shape)
@@ -199,7 +198,7 @@ class NoiseGeneratorNoisex92(NoiseGeneratorTemplate):
         for l in self.labels:
             path = helper.get_path_for_label(l, sample_rate)
             self.audio_datas += [
-                ar.audioread(path, expected_sample_rate=sample_rate)[0]
+                load_audio(path, expected_sample_rate=sample_rate)
             ]
 
         self.sample_rate = sample_rate

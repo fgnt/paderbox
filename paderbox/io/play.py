@@ -4,7 +4,7 @@ from scipy import signal
 from paderbox.transform import istft
 import numpy as np
 import os
-from paderbox.io.audioread import audioread
+from paderbox.io.audioread import load_audio
 from pathlib import Path
 
 
@@ -91,7 +91,7 @@ def play(
 
     if isinstance(data, str):
         assert os.path.exists(data), ('File does not exist.', data)
-        data = audioread(data, expected_sample_rate=sample_rate)[0]
+        data = load_audio(data, expected_sample_rate=sample_rate)
         if len(data.shape) == 2:
             data = data[channel, :]
     elif np.iscomplexobj(data):
