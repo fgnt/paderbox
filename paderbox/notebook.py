@@ -75,11 +75,18 @@ __all__ = [
 
 
 def pprint(obj, verbose=False, max_width=79, newline='\n',
-           max_seq_length=IPython.lib.pretty.MAX_SEQ_LENGTH):
+           max_seq_length=IPython.lib.pretty.MAX_SEQ_LENGTH,
+           max_array_length=50,
+           ):
     """
     Copy of IPython.lib.pretty.pprint.
     Modifies the __repr__ of np.ndarray and torch.Tensor compared to the
     original.
+
+    >>> pprint([np.array([1]), np.array([1]*100)])
+    [array([1]), ndarray(shape=(100,), dtype=int64)]
+    >>> print([np.array([1])])
+    [array([1])]
     """
 
     class MyRepresentationPrinter(IPython.lib.pretty.RepresentationPrinter):
@@ -87,10 +94,16 @@ def pprint(obj, verbose=False, max_width=79, newline='\n',
             super().__init__(*args, **kwargs)
 
             def _ipy_pprint_ndarray(obj, p, cycle):
-                p.text(
-                    f'{obj.__class__.__name__}'
-                    f'(shape={obj.shape}, dtype={obj.dtype})'
-                )
+                if obj.size <= max_array_length:
+                    # Use repr or str?
+                    # repr -> array([...])
+                    # str -> [...]
+                    p.text(repr(obj))
+                else:
+                    p.text(
+                        f'{obj.__class__.__name__}'
+                        f'(shape={obj.shape}, dtype={obj.dtype})'
+                    )
 
             def _ipy_pprint_tensor(obj, p, cycle):
                 p.text(
