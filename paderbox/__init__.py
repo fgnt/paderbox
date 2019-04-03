@@ -55,7 +55,15 @@ def _lazy_import_submodules(__path__, __name__, __package__):
             if item in _available_submodules:
                 return importlib.import_module(f'{__package__}.{item}')
             else:
-                return super().__getattr__(item)
+                atters = dir(self) + list(_available_submodules)
+                import difflib
+                # Suggestions are sorted by their similarity.
+                suggestions = difflib.get_close_matches(
+                    item, atters, cutoff=0, n=100
+                )
+                raise AttributeError(f'module {__package__} has no attribute'
+                                     f' {item!r}.\n'
+                                     f'Close matches: {suggestions!r}.')
 
     sys.modules[__name__].__class__ = _LazySubModule
 
