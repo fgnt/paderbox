@@ -107,7 +107,8 @@ setup(
         'sh',
         'pycallgraph',  # Used in profiling module
         # 'pafy',  # Download Youtube files for some databases
-        'librosa'  # Used for FBanks
+        'lazy_dataset',  # used for iteration over database examples
+        'librosa',  # Used for FBanks
     ],
 
     # Installation problems in a clean, new environment:
