@@ -19,7 +19,7 @@ def wiener_filter_gain_apriori(observation, s_mask, n_mask, G_min_db=-25,
     Phi_NN = np.maximum(Phi_NN, mask_min)
     a_priori = Phi_SS / Phi_NN
     a_priori_SNR = np.maximum(a_priori, mask_min)
-    gain = np.maximum(1 / (1 + a_priori_SNR), G_min)
+    gain = np.maximum(1 / (1 + 1 / a_priori_SNR), G_min)
     return gain
 
 
