@@ -552,10 +552,10 @@ class STFT:
             frame_step: int,
             fft_length: int,
             frame_length: int = None,
-            window: str = "hann",
+            window: str = "blackman",
             symmetric_window: bool=False,
-            fading: bool=True,
-            pad: bool=True,
+            fading: bool = True,
+            pad: bool = True,
             always3d: bool = False
     ):
         """
