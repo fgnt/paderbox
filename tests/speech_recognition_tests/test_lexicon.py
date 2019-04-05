@@ -1,9 +1,10 @@
+import os
 import tempfile
 import unittest
 
-from paderbox.TODO.kaldi import fst
-from paderbox.speech_recognition.lexicon import Linear
 from paderbox.label_handling.transcription_handler import LabelHandler
+from paderbox.speech_recognition.lexicon import Linear
+from paderbox.TODO.kaldi import fst
 
 
 class TestLexicon(unittest.TestCase):
@@ -57,6 +58,7 @@ class TestLexicon(unittest.TestCase):
             lexicon.write_fst(fst_filename)
             self.lh.write_table(sym_filename)
             fst.draw(sym_filename, sym_filename, fst_filename, pdf_filename)
+            self.assertTrue(os.path.exists(pdf_filename))
 
     def test_linear_linear_trie_write_fst(self):
         for eoc in (None, self.int_eoc):
