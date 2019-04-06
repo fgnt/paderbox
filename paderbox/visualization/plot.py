@@ -670,7 +670,8 @@ def beampattern(W, sensor_positions, fft_size, sample_rate,
 
 
 @create_subplot
-def posteriorgram(probabilities, ax=None, label_handler=None, batch=0):
+def posteriorgram(
+        probabilities, ax=None, label_handler=None, batch=0, blank_idx=None):
     """ Plots a posteriorgram
 
     :param probabilities: Probabilities for the labels
@@ -683,6 +684,12 @@ def posteriorgram(probabilities, ax=None, label_handler=None, batch=0):
             sorted(label_handler.int_to_label.items(), key=lambda t: t[1])
         )
         order = list(ordered_map.keys())
+        if blank_idx is not None:
+            if blank_idx < 0:
+                blank_idx += x.shape[-1]
+            if len(order) < x.shape[-1]:
+                order += [blank_idx]
+                ordered_map[blank_idx] = '<BLANK>'
     else:
         order = list(range(x.shape[1]))
 
@@ -694,11 +701,13 @@ def posteriorgram(probabilities, ax=None, label_handler=None, batch=0):
 
     if label_handler is not None:
         plt.yticks(
-            range(label_handler.num_labels),
+            range(len(ordered_map)),
             list(ordered_map.values()))
 
     ax.set_xlabel('Time frame index')
     ax.set_ylabel('Transcription')
+    ax.grid(False, axis='x')
+    ax.grid(linestyle='-.', axis='y')
     return ax
 
 
