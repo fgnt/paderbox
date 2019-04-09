@@ -113,6 +113,10 @@ wsj = _get_path(
     'NT_WSJ_DIR',
     fast_db_dir / 'wsj'
 )
+wsj_voicehome = _get_path(
+    'NT_WSJ_VOICEHOME_DIR',
+    db_dir / 'voicehome_v2'
+)
 wsj_corrected_paths = _get_path(
     'NT_WSJ_DIR',
     db_dir / 'wsj_corrected_paths'
