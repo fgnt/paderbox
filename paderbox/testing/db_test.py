@@ -195,7 +195,7 @@ class DatabaseClassTest(unittest.TestCase):
     ):
         if not dataset_names:
             dataset_names = database.dataset_names
-        iterator = database.get_iterator_by_names(dataset_names)
+        iterator = database.get_dataset(names=dataset_names)
 
         all_keys = [
             key
