@@ -71,16 +71,7 @@ class MelTransform:
 
     @cached_property
     def ifbanks(self):
-        filter_norms = self.fbanks.sum(axis=-2, keepdims=True)
-        normed_filters = self.fbanks / filter_norms
-
-        # for each fft bin obtain relevance of each mel bin
-        binwise_norm = normed_filters.sum(axis=-1, keepdims=True)
-        binwise_norm = numpy.where(
-            binwise_norm == 0, 1, binwise_norm
-        )
-        relevance = normed_filters / binwise_norm
-        return (relevance / filter_norms).T
+        return np.linalg.pinv(self.fbanks.T).T
 
     def __call__(self, x):
         x = np.dot(x, self.fbanks)
