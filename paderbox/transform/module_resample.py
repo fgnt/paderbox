@@ -87,7 +87,7 @@ def resample_sox(signal: np.ndarray, *, in_rate, out_rate):
         stderr=subprocess.PIPE,
         input=signal.tobytes(order="f")
     )
-    signal_resampled = np.fromstring(process.stdout, dtype=signal.dtype)
+    signal_resampled = np.frombuffer(process.stdout, dtype=signal.dtype)
     assert signal_resampled.size > 0, (
         'The command did not yield any output:\n'
         f'signal.shape: {signal.shape}\n'

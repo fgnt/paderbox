@@ -29,13 +29,18 @@ fast_db_dir = _get_path(
     'NT_FAST_DB_DIR',
     '/net/fastdb'
 )
+ssd_db_dir = _get_path(
+    'NT_SSD_DB_DIR',
+    '/net/ssddb'
+)
 testing = _get_path(
     'NT_TESTING_DIR',
     '/net/vol/jenkins/python_unittest_data'
 )
 kaldi_root = _get_path(
     'KALDI_ROOT',
-    '/path/to/proper/kaldi_root/check/in/getting/started/how/to/set/it')
+    '/path/to/proper/kaldi_root/check/in/getting/started/how/to/set/it'
+)
 matlab_toolbox = _get_path(
     'MATLAB_TOOLBOX_DIR',
     '/net/ssd/software/matlab_toolbox'
@@ -55,7 +60,7 @@ ami = _get_path(
 )
 audioset = _get_path(
     'NT_AUDIOSET_DIR',
-    db_dir / 'AudioSet'
+    ssd_db_dir / 'AudioSet'
 )
 dcase_2017_task_3 = _get_path(
     'NT_DCASE_2017_TASK_3_DIR',
@@ -63,11 +68,15 @@ dcase_2017_task_3 = _get_path(
 )
 dcase_2017_task_4 = _get_path(
     'NT_DCASE_2017_TASK_4_DIR',
-    db_dir / 'DCASE2017' / 'Task4'
+    ssd_db_dir / 'DCASE2017' / 'Task4'
 )
 dcase_2018_task_5 = _get_path(
     'NT_DCASE_2018_TASK_5_DIR',
     fast_db_dir / 'DCASE2018' / 'Task5'
+)
+dcase_2019_task_2 = _get_path(
+    'NT_DCASE_2019_TASK_2_DIR',
+    ssd_db_dir / 'DCASE2019' / 'Task2'
 )
 sins = _get_path(
     'NT_SINS_DIR',
