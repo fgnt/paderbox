@@ -3,6 +3,10 @@ from numpy.fft import __file__ as FFT_FILE
 # https://github.com/numpy/numpy/issues/11456
 # https://github.com/ContinuumIO/anaconda-issues/issues/9697
 # https://github.com/IntelPython/mkl_fft/issues/11
+# Still there (22.2.19) https://github.com/IntelPython/mkl_fft/issues/24
+# Estimated that mkl=2019.3 is required (in the moment 2019.1)
+# $ conda env export --name=base | grep mkl
+# mkl=2019.1=144
 with open(FFT_FILE) as f:
     if 'patch_fft = True' in f.read():
         raise Exception(
