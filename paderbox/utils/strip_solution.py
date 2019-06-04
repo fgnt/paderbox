@@ -111,7 +111,7 @@ def nb_replace(old_path, new_path):
             cell['source'] = cell_source
 
     print(f'Replaced {replacements} lines of code.')
-    nbformat.write(nb, new_path, nbformat.NO_CONVERT)
+    nbformat.write(nb, str(new_path), nbformat.NO_CONVERT)
 
 
 def entry_point():
