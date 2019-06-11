@@ -6,7 +6,11 @@ source "`dirname "$0"`/jenkins_common.bash"
 # Unittets
 # It seems, that jenkins currentliy does not work with matlab: Error: Segmentation violation
 
-nosetests -a '!matlab' --with-xunit --with-coverage --cover-package=paderbox -v -w "${TOOLBOX}/tests" # --processes=-1
+# nosetests -a '!matlab' --with-xunit --with-coverage --cover-package=paderbox -v -w "${TOOLBOX}/tests" # --processes=-1
+
+pytest --junitxml='test_results.xml' --cov=paderbox  \
+  --doctest-modules --doctest-continue-on-failure --cov-report term -v "${TOOLBOX}/tests/
+
 # Use as many processes as you have cores: --processes=-1
 
 # Export coverage
