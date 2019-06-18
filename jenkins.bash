@@ -7,13 +7,13 @@ source "`dirname "$0"`/jenkins_common.bash"
 # It seems, that jenkins currentliy does not work with matlab: Error: Segmentation violation
 # pytest ignores all evaluation tests, generate_data_file.py and  import_test.py due to errors
 
-#nosetests -a '!matlab' --with-xunit --with-coverage --cover-package=paderbox -v -w "${TOOLBOX}/tests" # --processes=-1
+nosetests -a '!matlab' --with-xunit --with-coverage --cover-package=paderbox -v -w "${TOOLBOX}/tests" # --processes=-1
 
-pytest --junitxml='test_results.xml' --cov=paderbox --doctest-modules   \
-       --doctest-continue-on-failure --cov-report term -v "${TOOLBOX}/tests/" \
-       -k 'not matlab'  \
-       --ignore 'tests/evaluation' --ignore 'tests/import_test.py' \
-       --ignore 'tests/speech_enhancement_test/generate_data_file.py'
+#pytest --junitxml='test_results.xml' --cov=paderbox --doctest-modules   \
+#       --doctest-continue-on-failure --cov-report term -v "${TOOLBOX}/tests/" \
+#       -k 'not matlab'  \
+#       --ignore 'tests/evaluation' --ignore 'tests/import_test.py' \
+#       --ignore 'tests/speech_enhancement_test/generate_data_file.py'
 
 # Use as many processes as you have cores: --processes=-1
 
