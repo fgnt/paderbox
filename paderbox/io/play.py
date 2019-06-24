@@ -37,6 +37,7 @@ def play(
         size=1024,
         shift=256,
         window=signal.blackman,
+        window_length: int=None,
         *,
         scale=1,
         name=None,
@@ -75,6 +76,7 @@ def play(
                 size=size,
                 shift=shift,
                 window=window,
+                window_length=window_length,
                 scale=scale,
                 stereo=stereo,
             )
@@ -101,7 +103,13 @@ def play(
         if len(data.shape) == 3:
             data = data[:, channel, :]
 
-        data = istft(data, size=size, shift=shift, window=window)
+        data = istft(
+            data,
+            size=size,
+            shift=shift,
+            window=window,
+            window_length=window_length,
+        )
     elif np.isrealobj(data):
         if len(data.shape) == 2:
             data = data[channel, :]
