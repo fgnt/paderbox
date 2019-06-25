@@ -122,13 +122,11 @@ def test_lwlrap():
     truth[0:1, :] = False  # Ensure at least some samples with no truth labels.
 
     scores = np.random.rand(num_samples, num_labels)
-    lwlrap_, per_class_lwlrap, weight_per_class = lwlrap(truth, scores[None])
+    lwlrap_ = lwlrap(truth, scores)
     per_class_lwlrap_ref, weight_per_class_ref = calculate_per_class_lwlrap(
         truth, scores
     )
-    assert all(weight_per_class[0] == weight_per_class_ref)
-    assert all(per_class_lwlrap[0] == per_class_lwlrap_ref)
-    assert lwlrap_[0] == np.sum(per_class_lwlrap_ref * weight_per_class_ref)
+    assert lwlrap_ == np.sum(per_class_lwlrap_ref * weight_per_class_ref)
 
 
 # Reference implementation taken from https://colab.research.google.com/drive/1AgPdhSp7ttY18O3fEoHOQKlt_3HJDLi8#scrollTo=Xffu7w5t0YFa
