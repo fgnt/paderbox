@@ -450,7 +450,7 @@ def spectrogram(
 
 @create_subplot
 def image(
-        signal, ax=None, x_label='', y_label='', cmap=None, colorbar=False
+        signal, ax=None, x_label='', y_label='', z_label='', cmap=None, colorbar=False
 ):
     """
     Plots a spectrogram from a spectrogram (power) as input.
