@@ -80,7 +80,7 @@ dcase_2019_task_2 = _get_path(
 )
 sins = _get_path(
     'NT_SINS_DIR',
-    '/net/vol/db/SINS'
+    ssd_db_dir / 'SINS'
 )
 timit = _get_path(
     'NT_TIMIT_DIR',
