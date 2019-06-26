@@ -262,13 +262,20 @@ class _AxesHandler:
     # See axes_context for use case
     # Should this class be public?
     def _new_subplot(self):
-        figure, axis = plt.subplots(1, self._columns, squeeze=False)
+        figure, axis = plt.subplots(1, self._columns, **self.subplot_kwargs)
         return figure, axis.flatten()
 
-    def __init__(self, columns):
+    def __init__(self, columns, subplot_kwargs=None):
         self._columns = columns
         self.subplots = []
         self.counter = -1
+        self.subplot_kwargs = subplot_kwargs
+
+        if self.subplot_kwargs is None:
+            self.subplot_kwargs = dict()
+
+        if 'squeeze' not in self.subplot_kwargs:
+            self.subplot_kwargs['squeeze'] = False
 
     def get_axes(self, *, row, col):
         while row >= len(self.subplots):
@@ -305,6 +312,7 @@ def axes_context(
         font_scale=1.0,
         line_width=3,
         figure_size=(8.0, 6.0),
+        subplot_kwargs=None
 ):
     """
 
@@ -331,4 +339,4 @@ def axes_context(
             line_width=line_width,
             figure_size=figure_size,
     ):
-        yield _AxesHandler(columns)
+        yield _AxesHandler(columns, subplot_kwargs=subplot_kwargs)
