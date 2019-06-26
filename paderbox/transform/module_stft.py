@@ -155,14 +155,19 @@ def _samples_to_stft_frames(
         fading=False,
 ):
     """
-    Calculates STFT frames from samples in time domain.
-    :param samples: Number of samples in time domain.
-    :param size: window_length often equal to FFT size.
-                 The name size should be marked as deprecated and replaced with
-                 window_length.
-    :param shift: Hop in samples.
-    :param fading: See stft. Note to keep old behavior, default value is False.
-    :return: Number of STFT frames.
+    Calculates number of STFT frames from number of samples in time domain.
+
+    Args:
+        samples: Number of samples in time domain.
+        size: FFT size.
+            window_length often equal to FFT size. The name size should be
+            marked as deprecated and replaced with window_length.
+        shift: Hop in samples.
+        pad: See stft.
+        fading: See stft. Note to keep old behavior, default value is False.
+
+    Returns:
+        Number of STFT frames.
 
     >>> _samples_to_stft_frames(19, 16, 4)
     2
@@ -232,7 +237,7 @@ def _stft_frames_to_samples(
     return samples
 
 
-def sample_id_to_stft_frame_id(sample, window_length, shift, fading=True):
+def sample_index_to_stft_frame_index(sample, window_length, shift, fading=True):
     """
     Calculates the best frame index for a given sample index
     :param sample: Sample index in time domain.
