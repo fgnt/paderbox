@@ -237,7 +237,7 @@ def _stft_frames_to_samples(
     return samples
 
 
-def sample_id_to_stft_frame_id(sample, window_length, shift, fading=True):
+def sample_index_to_stft_frame_index(sample, window_length, shift, fading=True):
     """
     Calculates the best frame index for a given sample index
     :param sample: Sample index in time domain.
