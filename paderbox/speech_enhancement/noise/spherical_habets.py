@@ -54,7 +54,8 @@ https://www.audiolabs-erlangen.de/fau/professor/habets/software/noise-generators
 from math import acos, sqrt
 from math import pi, sin, cos, ceil, floor
 
-import numpy
+
+import numpy as np
 from numpy import zeros
 from numpy.fft import irfft as ifft
 from numpy.fft import fft as fft
@@ -83,10 +84,10 @@ def sinf_3d(positions, signal_length, sample_rate=8000, c=340, N=256):
     """
 
     M = positions.shape[1]  # Number of sensors
-    NFFT = 2 ** ceil(numpy.log2(signal_length))  # Number of frequency bins
-    X = zeros((M, NFFT // 2 + 1), dtype=numpy.complex128)
+    NFFT = 2 ** ceil(np.log2(signal_length))  # Number of frequency bins
+    X = zeros((M, NFFT // 2 + 1), dtype=np.complex128)
 
-    w = 2 * pi * sample_rate * numpy.arange(0, NFFT // 2 + 1) / NFFT
+    w = 2 * pi * sample_rate * np.arange(0, NFFT // 2 + 1) / NFFT
 
     # Generate N points that are near-uniformly distributed over S^2
     phi = zeros(N)
@@ -118,20 +119,20 @@ def sinf_3d(positions, signal_length, sample_rate=8000, c=340, N=256):
                 cos(phi[idx])
             ])
             Delta = v @ P_rel[:, m]
-            X[m, :] = X[m, :] + X_prime * numpy.exp(-1j * Delta * w / c)
+            X[m, :] = X[m, :] + X_prime * np.exp(-1j * Delta * w / c)
 
     X = X / sqrt(N)
 
     # Transform to time domain
     X = [
-        sqrt(NFFT) * numpy.real(X[:, 0]),
+        sqrt(NFFT) * np.real(X[:, 0]),
         sqrt(NFFT // 2) * X[:, 1:-1],
-        sqrt(NFFT) * numpy.real(X[:, -1]),
-        sqrt(NFFT / 2) * numpy.conj(X[:, -2:0:-1])
+        sqrt(NFFT) * np.real(X[:, -1]),
+        sqrt(NFFT / 2) * np.conj(X[:, -2:0:-1])
     ]
     X = [x if x.ndim is 2 else x[:, None] for x in X]
-    X = numpy.concatenate(X, axis=1)
-    z = numpy.real(ifft(X, NFFT, 1))
+    X = np.concatenate(X, axis=1)
+    z = np.real(ifft(X, NFFT, 1))
 
     # Truncate output signals
     return z[:, :signal_length]
@@ -198,7 +199,7 @@ def _mycohere(
     #[msg,nfft,Fs,window,noverlap,p,dflag]=psdchk(varargin(3:end),x,y);
     #error(msg)
     if window is None:
-        window = numpy.hanning(nfft)
+        window = np.hanning(nfft)
     if not noverlap:
         noverlap = 0.75*nfft
 
@@ -207,8 +208,8 @@ def _mycohere(
     n = len(x)		# Number of data points
     nwind = len(window) # length of window
     if n < nwind:    # zero-pad x , y if length is less than the window length
-        x = numpy.pad(numpy.diag(x), (0, nwind - n), mode='constant')
-        y = numpy.pad(numpy.diag(x), (0, nwind - n), mode='constant')
+        x = np.pad(np.diag(x), (0, nwind - n), mode='constant')
+        y = np.pad(np.diag(x), (0, nwind - n), mode='constant')
         # x(nwind)=0;
         # y(nwind)=0;
         n=nwind
@@ -217,13 +218,13 @@ def _mycohere(
     #y = y(:);		# Make sure y is a column vector
     k = floor((n-noverlap) / (nwind-noverlap))	# Number of windows
                         # (k = fix(n/nwind) for noverlap=0)
-    index = numpy.arange(nwind)
+    index = np.arange(nwind)
 
     Pxx = zeros(nfft)
     Pxx2 = zeros(nfft)
     Pyy = zeros(nfft)
     Pyy2 = zeros(nfft)
-    Pxy = zeros(nfft, dtype=numpy.complex128)
+    Pxy = zeros(nfft, dtype=np.complex128)
     Pxy2 = zeros(nfft)
     for i in range(k): # 1:k
         if dflag == 'none':
@@ -241,7 +242,7 @@ def _mycohere(
         Yy = fft(yw,nfft)
         Xx2 = abs(Xx)**2
         Yy2 = abs(Yy)**2
-        Xy2 = Yy * numpy.conj(Xx)
+        Xy2 = Yy * np.conj(Xx)
         Pxx += Xx2
         Pxx2 += abs(Xx2)**2
         Pyy += Yy2
@@ -251,12 +252,12 @@ def _mycohere(
 
     # Select first half
     # if ~any(any(imag([x y])~=0)),   # if x and y are not complex
-    select = numpy.arange(nfft) # 1:nfft;
-    if (numpy.iscomplexobj(x) or numpy.iscomplexobj(y)) is False:
+    select = np.arange(nfft) # 1:nfft;
+    if (np.iscomplexobj(x) or np.iscomplexobj(y)) is False:
         if nfft % 2:     # nfft odd
-            select = numpy.arange((nfft+1) // 2) # [1:(nfft+1)/2];
+            select = np.arange((nfft+1) // 2) # [1:(nfft+1)/2];
         else:
-            select = numpy.arange((nfft) // 2 + 1) #  [1:nfft/2+1];   # include DC AND Nyquist
+            select = np.arange((nfft) // 2 + 1) #  [1:nfft/2+1];   # include DC AND Nyquist
 
         Pxx = Pxx[select]
         Pxx2 = Pxx2[select]
@@ -267,7 +268,7 @@ def _mycohere(
 
 
     #Coh = (abs(Pxy).^2)./(Pxx.*Pyy);             # coherence function estimate
-    Coh = Pxy / numpy.sqrt(Pxx * Pyy)
+    Coh = Pxy / np.sqrt(Pxx * Pyy)
     freq_vector = (select - 1) * sample_rate / nfft
 
     # set up output parameters
