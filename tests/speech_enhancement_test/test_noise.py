@@ -9,7 +9,7 @@ from paderbox.speech_enhancement.noise import get_snr
 from paderbox.speech_enhancement.noise import set_snr
 from paderbox.math.vector import sph2cart
 import paderbox.transform as transform
-from paderbox.speech_enhancement.noise.spherical_habets import _mycohere,_sinf_3D
+from paderbox.speech_enhancement.noise.spherical_habets import _mycohere,sinf_3d
 from math import pi
 from numpy.linalg import norm
 
@@ -119,7 +119,7 @@ class TestNoiseGeneratorSpherical(TestNoiseGeneratorWhite):
         c = 340  # Speed of sound
         w = 2*pi*fs*(np.arange(0, NFFT//2+1))/NFFT
         d = norm(self.P-self.P[:, 0], 2, axis=0)  # Sensor distances w.r.t. sensor 1
-        z = _sinf_3D(self.P, L, sample_rate=fs)
+        z = sinf_3d(self.P, L, sample_rate=fs)
         sc_sim = np.zeros((M-1, NFFT // 2 + 1))
         sc_theory = np.zeros((M-1, NFFT // 2 + 1))
         for m in range(M-1):  # for m = 1:M-1

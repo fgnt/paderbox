@@ -7,7 +7,7 @@ from scipy.signal import lfilter
 import paderbox.testing as tc
 from paderbox.io.audioread import load_audio
 from paderbox.speech_enhancement.noise.utils import set_snr
-from paderbox.speech_enhancement.noise.spherical_habets import _sinf_3D_py
+from paderbox.speech_enhancement.noise.spherical_habets import sinf_3d
 from paderbox.database.noisex92 import helper
 
 from paderbox.io import load_json
@@ -293,9 +293,14 @@ class NoiseGeneratorSpherical(NoiseGeneratorTemplate):
         assert len(shape) == 2, shape
         tc.assert_equal(shape[self.channel_axis], self.number_of_channels)
 
-        noise_signal = _sinf_3D_py(self.sensor_positions,
-                                   shape[self.sample_axis])
-        return noise_signal.T
+        noise_signal = sinf_3d(
+            positions=self.sensor_positions,
+            signal_length=shape[self.sample_axis],
+            sample_rate=self.sample_rate,
+            c=self.sound_velocity,
+            N=self.number_of_cylindrical_angels
+        )
+        return noise_signal
 
 
 if __name__ == "__main__":

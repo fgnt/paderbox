@@ -1,5 +1,5 @@
 """
-# Source: https://www.audiolabs-erlangen.de/fau/professor/habets/software/noise-generators
+Source: https://www.audiolabs-erlangen.de/fau/professor/habets/software/noise-generators
 
 Generating sensor signals for a 1D sensor array in a spherically
 isotropic noise field [1,2]
@@ -47,8 +47,8 @@ Copyright (C) 2007,2010 E.A.P. Habets
   Free Software Foundation, Inc.,675 Mass Ave, Cambridge, MA 02139, USA.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-# Sperical (isotropic) noise MATLAB implemention can be found on:
-    https://www.audiolabs-erlangen.de/fau/professor/habets/software/noise-generators
+Spherical (isotropic) noise MATLAB implementation can be found on:
+https://www.audiolabs-erlangen.de/fau/professor/habets/software/noise-generators
 """
 
 from math import acos, sqrt
@@ -62,11 +62,12 @@ from numpy.random import randn
 from scipy.signal import detrend
 
 
-def _sinf_3D(positions, signal_length, sample_rate=8000, c=340, N=256):
+def sinf_3d(positions, signal_length, sample_rate=8000, c=340, N=256):
     """
 
-    :param P: position of microphones in cartesian coordinates, shape 3 x #channels
-    :param length: signal length
+    :param positions: position of microphones in cartesian coordinates,
+        shape 3 x #channels
+    :param signal_length: signal length
     :param sample_rate: sample frequency
     :param c: sound velocity in m/s
     :param N: number of cylindrical angles
@@ -77,7 +78,7 @@ def _sinf_3D(positions, signal_length, sample_rate=8000, c=340, N=256):
     >>> M = 4 # Number of sensors
     >>> P = randn(3, M)
     >>> N = 300
-    >>> _sinf_3D(P, N);
+    >>> sinf_3d(P, N)
 
     """
 
@@ -98,30 +99,36 @@ def _sinf_3D(positions, signal_length, sample_rate=8000, c=340, N=256):
         else:
             theta[k] = (theta[k - 1] + 3.6 / sqrt(N * (1 - h ** 2))) % 2 * pi
 
-    # Caculate relative positions
+    # Calculate relative positions
     P_rel = zeros((3, M))
     for m in range(M):
         P_rel[:, m] = positions[:, m] - positions[:, 0]
 
-    # Initialize waitbar
-    # waitbar(0,'Generating sensor signals...');
-
     # Calculate sensor signals in the frequency domain
     for idx in range(N):
-        #     waitbar(idx/N);
-
         X_prime = randn(NFFT // 2 + 1) + 1j * randn(NFFT // 2 + 1)
         X[0, :] = X[0, :] + X_prime
         for m in range(1, M):
-            v = [cos(theta[idx]) * sin(phi[idx]), sin(theta[idx]) * sin(phi[idx]), cos(phi[idx])]
+
+            # It is unclear, why this differs from the implementation in
+            # `paderbox.math.vector.sph2cart()`.
+            v = np.array([
+                cos(theta[idx]) * sin(phi[idx]),
+                sin(theta[idx]) * sin(phi[idx]),
+                cos(phi[idx])
+            ])
             Delta = v @ P_rel[:, m]
             X[m, :] = X[m, :] + X_prime * numpy.exp(-1j * Delta * w / c)
 
     X = X / sqrt(N)
 
     # Transform to time domain
-    X = [sqrt(NFFT) * numpy.real(X[:, 0]), sqrt(NFFT // 2) * X[:, 1:-1],
-         sqrt(NFFT) * numpy.real(X[:, -1]), sqrt(NFFT / 2) * numpy.conj(X[:, -2:0:-1])]
+    X = [
+        sqrt(NFFT) * numpy.real(X[:, 0]),
+        sqrt(NFFT // 2) * X[:, 1:-1],
+        sqrt(NFFT) * numpy.real(X[:, -1]),
+        sqrt(NFFT / 2) * numpy.conj(X[:, -2:0:-1])
+    ]
     X = [x if x.ndim is 2 else x[:, None] for x in X]
     X = numpy.concatenate(X, axis=1)
     z = numpy.real(ifft(X, NFFT, 1))
@@ -129,135 +136,61 @@ def _sinf_3D(positions, signal_length, sample_rate=8000, c=340, N=256):
     # Truncate output signals
     return z[:, :signal_length]
 
-    # Close waitbar
-    # waitbar;
 
-def _sinf_3D_py(positions, signal_length, sample_rate=8000, c=340, N=256):
+def _mycohere(
+        x,
+        y,
+        nfft=256,
+        sample_rate=8000,
+        window=None,
+        noverlap=None,
+        p=.95,
+        dflag='none',
+):
+    """Coherence function estimate.
+
+    Cxy = COHERE(X,Y,NFFT,Fs,WINDOW) estimates the coherence of X and Y
+    using Welch's averaged periodogram method.  Coherence is a function
+    of frequency with values between 0 and 1 that indicate how well the
+    input X corresponds to the output Y at each frequency.  X and Y are
+    divided into overlapping sections, each of which is detrended, then
+    windowed by the WINDOW parameter, then zero-padded to length NFFT.
+    The magnitude squared of the length NFFT DFTs of the sections of X and
+    the sections of Y are averaged to form Pxx and Pyy, the Power Spectral
+    Densities of X and Y respectively. The products of the length NFFT DFTs
+    of the sections of X and Y are averaged to form Pxy, the Cross Spectral
+    Density of X and Y. The coherence Cxy is given by
+        Cxy = (abs(Pxy).^2)./(Pxx.*Pyy)
+    Cxy has length NFFT/2+1 for NFFT even, (NFFT+1)/2 for NFFT odd, or NFFT
+    if X or Y is complex. If you specify a scalar for WINDOW, a Hanning
+    window of that length is used.  Fs is the sampling frequency which does
+    not effect the cross spectrum estimate but is used for scaling of plots.
+
+    [Cxy,F] = COHERE(X,Y,NFFT,Fs,WINDOW,NOVERLAP) returns a vector of freq-
+    uencies the same size as Cxy at which the coherence is computed, and
+    overlaps the sections of X and Y by NOVERLAP samples.
+
+    COHERE(X,Y,...,DFLAG), where DFLAG can be 'linear', 'mean' or 'none',
+    specifies a detrending mode for the prewindowed sections of X and Y.
+    DFLAG can take the place of any parameter in the parameter list
+    (besides X and Y) as long as it is last, e.g. COHERE(X,Y,'mean');
+
+    COHERE with no output arguments plots the coherence in the current
+    figure window.
+
+    The default values for the parameters are NFFT = 256 (or LENGTH(X),
+    whichever is smaller), NOVERLAP = 0, WINDOW = HANNING(NFFT), Fs = 2,
+    P = .95, and DFLAG = 'none'.  You can obtain a default parameter by
+    leaving it off or inserting an empty matrix [], e.g.
+    COHERE(X,Y,[],10000).
+
+    See also PSD, CSD, TFE.
+    ETFE, SPA, and ARX in the Identification Toolbox.
+
+    Author(s): T. Krauss, 3-31-93
+    Copyright (c) 1988-98 by The MathWorks, Inc.
+    $Revision: 1.1 $  $Date: 1998/06/03 14:42:19 $
     """
-
-    :param P: position of microphones in cartesian coordinates, shape 3 x #channels
-    :param length: signal length
-    :param sample_rate: sample frequency
-    :param c: sound velocity in m/s
-    :param N: number of cylindrical angles
-    :return:
-
-    Example:
-
-    >>> M = 4 # Number of sensors
-    >>> P = randn(3, M)
-    >>> signal_length = 300
-    >>> _sinf_3D(P, signal_length).shape
-    (4, 300)
-
-    """
-
-    M = positions.shape[1]  # Number of sensors
-    NFFT = 2 ** ceil(numpy.log2(signal_length))  # Number of frequency bins
-    X = zeros((M, NFFT // 2 + 1), dtype=numpy.complex128)
-
-    w = 2 * pi * sample_rate * numpy.arange(0, NFFT // 2 + 1) / NFFT
-
-    # Generate N points that are near-uniformly distributed over S^2
-    phi = zeros(N)
-    theta = zeros(N)
-    for k in range(N):
-        h = -1 + 2 * (k) / (N - 1)
-        phi[k] = acos(h)
-        if k == 0 or k == N - 1:
-            theta[k] = 0
-        else:
-            theta[k] = (theta[k - 1] + 3.6 / sqrt(N * (1 - h ** 2))) % 2 * pi
-
-    # Caculate relative positions
-    P_rel = zeros((3, M))
-    for m in range(M):
-        P_rel[:, m] = positions[:, m] - positions[:, 0]
-
-    # Initialize waitbar
-    # waitbar(0,'Generating sensor signals...');
-
-    # Calculate sensor signals in the frequency domain
-
-    # for idx in range(N):
-    #     #     waitbar(idx/N);
-    #
-    #     X_prime = randn(NFFT // 2 + 1) + 1j * randn(NFFT // 2 + 1)
-    #     X[0, :] += X_prime
-    #     for m in range(1, M):
-    #         v = [cos(theta[idx]) * sin(phi[idx]), sin(theta[idx]) * sin(phi[idx]), cos(phi[idx])]
-    #         # Delta = v @ P_rel[:, m]
-    #         Delta = numpy.sum(v * P_rel[:, m])
-    #         X[m, :] += X_prime * numpy.exp(-1j * Delta * w / c)
-    # print(N, NFFT // 2 + 1)
-    X_prime = randn(N, NFFT // 2 + 1) + 1j * randn(N, NFFT // 2 + 1)
-    v = numpy.stack([numpy.cos(theta) * numpy.sin(phi), numpy.sin(theta) * numpy.sin(phi), numpy.cos(phi)])
-    Delta = P_rel[:, 1:].T @ v
-    X[0, :] += numpy.sum(X_prime, axis=0)
-    X[1:, :] += numpy.sum(X_prime[None, :, :] * numpy.exp((-1j * (Delta[:, :, None] / c)) * w[None, None, :]))
-
-    X /= sqrt(N)
-
-    # Transform to time domain
-    X = [sqrt(NFFT) * numpy.real(X[:, 0]), sqrt(NFFT // 2) * X[:, 1:-1],
-         sqrt(NFFT) * numpy.real(X[:, -1]), sqrt(NFFT / 2) * numpy.conj(X[:, -2:0:-1])]
-    X = [x if x.ndim is 2 else x[:, None] for x in X]
-    X = numpy.concatenate(X, axis=1)
-    z = numpy.real(ifft(X, NFFT, 1))
-
-    # Truncate output signals
-    return z[:, :signal_length].T
-
-    # Close waitbar
-    # waitbar;
-
-###############################################################################################
-# function [Cxy, f] = mycohere(varargin)
-# %COHERE Coherence function estimate.
-# %   Cxy = COHERE(X,Y,NFFT,Fs,WINDOW) estimates the coherence of X and Y
-# %   using Welch's averaged periodogram method.  Coherence is a function
-# %   of frequency with values between 0 and 1 that indicate how well the
-# %   input X corresponds to the output Y at each frequency.  X and Y are
-# %   divided into overlapping sections, each of which is detrended, then
-# %   windowed by the WINDOW parameter, then zero-padded to length NFFT.
-# %   The magnitude squared of the length NFFT DFTs of the sections of X and
-# %   the sections of Y are averaged to form Pxx and Pyy, the Power Spectral
-# %   Densities of X and Y respectively. The products of the length NFFT DFTs
-# %   of the sections of X and Y are averaged to form Pxy, the Cross Spectral
-# %   Density of X and Y. The coherence Cxy is given by
-# %       Cxy = (abs(Pxy).^2)./(Pxx.*Pyy)
-# %   Cxy has length NFFT/2+1 for NFFT even, (NFFT+1)/2 for NFFT odd, or NFFT
-# %   if X or Y is complex. If you specify a scalar for WINDOW, a Hanning
-# %   window of that length is used.  Fs is the sampling frequency which does
-# %   not effect the cross spectrum estimate but is used for scaling of plots.
-# %
-# %   [Cxy,F] = COHERE(X,Y,NFFT,Fs,WINDOW,NOVERLAP) returns a vector of freq-
-# %   uencies the same size as Cxy at which the coherence is computed, and
-# %   overlaps the sections of X and Y by NOVERLAP samples.
-# %
-# %   COHERE(X,Y,...,DFLAG), where DFLAG can be 'linear', 'mean' or 'none',
-# %   specifies a detrending mode for the prewindowed sections of X and Y.
-# %   DFLAG can take the place of any parameter in the parameter list
-# %   (besides X and Y) as long as it is last, e.g. COHERE(X,Y,'mean');
-# %
-# %   COHERE with no output arguments plots the coherence in the current
-# %   figure window.
-# %
-# %   The default values for the parameters are NFFT = 256 (or LENGTH(X),
-# %   whichever is smaller), NOVERLAP = 0, WINDOW = HANNING(NFFT), Fs = 2,
-# %   P = .95, and DFLAG = 'none'.  You can obtain a default parameter by
-# %   leaving it off or inserting an empty matrix [], e.g.
-# %   COHERE(X,Y,[],10000).
-# %
-# %   See also PSD, CSD, TFE.
-# %   ETFE, SPA, and ARX in the Identification Toolbox.
-#
-# %   Author(s): T. Krauss, 3-31-93
-# %   Copyright (c) 1988-98 by The MathWorks, Inc.
-# %   $Revision: 1.1 $  $Date: 1998/06/03 14:42:19 $
-
-# helper function for testcases
-def _mycohere(x, y, nfft=256, sample_rate=8000, window=None, noverlap=None, p=.95, dflag='none'):
 
     #error(nargchk(2,7,nargin))
     #x = varargin{1};
