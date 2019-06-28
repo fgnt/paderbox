@@ -275,7 +275,14 @@ class _AxesHandler:
             self.subplot_kwargs = dict()
 
         if 'squeeze' not in self.subplot_kwargs:
+            self.subplot_kwargs = self.subplot_kwargs.copy()
             self.subplot_kwargs['squeeze'] = False
+        elif self.subplot_kwargs['squeeze'] is not False:
+            raise AssertionError(
+                f'The squeeze argument for subplots in'
+                f'{self.__class__.__name__} has to be False.\n'
+                f'Got: squeeze = {self.subplot_kwargs["squeeze"]'
+            )
 
     def get_axes(self, *, row, col):
         while row >= len(self.subplots):
