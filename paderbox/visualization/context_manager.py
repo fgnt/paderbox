@@ -281,7 +281,7 @@ class _AxesHandler:
             raise AssertionError(
                 f'The squeeze argument for subplots in'
                 f'{self.__class__.__name__} has to be False.\n'
-                f'Got: squeeze = {self.subplot_kwargs["squeeze"]'
+                f'Got: squeeze = {self.subplot_kwargs["squeeze"]}'
             )
 
     def get_axes(self, *, row, col):
