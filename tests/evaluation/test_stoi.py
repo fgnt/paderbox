@@ -9,7 +9,7 @@ from paderbox.io.data_dir import testing as testing_dir
 class TestSTOI(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        path = testing_dir('timit', 'data', 'sample_1.wav')
+        path = str(testing_dir / 'timit' / 'data' / 'sample_1.wav')
         cls.x = audioread(path)[0]
         cls.sample_rate = 16000
 
