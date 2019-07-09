@@ -27,7 +27,7 @@ def _get_import_name(py_file, concat='.', return_suffix=False):
     """
     if py_file.stem == '__init__':
         py_file = py_file.parents[0]  # replace __init__.py with package path
-    import_name = concat.join(py_file.parts[py_file.parts.index('nt'):-1] +
+    import_name = concat.join(py_file.parts[py_file.parts.index('paderbox'):-1] +
                               (py_file.stem,)
                               )
     if not return_suffix:
@@ -39,7 +39,7 @@ class TestImport:
     TOOLBOX_PATH = Path(
         inspect.getfile(inspect.currentframe())
     ).absolute().parents[1]
-    NT_PATH = TOOLBOX_PATH / 'nt'
+    NT_PATH = TOOLBOX_PATH / 'paderbox'
 
     python_files = NT_PATH.glob('**/*.py')
     python_files = [py_file for py_file in python_files
