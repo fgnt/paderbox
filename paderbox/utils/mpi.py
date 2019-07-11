@@ -115,9 +115,18 @@ def call_on_master_and_broadcast(func, *args, **kwargs):
     return bcast(result)
 
 
-def map_unordered(func, iterator, progress_bar=False):
+def map_unordered(
+        func,
+        iterable,
+        progress_bar=False,
+        indexable=True,
+
+):
     """
     A master process push tasks to the workers and receives the result.
+    Pushing tasks mean, send an index to the worker and the worker iterates
+    through the iterable until the worker reaches this index.
+
     Required at least 2 mpi processes, but to produce a speedup 3 are required.
     Only rank 0 get the results.
     This map is lazy.
@@ -132,10 +141,10 @@ def map_unordered(func, iterator, progress_bar=False):
 
     if SIZE == 1:
         if progress_bar:
-            yield from tqdm(map(func, iterator))
+            yield from tqdm(map(func, iterable))
             return
         else:
-            yield from map(func, iterator)
+            yield from map(func, iterable)
             return
 
     status = MPI.Status()
@@ -151,7 +160,7 @@ def map_unordered(func, iterator, progress_bar=False):
 
     if RANK == 0:
         i = 0
-        with tqdm(total=len(iterator), disable=not progress_bar) as pbar:
+        with tqdm(total=len(iterable), disable=not progress_bar) as pbar:
             pbar.set_description(f'busy: {workers}')
             while workers > 0:
                 result = COMM.recv(
@@ -178,10 +187,20 @@ def map_unordered(func, iterator, progress_bar=False):
         try:
             COMM.send(None, dest=0, tag=tags.start)
             next_index = COMM.recv(source=0)
-            for i, val in enumerate(iterator):
-                if i == next_index:
+            if indexable:
+                while True:
+                    try:
+                        val = iterable[next_index]
+                    except IndexError:
+                        break
                     result = func(val)
                     COMM.send(result, dest=0, tag=tags.default)
                     next_index = COMM.recv(source=0)
+            else:
+                for i, val in enumerate(iterable):
+                    if i == next_index:
+                        result = func(val)
+                        COMM.send(result, dest=0, tag=tags.default)
+                        next_index = COMM.recv(source=0)
         finally:
             COMM.send(None, dest=0, tag=tags.stop)
