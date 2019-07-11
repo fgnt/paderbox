@@ -552,6 +552,23 @@ def get_stft_center_frequencies(size=1024, sample_rate=16000):
 
 
 class STFT:
+    """
+    Code review (Lukas):
+
+    Please change order of arguments to order in which they are used:
+    1. frame_length
+    2. frame_step
+    3. fft_length
+
+    Please remove `always3d` option since behavior is unclear.
+
+    Please factor out `griffin_lim` to a separate module or function.
+
+    Fix `sampleid2frameid`. Some code is undefined.
+
+    Add doc strings. Especially for `samples2frames` and the similar name. An
+    ID is not an index. Do you mean `sampleindex` or `sample_index`?
+    """
     def __init__(
             self,
             frame_step: int,

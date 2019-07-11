@@ -4,6 +4,7 @@ This module deals with all sorts of acoustic features and transforms.
 from paderbox.transform.module_stft import (
     stft,
     istft,
+    STFT,
     spectrogram,
     stft_to_spectrogram,
     spectrogram_to_energy_per_frame,
