@@ -157,7 +157,10 @@ librispeech = _get_path(
     'NT_LIBRISPEECH_DIR',
     db_dir / 'LibriSpeech'
 )
-
+ham_radio_librispeech = _get_path(
+    'NT_HAM_RADIO_LIBRISPEECH_DIR',
+    db_dir / '/net/db/ham'
+)
 mird = _get_path(
     'NT_MIRD_DIR',
     db_dir / 'Multichannel_Impulse_Response_Database'
