@@ -3,8 +3,8 @@ import soundfile
 
 from paderbox.io import load_audio
 from paderbox.io.audiowrite import dump_audio
-
-from parameterized import parameterized
+    
+import pytest
 
 path = "tmp_audio.wav"
 
@@ -35,7 +35,8 @@ class TestIOAudio:
         assert b.dtype == np.float64
         np.testing.assert_allclose(b, a / 2 ** 15)
 
-    @parameterized(
+
+    @pytest.mark.parametrize("array_dtype, dump_type, dumped_type, load_type, loaded_dtype",
         [
             (np.int16, np.int16, "PCM_16", np.int16, np.int16),
             (np.int32, np.int16, "PCM_16", np.int16, np.int16),
@@ -73,11 +74,11 @@ class TestIOAudio:
     )
     def test_dtype(
         self,
-        array_dtype=np.int16,
-        dump_type=np.int16,
-        dumped_type=np.int16,
-        load_type=np.int16,
-        loaded_dtype=np.int16,
+        array_dtype,
+        dump_type,
+        dumped_type,
+        load_type,
+        loaded_dtype,
     ):
         a = np.array([1, 2, -4, 4], dtype=array_dtype)
         dump_audio(a, path, dtype=dump_type, normalize=False)
