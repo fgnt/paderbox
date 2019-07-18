@@ -4,19 +4,14 @@ import numbers
 import subprocess
 import contextlib
 from os import path
+from cycler import cycler
 
-from distutils.version import LooseVersion
 
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
 import seaborn as sns
 
 from paderbox.visualization.new_cm import cmaps
-
-
-# Still necessary?
-mpl_ge_150 = LooseVersion(mpl.__version__) >= '1.5.0'
 
 
 class DollarFormatter(ScalarFormatter):
@@ -218,19 +213,13 @@ def figure_context(
 
     colors = sns.palettes.color_palette(sns.color_palette(palette))
 
-    if mpl_ge_150:
-        from cycler import cycler
-        mul = len(colors)
-        colors = 4*colors
-        cyl = cycler('color', colors) + cycler(
-            'linestyle', [*mul*['-'], *mul*['--'], *mul*[':'], *mul*['-.']])
-        rc_parameters.update({
-            'axes.prop_cycle': cyl[color_skip:]
-        })
-    else:
-        rc_parameters.update({
-            'axes.prop_cycle': list(colors)[color_skip:]
-        })
+    mul = len(colors)
+    colors = 4*colors
+    cyl = cycler('color', colors) + cycler(
+        'linestyle', [*mul*['-'], *mul*['--'], *mul*[':'], *mul*['-.']])
+    rc_parameters.update({
+        'axes.prop_cycle': cyl[color_skip:]
+    })
 
     rc_parameters.update({
         'patch.facecolor': colors[0]
