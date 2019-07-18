@@ -208,20 +208,13 @@ def figure_context(
     """
     axes_style = sns.axes_style(seaborn_axes_style)
 
-    # TODO: Does not work with mpl 3.0.2
-    # if seaborn_axes_style in ['whitegrid', 'darkgrid']:
-        # ToDo: should this be an option?
-        # Fix non visible minor ticks. Important for log plots.
-        # axes_style_ticks = sns.axes_style('ticks')
-        # axes_style['xtick.minor.size'] = axes_style_ticks['xtick.minor.size']
-        # axes_style['ytick.minor.size'] = axes_style_ticks['ytick.minor.size']
-        # axes_style['xtick.direction'] = 'in'
-        # axes_style['ytick.direction'] = 'in'
-
     rc_parameters = {
         'lines.linewidth': line_width,
-        'figure.figsize': figure_size
+        'figure.figsize': figure_size,
     }
+
+    # Improve grid lines for log plots. Allowed values: minor, major, both.
+    rc_parameters['axes.grid.which'] = 'both'
 
     colors = sns.palettes.color_palette(sns.color_palette(palette))
 
