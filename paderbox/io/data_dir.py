@@ -62,6 +62,10 @@ audioset = _get_path(
     'NT_AUDIOSET_DIR',
     ssd_db_dir / 'AudioSet'
 )
+dcase_2016_task_2 = _get_path(
+    'NT_DCASE_2016_TASK_2_DIR',
+    db_dir / 'DCASE2016'
+)
 dcase_2017_task_3 = _get_path(
     'NT_DCASE_2017_TASK_3_DIR',
     db_dir / 'DCASE2017' / 'Task3'
