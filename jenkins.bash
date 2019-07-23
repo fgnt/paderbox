@@ -3,6 +3,11 @@
 # include common stuff (installation of toolbox, paths, traps, nice level...)
 source "`dirname "$0"`/jenkins_common.bash"
 
+# install pb_bss
+git clone https://github.com/fgnt/pb_bss.git
+pip install --quiet --user -e pb_bss
+pip show pb_bss
+
 # Unittets
 # It seems, that jenkins currentliy does not work with matlab: Error: Segmentation violation
 # pytest ignores all evaluation tests, generate_data_file.py and  import_test.py due to errors
@@ -29,6 +34,8 @@ make --directory=./toolbox/doc/ html
 
 pip freeze > pip.txt
 pip uninstall --quiet --yes paderbox
+
+pip uninstall --quiet --yes pb_bss
 
 # copy html code to lighttpd webserver
 rsync -a --delete-after /var/lib/jenkins/jobs/python_toolbox/workspace/toolbox/doc/build/html/ /var/www/doku/html/python_toolbox/
