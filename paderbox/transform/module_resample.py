@@ -67,6 +67,11 @@ def resample_sox(signal: np.ndarray, *, in_rate, out_rate):
     else:
         raise NotImplementedError(signal.shape)
 
+    # This rescaling is necessary since SOX introduces clipping, when the
+    # input signal is much too large.
+    normalizer = 0.95 / np.max(signal)
+    signal = normalizer * signal
+
     command = [
         'sox',
         '-N',
@@ -102,4 +107,4 @@ def resample_sox(signal: np.ndarray, *, in_rate, out_rate):
     if has_channel:
         signal_resampled = signal_resampled.reshape(channels, -1, order='F')
 
-    return signal_resampled
+    return signal_resampled / normalizer
