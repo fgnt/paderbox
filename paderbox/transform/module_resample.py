@@ -67,9 +67,14 @@ def resample_sox(signal: np.ndarray, *, in_rate, out_rate):
     else:
         raise NotImplementedError(signal.shape)
 
+    assert np.maximum(in_rate / out_rate, out_rate / in_rate) < 10, (
+        'Schmalenstroer recommends limited resampling factor. If you really '
+        'need this, you need to resample in steps.'
+    )
+
     # This rescaling is necessary since SOX introduces clipping, when the
     # input signal is much too large.
-    normalizer = 0.95 / np.max(signal)
+    normalizer = 0.95 / np.max(np.abs(signal))
     signal = normalizer * signal
 
     command = [
