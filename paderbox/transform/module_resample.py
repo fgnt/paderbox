@@ -13,6 +13,12 @@ def resample_sox(signal: np.ndarray, *, in_rate, out_rate):
 
     We assume SoX version v14.4.1.
 
+    SoX does not apply dithering when you do not change the bits per sample.
+    We here fixed input and output bitrate, thus, you are fine.
+
+    SoX automatically does a delay compensation and uses linear filters. This
+    is already a sane choice.
+
     >>> signal = np.array([1, -1, 1, -1], dtype=np.float32)
     >>> resample_sox(signal, in_rate=2, out_rate=1)
     array([ 0.28635263, -0.13530457], dtype=float32)
@@ -69,7 +75,8 @@ def resample_sox(signal: np.ndarray, *, in_rate, out_rate):
 
     assert np.maximum(in_rate / out_rate, out_rate / in_rate) < 10, (
         'Schmalenstroer recommends limited resampling factor. If you really '
-        'need this, you need to resample in steps.'
+        'need this, you need to resample in steps. Up to this point it is '
+        'unclear if sox automatically does multi-stage resampling.'
     )
 
     # This rescaling is necessary since SOX introduces clipping, when the
@@ -77,6 +84,8 @@ def resample_sox(signal: np.ndarray, *, in_rate, out_rate):
     normalizer = 0.95 / np.max(np.abs(signal))
     signal = normalizer * signal
 
+    # See this page for a parameter explanation:
+    # https://explainshell.com/explain?cmd=sox+-N+-V1+--type+f32+--rate+16000+--channels+2+-+--type+f32+--rate+8000+--channels+2+-
     command = [
         'sox',
         '-N',
