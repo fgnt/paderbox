@@ -552,33 +552,15 @@ def get_stft_center_frequencies(size=1024, sample_rate=16000):
 
 
 class STFT:
-    """
-    Code review (Lukas):
-
-    Please change order of arguments to order in which they are used:
-    1. frame_length
-    2. frame_step
-    3. fft_length
-
-    Please remove `always3d` option since behavior is unclear.
-
-    Please factor out `griffin_lim` to a separate module or function.
-
-    Fix `sampleid2frameid`. Some code is undefined.
-
-    Add doc strings. Especially for `samples2frames` and the similar name. An
-    ID is not an index. Do you mean `sampleindex` or `sample_index`?
-    """
     def __init__(
             self,
-            frame_step: int,
-            fft_length: int,
-            frame_length: int = None,
+            shift: int,
+            size: int,
+            window_length: int = None,
             window: str = "blackman",
             symmetric_window: bool=False,
             fading: bool = True,
-            pad: bool = True,
-            always3d: bool = False
+            pad: bool = True
     ):
         """
         Transforms audio data to STFT.
@@ -586,40 +568,46 @@ class STFT:
         from magnitudes using griffin lim algorithm.
 
         Args:
-            frame_step:
-            fft_length:
-            frame_length:
+            shift:
+            size:
+            window_length:
             window:
             symmetric_window:
             fading:
             pad:
-            always3d:
 
         >>> stft = STFT(160, 512)
         >>> audio_data=np.zeros(8000)
         >>> x = stft(audio_data)
         >>> x.shape
         (53, 257)
-        >>> reconstruction = stft.griffin_lim(np.abs(x), iterations=5)
         """
-        self.frame_step = frame_step
-        self.fft_length = fft_length
-        self.frame_length = frame_length if frame_length is not None \
-            else fft_length
+        self.shift = shift
+        self.size = size
+        self.window_length = window_length if window_length is not None \
+            else size
         if isinstance(window, str):
             window = getattr(signal.windows, window)
         self.window = window
         self.symmetric_window = symmetric_window
         self.fading = fading
         self.pad = pad
-        self.always3d = always3d
 
     def __call__(self, x):
+        """
+        Performs stft
+
+        Args:
+            x: time signal
+
+        Returns:
+
+        """
         x = stft(
             x,
-            size=self.fft_length,
-            shift=self.frame_step,
-            window_length=self.frame_length,
+            size=self.size,
+            shift=self.shift,
+            window_length=self.window_length,
             window=self.window,
             symmetric_window=self.symmetric_window,
             axis=-1,
@@ -627,69 +615,69 @@ class STFT:
             pad=self.pad
         )  # (..., T, F)
 
-        if self.always3d:
-            if x.ndim == 2:
-                x = x[None]  # (C, T, F)
-            assert x.ndim == 3
-
         return x
 
     def inverse(self, x):
+        """
+        Computes inverse stft
+
+        Args:
+            x: stft
+
+        Returns:
+
+        """
         #  x: (C, T, F)
         return istft(
             x,
-            size=self.fft_length,
-            shift=self.frame_step,
-            window_length=self.frame_length,
+            size=self.size,
+            shift=self.shift,
+            window_length=self.window_length,
             window=self.window,
             symmetric_window=self.symmetric_window,
             fading=self.fading
         )
 
-    def samples2frames(self, samples):
+    def samples_to_frames(self, samples):
+        """
+        Calculates number of STFT frames from number of samples in time domain.
+
+        Args:
+            samples: Number of samples in time domain.
+
+        Returns:
+            Number of STFT frames.
+
+        """
         return _samples_to_stft_frames(
-            samples, self.frame_length, self.frame_step,
+            samples, self.window_length, self.shift,
             pad=self.pad, fading=self.fading
         )
 
-    def sampleid2frameid(self, sampleid):
-        return sample_id_to_stft_frame_id(
-            sampleid, self.frame_length, self.frame_step, fading=self.fading
-        )
-
-    def frames2samples(self, frames):
-        return _stft_frames_to_samples(
-            frames, self.frame_length, self.frame_step, fading=self.fading
-        )
-
-    def griffin_lim(self, x, iterations=100, verbose=False):
+    def sample_index_to_frame_index(self, sample_index):
         """
+        Calculates the best frame index for a given sample index
 
         Args:
-            x: STFT Magnitudes (..., T, F)
-            iterations:
-            verbose:
+            sample_index:
 
         Returns:
 
         """
-        nframes = x.shape[-2]
-        nsamples = int(self.frames2samples(nframes))
-        # Initialize the reconstructed signal.
-        audio = np.random.randn(nsamples)
-        n = iterations  # number of iterations of Griffin-Lim algorithm.
-        while n > 0:
-            n -= 1
-            reconstruction_stft = self(audio)
-            reconstruction_magnitude = np.abs(reconstruction_stft)
-            reconstruction_angle = np.angle(reconstruction_stft)
-            # Discard magnitude part of the reconstruction and use the supplied
-            # magnitude spectrogram instead.
-            diff = (np.sqrt(np.mean((reconstruction_magnitude - x) ** 2)))
-            proposal_spec = x * np.exp(1.0j * reconstruction_angle)
-            audio = self.inverse(proposal_spec)
+        return sample_index_to_stft_frame_index(
+            sample_index, self.window_length, self.shift, fading=self.fading
+        )
 
-            if verbose:
-                print('Reconstruction iteration: {}/{} RMSE: {} '.format(
-                    iterations - n, iterations, diff))
-        return audio
+    def frames_to_samples(self, frames):
+        """
+        Calculates samples in time domain from STFT frames
+
+        Args:
+            frames: number of frames in STFT
+
+        Returns: number of samples in time signal
+
+        """
+        return _stft_frames_to_samples(
+            frames, self.window_length, self.shift, fading=self.fading
+        )
