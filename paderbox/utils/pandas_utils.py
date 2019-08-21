@@ -5,18 +5,15 @@ import pandas as pd
 
 
 def py_query(
-        data: pd.DataFrame, query, use_pd_query=False, allow_empty_result=False
+        data: pd.DataFrame,
+        query,
+        use_pd_query=False,
+        allow_empty_result=False,
+        setup_code='',
 ):
     """
-    Alternative: pd.DataFrame.query: supports a subset of this function,
-                                     but is faster
-
-    query:
-        str or list of str
-        If list of str the strings get join by a logical and to be a str.
-        For examples see doctest.
-    use_pd_query:
-        Pandas query is much faster but limited
+    Alternative: pd.DataFrame.query:
+        supports a subset of this function, but is faster
 
     >>> df = pd.DataFrame([{'a': 1, 'b': 2}, {'a': 3, 'b': 4}])
     >>> df
@@ -35,6 +32,18 @@ def py_query(
     >>> py_query(df, ['int(a) == 1', 'b == 2'])
        a  b
     0  1  2
+
+    Args:
+        data:
+        query: str or list of str. If list of str the strings get join by a
+            logical and to be a str. For examples see doctest.
+        use_pd_query:  Pandas query is much faster but limited
+        allow_empty_result:
+        setup_code: Additional code which runs before the query conditions.
+            You may use this for additional imports.
+
+    Returns:
+
     """
     if query is False:
         return data
@@ -64,6 +73,7 @@ def py_query(
     d = {}
     code = f"""
 def func({', '.join(list(data))}):
+    {setup_code}
     return {query}
 """
     try:
@@ -72,7 +82,6 @@ def func({', '.join(list(data))}):
     except Exception as e:
         raise Exception(code) from e
 
-    # selection = [d['func'](**data.iloc[i]) for i in range(len(data.index))]
     selection = data.apply(lambda row: func(**row), axis=1)
     data = data[selection]
 
