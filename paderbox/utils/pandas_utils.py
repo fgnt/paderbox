@@ -32,11 +32,18 @@ def py_query(
     >>> py_query(df, ['int(a) == 1', 'b == 2'])
        a  b
     0  1  2
+    >>> py_query(df, ['index == 1'])  # get second row
+       a  b
+    1  3  4
+    >>> py_query(df, ['index == 1'], use_pd_query=True)
+       a  b
+    1  3  4
 
     Args:
         data:
         query: str or list of str. If list of str the strings get join by a
             logical and to be a str. For examples see doctest.
+             Note: Use index to get access to the index.
         use_pd_query:  Pandas query is much faster but limited
         allow_empty_result:
         setup_code: Additional code which runs before the query conditions.
@@ -72,7 +79,7 @@ def py_query(
 
     d = {}
     code = f"""
-def func({', '.join(list(data))}):
+def func({', '.join(['index'] + list(data))}):
     {setup_code}
     return {query}
 """
@@ -82,7 +89,7 @@ def func({', '.join(list(data))}):
     except Exception as e:
         raise Exception(code) from e
 
-    selection = data.apply(lambda row: func(**row), axis=1)
+    selection = data.apply(lambda row: func(row.name, **row), axis=1)
     data = data[selection]
 
     assert allow_empty_result or len(data) > 0, len(data)
