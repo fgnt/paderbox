@@ -347,6 +347,7 @@ def lorenz_mask(
         axis=(-2, -1),
         lorenz_fraction: float=0.98,
         weight: float=0.999,
+        keepdims: bool=False
 ) -> np.ndarray:
     """ Calculate softened mask according to Lorenz function criterion.
 
@@ -399,7 +400,13 @@ def lorenz_mask(
 
     mask = 0.5 + weight * (mask - 0.5)
 
-    return np.moveaxis(mask.reshape(shape), tmp_axis, axis)
+    # Reverts effect of moving relevant axes to the last two axes.
+    mask = np.moveaxis(mask.reshape(shape), tmp_axis, axis)
+
+    if sensor_axis is not None and not keepdims:
+        mask = np.squeeze(mask, sensor_axis)
+
+    return mask
 
 
 def quantile_mask(
