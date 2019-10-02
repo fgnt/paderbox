@@ -140,6 +140,7 @@ def wiener_like_mask(
         source_axis: int=0,
         sensor_axis: Optional[int]=None,
         eps: float=EPS,
+        keepdims: bool=False
 ) -> np.ndarray:
     """
 
@@ -171,7 +172,7 @@ def wiener_like_mask(
 
     mask /= mask.sum(source_axis, keepdims=True) + eps
 
-    if sensor_axis is not None:
+    if sensor_axis is not None and not keepdims:
         mask = np.squeeze(mask, sensor_axis)
 
     return mask
@@ -206,18 +207,15 @@ def ideal_ratio_mask(
         array([ 1.])
     """
     signal = np.asarray(signal)
-    components = signal.shape[source_axis]
-    # np.testing.assert_equal(components, 2,
-    #                         'Only works for one speaker and noise.')
 
-    np.testing.assert_equal(sensor_axis, None, """
+    assert sensor_axis is None, """
 How to handle sensor_axis is not defined.
 Possible ways to handle it:
-    signal = signal.abs().sum(sensor_axis)
+    signal = signal.abs().sum(sensor_axis)  # problem, because signal is real
     signal = signal.sum(sensor_axis)
-    signal = (signal**2).abs().sum(sensor_axis).sqrt()
+    signal = (signal**2).abs().sum(sensor_axis).sqrt()  # problem, because signal is real
 But this destroys the signal, which is complex.
-""")
+"""
 
     mask = np.abs(signal)
 
@@ -262,14 +260,14 @@ def ideal_amplitude_mask(
         array([ 1.])
     """
     signal = np.asarray(signal)
-    np.testing.assert_equal(sensor_axis, None, """
+    assert sensor_axis is None, """
 How to handle sensor_axis is not defined.
 Possible ways to handle it:
-    signal = signal.abs().sum(sensor_axis)
+    signal = signal.abs().sum(sensor_axis)  # problem, because signal is real
     signal = signal.sum(sensor_axis)
-    signal = (signal**2).abs().sum(sensor_axis).sqrt()
+    signal = (signal**2).abs().sum(sensor_axis).sqrt()  # problem, because signal is real
 But this destroys the signal, which is complex.
-""")
+"""
 
     amplitude = np.abs(signal)
     amplitude_of_sum = np.abs(np.sum(signal, source_axis, keepdims=True))
@@ -296,14 +294,14 @@ def phase_sensitive_mask(
 
     """
     signal = np.asarray(signal)
-    np.testing.assert_equal(sensor_axis, None, """
+    assert sensor_axis is None, """
 How to handle sensor_axis is not defined.
 Possible ways to handle it:
     signal = signal.abs().sum(sensor_axis)  # problem, because signal is real
     signal = signal.sum(sensor_axis)
     signal = (signal**2).abs().sum(sensor_axis).sqrt()  # problem, because signal is real
 But this destroys the signal, which is complex.
-""")
+"""
 
     observed_signal = np.sum(signal, axis=source_axis, keepdims=True)
     theta = np.angle(signal) - np.angle(observed_signal)
@@ -327,14 +325,14 @@ def ideal_complex_mask(
 
     """
     signal = np.asarray(signal)
-    np.testing.assert_equal(sensor_axis, None, """
+    assert sensor_axis is None, """
 How to handle sensor_axis is not defined.
 Possible ways to handle it:
     signal = signal.abs().sum(sensor_axis)  # problem, because signal is real
     signal = signal.sum(sensor_axis)
     signal = (signal**2).abs().sum(sensor_axis).sqrt()  # problem, because signal is real
 But this destroys the signal, which is complex.
-""")
+"""
 
     observed_signal = np.sum(signal, axis=source_axis, keepdims=True)
     return signal / observed_signal
@@ -347,7 +345,7 @@ def lorenz_mask(
         axis=(-2, -1),
         lorenz_fraction: float=0.98,
         weight: float=0.999,
-        keepdims: bool=False
+        keepdims: bool=False,
 ) -> np.ndarray:
     """ Calculate softened mask according to Lorenz function criterion.
 
@@ -361,6 +359,7 @@ def lorenz_mask(
         axis: time_axis and/or frequency_axis
         lorenz_fraction: Fraction of observations which are rated down
         weight: Governs the influence of the mask
+        keepdims:
 
     Returns:
 
@@ -432,6 +431,15 @@ def quantile_mask(
     """
     signal = np.abs(signal)
 
+    assert sensor_axis is None, """
+How to handle sensor_axis is not defined.
+Possible ways to handle it:
+    signal = signal.abs().sum(sensor_axis)  # problem, because signal is real
+    signal = signal.sum(sensor_axis)
+    signal = (signal**2).abs().sum(sensor_axis).sqrt()  # problem, because signal is real
+But this destroys the signal, which is complex.
+"""
+
     if isinstance(quantile, (tuple, list)):
         return np.array([quantile_mask(
             signal=signal,
@@ -473,8 +481,6 @@ def quantile_mask(
     # Restore original shape
     mask = np.moveaxis(mask.reshape(shape), tmp_axis, axis)
 
-    if sensor_axis is not None:
-        mask = np.squeeze(mask, axis=sensor_axis)
     return mask
 
 
@@ -490,14 +496,9 @@ def biased_binary_mask(
         low_cut: int=5,
         high_cut: int=500,
 ) -> np.ndarray:
-    """
-
-
-    """
     signal = np.asarray(signal)
     components = signal.shape[component_axis]
-    np.testing.assert_equal(components, 2,
-                            'Only works for one speaker and noise.')
+    assert components == 2, 'Only works for one speaker and noise.'
 
     voiced, unvoiced = voiced_unvoiced_split_characteristic(signal.shape[frequency_axis])
 
