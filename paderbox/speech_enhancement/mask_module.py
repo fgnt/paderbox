@@ -29,8 +29,7 @@ All other axes are regarded as independent dimensions.
 # TODO:  - nt/speech_enhancement/merl_masks.py
 # TODO:  - nt/speech_enhancement/mask_estimation.py
 # TODO: Add test-case for LorenzMask
-# CB: Eventuell einen Dekorator nutzen für force signal np.ndarray?
-# CB: Eventuell einen Dekorator nutzen für force signal.real.dtype == return.dtype?
+
 import numpy as np
 from typing import Optional
 from paderbox.math.misc import abs_square
