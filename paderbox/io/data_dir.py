@@ -110,6 +110,10 @@ merl_mixtures = _get_path(
     'NT_MERL_MIXTURES_DIR',
     fast_db_dir / 'merl_speaker_mixtures'
 )
+wham = _get_path(
+    'NT_WHAM_DIR',
+    db_dir / 'wham'
+)
 german_speechdata = _get_path(
     'NT_GERMAN_SPEECHDATA_DIR',
     '/net/storage/jheymann/speech_db/german-speechdata-package-v2/'
