@@ -174,6 +174,13 @@ mird = _get_path(
     db_dir / 'Multichannel_Impulse_Response_Database'
 )
 
+dipco = _get_path(
+    'NT_DIPCO_DIR',
+    Path('/net/vol/boeddeker/share/DiPCo/DiPCo')
+    # db_dir / 'DiPCo'
+)
+
+
 if __name__ == "__main__":
     import doctest
 
