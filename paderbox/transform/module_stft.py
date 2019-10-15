@@ -424,6 +424,8 @@ def istft(
         fading: bool=True,
         window_length: int=None,
         symmetric_window: bool=False,
+        num_samples: int=None,
+        pad: bool=True,
 ):
     """
     Calculated the inverse short time Fourier transform to exactly reconstruct
@@ -447,6 +449,14 @@ def istft(
         periodic. Since the implementation of the windows in scipy.signal have a
         curious behaviour for odd window_length. Use window(len+1)[:-1]. Since
         is equal to the behaviour of MATLAB.
+    :param num_samples: None or the number of samples that the original time
+        signal has. When given, check, that the backt transformed signal
+        has a valid number of samples and shorten the signal to the original
+        length. (Does only work when pad is True).
+    :param pad: Necessary when num_samples is not None. This arguments is only
+        for the forward transform nessesary and not for the inverse.
+        Here it is used, to check that num_samples is valid.
+
     :return: Single channel complex STFT signal
     :return: Single channel time signal.
     """
@@ -492,6 +502,18 @@ def istft(
     if fading:
         time_signal = time_signal[
             ..., window_length - shift:time_signal.shape[-1] - (window_length - shift)]
+
+    if num_samples is not None:
+        if pad:
+            assert time_signal.shape[-1] >= num_samples, (time_signal.shape, num_samples)
+            assert time_signal.shape[-1] < num_samples + shift, (time_signal.shape, num_samples)
+            time_signal = time_signal[..., :num_samples]
+        else:
+            raise ValueError(
+                pad,
+                'When padding is False in the stft, the signal is cutted.'
+                'This operation can not be inverted.',
+            )
 
     return time_signal
 
