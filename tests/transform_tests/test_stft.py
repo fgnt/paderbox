@@ -100,6 +100,21 @@ class TestSTFTMethods(unittest.TestCase):
         tc.assert_almost_equal(x, istft(X, 1024, 256)[:len(x)])
         tc.assert_equal(X.shape, (186, 513))
 
+    def test_restore_time_signal_from_stft_and_istft_with_num_samples(self):
+        x = self.x
+        X = stft(x)
+
+        tc.assert_almost_equal(x, istft(X, 1024, 256, num_samples=len(x)))
+        tc.assert_equal(X.shape, (186, 513))
+
+    def test_restore_time_signal_with_str_window(self):
+        x = self.x
+        X = stft(x, window='hann')
+
+        tc.assert_almost_equal(
+            x, istft(X, 1024, 256, window='hann', num_samples=len(x)))
+        tc.assert_equal(X.shape, (186, 513))
+
     def test_restore_time_signal_from_stft_and_istft_kaldi_params(self):
         x = self.x
         X = stft(x, size=400, shift=160)
