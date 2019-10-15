@@ -9,6 +9,7 @@ import numpy as np
 from numpy.fft import rfft, irfft
 from paderbox.utils.numpy_utils import roll_zeropad
 from paderbox.utils.numpy_utils import segment_axis_v2
+from paderbox.utils.mapping import Dispatcher
 from scipy import signal
 
 
@@ -18,11 +19,11 @@ def stft(
         shift: int=256,
         *,
         axis=-1,
-        window: typing.Callable=signal.blackman,
+        window: [str, typing.Callable]=signal.blackman,
         window_length: int=None,
         fading: bool=True,
         pad: bool=True,
-        symmetric_window: bool=False
+        symmetric_window: bool=False,
 ) -> np.array:
     """
     ToDo: Open points:
@@ -68,11 +69,11 @@ def stft(
         pad_width[axis, :] = window_length - shift
         time_signal = np.pad(time_signal, pad_width, mode='constant')
 
-    if symmetric_window:
-        window = window(window_length)
-    else:
-        # https://github.com/scipy/scipy/issues/4551
-        window = window(window_length + 1)[:-1]
+    window = _get_window(
+        window=window,
+        symmetric_window=symmetric_window,
+        window_length=window_length,
+    )
 
     time_signal_seg = segment_axis_v2(
         time_signal,
@@ -90,7 +91,7 @@ def stft(
         return rfft(
             np.einsum(mapping, time_signal_seg, window),
             n=size,
-            axis=axis + 1
+            axis=axis + 1,
         )
     except ValueError as e:
         raise ValueError(
@@ -144,6 +145,57 @@ def stft_with_kaldi_dimensions(
         pad=False,
         symmetric_window=symmetric_window
     )
+
+
+_window_dispatcher = Dispatcher({
+    'blackman': signal.windows.blackman,
+    'hann': signal.windows.hann,
+    'boxcar': signal.windows.boxcar,
+    'triang': signal.windows.triang,
+    'hamming':  signal.windows.hamming,
+    'parzen': signal.windows.parzen,
+    'cosine': signal.windows.cosine,
+    'blackmanharris': signal.windows.blackmanharris,
+    'flattop': signal.windows.flattop,
+    'tukey': signal.windows.tukey,
+    'bartlett': signal.windows.bartlett,
+    'bohman': signal.windows.bohman,
+    # 'kaiser2': functools.partial(signal.windows.kaiser, beta=2),
+    # 'kaiser3': functools.partial(signal.windows.kaiser, beta=2),
+})
+
+
+def _get_window(window, symmetric_window, window_length):
+    """Returns the window.
+
+    Args:
+        window: callable or str
+        symmetric_window:
+        window_length:
+
+    Returns:
+        1D Array of length window_length.
+
+    >>> _get_window('hann', False, 4)  # common stft window
+    array([0. , 0.5, 1. , 0.5])
+    >>> _get_window('hann', True, 4)  # uncommon stft window, common for filter
+    array([0.  , 0.75, 0.75, 0.  ])
+    """
+    
+    if callable(window):
+        pass
+    elif isinstance(window, str):
+        window = _window_dispatcher[window]
+    else:
+        raise TypeError(window)
+
+    if symmetric_window:
+        window = window(window_length)
+    else:
+        # https://github.com/scipy/scipy/issues/4551
+        window = window(window_length + 1)[:-1]
+
+    return window
 
 
 def _samples_to_stft_frames(
@@ -240,6 +292,7 @@ def _stft_frames_to_samples(
 def sample_index_to_stft_frame_index(sample, window_length, shift, fading=True):
     """
     Calculates the best frame index for a given sample index
+
     :param sample: Sample index in time domain.
     :param size: FFT size.
     :param shift: Hop in samples.
@@ -420,7 +473,7 @@ def istft(
         size: int=1024,
         shift: int=256,
         *,
-        window: typing.Callable=signal.blackman,
+        window: [str, typing.Callable]=signal.blackman,
         fading: bool=True,
         window_length: int=None,
         symmetric_window: bool=False,
@@ -469,10 +522,11 @@ def istft(
     if window_length is None:
         window_length = size
 
-    if symmetric_window:
-        window = window(window_length)
-    else:
-        window = window(window_length + 1)[:-1]
+    window = _get_window(
+        window=window,
+        symmetric_window=symmetric_window,
+        window_length=window_length,
+    )
 
     window = _biorthogonal_window_fastest(window, shift)
 
