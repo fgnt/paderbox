@@ -19,7 +19,7 @@ def code_replace(source, cell_type='code'):
     """
 
     Args:
-        source: solutio code
+        source: solution code
         cell_type: 'code', 'markdown' or 'raw'
 
     Returns:
@@ -105,7 +105,7 @@ def nb_replace(old_path, new_path, force=False):
     nb = nbformat.read(str(old_path), nbformat.NO_CONVERT)
 
     replacements = 0
-    for i, cell in enumerate(nb['cells']):
+    for _, cell in enumerate(nb['cells']):
         cell_source = code_replace(cell['source'], cell['cell_type'])
         if cell_source != cell['source']:
             replacements += 1
@@ -116,6 +116,7 @@ def nb_replace(old_path, new_path, force=False):
 
 
 def entry_point():
+    """Used by Fire library to create a sourceript."""
     fire.Fire(nb_replace)
 
 
