@@ -71,7 +71,7 @@ def code_replace(source, cell_type='code'):
     return source
 
 
-def nb_replace(old_path, new_path):
+def nb_replace(old_path, new_path, force=False):
     """Remove the solution from a Jupyter notebook.
 
     For example, assume the following line is in a notebook:
@@ -99,7 +99,8 @@ def nb_replace(old_path, new_path):
     assert old_path.is_file(), f'{old_path} is not a file.'
     assert old_path.name.endswith('_solution.ipynb'), old_path
     assert new_path.name.endswith('_template.ipynb'), new_path
-    assert not new_path.is_file(), f'{new_path} already exists.'
+    if not force and new_path.is_file():
+        raise FileExistsError(f'{new_path} already exists.')
 
     nb = nbformat.read(str(old_path), nbformat.NO_CONVERT)
 
