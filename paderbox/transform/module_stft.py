@@ -21,7 +21,7 @@ def stft(
         axis=-1,
         window: [str, typing.Callable]=signal.blackman,
         window_length: int=None,
-        fading: bool=True,
+        fading: str = 'full',
         pad: bool=True,
         symmetric_window: bool=False,
 ) -> np.array:
@@ -64,9 +64,15 @@ def stft(
         window_length = size
 
     # Pad with zeros to have enough samples for the window function to fade.
-    if fading:
+    assert fading in [None, True, False, 'full', 'half'], fading
+    fading = fading if not isinstance(fading, bool) else 'full' if fading else None
+    if fading is not None:
         pad_width = np.zeros((time_signal.ndim, 2), dtype=np.int)
-        pad_width[axis, :] = window_length - shift
+        if fading == 'half':
+            pad_width[axis, 0] = (window_length - shift) // 2
+            pad_width[axis, 1] = ceil((window_length - shift) / 2)
+        else:
+            pad_width[axis, :] = window_length - shift
         time_signal = np.pad(time_signal, pad_width, mode='constant')
 
     window = _get_window(
@@ -141,7 +147,7 @@ def stft_with_kaldi_dimensions(
         axis=axis,
         window=window,
         window_length=window_length,
-        fading=False,
+        fading=None,
         pad=False,
         symmetric_window=symmetric_window
     )
@@ -204,7 +210,7 @@ def _samples_to_stft_frames(
         shift,
         *,
         pad=True,
-        fading=False,
+        fading=None,
 ):
     """
     Calculates number of STFT frames from number of samples in time domain.
@@ -228,18 +234,18 @@ def _samples_to_stft_frames(
     >>> _samples_to_stft_frames(21, 16, 4)
     3
 
-    >>> stft(np.zeros(19), 16, 4, fading=False).shape
+    >>> stft(np.zeros(19), 16, 4, fading=None).shape
     (2, 9)
-    >>> stft(np.zeros(20), 16, 4, fading=False).shape
+    >>> stft(np.zeros(20), 16, 4, fading=None).shape
     (2, 9)
-    >>> stft(np.zeros(21), 16, 4, fading=False).shape
+    >>> stft(np.zeros(21), 16, 4, fading=None).shape
     (3, 9)
 
-    >>> _samples_to_stft_frames(19, 16, 4, fading=True)
+    >>> _samples_to_stft_frames(19, 16, 4, fading='full')
     8
-    >>> _samples_to_stft_frames(20, 16, 4, fading=True)
+    >>> _samples_to_stft_frames(20, 16, 4, fading='full')
     8
-    >>> _samples_to_stft_frames(21, 16, 4, fading=True)
+    >>> _samples_to_stft_frames(21, 16, 4, fading='full')
     9
 
     >>> stft(np.zeros(19), 16, 4).shape
@@ -249,17 +255,21 @@ def _samples_to_stft_frames(
     >>> stft(np.zeros(21), 16, 4).shape
     (9, 9)
 
-    >>> _samples_to_stft_frames(21, 16, 3, fading=True)
+    >>> _samples_to_stft_frames(21, 16, 3, fading='full')
     12
     >>> stft(np.zeros(21), 16, 3).shape
     (12, 9)
     >>> _samples_to_stft_frames(21, 16, 3)
     3
-    >>> stft(np.zeros(21), 16, 3, fading=False).shape
+    >>> stft(np.zeros(21), 16, 3, fading=None).shape
     (3, 9)
     """
-    if fading:
-        samples = samples + 2 * (size - shift)
+
+    assert fading in [None, True, False, 'full', 'half'], fading
+    fading = fading if not isinstance(fading, bool) else 'full' if fading else None
+    if fading is not None:
+        pad_width = (size - shift)
+        samples = samples + (1 + (fading == 'full')) * pad_width
 
     # I changed this from np.ceil to math.ceil, to yield an integer result.
     frames = (samples - size + shift) / shift
@@ -269,7 +279,7 @@ def _samples_to_stft_frames(
 
 
 def _stft_frames_to_samples(
-        frames, size, shift, fading=False
+        frames, size, shift, fading=None
 ):
     """
     Calculates samples in time domain from STFT frames
@@ -284,12 +294,16 @@ def _stft_frames_to_samples(
     20
     """
     samples = frames * shift + size - shift
-    if fading:
-        samples -= 2*(size - shift)
+
+    assert fading in [None, True, False, 'full', 'half'], fading
+    fading = fading if not isinstance(fading, bool) else 'full' if fading else None
+    if fading is not None:
+        pad_width = (size - shift)
+        samples -= (1 + (fading == 'full')) * pad_width
     return samples
 
 
-def sample_index_to_stft_frame_index(sample, window_length, shift, fading=True):
+def sample_index_to_stft_frame_index(sample, window_length, shift, fading='full'):
     """
     Calculates the best frame index for a given sample index
 
@@ -320,22 +334,22 @@ def sample_index_to_stft_frame_index(sample, window_length, shift, fading=True):
     ## ## ## #
     00 00 01 12 23 34 45
 
-    >>> [sample_id_to_stft_frame_id(i, 8, 1, fading=False) for i in range(12)]
+    >>> [sample_index_to_stft_frame_index(i, 8, 1, fading=None) for i in range(12)]
     [0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8]
-    >>> [sample_id_to_stft_frame_id(i, 8, 2, fading=False) for i in range(10)]
+    >>> [sample_index_to_stft_frame_index(i, 8, 2, fading=None) for i in range(10)]
     [0, 0, 0, 0, 1, 1, 2, 2, 3, 3]
-    >>> [sample_id_to_stft_frame_id(i, 7, 2, fading=False) for i in range(10)]
+    >>> [sample_index_to_stft_frame_index(i, 7, 2, fading=None) for i in range(10)]
     [0, 0, 0, 0, 1, 1, 2, 2, 3, 3]
-    >>> [sample_id_to_stft_frame_id(i, 7, 1, fading=False) for i in range(10)]
+    >>> [sample_index_to_stft_frame_index(i, 7, 1, fading=None) for i in range(10)]
     [0, 0, 0, 0, 1, 2, 3, 4, 5, 6]
 
-    >>> [sample_id_to_stft_frame_id(i, 8, 1, fading=True) for i in range(12)]
+    >>> [sample_index_to_stft_frame_index(i, 8, 1, fading='full') for i in range(12)]
     [7, 7, 7, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-    >>> [sample_id_to_stft_frame_id(i, 8, 2, fading=True) for i in range(10)]
+    >>> [sample_index_to_stft_frame_index(i, 8, 2, fading='full') for i in range(10)]
     [3, 3, 3, 3, 4, 4, 5, 5, 6, 6]
-    >>> [sample_id_to_stft_frame_id(i, 7, 2, fading=True) for i in range(10)]
+    >>> [sample_index_to_stft_frame_index(i, 7, 2, fading='full') for i in range(10)]
     [3, 3, 3, 3, 4, 4, 5, 5, 6, 6]
-    >>> [sample_id_to_stft_frame_id(i, 7, 1, fading=True) for i in range(10)]
+    >>> [sample_index_to_stft_frame_index(i, 7, 1, fading='full') for i in range(10)]
     [6, 6, 6, 6, 7, 8, 9, 10, 11, 12]
 
     >>> stft(np.zeros([8]), size=8, shift=2).shape
@@ -351,8 +365,13 @@ def sample_index_to_stft_frame_index(sample, window_length, shift, fading=True):
     else:
         frame = (sample - (window_length + 1) // 2) // shift + 1
 
-    if fading:
-        frame = frame + ceil((window_length - shift) / shift)
+    assert fading in [None, True, False, 'full', 'half'], fading
+    fading = fading if not isinstance(fading, bool) else 'full' if fading else None
+    if fading is not None:
+        pad_width = (window_length - shift)
+        if fading == 'half':
+            pad_width //= 2
+        frame = frame + ceil(pad_width / shift)
 
     return frame
 
@@ -437,10 +456,10 @@ def _biorthogonal_window_brute_force(analysis_window, shift,
 
     >>> analysis_window = signal.blackman(4+1)[:-1]
     >>> print(analysis_window)
-    [ -1.38777878e-17   3.40000000e-01   1.00000000e+00   3.40000000e-01]
+    [-1.38777878e-17  3.40000000e-01  1.00000000e+00  3.40000000e-01]
     >>> synthesis_window = _biorthogonal_window_brute_force(analysis_window, 1)
     >>> print(synthesis_window)
-    [ -1.12717575e-17   2.76153346e-01   8.12215724e-01   2.76153346e-01]
+    [-1.12717575e-17  2.76153346e-01  8.12215724e-01  2.76153346e-01]
     >>> mult = analysis_window * synthesis_window
     >>> sum(mult)
     1.0000000000000002
@@ -474,7 +493,7 @@ def istft(
         shift: int=256,
         *,
         window: [str, typing.Callable]=signal.blackman,
-        fading: bool=True,
+        fading: str=None,
         window_length: int=None,
         symmetric_window: bool=False,
         num_samples: int=None,
@@ -553,9 +572,15 @@ def istft(
     # The [..., :window_length] is the inverse of the window padding in rfft.
 
     # Compensate fade-in and fade-out
-    if fading:
+
+    assert fading in [None, True, False, 'full', 'half'], fading
+    fading = fading if not isinstance(fading, bool) else 'full' if fading else None
+    if fading is not None:
+        pad_width = (window_length - shift)
+        if fading == 'half':
+            pad_width /= 2
         time_signal = time_signal[
-            ..., window_length - shift:time_signal.shape[-1] - (window_length - shift)]
+            ..., int(pad_width):time_signal.shape[-1] - ceil(pad_width)]
 
     if num_samples is not None:
         if pad:
@@ -634,9 +659,9 @@ class STFT:
             size: int,
             window_length: int = None,
             window: str = "blackman",
-            symmetric_window: bool=False,
-            fading: bool = True,
-            pad: bool = True
+            symmetric_window: bool = False,
+            pad: bool = True,
+            fading: str = 'full'
     ):
         """
         Transforms audio data to STFT.
@@ -652,7 +677,7 @@ class STFT:
             fading:
             pad:
 
-        >>> stft = STFT(160, 512)
+        >>> stft = STFT(160, 512, fading='full')
         >>> audio_data=np.zeros(8000)
         >>> x = stft(audio_data)
         >>> x.shape
