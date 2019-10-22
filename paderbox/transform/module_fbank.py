@@ -20,10 +20,9 @@ class MelTransform:
             sample_rate: int,
             fft_length: int,
             n_mels: Optional[int] = 40,
-            fmin: Optional[int] = 20,
+            fmin: Optional[int] = 50,
             fmax: Optional[int] = None,
-            log: bool = True,
-            always3d: bool = False
+            log: bool = True
     ):
         """
         Transforms linear spectrogram to (log) mel spectrogram.
@@ -35,7 +34,6 @@ class MelTransform:
             fmin: lowest frequency (onset of first filter)
             fmax: highest frequency (offset of last filter)
             log: apply log to mel spectrogram
-            always3d: always return 3d array (C, T, F)
 
         >>> mel_transform = MelTransform(16000, 512)
         >>> spec = np.zeros((100, 257))
@@ -52,7 +50,6 @@ class MelTransform:
         self.fmin = fmin
         self.fmax = fmax
         self.log = log
-        self.always3d = always3d
 
     @cached_property
     def fbanks(self):
@@ -76,11 +73,7 @@ class MelTransform:
     def __call__(self, x):
         x = np.dot(x, self.fbanks)
         if self.log:
-            x = np.log(np.maximum(x, 1e-18))
-        if self.always3d:
-            if x.ndim == 2:
-                x = x[None]
-            assert x.ndim == 3
+            x = np.log(x + 1e-18)
         return x
 
     def inverse(self, x):
