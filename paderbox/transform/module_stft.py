@@ -493,7 +493,7 @@ def istft(
         shift: int=256,
         *,
         window: [str, typing.Callable]=signal.blackman,
-        fading: str=None,
+        fading: str='full',
         window_length: int=None,
         symmetric_window: bool=False,
         num_samples: int=None,
