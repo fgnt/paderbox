@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 """
 Run this either with
 $ python -m paderbox.utils.strip_solution name_template.ipynb name_solution.ipynb
