@@ -53,7 +53,7 @@ def load_audio(
 
     Parameters
     ----------
-    file : str or int or file-like object
+    path : str or int or file-like object
         The file to read from.  See :class:`SoundFile` for details.
     frames : int, optional
         The number of frames to read. If `frames` is negative, the whole
