@@ -23,6 +23,14 @@ def timefunc(func):
 
 
 def cprun(func_or_str='tottime'):
+    """
+    decorator for the cProfile profiler
+    Args:
+        func_or_str: 
+
+    Returns:
+
+    """
     if isfunction(func_or_str):
         def profiled_func(*args, **kwargs):
             profile = cProfile.Profile()
