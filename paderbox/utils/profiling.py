@@ -10,6 +10,9 @@ from functools import wraps
 
 
 def timefunc(func):
+    """
+    decorator to measure the execution time of the decorated function.
+    """
     def profiled_func(*args, **kwargs):
         start = time.time()
         result = func(*args, **kwargs)
@@ -48,7 +51,7 @@ def cprun(func_or_str='tottime'):
 
 def gprun(func):
     """
-    graph profiling
+    graph profiling, visualizes the decorated function with a call graph
     :param func:
     :return:
     """
@@ -59,6 +62,16 @@ def gprun(func):
 
 
 def lprun(func_or_list=list()):
+    """
+    line profiling, enabling the user to profile a function not decorated, itself.
+    Useful to observe the behaviour of functions without calling them directly.
+
+    Args:
+        func_or_list: list of functions to observe in the decorated function
+
+    Returns: line-by-line analysis of the profiled functions
+
+    """
     if isfunction(func_or_list):
         @wraps(func_or_list)
         def profiled_func(*args, **kwargs):
@@ -96,6 +109,15 @@ def lprun(func_or_list=list()):
 
 
 def mprun(func_or_list=list()):
+    """
+    memory profiler, line-by-line profiling of the memory usage in a
+    likewise manner as lprun
+    Args:
+        func_or_list:
+
+    Returns:
+
+    """
     if isfunction(func_or_list):
         def profiled_func(*args, **kwargs):
             profiler = memory_profiler.LineProfiler()
