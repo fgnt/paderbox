@@ -1,11 +1,14 @@
+import sys
+import os
+from pathlib import Path
+
 from IPython.display import display
 from IPython.display import Audio
-from scipy import signal
-from paderbox.transform import istft
 import numpy as np
-import os
+from scipy import signal
+
 from paderbox.io.audioread import load_audio
-from pathlib import Path
+from paderbox.transform import istft
 
 
 class NamedAudio(Audio):
@@ -136,3 +139,11 @@ def play(
         na = NamedAudio(data, rate=sample_rate)
         na.name = name
         display(na)
+
+
+# Allows to use `paderbox.io.play` instead of `paderbox.io.play.play`
+class MyModule(sys.modules[__name__].__class__):
+    __call__ = staticmethod(play)
+
+
+sys.modules[__name__].__class__ = MyModule
