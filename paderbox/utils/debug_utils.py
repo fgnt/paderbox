@@ -19,7 +19,8 @@ def is_ipython():
 
 class debug_on(contextlib.suppress):
     """
-
+    Enters the debugger automatically if an exception occurs inside
+    of the context.
     """
     def __init__(self, *exceptions, force_ipdb=True):
         if not exceptions:
@@ -30,6 +31,11 @@ class debug_on(contextlib.suppress):
         self.force_ipdb = force_ipdb
 
     def __enter__(self):
+
+        """
+        >> with debug_on(AssertionError):
+        ..     assert False
+        """
         pass
 
     def post_mortem(self):
@@ -56,12 +62,7 @@ class debug_on(contextlib.suppress):
             raise e
 
     def __exit__(self, exctype, excinst, exctb):
-        """
-        >> @debug_on()
-        .. def foo():
-        ..     assert False
-        >> foo()
-        """
+
         ret = super().__exit__(exctype, excinst, exctb)
         if ret is True:
             self.post_mortem()
@@ -70,10 +71,11 @@ class debug_on(contextlib.suppress):
             return ret
 
     def __call__(self, f):
-
         """
-        >> with DebugOn():
+        >> @debug_on(AssertionError)
+        .. def foo():
         ..     assert False
+        >> foo()
         """
         # https://stackoverflow.com/a/12690039/5766934
         @functools.wraps(f)
