@@ -4,6 +4,7 @@ import numpy as np
 
 
 def _lstsq(A, B):
+    # Fallback solver with high execution time
     assert A.shape == B.shape, (A.shape, B.shape)
     shape = A.shape
     working_shape = [functools.reduce(operator.mul, [1, *shape[:-2]]),
