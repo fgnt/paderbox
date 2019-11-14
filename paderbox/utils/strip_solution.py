@@ -32,7 +32,7 @@ def code_replace(source, cell_type='code'):
     ... a = 1. / (1 + np.exp(-x))  # REPLACE
     ... return 1. / (1 + np.exp(-x))  # REPLACE return ???'''
     ... ))
-    b=1
+    b = 1
     return ???
     >>> print(code_replace(
     ... '''b = 1
@@ -71,8 +71,13 @@ def code_replace(source, cell_type='code'):
     return source
 
 
-def nb_replace(old_path, new_path, force=False):
+def nb_replace(old_path, new_path, force=False, strip_output=False):
     """Remove the solution from a Jupyter notebook.
+
+    python -m paderbox.utils.strip_solution solution.ipynb template.ipynb
+    python -m paderbox.utils.strip_solution solution.ipynb template.ipynb --force
+    python -m paderbox.utils.strip_solution solution.ipynb template.ipynb --strip-output
+    python -m paderbox.utils.strip_solution solution.ipynb template.ipynb --force --strip-output
 
     For example, assume the following line is in a notebook:
         x = 10  # REPLACE x = ???
@@ -110,6 +115,10 @@ def nb_replace(old_path, new_path, force=False):
         if cell_source != cell['source']:
             replacements += 1
             cell['source'] = cell_source
+
+    if strip_output:
+        import nbstripout
+        nb = nbstripout.strip_output(nb, keep_count=False, keep_output=False)
 
     print(f'Replaced {replacements} lines of code.')
     nbformat.write(nb, str(new_path), nbformat.NO_CONVERT)
