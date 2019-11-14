@@ -74,10 +74,17 @@ def code_replace(source, cell_type='code'):
 def nb_replace(old_path, new_path, force=False, strip_output=False):
     """Remove the solution from a Jupyter notebook.
 
-    python -m paderbox.utils.strip_solution solution.ipynb template.ipynb
-    python -m paderbox.utils.strip_solution solution.ipynb template.ipynb --force
-    python -m paderbox.utils.strip_solution solution.ipynb template.ipynb --strip-output
-    python -m paderbox.utils.strip_solution solution.ipynb template.ipynb --force --strip-output
+    python -m paderbox.utils.strip_solution _solution.ipynb _template.ipynb
+    python -m paderbox.utils.strip_solution _solution.ipynb _template.ipynb --force
+    python -m paderbox.utils.strip_solution _solution.ipynb _template.ipynb --strip-output
+    python -m paderbox.utils.strip_solution _solution.ipynb _template.ipynb --force --strip-output
+
+    Args:
+        old_path: The input notebook with the ending `_solution.ipynb`.
+        new_path: The output notebook with the ending `_template.ipynb`.
+        force: If enabled allow to overwrite the an existing output notebook.
+        strip_output: Whether to use nbstripout.strip_output to remove output
+            cells from the notebook.
 
     For example, assume the following line is in a notebook:
         x = 10  # REPLACE x = ???
@@ -92,10 +99,25 @@ def nb_replace(old_path, new_path, force=False, strip_output=False):
     will result in (Without an replacement the line will be deleted)
         y = # TODO
 
-    And the example
-        foo = bar  # COMMENT
-    will result in
-        # foo = bar
+    In Markdown cells this code will search for the string `% REPLACE`
+    instead of `# REPLACE`.
+
+
+    Suggestion:
+        Generate 4 files for the students:
+            The solution and the generated template, where this function
+            removed the solution. For both files you could generate an HTML
+            preview, so they can view them without an jupyter server.
+            The solution should contain executed cells, while the template
+            shouldn't.
+
+        Suggestion to produce all 4 files:
+            $ name=<solutionNotebookPrefix>
+            $ python -m paderbox.utils.strip_solution ${name}_solution.ipynb build/${name}_template.ipynb --force --strip-output
+            $ jupyter nbconvert --to html build/${name}_template.ipynb
+            $ cat ${name}_solution.ipynb | nbstripout > build/${name}_solution.ipynb
+            $ jupyter nbconvert --execute --allow-errors --to html build/${name}_solution.ipynb
+
     """
     old_path = Path(old_path)
     new_path = Path(new_path)
@@ -125,7 +147,7 @@ def nb_replace(old_path, new_path, force=False, strip_output=False):
 
 
 def entry_point():
-    """Used by Fire library to create a sourceript."""
+    """Used by Fire library to create a source script."""
     fire.Fire(nb_replace)
 
 
