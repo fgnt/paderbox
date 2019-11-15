@@ -45,7 +45,7 @@ __all__ = [
     "mkdir_p",
     "symlink",
     "SummaryEncoder",
-    "data_dir"
+    "data_dir",
 ]
 
 
@@ -57,7 +57,7 @@ def load_hdf5(path, internal_path="/"):
 
 def dump_hdf5(data, path):
     # ToDo: drop this wrapper
-    path = normalize_path(path, as_str=True, allow_fd=False)
+    path = normalize_path(path, as_str=True, allow_fd=True)
     return hdf5.dump_hdf5(data, path)
 
 
