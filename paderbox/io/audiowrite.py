@@ -32,8 +32,15 @@ def dump_audio(
         path:
         sample_rate:
         dtype:
+            The dtype of the written file. Default is integer with 16 bit.
         start:
+            Offset to write in an existing file. Can be used for block
+            processing algorithms that use overlap save.
         normalize:
+            bool, if the audio stream should be normalized to be in the range
+            -1 to 1.
+        format:
+            Special option. See soundfile.SoundFile.__init__ for details.
 
     >>> from paderbox.utils.process_caller import run_process
     >>> from paderbox.io import load_audio
@@ -197,8 +204,6 @@ def dump_audio(
         sf_args['subtype'] = dtype_map[obj.dtype]
     else:
         raise TypeError(dtype)
-
-    # soundfile.write()
 
     with soundfile.SoundFile(path, **sf_args) as f:
         if start is not None:
