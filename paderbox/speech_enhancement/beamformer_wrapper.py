@@ -4,7 +4,6 @@ from typing import Optional
 import paderbox as pb
 from .beamformer import *
 from paderbox.utils.numpy_utils import morph
-from paderbox.math.correlation import covariance
 from scipy.signal import lfilter
 
 
@@ -499,9 +498,9 @@ def block_online_beamforming(
     target_mask = morph('...t*b->t...b', target_mask, b=block_size)
     noise_mask = np.pad(noise_mask, padding[1:], 'constant')
     noise_mask = morph('...t*b->t...b', noise_mask, b=block_size)
-    target_psd = covariance(observation, target_mask, normalize=False,
-                            force_hermitian=True)
-    noise_psd = covariance(observation, noise_mask,
+    target_psd = get_power_spectral_density_matrix(
+        observation, target_mask, normalize=False, force_hermitian=True)
+    noise_psd = get_power_spectral_density_matrix(observation, noise_mask,
                            normalize=noise_psd_normalization)
     if target_psd_init is None:
         target_psd_init = np.zeros_like(target_psd[0])

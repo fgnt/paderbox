@@ -61,7 +61,8 @@ else:
 
 
 def get_power_spectral_density_matrix(observation, mask=None, sensor_dim=-2,
-                                      source_dim=-2, time_dim=-1, normalize=True):
+                                      source_dim=-2, time_dim=-1, normalize=True,
+                                      force_hermitian=False):
     """
     Calculates the weighted power spectral density matrix.
     It's also called covariance matrix.
@@ -143,7 +144,9 @@ def get_power_spectral_density_matrix(observation, mask=None, sensor_dim=-2,
             if source_dim < -2:
                 # assume PSD shape (sources, ..., sensors, sensors) is interested
                 psd = np.rollaxis(psd, -3, source_dim % observation.ndim)
-
+        if force_hermitian:
+            psd += psd.conj()
+            psd /= 2
     return psd
 
 
