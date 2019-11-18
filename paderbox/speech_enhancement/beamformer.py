@@ -19,10 +19,7 @@ import numpy as np
 from numpy.linalg import solve
 from scipy.linalg import eig
 from scipy.linalg import eigh
-from scipy.signal import lfilter
-from paderbox.math.correlation import covariance  # as shortcut!
 from paderbox.math.solve import stable_solve
-from paderbox.utils.numpy_utils import morph
 
 __all__ = [
     'get_power_spectral_density_matrix',
