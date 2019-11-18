@@ -7,7 +7,7 @@ import paderbox.speech_enhancement.noise as noise
 import paderbox.testing as tc
 from paderbox.speech_enhancement.noise import get_snr
 from paderbox.speech_enhancement.noise import set_snr
-from paderbox.math.vector import sph2cart
+from paderbox.math.directional import sph2cart
 import paderbox.transform as transform
 from paderbox.speech_enhancement.noise.spherical_habets import _mycohere,sinf_3d
 from math import pi

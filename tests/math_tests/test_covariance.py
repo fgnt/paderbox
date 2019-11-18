@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import paderbox.testing as tc
-from paderbox.math.correlation import covariance
+from paderbox.speech_enhancement.beamformer import get_power_spectral_density_matrix
 
 def rand(*shape, data_type=np.float64):
     if not shape:
@@ -29,40 +29,40 @@ class TestCovariance(unittest.TestCase):
 
     def test_covariance_without_mask(self):
         x = rand(3, 4)
-        psd = covariance(x)
+        psd = get_power_spectral_density_matrix(x)
         tc.assert_equal(psd.shape, (3, 3))
         tc.assert_positive_semidefinite(psd)
 
     def test_covariance_with_mask(self):
         x = rand(3, 4)
         mask = np.random.uniform(0, 1, (4,))
-        psd = covariance(x, mask)
+        psd = get_power_spectral_density_matrix(x, mask)
         tc.assert_equal(psd.shape, (3, 3))
         tc.assert_positive_semidefinite(psd)
 
     def test_covariance_with_mask_with_source(self):
         x = rand(3, 4)
         mask = np.random.uniform(0, 1, (2, 4))
-        psd = covariance(x[np.newaxis, ...], mask)
+        psd = get_power_spectral_density_matrix(x[None, ...], mask)
         tc.assert_equal(psd.shape, (2, 3, 3))
         tc.assert_positive_semidefinite(psd)
 
     def test_covariance_with_mask_independent_dim(self):
         x = rand(2, 3, 4)
         mask = np.random.uniform(0, 1, (2, 4,))
-        psd = covariance(x, mask)
+        psd = get_power_spectral_density_matrix(x, mask)
         tc.assert_equal(psd.shape, (2, 3, 3))
         tc.assert_positive_semidefinite(psd)
 
     def test_covariance_without_mask_independent_dim(self):
         x = rand(1, 2, 3, 4)
-        psd = covariance(x)
+        psd = get_power_spectral_density_matrix(x)
         tc.assert_equal(psd.shape, (1, 2, 3, 3))
         tc.assert_positive_semidefinite(psd)
 
     def test_multiple_sources_for_source_separation(self):
         x = rand(2, 3, 4)
         mask = np.random.uniform(0, 1, (5, 2, 4,))
-        psd = covariance(x[np.newaxis, ...], mask)
+        psd = get_power_spectral_density_matrix(x[np.newaxis, ...], mask)
         tc.assert_equal(psd.shape, (5, 2, 3, 3))
         tc.assert_positive_semidefinite(psd)
