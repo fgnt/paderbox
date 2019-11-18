@@ -160,3 +160,21 @@ def direction_vector_to_angle(vector):
     """
     assert vector.shape == (2, 1)
     return np.arctan2(vector[1, 0], vector[0, 0])
+
+
+# http://stackoverflow.com/questions/30084174/efficient-matlab-cart2sph-and-sph2cart-functions-in-python
+def cart2sph(x, y, z):
+    """transforms cartesian to spherical coordinates"""
+    azimuth = np.arctan2(y, x)
+    elevation = np.arctan2(z, np.sqrt(x**2 + y**2))
+    r = np.sqrt(x**2 + y**2 + z**2)
+    return azimuth, elevation, r
+
+
+# http://stackoverflow.com/questions/30084174/efficient-matlab-cart2sph-and-sph2cart-functions-in-python
+def sph2cart(azimuth, elevation, r):
+    """transforms spherical to cartesian coordinates"""
+    x = r * np.cos(elevation) * np.cos(azimuth)
+    y = r * np.cos(elevation) * np.sin(azimuth)
+    z = r * np.sin(elevation)
+    return x, y, z
