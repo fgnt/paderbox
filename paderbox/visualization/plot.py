@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import paderbox.transform
-from paderbox.math.misc import softmax
 from paderbox.speech_enhancement.beamform_utils import *
 from paderbox.visualization import module_facet_grid
 

@@ -606,7 +606,7 @@ def stft_to_spectrogram(stft_signal):
         #time_frames times #frequency_bins.
     :return: Real spectrogram with same dimensions as input.
 
-    Note: Special version of paderbox.math.misc.abs_square
+    Note: Special version of paderbox.math.scalar.abs_square
     """
 
     spectrogram = stft_signal.real**2 + stft_signal.imag**2
