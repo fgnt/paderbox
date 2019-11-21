@@ -124,7 +124,7 @@ def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
         time_signal,
         size=stft_size, shift=stft_shift,
         window=window, window_length=window_length,
-        fading=False
+        fading=None
     )
 
     spectrogram = stft_to_spectrogram(stft_signal) / stft_size
@@ -135,8 +135,7 @@ def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
         n_mels=number_of_filters,
         fmin=lowest_frequency,
         fmax=highest_frequency,
-        log=False,
-        always3d=False
+        log=False
     )
     feature = mel_transform(spectrogram)
 
