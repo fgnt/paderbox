@@ -65,8 +65,7 @@ def stft(
 
     # Pad with zeros to have enough samples for the window function to fade.
     assert fading in [None, True, False, 'full', 'half'], fading
-    fading = fading if not isinstance(fading, bool) else 'full' if fading else None
-    if fading is not None:
+    if fading not in [False, None]:
         pad_width = np.zeros((time_signal.ndim, 2), dtype=np.int)
         if fading == 'half':
             pad_width[axis, 0] = (window_length - shift) // 2
@@ -266,10 +265,9 @@ def _samples_to_stft_frames(
     """
 
     assert fading in [None, True, False, 'full', 'half'], fading
-    fading = fading if not isinstance(fading, bool) else 'full' if fading else None
-    if fading is not None:
+    if fading not in [None, False]:
         pad_width = (size - shift)
-        samples = samples + (1 + (fading == 'full')) * pad_width
+        samples = samples + (1 + (fading != 'half')) * pad_width
 
     # I changed this from np.ceil to math.ceil, to yield an integer result.
     frames = (samples - size + shift) / shift
@@ -296,10 +294,9 @@ def _stft_frames_to_samples(
     samples = frames * shift + size - shift
 
     assert fading in [None, True, False, 'full', 'half'], fading
-    fading = fading if not isinstance(fading, bool) else 'full' if fading else None
-    if fading is not None:
+    if fading not in [None, False]:
         pad_width = (size - shift)
-        samples -= (1 + (fading == 'full')) * pad_width
+        samples -= (1 + (fading != 'half')) * pad_width
     return samples
 
 
@@ -366,8 +363,7 @@ def sample_index_to_stft_frame_index(sample, window_length, shift, fading='full'
         frame = (sample - (window_length + 1) // 2) // shift + 1
 
     assert fading in [None, True, False, 'full', 'half'], fading
-    fading = fading if not isinstance(fading, bool) else 'full' if fading else None
-    if fading is not None:
+    if fading not in [None, False]:
         pad_width = (window_length - shift)
         if fading == 'half':
             pad_width //= 2
@@ -493,7 +489,7 @@ def istft(
         shift: int=256,
         *,
         window: [str, typing.Callable]=signal.blackman,
-        fading: str='full',
+        fading: typing.Optional[typing.Union[bool, str]] = 'full',
         window_length: int=None,
         symmetric_window: bool=False,
         num_samples: int=None,
@@ -574,8 +570,7 @@ def istft(
     # Compensate fade-in and fade-out
 
     assert fading in [None, True, False, 'full', 'half'], fading
-    fading = fading if not isinstance(fading, bool) else 'full' if fading else None
-    if fading is not None:
+    if fading not in [None, False]:
         pad_width = (window_length - shift)
         if fading == 'half':
             pad_width /= 2
@@ -661,7 +656,7 @@ class STFT:
             window: str = "blackman",
             symmetric_window: bool = False,
             pad: bool = True,
-            fading: str = 'full'
+            fading: typing.Optional[typing.Union[bool, str]] = 'full'
     ):
         """
         Transforms audio data to STFT.
