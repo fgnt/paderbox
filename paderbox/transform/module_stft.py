@@ -15,15 +15,15 @@ from scipy import signal
 
 def stft(
         time_signal,
-        size: int=1024,
-        shift: int=256,
+        size: int = 1024,
+        shift: int = 256,
         *,
         axis=-1,
-        window: [str, typing.Callable]=signal.blackman,
-        window_length: int=None,
-        fading: str = 'full',
-        pad: bool=True,
-        symmetric_window: bool=False,
+        window: [str, typing.Callable] = signal.blackman,
+        window_length: int = None,
+        fading: typing.Optional[typing.Union[bool, str]] = 'full',
+        pad: bool = True,
+        symmetric_window: bool = False,
 ) -> np.array:
     """
     ToDo: Open points:
