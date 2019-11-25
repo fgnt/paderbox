@@ -11,6 +11,11 @@ import pickle
 from pathlib import Path
 
 from paderbox.io.path_utils import normalize_path
+from paderbox.io.atomic import (
+    open_atomic,
+    write_text_atomic,
+    write_bytes_atomic,
+)
 from paderbox.io import audioread
 from paderbox.io import hdf5
 from paderbox.io import play
@@ -21,6 +26,16 @@ from paderbox.io.json_module import (
     dumps_json,
 )
 from paderbox.io.json_module import SummaryEncoder
+from paderbox.io.yaml_module import (
+    load_yaml,
+    loads_yaml,
+    load_yaml_unsafe,
+    loads_yaml_unsafe,
+    dump_yaml,
+    dumps_yaml,
+    dump_yaml_unsafe,
+    dumps_yaml_unsafe,
+)
 from paderbox.io.audioread import load_audio
 from paderbox.io.audiowrite import dump_audio, dumps_audio
 from paderbox.io.file_handling import (
@@ -28,6 +43,8 @@ from paderbox.io.file_handling import (
     symlink,
 )
 from paderbox.io import data_dir
+from .wrapper_load import load
+from .wrapper_dump import dump
 
 __all__ = [
     "load_audio",
@@ -37,6 +54,14 @@ __all__ = [
     "loads_json",
     "dump_json",
     "dumps_json",
+    "load_yaml",
+    "loads_yaml",
+    "load_yaml_unsafe",
+    "loads_yaml_unsafe",
+    "dump_yaml",
+    "dumps_yaml",
+    "dump_yaml_unsafe",
+    "dumps_yaml_unsafe",
     "load_hdf5",
     "dump_hdf5",
     "update_hdf5",
