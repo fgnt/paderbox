@@ -4,7 +4,7 @@ import unittest
 
 from paderbox.label_handling.transcription_handler import LabelHandler
 from paderbox.speech_recognition.lexicon import Linear
-from paderbox.TODO.kaldi import fst
+from paderbox.kaldi import fst
 
 
 class TestLexicon(unittest.TestCase):
