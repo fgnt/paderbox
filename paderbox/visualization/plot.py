@@ -83,6 +83,59 @@ def _get_batch(signal, batch):
                          f'Shape: {signal.shape}')
 
 
+def _xy_plot(
+        *signal, plt_fcn,
+        ax=None,
+        xlim=None, ylim=None,
+        label=None,
+        color=None,
+        xlabel=None, ylabel=None,
+        **kwargs
+):
+    # ToDo: Use this function for line, scatter and stem
+    if len(signal) == 1 and isinstance(signal[0], tuple):
+        signal = signal[0]
+
+    if color is not None:
+        plt_fcn(*signal, label=label, color=color, **kwargs)
+    else:
+        plt_fcn(*signal, label=label, **kwargs)
+
+    if label is not None:
+        ax.legend()
+
+    if xlim is not None:
+        ax.set_xlim(xlim)
+
+    if ylim is not None:
+        ax.set_ylim(ylim)
+
+    if xlabel is not None:
+        ax.set_xlabel(xlabel)
+
+    if ylabel is not None:
+        ax.set_ylabel(ylabel)
+
+    return ax
+
+
+@allow_dict_input_and_colorize
+@create_subplot
+def stem(
+        *signal,
+        ax=None,
+        xlim=None, ylim=None,
+        label=None,
+        color=None,
+        xlabel=None, ylabel=None,
+        **kwargs
+):
+    l = locals()
+    l.pop('kwargs')
+    l.pop('signal')
+    return _xy_plot(*signal, plt_fcn=ax.stem, **l, **kwargs)
+
+
 @allow_dict_input_and_colorize
 @create_subplot
 def line(*signal, ax: plt.Axes=None, xlim=None, ylim=None, label=None, color=None,
