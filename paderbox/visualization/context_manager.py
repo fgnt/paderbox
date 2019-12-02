@@ -1,3 +1,14 @@
+"""
+This module contains some context managers that may be useful helpers for
+generating plots. They mainly manipulate the matplotlib options.
+ - figure_context: Change matplotlib options for beautiful plots.
+ - axes_context: figure_context + axes handler to generate plots in a grid
+ - LatexContextManager: figure_context + latex export options and latex export
+   - Usually tikzplotlib (prior name matplotlib2tikz) is recommented for the
+     export, but in some cases tikzplotlib does not work, while the
+     LatexContextManager works.
+"""
+
 import os
 import platform
 import numbers
@@ -11,7 +22,15 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
 import seaborn as sns
 
-from paderbox.visualization.new_cm import cmaps
+from paderbox.visualization.colormap import cmaps
+
+
+__all__ = [
+    'figure_context',
+    'axes_context',
+    'LatexContextManager',
+    # 'DollarFormatter',
+]
 
 
 class DollarFormatter(ScalarFormatter):

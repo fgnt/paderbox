@@ -1,6 +1,6 @@
 from . import matplotlib_fix
 from . import ipynb
-from . import new_cm
+from . import colormap
 from . import plot
 
 from .context_manager import LatexContextManager
