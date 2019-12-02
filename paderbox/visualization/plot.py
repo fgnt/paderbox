@@ -48,15 +48,8 @@ def allow_dict_input_and_colorize(f):
         ax = kwargs.pop('ax', None)
 
         if isinstance(signal, dict):
-            # Scatter does not cycle the colors so we need to do this explicitly
-            if f.__name__ == 'scatter':
-                cyl = plt.rcParams['axes.prop_cycle']
-                for (label, data), prob_cycle in zip(signal.items(), cyl):
-                    ax = f(data, *args, ax=ax, label=label,
-                           color=prob_cycle['color'], **kwargs)
-            else:
-                for label, data in signal.items():
-                    ax = f(data, *args, ax=ax, label=label, **kwargs)
+            for label, data in signal.items():
+                ax = f(data, *args, ax=ax, label=label, **kwargs)
             ax.legend()
         else:
             ax = f(signal, *args, ax=ax, **kwargs)
@@ -165,7 +158,9 @@ def line(*signal, ax: plt.Axes=None, xlim=None, ylim=None, label=None, color=Non
 
 @allow_dict_input_and_colorize
 @create_subplot
-def scatter(*signal, ax=None, ylim=None, label=None, color=None, xlim=None,
+def scatter(*signal, ax=None, ylim=None, label=None, color=None, zorder=None,
+            marker=None, xlim=None, xlabel=None, ylabel=None,
+            logx=False, logy=False,
             **kwargs):
     """
     Use together with facet_grid().
@@ -197,6 +192,7 @@ def scatter(*signal, ax=None, ylim=None, label=None, color=None, xlim=None,
     :param ylim: Tuple with y-axis limits
     :return:
     """
+    kwargs['marker'] = marker
 
     if len(signal) == 1 and isinstance(signal[0], tuple):
         signal = signal[0]
@@ -204,22 +200,47 @@ def scatter(*signal, ax=None, ylim=None, label=None, color=None, xlim=None,
     if len(signal) == 1:
         signal = (range(len(signal[0])), signal[0])
 
+    if zorder is not None:
+        kwargs['zorder'] = zorder
+    if color is None:
+        # Scatter does not cycle the colors so we need to do this explicitly
+        color = ax._get_lines.get_next_color()
+
     if color is not None:
-        ax.scatter(*signal, label=label, color=color, **kwargs)
+        from itertools import count
+        if isinstance(color, (list, tuple, np.ndarray, count)):
+            if isinstance(color, count):
+                import itertools
+                color = list(itertools.islice(color, len(signal[0])))
+
+            ax.scatter(*signal, label=label, c=color, **kwargs)
+        else:
+            ax.scatter(*signal, label=label, color=color, **kwargs)
     else:
         ax.scatter(*signal, label=label, **kwargs)
-    if ylim is not None and isinstance(ylim, tuple):
-        ax.set_ylim(ylim)
-    if xlim is not None and isinstance(xlim, tuple):
+
+    if xlim is not None:
         ax.set_xlim(xlim)
+    if ylim is not None:
+        ax.set_ylim(ylim)
 
     # if type(signal) is tuple:
     #     ax.scatter(signal[0], signal[1], label=label, color=color)
     # else:
     #     ax.scatter(range(len(signal)), signal, label=label, color=color)
-    #
-    # if ylim is not None:
-    #     ax.set_ylim(ylim)
+
+    if logx:
+        ax.set_xscale('log')
+    if logy:
+        ax.set_xscale('log')
+
+    if xlabel is not None:
+        ax.set_xlabel(xlabel)
+    if ylabel is not None:
+        ax.set_ylabel(ylabel)
+
+    if label is not None:
+        ax.legend()
 
     return ax
 
