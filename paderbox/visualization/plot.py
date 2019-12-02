@@ -86,7 +86,8 @@ def _get_batch(signal, batch):
     elif signal.ndim == 2:
         return signal
     else:
-        raise ValueError('The signal can only be two or three dimensional')
+        raise ValueError(f'The signal can only be two or three dimensional. '
+                         f'Shape: {signal.shape}')
 
 
 @allow_dict_input_and_colorize
