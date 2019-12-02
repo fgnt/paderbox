@@ -1,5 +1,28 @@
+"""
+This module contains some colormaps.
+Initially introduced for the export of plots to latex/tikz.
+
+Available colormaps:
+
+    >>> from IPython.lib.pretty import pprint
+    >>> import paderbox as pb
+    >>> pprint(pb.visualization.new_cm.cmaps)  # doctest: +ELLIPSIS
+    {'magma': <matplotlib.colors.ListedColormap at 0x...>,
+     'inferno': <matplotlib.colors.ListedColormap at 0x...>,
+     'plasma': <matplotlib.colors.ListedColormap at 0x...>,
+     'viridis': <matplotlib.colors.ListedColormap at 0x...>,
+     'upb': <matplotlib.colors.ListedColormap at 0x...>}
+"""
+
 from matplotlib.colors import ListedColormap
 import numpy as np
+
+
+__all__ = [
+    'cmaps',
+    'viridis_hex',
+]
+
 
 _magma_data = [[0.001462, 0.000466, 0.013866],
                [0.002258, 0.001295, 0.018331],
