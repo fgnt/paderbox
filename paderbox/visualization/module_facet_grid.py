@@ -6,7 +6,8 @@ import types
 
 def facet_grid(
         data_list, function_list, kwargs_list=(), colwrap=2, scale=1,
-        title_list=(), return_axis=False
+        title_list=(), return_axis=False,
+        sharex=False, sharey=False,
 ):
 
     if isinstance(function_list, types.FunctionType):
@@ -33,7 +34,9 @@ def facet_grid(
     if len(kwargs_list) == 1:
         kwargs_list = len(function_list) * kwargs_list
 
-    figure, axis = plt.subplots(number_of_rows, colwrap)
+    figure, axis = plt.subplots(
+        number_of_rows, colwrap, sharex=sharex, sharey=sharey,
+    )
 
     figure.set_figwidth(figure.get_figwidth() * scale * colwrap)
     figure.set_figheight(figure.get_figheight() * scale * number_of_rows)
