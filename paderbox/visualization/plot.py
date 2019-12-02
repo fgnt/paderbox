@@ -331,7 +331,7 @@ def _time_frequency_plot(
     if cmap is None:
         cmap = 'viridis'
 
-    if z_scale == 'linear' or z_scale == None:
+    if z_scale == 'linear' or z_scale is None:
         norm = None
     elif z_scale == 'log':
         norm = matplotlib.colors.LogNorm(
@@ -354,9 +354,11 @@ def _time_frequency_plot(
         if isinstance(z_scale, matplotlib.colors.SymLogNorm):
             z_scale = 'symlog'
     else:
-        raise ValueError('z_scale: {} is invalid. '
-                         'Expected: linear, log, symlog or instance of matplotlib.colors.Normalize'
-                         ''.format(z_scale))
+        raise ValueError(
+            f'z_scale: {z_scale} is invalid.\n'
+            'Expected: linear, log, symlog or instance of '
+            'matplotlib.colors.Normalize'
+        )
 
     image = ax.imshow(
         signal,
