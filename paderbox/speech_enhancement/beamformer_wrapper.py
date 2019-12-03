@@ -1,3 +1,10 @@
+"""
+This whole file exists such that you can use strings to select the beamformer
+of choice, e.g., in `get_bf_vector()`. This allows to more easily configure
+experiments where you want to analyze a plethora of different beamforming
+variants.
+"""
+
 import numpy as np
 from typing import Optional
 
