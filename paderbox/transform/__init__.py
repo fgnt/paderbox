@@ -21,8 +21,4 @@ from .module_filter import (
 from .module_fbank import fbank, logfbank
 from .module_mfcc import mfcc, mfcc_velocity_acceleration
 from .module_normalize import normalize_mean_variance
-from .module_ssc import ssc
-from .module_bark_fbank import bark_fbank
-from .module_rastaplp import rasta_plp
-from .module_ams import ams
 from .module_resample import resample_sox
