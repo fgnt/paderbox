@@ -1,7 +1,7 @@
 """
 This module deals with all sorts of acoustic features and transforms.
 """
-from paderbox.transform.module_stft import (
+from .module_stft import (
     stft,
     istft,
     STFT,
@@ -11,22 +11,18 @@ from paderbox.transform.module_stft import (
     get_stft_center_frequencies,
 )
 
-from paderbox.transform.module_filter import preemphasis
-from paderbox.transform.module_filter import inverse_preemphasis
-from paderbox.transform.module_filter import offset_compensation
-from paderbox.transform.module_filter import preemphasis_with_offset_compensation
-from paderbox.transform.module_fbank import fbank, logfbank
-from paderbox.transform.module_mfcc import mfcc, mfcc_velocity_acceleration
-from paderbox.transform.module_ssc import ssc
-from paderbox.transform.module_bark_fbank import bark_fbank
-from paderbox.transform.module_rastaplp import rasta_plp
-from paderbox.transform.module_ams import ams
 import numpy as np
 from paderbox.transform.module_resample import resample_sox
 
 
 def normalize_mean_variance(data, axis=0, eps=1e-6):
     """ Normalize features.
+from .module_filter import (
+    preemphasis,
+    inverse_preemphasis,
+    offset_compensation,
+    preemphasis_with_offset_compensation,
+)
 
     :param data: Any feature
     :param axis: Time dimensions, default is 0
@@ -34,3 +30,11 @@ def normalize_mean_variance(data, axis=0, eps=1e-6):
     """
     return (data - np.mean(data, axis=axis, keepdims=True)) /\
         (np.std(data, axis=axis, keepdims=True) + eps)
+from .module_fbank import fbank, logfbank
+from .module_mfcc import mfcc, mfcc_velocity_acceleration
+from .module_normalize import normalize_mean_variance
+from .module_ssc import ssc
+from .module_bark_fbank import bark_fbank
+from .module_rastaplp import rasta_plp
+from .module_ams import ams
+from .module_resample import resample_sox
