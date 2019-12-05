@@ -7,10 +7,11 @@ from math import ceil
 
 import numpy as np
 from numpy.fft import rfft, irfft
+from scipy import signal
+
 from paderbox.utils.numpy_utils import roll_zeropad
 from paderbox.utils.numpy_utils import segment_axis_v2
 from paderbox.utils.mapping import Dispatcher
-from scipy import signal
 
 
 def stft(
@@ -19,7 +20,7 @@ def stft(
         shift: int = 256,
         *,
         axis=-1,
-        window: [str, typing.Callable] = signal.blackman,
+        window: [str, typing.Callable] = signal.windows.blackman,
         window_length: int = None,
         fading: typing.Optional[typing.Union[bool, str]] = 'full',
         pad: bool = True,
@@ -43,7 +44,7 @@ def stft(
         samples. Typically shift is a fraction of size.
     :param axis: Scalar axis of time.
         Default: None means the biggest dimension.
-    :param window: Window function handle. Default is blackman window.
+    :param window: Window function handle. Default is windows.blackman window.
     :param fading: Pads the signal with zeros for better reconstruction.
     :param window_length: Sometimes one desires to use a shorter window than
         the fft size. In that case, the window is padded with zeros.
@@ -115,7 +116,7 @@ def stft_with_kaldi_dimensions(
         shift: int = 160,
         *,
         axis=-1,
-        window=signal.blackman,
+        window=signal.windows.blackman,
         window_length=400,
         symmetric_window: bool = False
 ):
@@ -186,7 +187,7 @@ def _get_window(window, symmetric_window, window_length):
     >>> _get_window('hann', True, 4)  # uncommon stft window, common for filter
     array([0.  , 0.75, 0.75, 0.  ])
     """
-    
+
     if callable(window):
         pass
     elif isinstance(window, str):
@@ -450,7 +451,7 @@ def _biorthogonal_window_brute_force(analysis_window, shift,
     :param shift:
     :return:
 
-    >>> analysis_window = signal.blackman(4+1)[:-1]
+    >>> analysis_window = signal.windows.blackman(4+1)[:-1]
     >>> print(analysis_window)
     [-1.38777878e-17  3.40000000e-01  1.00000000e+00  3.40000000e-01]
     >>> synthesis_window = _biorthogonal_window_brute_force(analysis_window, 1)
@@ -488,7 +489,7 @@ def istft(
         size: int=1024,
         shift: int=256,
         *,
-        window: [str, typing.Callable]=signal.blackman,
+        window: [str, typing.Callable]=signal.windows.blackman,
         fading: typing.Optional[typing.Union[bool, str]] = 'full',
         window_length: int=None,
         symmetric_window: bool=False,
