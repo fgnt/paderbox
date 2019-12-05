@@ -1,6 +1,6 @@
 __all__ = [
     'debug_utils',
-    'deprecated',
+    'deprecation.py',
     'dtw',
     'mapping',
     'matlab',
