@@ -23,15 +23,6 @@ class TestSTFTMethods(unittest.TestCase):
         tc.assert_isreal(feature)
         tc.assert_array_greater_equal(feature, 0)
 
-    @unittest.skip("Not used at the moment, switch to e.g. librosa")
-    def test_get_filterbanks(self):
-        fbank = transform.module_fbank.get_filterbanks()
-
-        tc.assert_equal(fbank.shape, (20, 513))
-        tc.assert_isreal(fbank)
-        tc.assert_array_greater_equal(fbank, 0)
-        tc.assert_array_less_equal(fbank, 1)
-
     def test_hz2mel(self):
         tc.assert_equal(transform.module_fbank.hz2mel(6300), 2595)
         tc.assert_equal(transform.module_fbank.hz2mel(
