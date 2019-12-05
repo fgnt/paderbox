@@ -4,14 +4,14 @@ Provides fbank features and the fbank filterbank.
 
 from typing import Optional
 
-import numpy
+from cached_property import cached_property
 import numpy as np
 import scipy.signal
-from cached_property import cached_property
-from paderbox.transform.module_filter import \
-    preemphasis_with_offset_compensation
-from paderbox.transform.module_stft import stft
-from paderbox.transform.module_stft import stft_to_spectrogram
+
+from .module_filter import preemphasis_with_offset_compensation
+from .module_stft import stft
+from .module_stft import stft_to_spectrogram
+
 
 
 class MelTransform:
@@ -85,7 +85,7 @@ class MelTransform:
 def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
           number_of_filters=23, stft_size=512, lowest_frequency=0,
           highest_frequency=None, preemphasis_factor=0.97,
-          window=scipy.signal.hamming, denoise=False):
+          window=scipy.signal.windows.hamming, denoise=False):
     """
     Compute Mel-filterbank energy features from an audio signal.
 
@@ -140,10 +140,10 @@ def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
     feature = mel_transform(spectrogram)
 
     if denoise:
-        feature -= numpy.min(feature, axis=0)
+        feature -= np.min(feature, axis=0)
 
     # if feat is zero, we get problems with log
-    feature = numpy.where(feature == 0, numpy.finfo(float).eps, feature)
+    feature = np.where(feature == 0, np.finfo(float).eps, feature)
 
     return feature
 
@@ -178,13 +178,13 @@ def get_filterbanks(number_of_filters=20, nfft=1024, sample_rate=16000,
     # compute points evenly spaced in mels
     lowmel = hz2mel(lowfreq)
     highmel = hz2mel(highfreq)
-    melpoints = numpy.linspace(lowmel, highmel, number_of_filters + 2)
+    melpoints = np.linspace(lowmel, highmel, number_of_filters + 2)
     # our points are in Hz, but we use fft bins, so we have to convert
     #  from Hz to fft bin number
-    bin = numpy.floor((nfft + 1) * mel2hz(melpoints) / sample_rate)
+    bin = np.floor((nfft + 1) * mel2hz(melpoints) / sample_rate)
 
-    assert numpy.mod(nfft, 2) == 0
-    fbank = numpy.zeros([number_of_filters, nfft // 2 + 1])
+    assert np.mod(nfft, 2) == 0
+    fbank = np.zeros([number_of_filters, nfft // 2 + 1])
     for j in range(0, number_of_filters):
         for i in range(int(bin[j]), int(bin[j + 1])):
             fbank[j, i] = (i - bin[j]) / (bin[j + 1] - bin[j])
@@ -201,7 +201,7 @@ def hz2mel(hz):
     :returns: a value in Mels. If an array was passed in, an identical sized
         array is returned.
     """
-    return 2595 * numpy.log10(1 + hz / 700.0)
+    return 2595 * np.log10(1 + hz / 700.0)
 
 
 def mel2hz(mel):
@@ -218,12 +218,12 @@ def mel2hz(mel):
 def logfbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
              number_of_filters=23, stft_size=512, lowest_frequency=0,
              highest_frequency=None, preemphasis_factor=0.97,
-             window=scipy.signal.hamming, denoise=False):
+             window=scipy.signal.windows.hamming, denoise=False):
     """Generates log fbank features from time signal.
 
     Simply wraps fbank function. See parameters there.
     """
-    return numpy.log(fbank(
+    return np.log(fbank(
         time_signal,
         sample_rate=sample_rate,
         window_length=window_length,
