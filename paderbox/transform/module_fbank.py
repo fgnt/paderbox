@@ -53,6 +53,7 @@ class MelTransform:
 
     @cached_property
     def fbanks(self):
+        """Create filterbank matrix according to member variables."""
         import librosa
         fbanks = librosa.filters.mel(
             n_mels=self.n_mels,
@@ -68,6 +69,7 @@ class MelTransform:
 
     @cached_property
     def ifbanks(self):
+        """Create (pseudo)-inverse of filterbank matrix."""
         return np.linalg.pinv(self.fbanks.T).T
 
     def __call__(self, x):
@@ -77,6 +79,7 @@ class MelTransform:
         return x
 
     def inverse(self, x):
+        """Invert the mel-filterbank transform."""
         if self.log:
             x = np.exp(x)
         return np.maximum(np.dot(x, self.ifbanks), 0.)
