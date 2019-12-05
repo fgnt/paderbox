@@ -1,6 +1,6 @@
 __all__ = [
     'debug_utils',
-    'deprecation.py',
+    'deprecation',
     'dtw',
     'mapping',
     'matlab',
@@ -8,7 +8,6 @@ __all__ = [
     'mpi',
     'nested',
     'numpy_utils',
-    'options',
     'pandas_utils',
     'parallel_utils',
     'pc2',
