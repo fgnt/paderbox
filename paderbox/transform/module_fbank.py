@@ -152,51 +152,6 @@ def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
     return feature
 
 
-def get_filterbanks(number_of_filters=20, nfft=1024, sample_rate=16000,
-                    lowfreq=0, highfreq=None):
-    """Compute a Mel-filterbank. The filters are stored in the rows, the columns
-    correspond to fft bins. The filters are returned as an array of size
-    nfilt * (nfft/2 + 1)
-
-    Source: https://github.com/jameslyons/python_speech_features
-
-    :param number_of_filters: the number of filters in the filterbank.
-        Default is 20.
-    :param nfft: the FFT size. Default is 1024.
-    :param sample_rate: the samplerate of the signal we are working with.
-        Affects mel spacing.
-    :param lowfreq: lowest band edge of mel filters, Default 0 Hz.
-    :param highfreq: highest band edge of mel filters, Default is samplerate/2.
-    :returns: A numpy array of size nfilt by (nfft/2 + 1) containing filterbank.
-        Each row holds 1 filter.
-
-    ToDo: Can this function be removed?
-    """
-    raise AssertionError('This function is wrong. Use e.g. librosa. '
-                         'See http://ntjenkins.upb.de:8082/'
-                         'python_toolbox_notebooks/build/toolbox_examples/'
-                         'transform/06%20-%20Additional%20features.html')
-    highfreq = highfreq or sample_rate / 2
-    assert highfreq <= sample_rate / 2, "highfreq is greater than samplerate/2"
-
-    # compute points evenly spaced in mels
-    lowmel = hz2mel(lowfreq)
-    highmel = hz2mel(highfreq)
-    melpoints = np.linspace(lowmel, highmel, number_of_filters + 2)
-    # our points are in Hz, but we use fft bins, so we have to convert
-    #  from Hz to fft bin number
-    bin = np.floor((nfft + 1) * mel2hz(melpoints) / sample_rate)
-
-    assert np.mod(nfft, 2) == 0
-    fbank = np.zeros([number_of_filters, nfft // 2 + 1])
-    for j in range(0, number_of_filters):
-        for i in range(int(bin[j]), int(bin[j + 1])):
-            fbank[j, i] = (i - bin[j]) / (bin[j + 1] - bin[j])
-        for i in range(int(bin[j + 1]), int(bin[j + 2])):
-            fbank[j, i] = (bin[j + 2] - i) / (bin[j + 2] - bin[j + 1])
-    return fbank
-
-
 def hz2mel(hz):
     """Convert a value in Hertz to Mels
 
