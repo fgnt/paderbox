@@ -13,6 +13,7 @@ from .module_stft import stft
 from .module_stft import stft_to_spectrogram
 
 
+# pylint: disable=too-many-arguments,line-too-long
 
 class MelTransform:
     def __init__(
