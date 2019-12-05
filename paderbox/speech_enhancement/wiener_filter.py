@@ -10,6 +10,40 @@ def _spectrogram(x):
 
 def wiener_filter_gain_apriori(observation, s_mask, n_mask, G_min_db=-25,
                                mask_min=1e-6):
+    """
+        Decision directed approach Wiener filter implementation
+         as used in [1].
+
+        [1] Chinaev, Heitkaemper, Häb-Umbach, "A Priori SNR Estimation
+         Using Weibull Mixture Model", 12. ITG Fachtagung
+        Sprachkommunikation (ITG 2016). 2016
+
+        :param observation: Single channel complex STFT signal with
+            dimensions TxF.
+        :type observation: ndarray
+        :param s_mask: SPP like mask.
+        :type s_mask: ndarray
+        :param n_mask: NPP like mask.
+        :type n_mask: ndarray
+        :param G_min_db: Minimal Gain in dB. Defaults to -25.
+        :type G_min_db: int, optional
+        :param mask_min: Minimal mask value. Defaults to 1e-6.
+        :type mask_min: float, optional
+
+        :return: Estimate for the Wiener filter gain TxF using a apriori
+        SNR estimation similar to the decision directed approach.
+        :rtype: ndarray
+
+
+        >>> obs = np.array([1, 1, 1, 1, 1])[:, None]
+        >>> mask = np.array([1, 1, 1, 1, 1])[:, None]
+        >>> G_min_db = -25
+        >>> (wiener_filter_gain(obs, mask) - 10 ** (G_min_db / 20)).ravel()
+        array([0., 0., 0., 0., 0.])
+        >>> mask = np.array([1, 0, 0, 0, 0])[:, None]
+        >>> (wiener_filter_gain(obs, mask) - 10 ** (G_min_db / 20)).ravel()
+        array([0., 0., 0., 0., 0.])
+        """
     G_min = 10 ** (G_min_db / 20)
     n_mask = np.clip(n_mask, mask_min, (1 - mask_min))
     s_mask = np.clip(s_mask, mask_min, (1 - mask_min))
