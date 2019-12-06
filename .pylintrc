@@ -13,3 +13,7 @@
 disable=C0103,
 
 extension-pkg-whitelist=numpy,scipy
+
+[TYPECHECK]
+# see https://amoffat.github.io/sh/sections/faq.html#how-to-disable-pylint-e1101-no-member-errors
+generated-members=sh
