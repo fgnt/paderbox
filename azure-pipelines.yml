@@ -32,5 +32,5 @@ steps:
 - script: |
     pip install pytest pytest-azurepipelines
     pip install pytest-cov
-    pytest
+    pytest tests --doctest-modules --doctest-continue-on-failure --junitxml=junit/test-results.xml --cov=paderbox --cov-report=xml --cov-report=html
   displayName: 'pytest'
