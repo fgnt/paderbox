@@ -1,9 +1,12 @@
 import unittest
 from paderbox.utils.matlab import Mlab
 import paderbox.testing as tc
-from paderbox.evaluation.stoi_module import *
+from pb_bss.evaluation.module_stoi import *
 from paderbox.io.audioread import audioread
 from paderbox.io.data_dir import testing as testing_dir
+
+
+# ToDo: move this code to pb_bss
 
 
 class TestSTOI(unittest.TestCase):
