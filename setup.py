@@ -88,7 +88,7 @@ setup(
         'IPython',
         'scikit-learn',
         'pyzmq',
-        'pymatbridge',
+        # 'pymatbridge',  # need pyzmq to be installed manually
         'h5py',
         # 'line_profiler',
         # 'memory_profiler',
