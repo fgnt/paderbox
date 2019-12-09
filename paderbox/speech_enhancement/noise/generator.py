@@ -8,7 +8,6 @@ import paderbox.testing as tc
 from paderbox.io.audioread import load_audio
 from paderbox.speech_enhancement.noise.utils import set_snr
 from paderbox.speech_enhancement.noise.spherical_habets import sinf_3d
-from paderbox.database.noisex92 import helper
 
 from paderbox.io import load_json
 from paderbox.io.data_dir import database_jsons
@@ -59,7 +58,7 @@ class NoiseGeneratorWhite(NoiseGeneratorTemplate):
     """
     Example:
 
-    >>> from paderbox.evaluation.sxr_module import input_sxr
+    >>> from pb_bss.evaluation.sxr_module import input_sxr
     >>> time_signal = np.random.normal(size=(1000,))
     >>> ng = NoiseGeneratorWhite()
     >>> n = ng.get_noise_for_signal(time_signal, snr=20)
@@ -76,7 +75,7 @@ class NoiseGeneratorWhite(NoiseGeneratorTemplate):
     >>> time_signal.shape
     (2, 1000)
 
-    >>> from paderbox.evaluation.sxr_module import input_sxr
+    >>> from pb_bss.evaluation.sxr_module import input_sxr
     >>> SDR, SIR, SNR = input_sxr(time_signal[None, :, :], n)
     >>> round(SNR, 1)
     20.0
@@ -185,6 +184,11 @@ class NoiseGeneratorPink(NoiseGeneratorTemplate):
 
 class NoiseGeneratorNoisex92(NoiseGeneratorTemplate):
     def __init__(self, label=None, sample_rate=16000):
+        raise NotImplementedError(
+            'Our source code for noisex92 is not public.\n'
+            'So this code cannot be used in the moment.'
+        )
+        from paderbox.database.noisex92 import helper
 
         self.labels = helper.get_labels()
         if label is not None:
@@ -263,7 +267,7 @@ class NoiseGeneratorSpherical(NoiseGeneratorTemplate):
         Example:
 
         >>> import paderbox.evaluation.sxr as sxr, numpy
-        >>> from paderbox.math.vector import sph2cart
+        >>> from paderbox.math.directional import sph2cart
         >>> time_signal = numpy.random.randn(1000, 3)
         >>> x1,y1,z1 = sph2cart(0,0,0.1)    # Sensor position 1
         >>> x2,y2,z2 = sph2cart(0,0,0.2)    # Sensor position 2

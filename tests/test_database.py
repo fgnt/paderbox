@@ -1,6 +1,6 @@
 import unittest
-from paderbox.database import JsonDatabase
-from paderbox.database import DictDatabase
+from lazy_dataset.database import JsonDatabase
+from lazy_dataset.database import DictDatabase
 from pathlib import Path
 import shutil
 import tempfile
@@ -33,7 +33,7 @@ class IteratorTest(unittest.TestCase):
         )
 
     def test_iterator(self):
-        iterator = self.db.get_iterator_by_names('train')
+        iterator = self.db.get_dataset('train')
         example_ids = [e['example_id'] for e in iterator]
         self.assertListEqual(
             example_ids,
@@ -46,13 +46,13 @@ class IteratorTest(unittest.TestCase):
         _ = iterator[:1][0]
 
     def test_iterator_contains(self):
-        iterator = self.db.get_iterator_by_names('train')
+        iterator = self.db.get_dataset('train')
         with self.assertRaises(Exception):
             # contains should be unsupported
             'a' in iterator
 
     def test_map_iterator(self):
-        iterator = self.db.get_iterator_by_names('train')
+        iterator = self.db.get_dataset('train')
 
         def map_fn(d):
             d['example_id'] = d['example_id'].upper()
@@ -69,7 +69,7 @@ class IteratorTest(unittest.TestCase):
         _ = iterator[:1][0]
 
     def test_filter_iterator(self):
-        iterator = self.db.get_iterator_by_names('train')
+        iterator = self.db.get_dataset('train')
 
         def filter_fn(d):
             return not d['example_id'] == 'b'
@@ -89,8 +89,8 @@ class IteratorTest(unittest.TestCase):
             _ = iterator[:1]
 
     def test_concatenate_iterator(self):
-        train_iterator = self.db.get_iterator_by_names('train')
-        test_iterator = self.db.get_iterator_by_names('test')
+        train_iterator = self.db.get_dataset('train')
+        test_iterator = self.db.get_dataset('test')
         iterator = train_iterator.concatenate(test_iterator)
         example_ids = [e['example_id'] for e in iterator]
         self.assertListEqual(
@@ -108,7 +108,7 @@ class IteratorTest(unittest.TestCase):
         _ = iterator[:1][0]
 
     def test_concatenate_iterator_double_keys(self):
-        train_iterator = self.db.get_iterator_by_names('train')
+        train_iterator = self.db.get_dataset('train')
         iterator = train_iterator.concatenate(train_iterator)
         example_ids = [e['example_id'] for e in iterator]
         self.assertListEqual(
@@ -124,7 +124,7 @@ class IteratorTest(unittest.TestCase):
         _ = iterator[:1][0]
 
     def test_multiple_concatenate_iterator(self):
-        train_iterator = self.db.get_iterator_by_names('train')
+        train_iterator = self.db.get_dataset('train')
         iterator = train_iterator.concatenate(train_iterator)
         example_ids = [e['example_id'] for e in iterator]
         self.assertListEqual(
@@ -135,7 +135,7 @@ class IteratorTest(unittest.TestCase):
 
     def test_zip_iterator(self):
         import numpy as np
-        train_iterator = self.db.get_iterator_by_names('train')
+        train_iterator = self.db.get_dataset('train')
 
         # Change the key order
         np.random.seed(2)
@@ -171,7 +171,7 @@ class IteratorTest(unittest.TestCase):
         )
 
     def test_slice_iterator(self):
-        base_iterator = self.db.get_iterator_by_names('train')
+        base_iterator = self.db.get_dataset('train')
         base_iterator = base_iterator.concatenate(base_iterator)
         iterator = base_iterator[:4]
         example_ids = [e['example_id'] for e in iterator]
@@ -217,8 +217,8 @@ class UniqueIDIteratorTest(unittest.TestCase):
 
     def test_duplicate_id(self):
         with self.assertRaises(AssertionError):
-            iterator = self.db.get_iterator_by_names('train test'.split())
+            iterator = self.db.get_dataset('train test'.split())
             _ = iterator.keys()
 
     def test_duplicate_id_with_prepend_dataset_name(self):
-        _ = self.db.get_iterator_by_names('train test'.split())
+        _ = self.db.get_dataset('train test'.split())

@@ -1,7 +1,8 @@
 import unittest
 import numpy as np
 import paderbox.testing as tc
-from paderbox.speech_enhancement.beamformer import get_power_spectral_density_matrix
+from pb_bss.extraction.beamformer import get_power_spectral_density_matrix
+
 
 def rand(*shape, data_type=np.float64):
     if not shape:
