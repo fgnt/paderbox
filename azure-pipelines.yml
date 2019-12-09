@@ -22,6 +22,7 @@ steps:
   displayName: 'Use Python $(python.version)'
 
 - script: |
+    sudo apt-get install libsndfile1
     python -m pip install --upgrade pip
     # pip install -r requirements.txt
     pip install numpy scipy Cython
