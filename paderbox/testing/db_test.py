@@ -7,11 +7,14 @@ from parameterized import parameterized
 
 
 from paderbox.io.data_dir import database_jsons as database_jsons_dir
-from paderbox.database.keys import *
-from paderbox.database.iterator import recursive_transform, AudioReader
+# from paderbox.database.keys import *
+# from paderbox.database.iterator import recursive_transform, AudioReader
 import lazy_dataset
 
 ROOT = database_jsons_dir
+
+
+# ToDo: move this code to lazy_dataset
 
 
 class DatabaseTest(unittest.TestCase):

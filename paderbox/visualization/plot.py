@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import paderbox.transform
-from paderbox.speech_enhancement.beamform_utils import *
+from pb_bss.extraction.beamform_utils import *
 from paderbox.visualization import module_facet_grid
 
 # from chainer import Variable  # see line 281

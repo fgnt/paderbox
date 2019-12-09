@@ -1,5 +1,5 @@
 """Test whether all files from paderbox/nt are importable"""
-
+import os
 from pathlib import Path
 import inspect
 import subprocess
@@ -8,31 +8,37 @@ import importlib
 from parameterized import parameterized, param
 
 
+def get_module_name_from_file(file):
+    """
+    >> import paderbox as pb
+    >> get_module_name_from_file(pb.transform.module_stft.__file__)
+    'paderbox.transform.module_stft'
+    """
+
+    # coppied from inspect.getabsfile
+    file = os.path.normcase(os.path.abspath(file))
+
+    file, module_path = os.path.split(file)
+    module_path = os.path.splitext(module_path)[0]
+    while file:
+        # See setuptools.PackageFinder._looks_like_package
+        if not os.path.isfile(os.path.join(file, '__init__.py')):
+            break
+        file, part = os.path.split(file)
+        module_path = part + '.' + module_path
+    if '.' in module_path:
+        return module_path
+    else:
+        return '__main__'
+
+
 def _custom_name_func(testcase_func, _, param):
-    import_name = _get_import_name(param.args[0], concat='_')
+    import_name = get_module_name_from_file(param.args[0])
+    import_name = '_'.join(import_name.split('.'))
     return f"%s_%s" % (
         testcase_func.__name__,
         import_name
     )
-
-
-def _get_import_name(py_file, concat='.', return_suffix=False):
-    """
-    Convert path to Python's import notation, i.e. "x.y.z"
-    :param py_file: Path object to python file
-    :param concat: String that concatenates modules. Default to '.'
-    :param return_suffix: If True, return additionally `py_file.suffix`. Either
-        '.py' or '' (if `py_file` is path to a package, i.e. '__init__.py')
-    :return:
-    """
-    if py_file.stem == '__init__':
-        py_file = py_file.parents[0]  # replace __init__.py with package path
-    import_name = concat.join(py_file.parts[py_file.parts.index('paderbox'):-1] +
-                              (py_file.stem,)
-                              )
-    if not return_suffix:
-        return import_name
-    return import_name, py_file.suffix
 
 
 class TestImport:
@@ -61,7 +67,8 @@ class TestImport:
              readable test output
         :raise: `AssertionError` if file cannot be imported
         """
-        import_name, suffix = _get_import_name(py_file, return_suffix=True)
+        import_name = get_module_name_from_file(py_file)
+        suffix = py_file.suffix
         try:
             if with_importlib:
                 _ = importlib.import_module(import_name)

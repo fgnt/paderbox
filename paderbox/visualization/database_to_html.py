@@ -1,7 +1,7 @@
 import numpy as np
 from IPython.display import HTML, Audio, display_html, Image
 import shutil
-from paderbox.database.keys import *
+# from paderbox.database.keys import *
 from paderbox.io.audioread import load_audio, audio_length, is_nist_sphere_file
 import pathlib
 
@@ -10,6 +10,9 @@ from paderbox.visualization import figure_context
 
 
 VALID_AUDIO_EXTENSIONS = ('wav', 'flac', 'ogg')
+
+
+# ToDo: delete this code in public repo
 
 
 class Templates:

@@ -19,8 +19,8 @@ import seaborn as sns
 import IPython.lib.pretty
 from IPython.display import HTML
 from IPython.display import display
-from paderbox.database.chime import Chime3, Chime4
-from paderbox.database.reverb import Reverb
+# from paderbox.database.chime import Chime3, Chime4
+# from paderbox.database.reverb import Reverb
 from paderbox.io import dump_json
 from paderbox.io import load_json
 from paderbox.io.play import play
@@ -34,9 +34,9 @@ from paderbox.visualization import axes_context
 from paderbox.visualization import facet_grid
 from paderbox.visualization import plot
 from tqdm import tqdm
-from paderbox.database.iterator import AudioReader
-from paderbox.database.iterator import LimitAudioLength
-from paderbox.database.iterator import AlignmentReader
+# from paderbox.database.iterator import AudioReader
+# from paderbox.database.iterator import LimitAudioLength
+# from paderbox.database.iterator import AlignmentReader
 
 __all__ = [
     "pprint",

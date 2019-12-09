@@ -16,17 +16,11 @@ with open(FFT_FILE) as f:
         )
 
 __all__ = [
-    'database',
-    'evaluation',
     'io',
-    'kaldi',
-    'label_handling',
     'math',
     'notebook',
     'speech_enhancement',
-    'speech_recognition',
     'testing',
-    'TODO',
     'transform',
     'utils',
     'visualization',
