@@ -1,4 +1,3 @@
-from pymatbridge import Matlab
 from cached_property import cached_property
 import socket
 import warnings
@@ -24,6 +23,7 @@ class Mlab:
 
     @cached_property
     def process(self):
+        from pymatbridge import Matlab
         hostname = socket.gethostname()
         if 'nt' in hostname:
             mlab_process = Matlab(
