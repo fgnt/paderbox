@@ -130,10 +130,6 @@ setup(
     },
 
     ext_modules=cythonize([
-        'paderbox/reverb/CalcRIR_Simple_C.pyx',
-        'paderbox/speech_enhancement/cythonized/get_gev_vector.pyx',
-        'paderbox/speech_enhancement/cythonized/c_eig.pyx',
-        'paderbox/reverb/rirgen/pyrirgen.pyx'
     ],
         annotate=True,
     ),
