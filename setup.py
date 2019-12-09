@@ -18,8 +18,11 @@ from Cython.Build import cythonize
 here = path.abspath(path.dirname(__file__))
 
 # Get the long description from the relevant file
-with open(path.join(here, 'DESCRIPTION.rst'), encoding='utf-8') as f:
-    long_description = f.read()
+try:
+    with open(path.join(here, 'DESCRIPTION.rst'), encoding='utf-8') as f:
+        long_description = f.read()
+except FileNotFoundError:
+    long_description=''
 
 setup(
     name='paderbox',
