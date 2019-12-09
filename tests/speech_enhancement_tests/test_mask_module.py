@@ -4,10 +4,13 @@ import numpy as np
 from nose_parameterized import parameterized, param
 
 import paderbox.testing as tc
-from paderbox.speech_enhancement import mask_module
-from paderbox.speech_enhancement.mask_module import wiener_like_mask, lorenz_mask, \
+from pb_bss.extraction import mask_module
+from pb_bss.extraction.mask_module import wiener_like_mask, lorenz_mask, \
     ideal_binary_mask
 from paderbox.utils.random_utils import randn
+
+
+# ToDo: move this tests to pb_bss
 
 
 def randc128(*shape):

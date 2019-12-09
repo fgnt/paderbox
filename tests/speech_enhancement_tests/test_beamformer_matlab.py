@@ -6,15 +6,17 @@ import numpy as np
 import paderbox.testing as tc
 from paderbox.io.data_dir import testing as testing_dir
 from paderbox.io.audioread import audioread
-from paderbox.speech_enhancement.beamformer import get_gev_vector
-from paderbox.speech_enhancement.beamformer import get_lcmv_vector
-from paderbox.speech_enhancement.beamformer import get_mvdr_vector
-from paderbox.speech_enhancement.beamformer import get_pca_vector
-from paderbox.speech_enhancement.beamformer import get_power_spectral_density_matrix
-from paderbox.speech_enhancement.mask_module import biased_binary_mask, \
+from pb_bss.extraction.beamformer import get_gev_vector
+from pb_bss.extraction.beamformer import get_lcmv_vector
+from pb_bss.extraction.beamformer import get_mvdr_vector
+from pb_bss.extraction.beamformer import get_pca_vector
+from pb_bss.extraction.beamformer import get_power_spectral_density_matrix
+from pb_bss.extraction.mask_module import biased_binary_mask, \
     wiener_like_mask
 from paderbox.math.vector import vector_H_vector
 from paderbox.utils.matlab import Mlab
+
+# ToDo: move this test to pb_bss
 
 # uncomment, if you want to test matlab functions
 # matlab_test = unittest.skipUnless(True,'matlab-test')

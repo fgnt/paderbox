@@ -3,16 +3,19 @@ import unittest
 import numpy as np
 import functools
 import paderbox.testing as tc
-from paderbox.speech_enhancement.beamformer import get_gev_vector, \
+from pb_bss.extraction.beamformer import get_gev_vector, \
     _get_gev_vector, _cythonized_eig, eig
-from paderbox.speech_enhancement.beamformer import get_lcmv_vector
-from paderbox.speech_enhancement.beamformer import get_mvdr_vector
-from paderbox.speech_enhancement.beamformer import get_pca_vector
-from paderbox.speech_enhancement.beamformer import get_mvdr_vector_souden
-from paderbox.speech_enhancement.beamformer import get_wmwf_vector
-from paderbox.speech_enhancement.beamformer import blind_analytic_normalization
+from pb_bss.extraction.beamformer import get_lcmv_vector
+from pb_bss.extraction.beamformer import get_mvdr_vector
+from pb_bss.extraction.beamformer import get_pca_vector
+from pb_bss.extraction.beamformer import get_mvdr_vector_souden
+from pb_bss.extraction.beamformer import get_wmwf_vector
+from pb_bss.extraction.beamformer import blind_analytic_normalization
 from paderbox.math.vector import cos_similarity
 from paderbox.utils.random_utils import uniform, hermitian, pos_def_hermitian
+
+
+# ToDo: move this test to pb_bss
 
 
 class TestBeamformerWrapper(unittest.TestCase):

@@ -1,8 +1,11 @@
 import unittest
 import numpy as np
-from paderbox.speech_enhancement.beamformer_wrapper import get_bf_vector
-from paderbox.speech_enhancement.beamformer import zero_degree_normalization
+from pb_bss.extraction.beamformer_wrapper import get_bf_vector
+from pb_bss.extraction.beamformer import zero_degree_normalization
 from paderbox.utils.random_utils import pos_def_hermitian
+
+
+# ToDo: move this tests to pb_bss
 
 
 def rand(*shape, data_type):
