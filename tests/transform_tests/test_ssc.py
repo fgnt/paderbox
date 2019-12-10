@@ -4,6 +4,7 @@ from paderbox.io.audioread import audioread
 # from scipy import signal
 
 import paderbox.testing as tc
+from paderbox.testing.testfile_fetcher import get_file_path
 import paderbox.transform as transform
 # from pymatbridge import Matlab
 
@@ -13,11 +14,8 @@ import paderbox.transform as transform
 class TestSTFTMethods(unittest.TestCase):
     @unittest.skip("Not used at the moment, switch to e.g. librosa")
     def test_mfcc(self):
-        path = tc.fetch_file_from_url(
-            "https://github.com/fgnt/pb_test_data/blob/master"
-            "/bss_data/low_reverberation/speech_source_0.wav",
-            "speech_source_0.wav"
-        )
+        path = get_file_path("sample.wav")
+
         y = audioread(path)[0]
         yFilterd = transform.ssc(y)
 

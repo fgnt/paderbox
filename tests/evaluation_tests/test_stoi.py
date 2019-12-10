@@ -3,7 +3,7 @@ from paderbox.utils.matlab import Mlab
 import paderbox.testing as tc
 from pb_bss.evaluation.module_stoi import *
 from paderbox.io.audioread import audioread
-from paderbox.io.data_dir import testing as testing_dir
+from paderbox.testing.testfile_fetcher import get_file_path
 
 
 # ToDo: move this code to pb_bss
@@ -12,7 +12,7 @@ from paderbox.io.data_dir import testing as testing_dir
 class TestSTOI(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        path = str(testing_dir / 'timit' / 'data' / 'sample_1.wav')
+        path = get_file_path("sample.wav")
         cls.x = audioread(path)[0]
         cls.sample_rate = 16000
 

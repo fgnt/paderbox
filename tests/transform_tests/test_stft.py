@@ -4,6 +4,7 @@ import numpy as np
 from scipy import signal
 
 import paderbox.testing as tc
+from paderbox.testing.testfile_fetcher import get_file_path
 from paderbox.io.audioread import audioread
 from paderbox.transform.module_stft import _biorthogonal_window
 from paderbox.transform.module_stft import _biorthogonal_window_loopy
@@ -72,11 +73,8 @@ def stft_single_channel(time_signal, size=1024, shift=256,
 class TestSTFTMethods(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        path = tc.fetch_file_from_url(
-            "https://github.com/fgnt/pb_test_data/raw/master/bss_data/"
-            "low_reverberation/speech_source_0.wav",
-            "speech_source_0.wav"
-        )
+        path = get_file_path("sample.wav")
+
         self.x = audioread(path)[0]
 
     def test_samples_to_stft_frames(self):
