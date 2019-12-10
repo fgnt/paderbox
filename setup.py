@@ -83,7 +83,7 @@ setup(
         'seaborn',
         'tqdm',
         'dill',
-        "dataclasses ; python_version<'3.7'",  # dataclasses is in py37 buildin
+        "dataclasses; python_version<'3.7'",  # dataclasses is in py37 buildin
         'pathos',  # Multiprocessing alternative
         'pip',
         'IPython',
@@ -92,7 +92,11 @@ setup(
         'pyzmq',
         # 'pymatbridge',  # need pyzmq to be installed manually
         'h5py',
-        'line_profiler',
+
+        # line_profiler does not work in python 3.7
+        # https://github.com/rkern/line_profiler/issues/132
+        'line_profiler; python_version<"3.7"',
+
         'memory_profiler',
         'cached_property',
         'editdistance',
