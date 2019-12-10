@@ -116,7 +116,7 @@ class TestBeamformerWrapperWithSpeakers(TestBeamformerWrapper):
 
 class TestCythonizedGetGEV(unittest.TestCase):
     def test_import(self):
-        from paderbox.speech_enhancement.cythonized.get_gev_vector import \
+        from pb_bss.extraction.cythonized.get_gev_vector import \
             _c_get_gev_vector
 
     def test_result_equal(self):
