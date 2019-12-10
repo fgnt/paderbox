@@ -2,6 +2,7 @@ from cached_property import cached_property
 import socket
 import warnings
 import os.path
+import shutil
 from paderbox.io.data_dir import matlab_toolbox, matlab_r2015a, matlab_license
 
 
@@ -26,14 +27,23 @@ class Mlab:
         from pymatbridge import Matlab
         hostname = socket.gethostname()
         if 'nt' in hostname:
+            matlab_executable = str(matlab_r2015a / 'bin' / 'matlab')
             mlab_process = Matlab(
                 'nice -n 3 ' +
-                str(matlab_r2015a / 'bin' / 'matlab') +
+                matlab_executable +
                 ' -c {}'.format(matlab_license) +
                 ' -nodisplay -nosplash'
             )
         else:
-            mlab_process = Matlab('nice -n 3 matlab -nodisplay -nosplash')
+            matlab_executable = 'matlab'
+            mlab_process = Matlab(
+                f'nice -n 3 {matlab_executable} -nodisplay -nosplash')
+        if shutil.which(matlab_executable) is None:
+            # pymatbridge.Matlab has a long timeout and will fail with
+            # "ValueError: MATLAB failed to start" when matlab does not exists.
+            raise EnvironmentError(
+                'Could not find matlab.'
+            )
         mlab_process.start()
         ret = mlab_process.run_code('run ' + self.matlab_startup_path)
         if not ret['success']:
