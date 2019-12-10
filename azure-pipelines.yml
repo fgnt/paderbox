@@ -35,6 +35,7 @@ steps:
     pip install pytest-cov
     pytest \
       tests \
+      paderbox \  # for doctests
       -m "not matlab" \
       --doctest-modules --doctest-continue-on-failure \
       --junitxml=junit/test-results.xml \
