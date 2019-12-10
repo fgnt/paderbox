@@ -100,6 +100,7 @@ setup(
         # 'psutil',
         # 'plumbum',
         'click',
+        'fire',
         'typecheck-decorator',
         'natsort',
         # 'pymongo',  # Used to generate and check Sacred IDs
