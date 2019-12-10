@@ -106,6 +106,7 @@ setup(
         # 'pymongo',  # Used to generate and check Sacred IDs
         'coverage',  # for nosetests --with-coverage
         'beautifulsoup4',
+        'soundfile',
         'pysoundfile',  # for German speech database
         'wavefile',  # for reading .flac audio
         'nose',
