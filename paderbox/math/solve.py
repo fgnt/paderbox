@@ -54,7 +54,7 @@ def stable_solve(A, B):
     >>> C1 = np.linalg.solve(A, B)
     Traceback (most recent call last):
     ...
-    numpy.linalg.linalg.LinAlgError: Singular matrix
+    numpy.linalg.LinAlgError: Singular matrix
     >>> C2, *_ = np.linalg.lstsq(A, B)
     >>> C3 = stable_solve(A, B)
     >>> C4 = _lstsq(A, B)
@@ -67,7 +67,7 @@ def stable_solve(A, B):
     >>> C2, *_ = np.linalg.lstsq(A, B)
     Traceback (most recent call last):
     ...
-    numpy.linalg.linalg.LinAlgError: 3-dimensional array given. Array must be two-dimensional
+    numpy.linalg.LinAlgError: 3-dimensional array given. Array must be two-dimensional
     >>> C3 = stable_solve(A, B)
     >>> C4 = _lstsq(A, B)
     >>> np.testing.assert_allclose(C1, C3)
@@ -78,11 +78,11 @@ def stable_solve(A, B):
     >>> C1 = np.linalg.solve(A, B)
     Traceback (most recent call last):
     ...
-    numpy.linalg.linalg.LinAlgError: Singular matrix
+    numpy.linalg.LinAlgError: Singular matrix
     >>> C2, *_ = np.linalg.lstsq(A, B)
     Traceback (most recent call last):
     ...
-    numpy.linalg.linalg.LinAlgError: 3-dimensional array given. Array must be two-dimensional
+    numpy.linalg.LinAlgError: 3-dimensional array given. Array must be two-dimensional
     >>> C3 = stable_solve(A, B)
     >>> C4 = _lstsq(A, B)
     >>> np.testing.assert_allclose(C3, C4)

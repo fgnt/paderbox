@@ -11,7 +11,12 @@ def resample_sox(signal: np.ndarray, *, in_rate, out_rate):
     This function exists to mimic as closely as possible how resampling would
     be realized in a `wav.scp` file in Kaldi.
 
-    We assume SoX version v14.4.1.
+    We assume SoX version v14.4.2.
+
+    Note:
+        SoX version v14.4.1 produces different values.
+        In https://github.com/chimechallenge/chime6-synchronisation/commit/cfc11aa8e8ad48c914b594216f4196fbb73a8998
+        is tested, that v14.4.1 produces different results.
 
     SoX does not apply dithering when you do not change the bits per sample.
     We here fixed input and output bitrate, thus, you are fine.
@@ -21,7 +26,7 @@ def resample_sox(signal: np.ndarray, *, in_rate, out_rate):
 
     >>> signal = np.array([1, -1, 1, -1], dtype=np.float32)
     >>> resample_sox(signal, in_rate=2, out_rate=1)
-    array([ 0.28635263, -0.13530457], dtype=float32)
+    array([ 0.28615332, -0.13513082], dtype=float32)
 
     >>> signal = np.array([1, -1, 1, -1], dtype=np.float32)
     >>> resample_sox(signal, in_rate=1, out_rate=1)
@@ -81,7 +86,9 @@ def resample_sox(signal: np.ndarray, *, in_rate, out_rate):
 
     # This rescaling is necessary since SOX introduces clipping, when the
     # input signal is much too large.
-    normalizer = 0.95 / np.max(np.abs(signal))
+    # We normalize each channel independently to avoid rounding errors leading
+    # to the channel doc test above to fail randomly.
+    normalizer = 0.95 / np.max(np.abs(signal), keepdims=True, axis=-1)
     signal = normalizer * signal
 
     # See this page for a parameter explanation:

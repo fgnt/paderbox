@@ -121,7 +121,7 @@ def dump_audio(
     Input File     : 'tmp_audio_data.wav'
     Channels       : 1
     Sample Rate    : 16000
-    Precision      : 53-bit
+    Precision      : 54-bit
     Duration       : 00:00:00.00 = 10 samples ~ 0.046875 CDDA sectors
     File Size      : 160
     Bit Rate       : 2.05M
@@ -137,7 +137,7 @@ def dump_audio(
     Input File     : 'tmp_audio_data.wav'
     Channels       : 1
     Sample Rate    : 16000
-    Precision      : 24-bit
+    Precision      : 25-bit
     Duration       : 00:00:00.00 = 10 samples ~ 0.046875 CDDA sectors
     File Size      : 120
     Bit Rate       : 1.54M

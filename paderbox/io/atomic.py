@@ -113,7 +113,7 @@ def open_atomic(file, mode, *args, force=False, **kwargs):
 
     >>> with open_atomic('.tmp.io.txt', 'w') as f:
     ...     print('Name:', f.name)  # doctest: +ELLIPSIS
-    Name: .../paderbox/io/.tmp.io.txt...
+    Name: .../.tmp.io.txt...
     """
     file = normalize_path(file, as_str=True, allow_fd=False)
 

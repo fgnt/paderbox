@@ -33,7 +33,14 @@ steps:
 - script: |
     pip install pytest pytest-azurepipelines
     pip install pytest-cov
-    pytest tests -m "not matlab" --doctest-modules --doctest-continue-on-failure --junitxml=junit/test-results.xml --cov=paderbox --cov-report=xml --cov-report=html --ignore "tests/speech_enhancement_tests/generate_data_file.py"
+    pytest \
+      tests \
+      paderbox \  # for doctests
+      -m "not matlab" \
+      --doctest-modules --doctest-continue-on-failure \
+      --junitxml=junit/test-results.xml \
+      --cov=paderbox --cov-report=xml --cov-report=html \
+      --ignore "tests/speech_enhancement_tests/generate_data_file.py"
   displayName: 'pytest'
 
 - task: PublishTestResults@2
