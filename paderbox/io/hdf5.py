@@ -336,9 +336,10 @@ class _ReportInterface(object):
                 h5file[cur_path] = item
 
                 # NaN compares negative in Python.
-                if not h5file[cur_path].value == item and \
+                # dataset.value has been deprecated. Use dataset[()] instead.
+                if not h5file[cur_path][()] == item and \
                         not np.isnan(item) and \
-                        not np.isnan(h5file[cur_path].value):
+                        not np.isnan(h5file[cur_path][()]):
                     raise ValueError('The data representation in the HDF5 '
                                      'file does not match the original dict.')
             elif isinstance(item, type(None)):
@@ -359,7 +360,8 @@ class _ReportInterface(object):
                     )
                     continue
                 try:
-                    np.testing.assert_equal(h5file[cur_path].value, item)
+                    # dataset.value has been deprecated. Use dataset[()] instead.
+                    np.testing.assert_equal(h5file[cur_path][()], item)
                 except AssertionError:
                     raise ValueError('The data representation in the HDF5 '
                                      'file does not match the original dict.')
@@ -427,7 +429,8 @@ class _ReportInterface(object):
                     [value for (key, value) in sorted(tmp.items(),
                                                       key=lambda x: int(x[0]))]
             elif isinstance(item, h5py._hl.dataset.Dataset):
-                ans[key] = item.value
+                # dataset.value has been deprecated. Use dataset[()] instead.
+                ans[key] = item[()]
                 if isinstance(ans[key], str):
                     if ans[key] == 'None':
                         ans[key] = None
