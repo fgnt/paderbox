@@ -11,7 +11,7 @@ def flatten(d, sep='.', flat_type=dict):
                 flattened, e.g. using an isinstance check.
 
     import collections
-    flat_type=collections.MutableMapping
+    flat_type=collections.abc.MutableMapping
 
     >>> d_in = {'a': 1, 'c': {'a': 2, 'b': {'x': 5, 'y' : 10}}, 'd': [1, 2, 3]}
     >>> d = flatten(d_in)
@@ -168,9 +168,9 @@ def nested_merge(default_dict, *update_dicts, allow_update=True, inplace=False):
             for d in dicts
             if key in d.keys()
         ]
-        if isinstance(values[-1], collections.Mapping):
+        if isinstance(values[-1], collections.abc.Mapping):
             return nested_merge(*[
-                v for v in values if isinstance(v, collections.Mapping)
+                v for v in values if isinstance(v, collections.abc.Mapping)
             ], allow_update=allow_update, inplace=inplace)
         else:
             if not allow_update:
@@ -206,7 +206,7 @@ def nested_op(
         broadcast=False,
         handle_dataclass=False,
         keep_type=True,
-        mapping_type=collections.Mapping,
+        mapping_type=collections.abc.Mapping,
         sequence_type=(tuple, list),
 
 ):
