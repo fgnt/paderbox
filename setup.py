@@ -83,6 +83,7 @@ setup(
         'seaborn',
         'tqdm',
         'dill',
+        "dataclasses ; python_version<'3.7'",  # dataclasses is in py37 buildin
         'pathos',  # Multiprocessing alternative
         'pip',
         'IPython',
