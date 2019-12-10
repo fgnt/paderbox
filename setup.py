@@ -92,8 +92,8 @@ setup(
         'pyzmq',
         # 'pymatbridge',  # need pyzmq to be installed manually
         'h5py',
-        # 'line_profiler',
-        # 'memory_profiler',
+        'line_profiler',
+        'memory_profiler',
         'cached_property',
         'editdistance',
         # 'Pyro4',
@@ -104,7 +104,7 @@ setup(
         'natsort',
         # 'pymongo',  # Used to generate and check Sacred IDs
         'coverage',  # for nosetests --with-coverage
-        # 'bs4',
+        'beautifulsoup4',
         'pysoundfile',  # for German speech database
         'wavefile',  # for reading .flac audio
         'nose',
