@@ -1,19 +1,19 @@
 
-from nose.plugins import attrib
+import pytest
 
 """
-    see http://nose.readthedocs.io/en/latest/plugins/attrib.html
+    see https://docs.pytest.org/en/latest/example/markers.html#mark-examples
 
-    @nt.testing.attr.matlab
+    @paderbox.testing.attr.matlab
     def test_matlab():
         pass
 
-    @nt.testing.attr.matlab
+    @paderbox.testing.attr.matlab
     def TestMatlab:
         pass
 
-    nosetests -a '!matlab'  # disable test_matlab and TestMatlab
+    pytest -v -m "not matlab"  # disable test_matlab and TestMatlab
 
 """
 
-matlab = attrib.attr(matlab=False)
+matlab = pytest.mark.matlab

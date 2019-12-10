@@ -38,6 +38,7 @@ def rand(*shape, data_type):
         return uniform(np.float64) + 1j * uniform(np.float64)
 
 
+@tc.attr.matlab
 class TestBeamformerMethods(unittest.TestCase):
     @classmethod
     def setUpClass(self):
