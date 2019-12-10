@@ -11,6 +11,7 @@
 
 import os
 from pathlib import Path
+import urllib.request as url
 
 
 def _get_path(environment_name, default):
@@ -33,10 +34,8 @@ ssd_db_dir = _get_path(
     'NT_SSD_DB_DIR',
     '/net/ssddb'
 )
-testing = _get_path(
-    'NT_TESTING_DIR',
-    '/net/vol/jenkins/python_unittest_data'
-)
+# testing = get_test_data(
+# )
 kaldi_root = _get_path(
     'KALDI_ROOT',
     '/path/to/proper/kaldi_root/check/in/getting/started/how/to/set/it'

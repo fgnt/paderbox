@@ -5,7 +5,6 @@ from scipy import signal
 
 import paderbox.testing as tc
 from paderbox.io.audioread import audioread
-from paderbox.io.data_dir import testing as testing_dir
 from paderbox.transform.module_stft import _biorthogonal_window
 from paderbox.transform.module_stft import _biorthogonal_window_loopy
 from paderbox.transform.module_stft import _biorthogonal_window_brute_force
@@ -73,7 +72,11 @@ def stft_single_channel(time_signal, size=1024, shift=256,
 class TestSTFTMethods(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        path = testing_dir / 'timit' / 'data' / 'sample_1.wav'
+        path = tc.fetch_file_from_url(
+            "https://github.com/fgnt/pb_test_data/raw/master/bss_data/"
+            "low_reverberation/speech_source_0.wav",
+            "speech_source_0.wav"
+        )
         self.x = audioread(path)[0]
 
     def test_samples_to_stft_frames(self):
@@ -98,14 +101,14 @@ class TestSTFTMethods(unittest.TestCase):
         X = stft(x)
 
         tc.assert_almost_equal(x, istft(X, 1024, 256)[:len(x)])
-        tc.assert_equal(X.shape, (186, 513))
+        tc.assert_equal(X.shape, (154, 513))
 
     def test_restore_time_signal_from_stft_and_istft_with_num_samples(self):
         x = self.x
         X = stft(x)
 
         tc.assert_almost_equal(x, istft(X, 1024, 256, num_samples=len(x)))
-        tc.assert_equal(X.shape, (186, 513))
+        tc.assert_equal(X.shape, (154, 513))
 
     def test_restore_time_signal_with_str_window(self):
         x = self.x
@@ -113,14 +116,14 @@ class TestSTFTMethods(unittest.TestCase):
 
         tc.assert_almost_equal(
             x, istft(X, 1024, 256, window='hann', num_samples=len(x)))
-        tc.assert_equal(X.shape, (186, 513))
+        tc.assert_equal(X.shape, (154, 513))
 
     def test_restore_time_signal_from_stft_and_istft_kaldi_params(self):
         x = self.x
         X = stft(x, size=400, shift=160)
 
         tc.assert_almost_equal(x, istft(X, 400, 160)[:len(x)])
-        tc.assert_equal(X.shape, (294, 201))
+        tc.assert_equal(X.shape, (243, 201))
 
     def test_spectrogram_and_energy(self):
         x = self.x
@@ -128,13 +131,13 @@ class TestSTFTMethods(unittest.TestCase):
         spectrogram = stft_to_spectrogram(X)
         energy = spectrogram_to_energy_per_frame(spectrogram)
 
-        tc.assert_equal(X.shape, (186, 513))
+        tc.assert_equal(X.shape, (154, 513))
 
-        tc.assert_equal(spectrogram.shape, (186, 513))
+        tc.assert_equal(spectrogram.shape, (154, 513))
         tc.assert_isreal(spectrogram)
         tc.assert_array_greater_equal(spectrogram, 0)
 
-        tc.assert_equal(energy.shape, (186,))
+        tc.assert_equal(energy.shape, (154,))
         tc.assert_isreal(energy)
         tc.assert_array_greater_equal(energy, 0)
 
@@ -281,32 +284,32 @@ class TestSTFTMethods(unittest.TestCase):
 
         x1 = np.array([self.x, self.x])
         X1 = stft(x1)
-        tc.assert_equal(X1.shape, (2, 186, 513))
+        tc.assert_equal(X1.shape, (2, 154, 513))
 
         for d in np.ndindex(2):
             tc.assert_equal(X1[d, :, :].squeeze(), X)
 
         x11 = np.array([x1, x1])
         X11 = stft(x11)
-        tc.assert_equal(X11.shape, (2, 2, 186, 513))
+        tc.assert_equal(X11.shape, (2, 2, 154, 513))
         for d, k in np.ndindex(2, 2):
             tc.assert_equal(X11[d, k, :, :].squeeze(), X)
 
         x2 = x1.transpose()
         X2 = stft(x2, axis=0)
-        tc.assert_equal(X2.shape, (186, 513, 2))
+        tc.assert_equal(X2.shape, (154, 513, 2))
         for d in np.ndindex(2):
             tc.assert_equal(X2[:, :, d].squeeze(), X)
 
         x21 = np.array([x2, x2])
         X21 = stft(x21, axis=1)
-        tc.assert_equal(X21.shape, (2, 186, 513, 2))
+        tc.assert_equal(X21.shape, (2, 154, 513, 2))
         for d, k in np.ndindex(2, 2):
             tc.assert_equal(X21[d, :, :, k].squeeze(), X)
 
         x22 = x21.swapaxes(0, 1)
         X22 = stft(x22, axis=0)
-        tc.assert_equal(X22.shape, (186, 513, 2, 2))
+        tc.assert_equal(X22.shape, (154, 513, 2, 2))
         for d, k in np.ndindex(2, 2):
             tc.assert_equal(X22[:, :, d, k].squeeze(), X)
 
@@ -315,7 +318,7 @@ class TestSTFTMethods(unittest.TestCase):
         x_hat = istft(X, 512, 160, window_length=400)
 
         X_ref = istft(stft(self.x, 400, 160), 400, 160)
-        tc.assert_equal(X.shape, (294, 257))
+        tc.assert_equal(X.shape, (243, 257))
 
         tc.assert_allclose(X_ref, x_hat, rtol=1e-6, atol=1e-6)
 

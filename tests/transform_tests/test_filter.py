@@ -7,14 +7,16 @@ import paderbox.testing as tc
 import paderbox.transform as transform
 # from pymatbridge import Matlab
 
-from paderbox.io.data_dir import testing as testing_dir
-
 
 class TestSTFTMethods(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        path = testing_dir / 'timit' / 'data' / 'sample_1.wav'
+        path = tc.fetch_file_from_url(
+            "https://github.com/fgnt/pb_test_data/blob/master"
+            "/bss_data/low_reverberation/speech_source_0.wav",
+            "speech_source_0.wav"
+        )
         self.x = audioread(path)[0]
 
     def test_offcomp(self):

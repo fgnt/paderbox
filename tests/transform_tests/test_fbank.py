@@ -9,17 +9,19 @@ import paderbox.testing as tc
 import paderbox.transform as transform
 # from pymatbridge import Matlab
 
-from paderbox.io.data_dir import testing as testing_dir
-
 
 class TestSTFTMethods(unittest.TestCase):
 
     def test_fbank(self):
-        path = testing_dir / 'timit' / 'data' / 'sample_1.wav'
+        path = tc.fetch_file_from_url(
+            "https://github.com/fgnt/pb_test_data/raw/master/bss_data/"
+            "low_reverberation/speech_source_0.wav",
+            "speech_source_0.wav"
+        )
         y = audioread(path)[0]
         feature = transform.fbank(y)
 
-        tc.assert_equal(feature.shape, (291, 23))
+        tc.assert_equal(feature.shape, (240, 23))
         tc.assert_isreal(feature)
         tc.assert_array_greater_equal(feature, 0)
 
@@ -39,3 +41,5 @@ class TestSTFTMethods(unittest.TestCase):
             rand, transform.module_fbank.mel2hz(
                 transform.module_fbank.hz2mel(rand)))
         tc.assert_almost_equal(rand, transform.module_fbank.hz2mel(transform.module_fbank.mel2hz(rand)))
+
+
