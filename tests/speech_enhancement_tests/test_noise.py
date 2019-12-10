@@ -1,5 +1,6 @@
 import unittest
 
+import pytest
 import numpy as np
 import scipy
 import pb_bss.evaluation.sxr_module as sxr
@@ -77,6 +78,7 @@ class TestNoiseGeneratorPink(TestNoiseGeneratorWhite):
     slope_dB_expected = -1
 
 
+@pytest.mark.skip(reason="Noisex92 is not a public database")
 class TestNoiseGeneratorNoisex92(TestNoiseGeneratorWhite):
     n_gen_cls = noise.NoiseGeneratorNoisex92
     n_gen_cls_args = ['destroyerengine']
