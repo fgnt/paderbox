@@ -87,6 +87,7 @@ setup(
         'pathos',  # Multiprocessing alternative
         'pip',
         'IPython',
+        'ipywidgets',
         'scikit-learn',
         'pyzmq',
         # 'pymatbridge',  # need pyzmq to be installed manually
