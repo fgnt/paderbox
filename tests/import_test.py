@@ -11,12 +11,22 @@ from parameterized import parameterized, param
 def get_module_name_from_file(file):
     """
     >> import paderbox as pb
-    >> get_module_name_from_file(pb.transform.module_stft.__file__)
+    >> file = pb.transform.module_stft.__file__
+    >> file  # doctest: +ELLIPSIS
+    '.../paderbox/transform/module_stft.py'
+    >> get_module_name_from_file(file)
     'paderbox.transform.module_stft'
+    >> file = pb.transform.__file__
+    >> file  # doctest: +ELLIPSIS
+    '.../paderbox/transform/__init__.py'
+    >> get_module_name_from_file(pb.transform.__file__)
+    'paderbox.transform'
     """
 
     # coppied from inspect.getabsfile
     file = os.path.normcase(os.path.abspath(file))
+    if os.path.basename(file) == '__init__.py':
+        file, _ = os.path.split(file)
 
     file, module_path = os.path.split(file)
     module_path = os.path.splitext(module_path)[0]
