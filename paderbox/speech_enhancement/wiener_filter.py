@@ -87,10 +87,10 @@ def wiener_filter_gain(observation, n_mask, G_min_db=-25, mask_min=1e-6):
         >>> mask = np.array([1, 1, 1, 1, 1])[:, None]
         >>> G_min_db = -25
         >>> (wiener_filter_gain(obs, mask) - 10 ** (G_min_db / 20)).ravel()
-        array([ 0.,  0.,  0.,  0.,  0.])
+        array([0., 0., 0., 0., 0.])
         >>> mask = np.array([1, 0, 0, 0, 0])[:, None]
         >>> (wiener_filter_gain(obs, mask) - 10 ** (G_min_db / 20)).ravel()
-        array([ 0.,  0.,  0.,  0.,  0.])
+        array([0., 0., 0., 0., 0.])
         """
 
     G_min = 10 ** (G_min_db / 20)
