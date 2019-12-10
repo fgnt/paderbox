@@ -51,7 +51,6 @@ class TestImport:
     @pytest.mark.parametrize('py_file', [
             pytest.param(
                 py_file,
-                with_importlib=True,
                 id=get_module_name_from_file(py_file))
             for py_file in python_files
     ])
