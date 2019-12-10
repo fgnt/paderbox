@@ -96,6 +96,8 @@ setup(
         # line_profiler does not work in python 3.7
         # https://github.com/rkern/line_profiler/issues/132
         'line_profiler; python_version<"3.7"',
+        # Install from repo works also in py37:
+        'line_profiler @ git+https://github.com/rkern/line_profiler; python_version>="3.7"'
 
         'memory_profiler',
         'cached_property',
