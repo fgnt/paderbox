@@ -3,9 +3,12 @@
 >>> from pathlib import Path
 >>> p = Path('/') / 'net' # /storage/python_unittest_data
 >>> p
+PosixPath('/net')
 >>> p = p / 'storage'
 >>> p
+PosixPath('/net/storage')
 >>> str(p)
+'/net/storage'
 
 """
 
