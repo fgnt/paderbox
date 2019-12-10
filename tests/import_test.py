@@ -1,11 +1,12 @@
 """Test whether all files from paderbox/nt are importable"""
 import os
 from pathlib import Path
-import inspect
 import subprocess
 import importlib
 
-from parameterized import parameterized, param
+import pytest
+
+import paderbox
 
 
 def get_module_name_from_file(file):
@@ -42,32 +43,18 @@ def get_module_name_from_file(file):
         return '__main__'
 
 
-def _custom_name_func(testcase_func, _, param):
-    import_name = get_module_name_from_file(param.args[0])
-    import_name = '_'.join(import_name.split('.'))
-    return f"%s_%s" % (
-        testcase_func.__name__,
-        import_name
-    )
-
-
 class TestImport:
-    TOOLBOX_PATH = Path(
-        inspect.getfile(inspect.currentframe())
-    ).absolute().parents[1]
-    NT_PATH = TOOLBOX_PATH / 'paderbox'
+    NT_PATH = Path(paderbox.__file__).parent
 
     python_files = NT_PATH.glob('**/*.py')
-    python_files = [py_file for py_file in python_files
-                    if 'TODO' not in str(py_file)
-                    ]
 
-    test_input = list(
-        map(lambda p: param(p, with_importlib=True), python_files)
-    )
-
-    @parameterized.expand(test_input, doc_func=(lambda func, num, p: None),
-                          testcase_func_name=_custom_name_func)
+    @pytest.mark.parametrize('py_file', [
+            pytest.param(
+                py_file,
+                with_importlib=True,
+                id=get_module_name_from_file(py_file))
+            for py_file in python_files
+    ])
     def test_import(self, py_file, with_importlib=True):
         """
         Import `py_file` into the system
