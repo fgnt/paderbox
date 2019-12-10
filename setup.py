@@ -6,6 +6,7 @@ https://github.com/pypa/sampleproject
 """
 
 # To use a consistent encoding
+import sys
 from codecs import open
 # Always prefer setuptools over distutils
 from distutils.core import setup
@@ -92,13 +93,17 @@ setup(
         'pyzmq',
         # 'pymatbridge',  # need pyzmq to be installed manually
         'h5py',
-
-        # line_profiler does not work in python 3.7
-        # https://github.com/rkern/line_profiler/issues/132
-        'line_profiler; python_version<"3.7"',
-        # Install from repo works also in py37:
-        'line_profiler @ git+https://github.com/rkern/line_profiler; python_version>="3.7"'
-
+        (
+            # line_profiler does not work in python 3.7
+            # https://github.com/rkern/line_profiler/issues/132
+            # 'line_profiler; python_version<"3.7"'
+            'line_profiler'
+            if sys.version_info < (3, 7) else
+            # Install from repo works also in py37:
+            # 'line_profiler @ git+https://github.com/rkern/line_profiler; python_version>="3.7"'
+            'line_profiler @ git+https://github.com/rkern/line_profiler'
+            # `; python_version<"3.7"` does not work with `git+...`
+        ),
         'memory_profiler',
         'cached_property',
         'editdistance',
