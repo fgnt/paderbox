@@ -1,13 +1,13 @@
 import os
 import tempfile
-import parameterized
+import pytest
 import paderbox.testing as tc
 import numpy as np
 from paderbox.io import dump_hdf5, load_hdf5
 
 
 class TestHdf5:
-    @parameterized.parameterized([
+    @pytest.mark.parametrize("name,data,expect", [
         ('int', {'key': 1}, np.int64(1)),
         ('float', {'key': 1.1}, np.float64(1.1)),
         ('complex', {'key': 1.1j}, np.complex128(1.1j)),
