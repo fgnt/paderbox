@@ -143,7 +143,7 @@ def load_hdf5(filename, path='/'):
     >>> dump_hdf5(ex, 'tmp_foo.hdf5', True)
     >>> ex_load = load_hdf5('tmp_foo.hdf5')
     >>> from pprint import pprint
-    >>> ex_load.fav_tensors.kronecker2d[0, 0]
+    >>> ex_load['fav_tensors']['kronecker2d'][0, 0]
     1.0
     >>> pprint(ex_load)
     {'age': 24,
