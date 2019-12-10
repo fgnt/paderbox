@@ -81,7 +81,9 @@ def resample_sox(signal: np.ndarray, *, in_rate, out_rate):
 
     # This rescaling is necessary since SOX introduces clipping, when the
     # input signal is much too large.
-    normalizer = 0.95 / np.max(np.abs(signal))
+    # We normalize each channel independently to avoid rounding errors leading
+    # to the channel doc test above to fail randomly.
+    normalizer = 0.95 / np.max(np.abs(signal), keepdims=True, axis=-1)
     signal = normalizer * signal
 
     # See this page for a parameter explanation:
