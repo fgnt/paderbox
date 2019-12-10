@@ -34,7 +34,7 @@ steps:
     pip install git+https://github.com/fgnt/pb_bss  # Remove pb_bss, when all corresponding tests are moved to pb_bss
   displayName: 'Install dependencies'
 
-- script: |
+- bash: |
     # set a prefix for each cmd
     green='\033[0;32m'
     NC='\033[0m' # No Color
