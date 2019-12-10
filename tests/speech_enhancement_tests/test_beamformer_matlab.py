@@ -4,7 +4,7 @@ from os import path
 import numpy as np
 
 import paderbox.testing as tc
-from paderbox.io.data_dir import testing as testing_dir
+# from paderbox.io.data_dir import testing as testing_dir
 from paderbox.io.audioread import audioread
 from pb_bss.extraction.beamformer import get_gev_vector
 from pb_bss.extraction.beamformer import get_lcmv_vector
