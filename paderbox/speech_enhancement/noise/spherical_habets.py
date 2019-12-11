@@ -79,7 +79,8 @@ def sinf_3d(positions, signal_length, sample_rate=8000, c=340, N=256):
     >>> M = 4 # Number of sensors
     >>> P = randn(3, M)
     >>> N = 300
-    >>> sinf_3d(P, N)
+    >>> sinf_3d(P, N).shape
+    (4, 300)
 
     """
 
