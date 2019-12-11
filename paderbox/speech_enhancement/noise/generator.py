@@ -94,6 +94,10 @@ class NoiseGeneratorChimeBackground(NoiseGeneratorTemplate):
     You can create the file by running this code:
     ``python -m paderbox.database.chime.create_background_json``
 
+
+    >>> import pytest
+    >>> if not (database_jsons / 'chime_backgrounds.json').exists():
+    ...     pytest.skip('Could not find chime_backgrounds.json. Most likely you are not on the fgnt enviroment')
     >>> ng = NoiseGeneratorChimeBackground(database_jsons / 'chime_backgrounds.json', flist='train')
     >>> noise = ng.get_noise((3, 16000), np.random)
     >>> print(noise.shape)
@@ -212,7 +216,9 @@ class NoiseGeneratorNoisex92(NoiseGeneratorTemplate):
 
         Example:
 
-        >>> import paderbox.evaluation.sxr as sxr, numpy as np
+        >>> import pytest
+        >>> pytest.skip('Our source code for noisex92 is not public.')
+        >>> import pb_bss.evaluation.sxr_module as sxr, numpy as np
         >>> time_signal = np.random.randn(16000)
         >>> ng = NoiseGeneratorNoisex92(sample_rate = 16000)
         >>> n = ng.get_noise_for_signal(time_signal, snr=20, rng_state=np.random.RandomState(1))
@@ -266,36 +272,36 @@ class NoiseGeneratorSpherical(NoiseGeneratorTemplate):
         """
         Example:
 
-        >>> import paderbox.evaluation.sxr as sxr, numpy
+        >>> import pb_bss.evaluation.sxr_module as sxr, numpy as np
         >>> from paderbox.math.directional import sph2cart
-        >>> time_signal = numpy.random.randn(1000, 3)
+        >>> time_signal = np.random.randn(3, 1000)
         >>> x1,y1,z1 = sph2cart(0,0,0.1)    # Sensor position 1
         >>> x2,y2,z2 = sph2cart(0,0,0.2)    # Sensor position 2
-        >>> P = numpy.array([[0, x1, x2], [0, y1, y2], [0, z1, z2]]) # Construct position matrix
+        >>> P = np.array([[0, x1, x2], [0, y1, y2], [0, z1, z2]]) # Construct position matrix
         >>> n_gen = NoiseGeneratorSpherical(P)
         >>> n = n_gen.get_noise_for_signal(time_signal, snr=20)
-        >>> SDR, SIR, SNR = sxr.input_sxr(time_signal[:, :, None], n[:, :, None])
+        >>> SDR, SIR, SNR = sxr.input_sxr(time_signal[None, :, :], n[:, :])
         >>> '{:.2f}'.format(SNR)
         '20.00'
 
-        >>> time_signal = numpy.random.randn(1000, 3)
+        >>> time_signal = np.random.randn(3, 1000)
         >>> x1,y1,z1 = sph2cart(0,0,0.1)    # Sensor position 1
         >>> x2,y2,z2 = sph2cart(0,0,0.2)    # Sensor position 2
-        >>> P = numpy.array([[0, x1, x2], [0, y1, y2], [0, z1, z2]]) # Construct position matrix
+        >>> P = np.array([[0, x1, x2], [0, y1, y2], [0, z1, z2]]) # Construct position matrix
         >>> n_gen = NoiseGeneratorSpherical(P)
         >>> n = n_gen.get_noise_for_signal(time_signal, snr=20)
         >>> n.shape
-        (1000, 3)
+        (3, 1000)
         >>> time_signal.shape
-        (1000, 3)
-        >>> SDR, SIR, SNR = sxr.input_sxr(time_signal[:, :, numpy.newaxis], n)
+        (3, 1000)
+        >>> SDR, SIR, SNR = sxr.input_sxr(time_signal[None, :, :], n)
         >>> '{:.2f}'.format(SNR)
         '20.00'
 
 
         """
         assert len(shape) == 2, shape
-        tc.assert_equal(shape[self.channel_axis], self.number_of_channels)
+        assert shape[self.channel_axis] == self.number_of_channels, (shape, self.channel_axis, self.number_of_channels)
 
         noise_signal = sinf_3d(
             positions=self.sensor_positions,
