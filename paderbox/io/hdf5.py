@@ -8,11 +8,24 @@ import numpy as np
 __all__ = ['dump_hdf5', 'update_hdf5', 'load_hdf5']
 
 
-def dump_hdf5(obj, filename, force=True):
+def dump_hdf5(obj, filename, force=True, _print_warnings=False):
     """
 
     ToDo:
         - Discuss default value for force (CB: should be False)
+
+    Args:
+        obj:
+            HDF5 serializable obj
+        filename:
+        force:
+            IF True skip non HDF5 serializable parts in obj
+        _print_warnings:
+            Whether to use the warning module or print.
+            pytest has some problems with redirect_stderr to catch the
+            warnings -> use this option in doctests
+
+    Returns:
 
     >>> from contextlib import redirect_stderr
     >>> import sys
@@ -37,18 +50,15 @@ def dump_hdf5(obj, filename, force=True):
     ...        'kronecker2d': np.identity(3)
     ...    }
     ... }
-    >>> with redirect_stderr(sys.stdout):
-    ...     dump_hdf5(ex, 'tmp_foo.hdf5', True)
+    >>> dump_hdf5(ex, 'tmp_foo.hdf5', True, _print_warnings=True)
     >>> ex = {
     ...    'fav_numbers4': {2,4,4.3}, # currently not supported
     ... }
-    >>> with io.StringIO() as buf, redirect_stderr(buf):
-    ...     dump_hdf5(ex, 'tmp_foo.hdf5', True)
-    ...     s = buf.getvalue()
-    ...     assert 'Hdf5DumpWarning' in s
-    ...     assert 'fav_numbers4' in s
+    >>> dump_hdf5(ex, 'tmp_foo.hdf5', True, _print_warnings=True)
+    WARNING: Cannot save <class 'set'> type for key "fav_numbers4". Skip this item.
     """
-    _ReportInterface.__save_dict_to_hdf5__(obj, filename, force=force)
+    _ReportInterface.__save_dict_to_hdf5__(
+        obj, filename, force=force, print_warnings=_print_warnings)
 
 
 def update_hdf5(
@@ -241,7 +251,8 @@ class Hdf5DumpWarning(UserWarning):
 class _ReportInterface(object):
 
     @classmethod
-    def __save_dict_to_hdf5__(cls, dic, filename, force=False):
+    def __save_dict_to_hdf5__(cls, dic, filename, force=False,
+                              print_warnings=False):
         """..."""
         import h5py
         if not force and os.path.exists(filename):
@@ -252,6 +263,7 @@ class _ReportInterface(object):
                 '/',
                 dic,
                 allow_overwrite=False,
+                print_warnings=print_warnings,
             )
 
     @classmethod
@@ -261,6 +273,7 @@ class _ReportInterface(object):
             filename,
             path='/',
             allow_overwrite=False,
+            print_warnings=False,
     ):
         """..."""
         import h5py
@@ -270,6 +283,7 @@ class _ReportInterface(object):
                 path,
                 dic,
                 allow_overwrite=allow_overwrite,
+                print_warnings=print_warnings,
             )
         else:
             with h5py.File(filename, 'a') as h5file:
@@ -278,11 +292,15 @@ class _ReportInterface(object):
                     path,
                     dic,
                     allow_overwrite=allow_overwrite,
+                    print_warnings=print_warnings,
                 )
 
     @classmethod
-    def _dump_warning(cls, msg):
-        warnings.warn(msg, Hdf5DumpWarning, stacklevel=2)
+    def _dump_warning(cls, msg, print_warnings):
+        if print_warnings:
+            print('WARNING:', msg)
+        else:
+            warnings.warn(msg, Hdf5DumpWarning, stacklevel=2)
 
     @classmethod
     def __recursively_save_dict_contents_to_group__(
@@ -291,6 +309,7 @@ class _ReportInterface(object):
             path,
             dic,
             allow_overwrite,
+            print_warnings,
     ):
         """..."""
         import h5py
@@ -310,7 +329,8 @@ class _ReportInterface(object):
                 cls._dump_warning(
                     f"dict keys must be strings (and not {key}) "
                     f"to save to hdf5. "
-                    f"Skip this item."
+                    f"Skip this item.",
+                    print_warnings=print_warnings,
                 )
                 continue
 
@@ -356,7 +376,8 @@ class _ReportInterface(object):
                     cls._dump_warning(
                         f'Cannot save {type(item)} type for key {key}. '
                         f'Error msg: {" ".join(e.args)}. '
-                        f'Skip this item.'
+                        f'Skip this item.',
+                        print_warnings=print_warnings,
                     )
                     continue
                 try:
@@ -377,6 +398,7 @@ class _ReportInterface(object):
                     cur_path,
                     item,
                     allow_overwrite=allow_overwrite,
+                    print_warnings=print_warnings,
                 )
             # save lists
             elif isinstance(item, list):
@@ -385,12 +407,14 @@ class _ReportInterface(object):
                     cur_path + "_<class 'list'>",
                     {f'{k}': v for k, v in enumerate(item)},
                     allow_overwrite=allow_overwrite,
+                    print_warnings=print_warnings,
                 )
             # other types cannot be saved and will result in an error
             else:
                 cls._dump_warning(
                     f'Cannot save {type(item)} type for key "{key}". '
-                    f'Skip this item.'
+                    f'Skip this item.',
+                    print_warnings=print_warnings,
                 )
                 continue
 
