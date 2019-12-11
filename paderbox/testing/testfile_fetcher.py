@@ -46,6 +46,8 @@ def get_file_path(file):
 
     url = {
         'sample.wav': _PB_BSS+"speech_source_0.wav",
+        'speech_source_0.wav': _PB_BSS+"speech_source_0.wav",
+        'speech_image_0.wav': _PB_BSS+"speech_image_0.wav",  # multi channel
         'speech.wav': _PESQ+"speech.wav",
         "speech_bab_0dB.wav": _PESQ+"speech_bab_0dB.wav",
 

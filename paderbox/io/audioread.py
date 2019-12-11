@@ -249,15 +249,18 @@ def audioread(path, offset=0.0, duration=None, expected_sample_rate=None):
     .. admonition:: Example:
         Only path provided:
 
-        >>> path = '/net/db/timit/pcm/train/dr1/fcjf0/sa1.wav'
+        >>> from paderbox.testing.testfile_fetcher import get_file_path
+        >>> path = get_file_path('speech.wav')
+        >>> # path = '/net/db/timit/pcm/train/dr1/fcjf0/sa1.wav'
         >>> signal, sample_rate = audioread(path)
         >>> signal.shape
-        (46797,)
+        (49600,)
 
         Say you load audio examples from a very long audio, you can provide a
         start position and a duration in seconds.
 
-        >>> path = '/net/db/timit/pcm/train/dr1/fcjf0/sa1.wav'
+        >>> path = get_file_path('speech.wav')
+        >>> # path = '/net/db/timit/pcm/train/dr1/fcjf0/sa1.wav'
         >>> signal, sample_rate = audioread(path, offset=0, duration=1)
         >>> signal.shape
         (16000,)
@@ -265,11 +268,11 @@ def audioread(path, offset=0.0, duration=None, expected_sample_rate=None):
         >>> signal.shape
         (160000,)
 
-        >>> path = '/net/db/tidigits/tidigits/test/man/ah/111a.wav'
-        >>> audioread(path)  #doctest: +ELLIPSIS
+        >>> path = get_file_path('123_1pcbe_shn.sph')
+        >>> audioread(path)  # doctest: +ELLIPSIS
         Traceback (most recent call last):
         ...
-        OSError: /net/db/tidigits/tidigits/test/man/ah/111a.wav: NIST SPHERE file
+        OSError: .../123_1pcbe_shn.sph: NIST SPHERE file
         <BLANKLINE>
     """
     import wavefile
@@ -315,15 +318,16 @@ def audio_length(path, unit='samples'):
 
     Returns:
 
-    >>> path = '/net/fastdb/chime3/audio/16kHz/isolated/dt05_caf_real/F01_050C0102_CAF.CH1.wav'
+    >>> from paderbox.testing.testfile_fetcher import get_file_path
+    >>> path = get_file_path('speech_source_0.wav')
     >>> audio_length(path)
-    122111
-    >>> path = '/net/db/voiceHome/audio/noises/dev/home3_room2_arrayGeo3_arrayPos2_noiseCond1.wav'
+    38520
+    >>> path = get_file_path('speech_image_0.wav')
     >>> audio_length(path)  # correct for multichannel
-    960000
+    38520
     >>> with soundfile.SoundFile(str(path)) as f:
     ...     print(f.read().shape)
-    (960000, 8)
+    (38520, 6)
     """
 
     # params = soundfile.info(str(path))
@@ -342,12 +346,13 @@ def audio_length(path, unit='samples'):
 def audio_channels(path):
     """
 
-    >>> path = '/net/fastdb/chime3/audio/16kHz/isolated/dt05_caf_real/F01_050C0102_CAF.CH1.wav'
+    >>> from paderbox.testing.testfile_fetcher import get_file_path
+    >>> path = get_file_path('speech_source_0.wav')
     >>> audio_channels(path)
     1
-    >>> path = '/net/db/voiceHome/audio/noises/dev/home3_room2_arrayGeo3_arrayPos2_noiseCond1.wav'
+    >>> path = get_file_path('speech_image_0.wav')
     >>> audio_channels(path)  # correct for multichannel
-    8
+    6
     """
     with soundfile.SoundFile(str(path)) as f:
         return f.channels
@@ -356,14 +361,15 @@ def audio_channels(path):
 def audio_shape(path):
     """
 
-    >>> path = '/net/fastdb/chime3/audio/16kHz/isolated/dt05_caf_real/F01_050C0102_CAF.CH1.wav'
+    >>> from paderbox.testing.testfile_fetcher import get_file_path
+    >>> path = get_file_path('speech_source_0.wav')
     >>> audio_shape(path)
-    122111
-    >>> path = '/net/db/voiceHome/audio/noises/dev/home3_room2_arrayGeo3_arrayPos2_noiseCond1.wav'
+    38520
+    >>> path = get_file_path('speech_image_0.wav')
     >>> audio_shape(path)  # correct for multichannel
-    (8, 960000)
+    (6, 38520)
     >>> audioread(path)[0].shape
-    (8, 960000)
+    (6, 38520)
     """
     with soundfile.SoundFile(str(path)) as f:
         channels = f.channels
