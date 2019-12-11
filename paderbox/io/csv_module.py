@@ -6,26 +6,30 @@ def load_csv(file):
     This function should imitate pandas.read_csv, but should return instead
     of a pandas Dataframe a list of dicts.
 
+
     >>> from IPython.lib.pretty import pprint
-    >>> file = '/net/db/wham_scripts/data/mix_2_spk_filenames_cv.csv'
+    >>> from pathlib import Path
+    >>> import sklearn
+    >>> file = Path(sklearn.__file__).parent / 'datasets/data/iris.csv'
+    >>> # file = '/net/db/wham_scripts/data/mix_2_spk_filenames_cv.csv'
     >>> pprint(load_csv(file))  # doctest: +ELLIPSIS
-    [{'output_filename': '01to030v_0.76421_20ga010m_-0.76421.wav',
-      's1_path': 'wsj0/si_tr_s/01t/01to030v.wav',
-      's2_path': 'wsj0/si_tr_s/20g/20ga010m.wav'},
-     {'output_filename': '40ec020o_1.3218_20ca010n_-1.3218.wav',
-      's1_path': 'wsj0/si_tr_s/40e/40ec020o.wav',
-      's2_path': 'wsj0/si_tr_s/20c/20ca010n.wav'},
-     {'output_filename': '20lo010m_0.13154_01mc020p_-0.13154.wav',
-      's1_path': 'wsj0/si_tr_s/20l/20lo010m.wav',
-      's2_path': 'wsj0/si_tr_s/01m/01mc020p.wav'},
+    [{'150': '5.1',
+      '4': '3.5',
+      'setosa': '1.4',
+      'versicolor': '0.2',
+      'virginica': '0'},
+     {'150': '4.9',
+      '4': '3.0',
+      'setosa': '1.4',
+      'versicolor': '0.2',
+      'virginica': '0'},
     ...
 
     >>> import pandas as pd
     >>> pd.read_csv(file)  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
-                                   output_filename                        s1_path  \\
-    0       01to030v_0.76421_20ga010m_-0.76421.wav  wsj0/si_tr_s/01t/01to030v.wav
-    1         40ec020o_1.3218_20ca010n_-1.3218.wav  wsj0/si_tr_s/40e/40ec020o.wav
-    2       20lo010m_0.13154_01mc020p_-0.13154.wav  wsj0/si_tr_s/20l/20lo010m.wav   
+         150    4  setosa  versicolor  virginica
+    0    5.1  3.5     1.4         0.2          0
+    1    4.9  3.0     1.4         0.2          0
     ...
 
     """
