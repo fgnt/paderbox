@@ -15,18 +15,19 @@ def fetch_file_from_url(fpath, file):
 
     """
 
-    dirname = Path.cwd()
+    # Write in the cache folder at the git root of this repository
+    dirname = Path(__file__).resolve().absolute().parents[2]
     path = dirname / "cache"
     if not path.exists():
         path.mkdir()
 
-    if not (path/file).exists():
+    if not (path / file).exists():
         datapath = url.urlopen(fpath)
         data = datapath.read()
 
-        with open(path/file, "wb") as f:
+        with open(path / file, "wb") as f:
             f.write(data)
-    return path/file
+    return path / file
 
 
 def get_file_path(file):
