@@ -329,12 +329,13 @@ def axes_context(
         figure_size will be a the figure size of one plot and not the size of
         all subplots.
 
-     >>> with axes_context(2) as axes:
+     >>> with axes_context(2) as axes:  # doctest: +ELLIPSIS
      ...     axes.new.plot([1,2,3])
      ...     axes.new.plot([1,2,3])
      ...     axes.last.plot([1,2,4])
-     ...     axes.axes[1].plot([1,2,4])
-     ...     axes.axes[1, 1].plot([1,2,4])
+     ...     axes[1].plot([1,2,4])
+     ...     axes[1, 1].plot([1,2,4])
+     [...]
 
      - integrate context manager
      - integrate all plot functions
