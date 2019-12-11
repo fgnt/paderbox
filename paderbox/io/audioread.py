@@ -111,15 +111,16 @@ def load_audio(
     Examples
     --------
     >>> from paderbox.io import load_audio
-    >>> path = '/net/db/timit/pcm/train/dr1/fcjf0/sa1.wav'
+    >>> from paderbox.testing.testfile_fetcher import get_file_path
+    >>> path = get_file_path('speech.wav')
     >>> data = load_audio(path)
     >>> data.shape
-    (46797,)
+    (49600,)
 
     Say you load audio examples from a very long audio, you can provide a
     start position and a duration in samples or seconds.
 
-    >>> path = '/net/db/timit/pcm/train/dr1/fcjf0/sa1.wav'
+    >>> path = get_file_path('speech.wav')
     >>> signal = load_audio(path, start=0, frames=16_000)
     >>> signal.shape
     (16000,)
@@ -131,15 +132,16 @@ def load_audio(
 
     >>> signal = load_audio(path, start=0, frames=160_000)
     >>> signal.shape
-    (46797,)
+    (49600,)
 
-    >>> path = '/net/db/tidigits/tidigits/test/man/ah/111a.wav'
-    >>> load_audio(path)  #doctest: +ELLIPSIS
+    >>> path = get_file_path('123_1pcbe_shn.sph')
+    >>> load_audio(path)  # doctest: +ELLIPSIS
     Traceback (most recent call last):
     ...
-    RuntimeError: /net/db/tidigits/tidigits/test/man/ah/111a.wav: NIST SPHERE file
+    RuntimeError: Wrong suffix .sph in .../123_1pcbe_shn.sph.
+    File format:
+    .../123_1pcbe_shn.sph: NIST SPHERE file
     <BLANKLINE>
-
     """
 
     # soundfile does not support pathlib.Path.
@@ -182,14 +184,21 @@ def load_audio(
         signal, sample_rate = data, f.samplerate
     except RuntimeError as e:
         if isinstance(path, (Path, str)):
+            from paderbox.utils.process_caller import run_process
+            cp = run_process(f'file {path}')
+            stdout = cp.stdout
             if Path(path).suffix == '.wav':
                 # Improve exception msg for NIST SPHERE files.
-                from paderbox.utils.process_caller import run_process
-                cp = run_process(f'file {path}')
-                stdout = cp.stdout
-                raise RuntimeError(f'{stdout}') from e
+                raise RuntimeError(
+                    f'Could not read {path}.\n'
+                    f'File format:\n{stdout}'
+                ) from e
             else:
-                raise RuntimeError(f'Wrong suffix {path.suffix} in {path}')
+                path = Path(path)
+                raise RuntimeError(
+                    f'Wrong suffix {path.suffix} in {path}.\n'
+                    f'File format:\n{stdout}'
+                ) from e
         raise
 
     if expected_sample_rate is not None:

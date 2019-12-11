@@ -3,6 +3,7 @@ import soundfile
 
 from paderbox.io import load_audio
 from paderbox.io.audiowrite import dump_audio
+from paderbox.testing.testfile_fetcher import get_file_path
     
 import pytest
 
@@ -85,3 +86,19 @@ class TestIOAudio:
         assert get_audio_type(path) == dumped_type
         b = load_audio(path, dtype=load_type)
         assert b.dtype == loaded_dtype
+
+    @pytest.mark.parametrize("file,fails",
+    [
+        ('speech.sph', False),
+        ('123_2alaw.sph', False),
+        ('123_1pcle_shn.sph', True),
+        ('123_1ulaw_shn.sph', True),
+    ])
+    def test_sph_files(self, file, fails):
+        # Some SPHERE files can be read with soundfile, but not all.
+        path = get_file_path(file)
+        if fails:
+            with pytest.raises(RuntimeError):
+                load_audio(path)
+        else:
+            load_audio(path)

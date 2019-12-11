@@ -48,6 +48,13 @@ def get_file_path(file):
         'sample.wav': _PB_BSS+"speech_source_0.wav",
         'speech.wav': _PESQ+"speech.wav",
         "speech_bab_0dB.wav": _PESQ+"speech_bab_0dB.wav",
+
+        # Found on https://www.isip.piconepress.com/projects/speech/software/tutorials/production/fundamentals/v1.0/section_02/s02_01_p04.html
+        'speech.sph': 'https://www.isip.piconepress.com/projects/speech/software/tutorials/production/fundamentals/v1.0/section_02/data/speech.sph',
+        '123_1pcbe_shn.sph': 'https://github.com/robd003/sph2pipe/raw/master/test/123_1ulaw_shn.sph',
+        '123_1pcle_shn.sph': 'https://github.com/robd003/sph2pipe/raw/master/test/123_1pcle_shn.sph',
+        '123_1ulaw_shn.sph': 'https://github.com/robd003/sph2pipe/raw/master/test/123_1ulaw_shn.sph',
+        '123_2alaw.sph': 'https://github.com/robd003/sph2pipe/raw/master/test/123_2alaw.sph',
     }[file]
 
     return fetch_file_from_url(url, file)
