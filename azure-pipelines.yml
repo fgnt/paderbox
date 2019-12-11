@@ -26,7 +26,7 @@ steps:
     green='\033[0;32m'
     NC='\033[0m' # No Color
     trap 'echo -e "${green}$ $BASH_COMMAND ${NC}"' DEBUG
-    sudo apt-get install libsndfile1
+    sudo apt-get install libsndfile1 sox
     python -m pip install --upgrade pip
     # pip install -r requirements.txt
     pip install numpy scipy Cython
