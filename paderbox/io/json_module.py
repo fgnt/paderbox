@@ -44,6 +44,7 @@ class SummaryEncoder(Encoder):
     >>> np.set_string_function(lambda a: f'array(shape={a.shape}, dtype={a.dtype})')
     >>> example
     {'a': array(shape=(3, 4), dtype=float64)}
+    >>> np.set_string_function(None)  # needed for pytest. np.set_string_function is not properly reseted.
     """
 
     def default(self, obj):
