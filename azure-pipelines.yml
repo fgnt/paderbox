@@ -24,6 +24,14 @@ steps:
 - script: |
     # Print cmd before executing
     trap 'echo -e "$ $BASH_COMMAND"' DEBUG
+    lsb_release -a
+    python --version
+  displayName: 'Show versions'
+
+
+- script: |
+    # Print cmd before executing
+    trap 'echo -e "$ $BASH_COMMAND"' DEBUG
     sudo apt-get install libsndfile1 sox
     python -m pip install --upgrade pip
     # pip install -r requirements.txt
