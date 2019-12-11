@@ -1,14 +1,16 @@
 import unittest
-from paderbox.utils.matlab import Mlab
-import paderbox.testing as tc
+
 from pb_bss.evaluation.module_stoi import *
+
 from paderbox.io.audioread import audioread
+import paderbox.testing as tc
 from paderbox.testing.testfile_fetcher import get_file_path
+from paderbox.utils.matlab import Mlab
 
 
 # ToDo: move this code to pb_bss
 
-
+@unittest.skip('To be moved to pb_bss')
 class TestSTOI(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -101,7 +103,7 @@ class TestSTOI(unittest.TestCase):
     def test_stoi(self):
         processed = (self.x + 0.5*np.random.rand(1, self.x.shape[0])).flatten()
         mlab = Mlab().process
-        
+
         # Matlab
         mlab.set_variable("clean_signal", self.x)
         mlab.set_variable("processed_signal", processed)

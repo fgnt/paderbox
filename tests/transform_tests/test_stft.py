@@ -323,6 +323,7 @@ class TestSTFTMethods(unittest.TestCase):
     def test_center_frequencies(self):
         tc.assert_allclose(get_stft_center_frequencies(size=1024, sample_rate=16000)[0], 0)
 
+    @unittest.skip('ToDo: remove matlab dependency')
     @tc.attr.matlab
     def test_compare_with_matlab(self):
         y = self.x

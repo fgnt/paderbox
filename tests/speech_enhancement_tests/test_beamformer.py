@@ -18,6 +18,7 @@ from paderbox.utils.random_utils import uniform, hermitian, pos_def_hermitian
 # ToDo: move this test to pb_bss
 
 
+@unittest.skip('Will bemoved to pb_bss')
 class TestBeamformerWrapper(unittest.TestCase):
     K, F, D = 2, 3, 6
     shape_psd = (F, D, D)
@@ -48,7 +49,7 @@ class TestBeamformerWrapper(unittest.TestCase):
                 self.shape_psd), pos_def_hermitian(
                 self.shape_psd))
         tc.assert_equal(output.shape, self.shape_vector)
-        
+
     def test_mvdr_souden_dimensions_with_ref_channel(self):
         output = get_mvdr_vector_souden(
             pos_def_hermitian(
@@ -100,20 +101,23 @@ class TestBeamformerWrapper(unittest.TestCase):
         tc.assert_allclose(cos_similarity(W_gev, W_pca), 1.0, atol=1e-6)
 
 
+@unittest.skip('Will bemoved to pb_bss')
 class TestBeamformerWrapperWithoutIndependent(TestBeamformerWrapper):
     K, F, D = 2, 3, 6
     shape_psd = (1, D, D)
 
 
+@unittest.skip('Will bemoved to pb_bss')
 class TestBeamformerWrapperWithSpeakers(TestBeamformerWrapper):
     K, F, D = 2, 3, 6
     shape_psd = (K, F, D, D)
-    
+
     def test_mvdr_souden_dimensions(self):
         with tc.assert_raises(ValueError):
             super().test_mvdr_souden_dimensions()
 
 
+@unittest.skip('Will bemoved to pb_bss')
 class TestCythonizedGetGEV(unittest.TestCase):
     def test_import(self):
         from pb_bss.extraction.cythonized.get_gev_vector import \
@@ -141,6 +145,7 @@ class TestCythonizedGetGEV(unittest.TestCase):
         tc.assert_array_greater(elapsed_time_python/elapsed_time_cython1, 5)
 
 
+@unittest.skip('Will bemoved to pb_bss')
 class TestCythonizedEig(unittest.TestCase):
     def test_result_equal(self):
         import time
@@ -162,8 +167,8 @@ class TestCythonizedEig(unittest.TestCase):
 
         t = time.time()
         eigenvals_c, eigenvecs_c = _cythonized_eig(phi_XX, phi_NN)
-        beamforming_vector_cython = eigenvecs_c[range(F), :,
-                                    np.argmax(eigenvals_c, axis=1)]
+        beamforming_vector_cython = eigenvecs_c[
+            range(F), :, np.argmax(eigenvals_c, axis=1)]
         elapsed_time_cython1 = time.time() - t
 
         tc.assert_allclose(
@@ -174,6 +179,7 @@ class TestCythonizedEig(unittest.TestCase):
         tc.assert_array_greater(elapsed_time_python / elapsed_time_cython1, 4)
 
 
+@unittest.skip('Will bemoved to pb_bss')
 class TestMvdrSouden(unittest.TestCase):
 
     @classmethod
@@ -206,35 +212,35 @@ class TestMvdrSouden(unittest.TestCase):
         get_beamformer = get_mvdr_vector_souden
 
         for args in [
-            (
-                self.PhiXX[None, ...] * 0,
-                self.PhiNN[None, ...],
-            ),
-            (
-                self.PhiXX[None, ...],
-                self.PhiNN[None, ...] * 0,
-            ),
-            (
-                self.PhiXX[None, ...] * 0,
-                self.PhiNN[None, ...] * 0,
-            ),
+                (
+                    self.PhiXX[None, ...] * 0,
+                    self.PhiNN[None, ...],
+                ),
+                (
+                    self.PhiXX[None, ...],
+                    self.PhiNN[None, ...] * 0,
+                ),
+                (
+                    self.PhiXX[None, ...] * 0,
+                    self.PhiNN[None, ...] * 0,
+                ),
         ]:
             w = get_beamformer(*args)
             assert repr(w) == 'array([[0., 0., 0.]])', repr(w)
 
         for args in [
-            (
-                self.PhiXX[None, ...] * np.inf,
-                self.PhiNN[None, ...],
-            ),
-            (
-                self.PhiXX[None, ...],
-                self.PhiNN[None, ...] * np.inf,
-            ),
-            (
-                self.PhiXX[None, ...] * np.inf,
-                self.PhiNN[None, ...] * np.inf,
-            ),
+                (
+                    self.PhiXX[None, ...] * np.inf,
+                    self.PhiNN[None, ...],
+                ),
+                (
+                    self.PhiXX[None, ...],
+                    self.PhiNN[None, ...] * np.inf,
+                ),
+                (
+                    self.PhiXX[None, ...] * np.inf,
+                    self.PhiNN[None, ...] * np.inf,
+                ),
         ]:
             with tc.assert_raises(AssertionError):
                 get_beamformer(*args)
@@ -245,30 +251,30 @@ class TestMvdrSouden(unittest.TestCase):
                 A, B, eps=0
             )
         for args in [
-            (
-                self.PhiXX[None, ...] * 0,
-                self.PhiNN[None, ...],
-            ),
-            (
-                self.PhiXX[None, ...],
-                self.PhiNN[None, ...] * 0,
-            ),
-            (
-                self.PhiXX[None, ...] * 0,
-                self.PhiNN[None, ...] * 0,
-            ),
-            (
-                self.PhiXX[None, ...] * np.inf,
-                self.PhiNN[None, ...],
-            ),
-            (
-                self.PhiXX[None, ...],
-                self.PhiNN[None, ...] * np.inf,
-            ),
-            (
-                self.PhiXX[None, ...] * np.inf,
-                self.PhiNN[None, ...] * np.inf,
-            ),
+                (
+                    self.PhiXX[None, ...] * 0,
+                    self.PhiNN[None, ...],
+                ),
+                (
+                    self.PhiXX[None, ...],
+                    self.PhiNN[None, ...] * 0,
+                ),
+                (
+                    self.PhiXX[None, ...] * 0,
+                    self.PhiNN[None, ...] * 0,
+                ),
+                (
+                    self.PhiXX[None, ...] * np.inf,
+                    self.PhiNN[None, ...],
+                ),
+                (
+                    self.PhiXX[None, ...],
+                    self.PhiNN[None, ...] * np.inf,
+                ),
+                (
+                    self.PhiXX[None, ...] * np.inf,
+                    self.PhiNN[None, ...] * np.inf,
+                ),
         ]:
             with tc.assert_raises(AssertionError):
                 get_beamformer(*args)
