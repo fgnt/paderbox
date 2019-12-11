@@ -6,7 +6,7 @@ Available colormaps:
 
     >>> from IPython.lib.pretty import pprint
     >>> import paderbox as pb
-    >>> pprint(pb.visualization.new_cm.cmaps)  # doctest: +ELLIPSIS
+    >>> pprint(pb.visualization.colormap.cmaps)  # doctest: +ELLIPSIS
     {'magma': <matplotlib.colors.ListedColormap at 0x...>,
      'inferno': <matplotlib.colors.ListedColormap at 0x...>,
      'plasma': <matplotlib.colors.ListedColormap at 0x...>,
