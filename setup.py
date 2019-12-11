@@ -128,6 +128,7 @@ setup(
         # 'pafy',  # Download Youtube files for some databases
         'lazy_dataset',  # used for iteration over database examples
         'librosa',  # Used for FBanks
+        'torch',  # Doctest for segment_axis
     ],
 
     # Installation problems in a clean, new environment:
