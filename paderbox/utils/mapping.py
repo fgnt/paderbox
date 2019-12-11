@@ -16,11 +16,12 @@ class DispatchError(KeyError):
 class Dispatcher(dict):
     """
     Is basically a dict with a better error message on key error.
+    >>> from paderbox.utils.mapping import Dispatcher
     >>> d = Dispatcher(abc=1, bcd=2)
     >>> d['acd']  #doctest: +ELLIPSIS
     Traceback (most recent call last):
     ...
-    mapping.DispatchError: Invalid option 'acd'.
+    paderbox.utils.mapping.DispatchError: Invalid option 'acd'.
     Close matches: ['bcd', 'abc'].
     """
 
