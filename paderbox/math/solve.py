@@ -3,7 +3,7 @@ import functools
 import numpy as np
 
 
-def _lstsq(A, B):
+def _lstsq(A, B, rcond=1):
     # Fallback solver with high execution time
     assert A.shape == B.shape, (A.shape, B.shape)
     shape = A.shape
@@ -14,16 +14,16 @@ def _lstsq(A, B):
 
     C = np.zeros_like(A)
     for i in range(working_shape[0]):
-        C[i], *_ = np.linalg.lstsq(A[i], B[i])
+        C[i], *_ = np.linalg.lstsq(A[i], B[i], rcond=rcond)
     return C.reshape(*shape)
 
 
-def stable_solve(A, B):
+def stable_solve(A, B, rcond=-1):
     """
     Use np.linalg.solve with fallback to np.linalg.lstsq.
     Equal to np.linalg.lstsq but faster.
 
-    Note: limited currently by A.shape == B.shape
+    Note: limited currently to A.shape == B.shape
 
     This function tries np.linalg.solve with independent dimensions,
     when this is not working the function fall back to np.linalg.solve
@@ -36,13 +36,19 @@ def stable_solve(A, B):
     108 ms and this function 28 ms for the case that one matrix is singular
     else 1 ms.
 
+    Args:
+        A: numpy-array_like, most likely ndarray
+        A: numpy-array_like, most likely ndarray
+        rcond: Cut-off ratio for small singular values of A.
+            Refer to documentation of numpy.linalg.lstsq for details.
+            The default is using the old behaviour.
     >>> def normal(shape):
     ...     return np.random.normal(size=shape) + 1j * np.random.normal(size=shape)
 
     >>> A = normal((6, 6))
     >>> B = normal((6, 6))
     >>> C1 = np.linalg.solve(A, B)
-    >>> C2, *_ = np.linalg.lstsq(A, B)
+    >>> C2, *_ = np.linalg.lstsq(A, B, rcond=-1)
     >>> C3 = stable_solve(A, B)
     >>> C4 = _lstsq(A, B)
     >>> np.testing.assert_allclose(C1, C2)
@@ -55,7 +61,7 @@ def stable_solve(A, B):
     Traceback (most recent call last):
     ...
     numpy.linalg.LinAlgError: Singular matrix
-    >>> C2, *_ = np.linalg.lstsq(A, B)
+    >>> C2, *_ = np.linalg.lstsq(A, B, rcond=-1)
     >>> C3 = stable_solve(A, B)
     >>> C4 = _lstsq(A, B)
     >>> np.testing.assert_allclose(C2, C3)
@@ -64,7 +70,7 @@ def stable_solve(A, B):
     >>> A = normal((3, 6, 6))
     >>> B = normal((3, 6, 6))
     >>> C1 = np.linalg.solve(A, B)
-    >>> C2, *_ = np.linalg.lstsq(A, B)
+    >>> C2, *_ = np.linalg.lstsq(A, B, rcond=-1)
     Traceback (most recent call last):
     ...
     numpy.linalg.LinAlgError: 3-dimensional array given. Array must be two-dimensional
@@ -79,7 +85,7 @@ def stable_solve(A, B):
     Traceback (most recent call last):
     ...
     numpy.linalg.LinAlgError: Singular matrix
-    >>> C2, *_ = np.linalg.lstsq(A, B)
+    >>> C2, *_ = np.linalg.lstsq(A, B, rcond=-1)
     Traceback (most recent call last):
     ...
     numpy.linalg.LinAlgError: 3-dimensional array given. Array must be two-dimensional
@@ -111,5 +117,5 @@ def stable_solve(A, B):
             try:
                 C[i] = np.linalg.solve(A[i], B[i])
             except np.linalg.linalg.LinAlgError:
-                C[i], *_ = np.linalg.lstsq(A[i], B[i])
+                C[i], *_ = np.linalg.lstsq(A[i], B[i], rcond=rcond)
         return C.reshape(*shape_B)
