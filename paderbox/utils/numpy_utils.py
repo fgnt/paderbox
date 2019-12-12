@@ -816,7 +816,7 @@ class Cutter:
         assert isinstance(axis, int), axis
         trimmer = [slice(None)] * array.ndim
         trimmer[axis] = slice(self.low_cut, self.high_cut)
-        return array[trimmer]
+        return array[tuple(trimmer)]
 
     def expand(self, array, *, axis):
         """Pads to reverse the cut."""
