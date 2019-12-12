@@ -44,21 +44,25 @@ class TimerDictEntry:
         self.time = 0.0
         self._style = style
         self.timestamp = time.perf_counter  # time.process_time
+        self._start = []
 
     def __enter__(self):
-        self._start = self.timestamp()
+        self._start.append(self.timestamp())
         return self
 
     def __exit__(self, *args):
         end = self.timestamp()
-        self.time += end - self._start
+        self.time += end - self._start.pop(-1)
 
     def __call__(self, iterable):
         it = iter(iterable)
-        while True:
-            with self:
-                x = next(it)
-            yield x
+        try:
+            while True:
+                with self:
+                    x = next(it)
+                yield x
+        except StopIteration:
+            pass
 
     @property
     def timedelta(self):
@@ -86,18 +90,31 @@ class TimerDict:
     ...     time.sleep(1)
     >>> with t['test_2']:
     ...     time.sleep(1)
+
+    # Wrap iterator
     >>> def slow_range(N):
     ...     for i in range(N):
     ...         time.sleep(0.1)
     ...         yield i
     >>> for i in t['test_3'](slow_range(3)):
     ...    pass
+
+    # Nesting
+    >>> with t['test_4']:
+    ...     time.sleep(1)
+    ...     with t['test_4']:
+    ...         pass
+
+    # Show the timings
     >>> times = t.as_dict
     >>> sorted(times.keys())
-    ['test', 'test_2', 'test_3']
-    >>> print(str(times['test'])[:9], str(times['test_2'])[:9], str(times['test_3'])[:9])
-    0:00:02.0 0:00:01.0 0:00:00.3
-
+    ['test', 'test_2', 'test_3', 'test_4']
+    >>> print('\\n'.join([f'{k} ' + str(times[k])[:9]
+    ...                   for k in sorted(times.keys())]))
+    test 0:00:02.0
+    test_2 0:00:01.0
+    test_3 0:00:00.3
+    test_4 0:00:01.0
     """
     _display_data = None
     _display_vbox = None
