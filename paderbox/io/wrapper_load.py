@@ -76,6 +76,7 @@ class Loader:
             data.close()
             return ret_data
         elif ext in ['.npy']:
+            assert self.unsafe, (self.unsafe, file)
             import numpy as np
             return np.load(file, **self.kwargs, allow_pickle=self.unsafe)
         elif ext in ['.gz', '.json.gz', '.pkl.gz', '.npy.gz']:

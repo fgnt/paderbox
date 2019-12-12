@@ -31,7 +31,7 @@ def dump(
        - json
        - yaml
      - Binary:
-       - pickle
+       - pkl: pickle
        - dill
        - h5: HDF5
        - wav
@@ -133,4 +133,4 @@ def dump(
         import torch
         torch.save(obj, str(file), **kwargs)
     else:
-        raise ValueError(file)
+        raise ValueError('Unsupported suffix:', file)
