@@ -1,10 +1,7 @@
 import unittest
-from lazy_dataset.database import JsonDatabase
+
+import lazy_dataset
 from lazy_dataset.database import DictDatabase
-from pathlib import Path
-import shutil
-import tempfile
-from paderbox.io import dump_json
 
 
 class IteratorTest(unittest.TestCase):
