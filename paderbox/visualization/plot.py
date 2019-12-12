@@ -1,7 +1,6 @@
-import inspect
-import warnings
 from collections import OrderedDict
 from functools import wraps
+import itertools
 from warnings import warn
 
 import matplotlib.colors
@@ -9,10 +8,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import paderbox.transform
-from pb_bss.extraction.beamform_utils import *
-from paderbox.visualization import module_facet_grid
+from pb_bss.extraction.beamform_utils import (
+    get_steering_vector,
+    get_farfield_time_difference_of_arrival,
+)
 
-# from chainer import Variable  # see line 281
 
 
 class _ChainerVariableWarning(UserWarning):
@@ -260,10 +260,8 @@ def scatter(*signal, ax=None, ylim=None, label=None, color=None, zorder=None,
         color = ax._get_lines.get_next_color()
 
     if color is not None:
-        from itertools import count
-        if isinstance(color, (list, tuple, np.ndarray, count)):
-            if isinstance(color, count):
-                import itertools
+        if isinstance(color, (list, tuple, np.ndarray, itertools.count)):
+            if isinstance(color, itertools.count):
                 color = list(itertools.islice(color, len(signal[0])))
 
             ax.scatter(*signal, label=label, c=color, **kwargs)
@@ -717,10 +715,9 @@ def labeled_line_plot(probabilities, label_handler=None, ax=None, batch=0):
 def beampattern(W, sensor_positions, fft_size, sample_rate,
                 source_angles=None, ax=None, resolution=360):
     if source_angles is None:
-        source_angles = numpy.arange(-numpy.pi, numpy.pi,
-                                     2 * numpy.pi / resolution)
-        source_angles = numpy.vstack(
-            [source_angles, numpy.zeros_like(source_angles)]
+        source_angles = np.arange(-np.pi, np.pi, 2 * np.pi / resolution)
+        source_angles = np.vstack(
+            [source_angles, np.zeros_like(source_angles)]
         )
 
     tdoa = get_farfield_time_difference_of_arrival(
