@@ -13,7 +13,7 @@ __all__ = ['dump']
 
 def dump(
         obj,
-        file,
+        path,
         mkdir=False,
         mkdir_parents=False,
         mkdir_exist_ok=False,  # Should this be an option? Should the default be True?
@@ -22,9 +22,9 @@ def dump(
         **kwargs,
 ):
     """
-    A generic dump function to write the obj to file.
+    A generic dump function to write the obj to path.
 
-    Infer the dump protocol (e.g. json, pickle, ...) from the file name.
+    Infer the dump protocol (e.g. json, pickle, ...) from the path name.
 
     Supported formats:
      - Text:
@@ -46,9 +46,9 @@ def dump(
 
     Args:
         obj: Arbitrary object that is supported from the dump protocol.
-        file: str or pathlib.Path
+        path: str or pathlib.Path
         mkdir:
-            Whether to make an mkdir id the parent dir of file does not exist.
+            Whether to make an mkdir id the parent dir of path does not exist.
         mkdir_parents:
         mkdir_exist_ok:
         unsafe:
@@ -61,52 +61,52 @@ def dump(
     Returns:
 
     """
-    file = normalize_path(file, allow_fd=False)
+    path = normalize_path(path, allow_fd=False)
     if mkdir:
         if mkdir_exist_ok:
             # Assume that in most cases the dir exists.
             # -> try first to reduce io requests
             try:
-                return dump(obj, file, unsafe=unsafe, **kwargs)
+                return dump(obj, path, unsafe=unsafe, **kwargs)
             except FileNotFoundError:
                 pass
-        file.parent.mkdir(parents=mkdir_parents, exist_ok=mkdir_exist_ok)
+        path.parent.mkdir(parents=mkdir_parents, exist_ok=mkdir_exist_ok)
 
-    if str(file).endswith(".json"):
+    if str(path).endswith(".json"):
         from paderbox.io import dump_json
-        dump_json(obj, file, **kwargs)
-    elif str(file).endswith(".pkl"):
-        assert unsafe, (unsafe, file)
-        with file.open("wb") as fp:
+        dump_json(obj, path, **kwargs)
+    elif str(path).endswith(".pkl"):
+        assert unsafe, (unsafe, path)
+        with path.open("wb") as fp:
             pickle.dump(obj, fp, protocol=pickle.HIGHEST_PROTOCOL, **kwargs)
-    elif str(file).endswith(".dill"):
-        assert unsafe, (unsafe, file)
-        with file.open("wb") as fp:
+    elif str(path).endswith(".dill"):
+        assert unsafe, (unsafe, path)
+        with path.open("wb") as fp:
             import dill
             dill.dump(obj, fp, **kwargs)
-    elif str(file).endswith(".h5"):
+    elif str(path).endswith(".h5"):
         from paderbox.io.hdf5 import dump_hdf5
-        dump_hdf5(obj, file, **kwargs)
-    elif str(file).endswith(".yaml"):
+        dump_hdf5(obj, path, **kwargs)
+    elif str(path).endswith(".yaml"):
         if unsafe:
             from paderbox.io.yaml_module import dump_yaml_unsafe
-            dump_yaml_unsafe(obj, file, **kwargs)
+            dump_yaml_unsafe(obj, path, **kwargs)
         else:
             from paderbox.io.yaml_module import dump_yaml
-            dump_yaml(obj, file, **kwargs)
-    elif str(file).endswith(".gz"):
+            dump_yaml(obj, path, **kwargs)
+    elif str(path).endswith(".gz"):
         assert len(kwargs) == 0, kwargs
-        with gzip.GzipFile(file, 'wb', compresslevel=1) as f:
-            if str(file).endswith(".json.gz"):
+        with gzip.GzipFile(path, 'wb', compresslevel=1) as f:
+            if str(path).endswith(".json.gz"):
                 f.write(json.dumps(obj).encode())
-            elif str(file).endswith(".pkl.gz"):
-                assert unsafe, (unsafe, file)
+            elif str(path).endswith(".pkl.gz"):
+                assert unsafe, (unsafe, path)
                 pickle.dump(obj, f, protocol=pickle.HIGHEST_PROTOCOL)
-            elif str(file).endswith(".npy.gz"):
+            elif str(path).endswith(".npy.gz"):
                 np.save(f, obj, allow_pickle=unsafe)
             else:
-                raise ValueError(file)
-    elif str(file).endswith(".wav"):
+                raise ValueError(path)
+    elif str(path).endswith(".wav"):
         from paderbox.io import dump_audio
         if np.ndim(obj) == 1:
             pass
@@ -114,23 +114,23 @@ def dump(
             assert np.shape(obj)[0] < 20, (np.shape(obj), obj)
         else:
             raise AssertionError(('Expect ndim in [1, 2]', np.shape(obj), obj))
-        with file.open("wb") as fp:  # Throws better exception msg
+        with path.open("wb") as fp:  # Throws better exception msg
             dump_audio(obj, fp, **kwargs)
-    elif str(file).endswith('.mat'):
+    elif str(path).endswith('.mat'):
         import scipy.io as sio
-        sio.savemat(file, obj, **kwargs)
-    elif str(file).endswith('.npy'):
-        np.save(str(file), obj, allow_pickle=unsafe, **kwargs)
-    elif str(file).endswith('.npz'):
-        assert unsafe, (unsafe, file)
+        sio.savemat(path, obj, **kwargs)
+    elif str(path).endswith('.npy'):
+        np.save(str(path), obj, allow_pickle=unsafe, **kwargs)
+    elif str(path).endswith('.npz'):
+        assert unsafe, (unsafe, path)
         assert len(kwargs) == 0, kwargs
         if isinstance(obj, dict):
-            np.savez(str(file), **obj)
+            np.savez(str(path), **obj)
         else:
-            np.savez(str(file), obj)
-    elif str(file).endswith('.pth'):
-        assert unsafe, (unsafe, file)
+            np.savez(str(path), obj)
+    elif str(path).endswith('.pth'):
+        assert unsafe, (unsafe, path)
         import torch
-        torch.save(obj, str(file), **kwargs)
+        torch.save(obj, str(path), **kwargs)
     else:
-        raise ValueError('Unsupported suffix:', file)
+        raise ValueError('Unsupported suffix:', path)
