@@ -23,13 +23,13 @@ def dump_yaml(
 
     Uses `paderbox.io.dumps_json` and `paderbox.io.loads_json` to convert
     some special types (e.g. `tuple`, `pathlib.Path`, `numpy.ndarray`) to yaml
-    default types (e.g. `list`, `str`, `list`). Since json is amplitudes faster
-    than yaml, the overhead to call json dumps and loads can be neglected for
-    the runtime.
+    default types (e.g. `list`, `str`, `list`). Since json is faster than yaml
+    in order of magnitudes, the overhead to call json dumps and loads can be
+    neglected for the runtime.
 
     Differences from yaml.dump:
         - pathlib.Path is converted to a str
-        - sort_keys is disables (since CPython 3.6 has the dict an order)
+        - sort_keys is disabled (since CPython 3.6 has the dict in order)
 
     Args:
         obj: Arbitrary object that is safe yaml serializable
@@ -83,7 +83,7 @@ def dump_yaml_unsafe(
     Safe dump as yaml.
     Differences from yaml.dump:
         - pathlib.Path is converted to a str
-        - sort_keys is disables (since CPython 3.6 has the dict an order)
+        - sort_keys is disabled (since CPython 3.6 has the dict in order)
 
     Args:
         obj: Arbitrary object that is safe yaml serializable
