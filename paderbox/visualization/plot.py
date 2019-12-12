@@ -14,6 +14,20 @@ from pb_bss.extraction.beamform_utils import (
 )
 
 
+__all__ = [
+    'seq2seq_alignment',
+    'beampattern',
+    'tf_symlog',
+    'phone_alignment',
+    'mask',
+    'stft',
+    'spectrogram',
+    'time_series',
+    'scatter',
+    'line',
+    'image'
+]
+
 
 class _ChainerVariableWarning(UserWarning):
     pass
@@ -32,7 +46,7 @@ def create_subplot(f):
     def wrapper(*args, **kwargs):
         ax = kwargs.pop('ax', None)
         if ax is None:
-            figure, ax = plt.subplots(1, 1)
+            _, ax = plt.subplots(1, 1)
         title = kwargs.pop('title', None)
         if title is not None:
             ax.set_title(title)
@@ -121,7 +135,7 @@ def _xy_plot(
 
 @allow_dict_input_and_colorize
 @create_subplot
-def stem(
+def stem( # pylint: disable=unused-argument
         *signal,
         ax=None,
         xlim=None, ylim=None,
@@ -138,8 +152,9 @@ def stem(
 
 @allow_dict_input_and_colorize
 @create_subplot
-def line(*signal, ax: plt.Axes=None, xlim=None, ylim=None, label=None, color=None,
-         logx=False, logy=False, xlabel=None, ylabel=None, **kwargs):
+def line(*signal, ax: plt.Axes = None, xlim=None, ylim=None, label=None,
+         color=None, logx=False, logy=False, xlabel=None, ylabel=None,
+         **kwargs):
     """
     Use together with facet_grid().
 
@@ -188,6 +203,7 @@ def line(*signal, ax: plt.Axes=None, xlim=None, ylim=None, label=None, color=Non
         plt_fcn(*signal, label=label, **kwargs)
 
     if label is not None:
+        #pylint: disable=protected-access
         if ax.get_legend() and ax.get_legend()._legend_title_box.get_visible():
             title = ax.get_legend().get_title().get_text()
         else:
@@ -257,6 +273,7 @@ def scatter(*signal, ax=None, ylim=None, label=None, color=None, zorder=None,
         kwargs['zorder'] = zorder
     if color is None:
         # Scatter does not cycle the colors so we need to do this explicitly
+        # pylint: disable=protected-access
         color = ax._get_lines.get_next_color()
 
     if color is not None:
@@ -411,7 +428,7 @@ def _time_frequency_plot(
             'matplotlib.colors.Normalize'
         )
 
-    image = ax.imshow(
+    image_ = ax.imshow(
         signal,
         interpolation='nearest',
         vmin=limits[0],
@@ -470,9 +487,9 @@ def _time_frequency_plot(
                                   norm.vmax)
             else:
                 tick_locations = cbar_ticks
-            cbar = plt.colorbar(image, ax=ax, ticks=tick_locations)
+            cbar = plt.colorbar(image_, ax=ax, ticks=tick_locations)
         else:
-            cbar = plt.colorbar(image, ax=ax, ticks=cbar_ticks)
+            cbar = plt.colorbar(image_, ax=ax, ticks=cbar_ticks)
 
         if cbar_tick_labels is not None:
             cbar.ax.set_yticklabels(cbar_tick_labels)
@@ -491,7 +508,7 @@ def _time_frequency_plot(
 
 
 @create_subplot
-def spectrogram(
+def spectrogram( # pylint: disable=unused-argument
         signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
         sample_rate=None, stft_size=None, stft_shift=None,
         x_label=None, y_label=None, z_label=None, z_scale=None, cmap=None,
@@ -523,8 +540,9 @@ def spectrogram(
 
 
 @create_subplot
-def image(
-        signal, ax=None, x_label='', y_label='', z_label='', cmap=None, colorbar=False
+def image( # pylint: disable=unused-argument
+        signal, ax=None, x_label='', y_label='', z_label='', cmap=None,
+        colorbar=False
 ):
     """
     Plots a spectrogram from a spectrogram (power) as input.
@@ -541,7 +559,7 @@ def image(
 
 
 @create_subplot
-def stft(
+def stft( # pylint: disable=unused-argument
         signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
         sample_rate=None, stft_size=None, stft_shift=None,
         x_label=None, y_label=None, z_label=None, z_scale=None,
@@ -573,7 +591,7 @@ def stft(
 
 @allow_dict_for_title
 @create_subplot
-def mask(
+def mask( # pylint: disable=unused-argument
         signal, ax=None, limits=(0, 1), log=False,
         colorbar=True, batch=0, sample_rate=None, stft_size=None,
         stft_shift=None, x_label=None, y_label=None, z_label='Mask',
@@ -600,7 +618,7 @@ def _switch_indices(alignment):
 
 @allow_dict_for_title
 @create_subplot
-def phone_alignment(
+def phone_alignment( # pylint: disable=unused-argument
         signal, phone_alignment, ax=None, limits=None, log=True,
         colorbar=True, batch=0, sample_rate=None, stft_size=None,
         stft_shift=None, x_label=None, y_label=None, z_label=None, z_scale=None
@@ -660,7 +678,7 @@ def _get_limits_for_tf_symlog(signal, limits):
 
 @allow_dict_for_title
 @create_subplot
-def tf_symlog(
+def tf_symlog( # pylint: disable=unused-argument
         signal, ax=None, limits=None, log=False, colorbar=True, batch=0,
         sample_rate=None, stft_size=None, stft_shift=None,
         x_label=None, y_label=None, z_label='tf_symlog', z_scale='symlog'
@@ -730,11 +748,11 @@ def beampattern(W, sensor_positions, fft_size, sample_rate,
     B /= np.einsum('ab,ab->a', W, W.conj())[:, None]
     B = np.abs(B)
 
-    image = ax.imshow(10 * numpy.log10(B),
-                      vmin=-10, vmax=10,
-                      interpolation='nearest',
-                      cmap='viridis', origin='lower')
-    cbar = plt.colorbar(image, ax=ax)
+    image_ = ax.imshow(10 * np.log10(B),
+                       vmin=-10, vmax=10,
+                       interpolation='nearest',
+                       cmap='viridis', origin='lower')
+    cbar = plt.colorbar(image_, ax=ax)
     cbar.set_label('Gain / dB')
     ax.set_xlabel('Angle')
     ax.set_ylabel('Frequency bin index')
@@ -766,11 +784,11 @@ def posteriorgram(
     else:
         order = list(range(x.shape[1]))
 
-    image = ax.imshow(
+    image_ = ax.imshow(
         x[:, order].T,
         cmap='viridis', interpolation='none', aspect='auto'
     )
-    _ = plt.colorbar(image, ax=ax)
+    _ = plt.colorbar(image_, ax=ax)
 
     if label_handler is not None:
         plt.yticks(
@@ -808,7 +826,7 @@ def seq2seq_alignment(alignment, targets=None, decode=None, ax=None,
             if label_length is not None:
                 decode = decode[:label_length[batch]]
 
-    image = ax.imshow(
+    ax.imshow(
         alignment,
         cmap='bone', interpolation='none', aspect='auto', origin='lower'
     )
@@ -831,18 +849,3 @@ def seq2seq_alignment(alignment, targets=None, decode=None, ax=None,
     ax.set_xlabel('frame index')
     ax.set_ylabel('decode')
     return ax
-
-
-__all__ = [
-    'seq2seq_alignment',
-    'beampattern',
-    'tf_symlog',
-    'phone_alignment',
-    'mask',
-    'stft',
-    'spectrogram',
-    'time_series',
-    'scatter',
-    'line',
-    'image'
-]
