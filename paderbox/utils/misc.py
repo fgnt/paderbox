@@ -56,4 +56,4 @@ def interleave(*lists):
             except StopIteration:
                 iterators[iter_idx] = None
         if all(i is None for i in iterators):
-            raise StopIteration()
+            return
