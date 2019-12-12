@@ -138,8 +138,9 @@ class IteratorTest(unittest.TestCase):
         np.random.seed(2)
         train_iterator_2 = train_iterator.shuffle(False)
 
-        iterator = train_iterator.key_zip(train_iterator_2)
-        iterator_2 = train_iterator_2.key_zip(train_iterator)
+        iterator = lazy_dataset.key_zip(train_iterator, train_iterator_2)
+        iterator_2 = lazy_dataset.key_zip(train_iterator_2, train_iterator)
+
 
         example_ids = [e['example_id'] for e in train_iterator]
         self.assertListEqual(
