@@ -294,16 +294,18 @@ class _AxesHandler:
 
     @property
     def new(self):
+        """Expand subplot grid with a new axes object and return it."""
         return self[self.counter + 1]
 
     @property
     def last(self):
+        """Get the last axes object in the subplot grid."""
         return self[self.counter]
 
     def __getitem__(self, item):
         if isinstance(item, numbers.Integral):
             if item < 0:
-                item % self.counter
+                item = item % self.counter
             row = item // self._columns
             col = item % self._columns
             return self.get_axes(row=row, col=col)
