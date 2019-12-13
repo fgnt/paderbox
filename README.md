@@ -1,4 +1,4 @@
-# Paderbox: A collection of utilities for audio/ speech processing
+# Paderbox: A collection of utilities for audio / speech processing
 
 This repository started in late 2014 as an internal development repository for the [Communications Engineering Group](https://ei.uni-paderborn.de/nt/) at Paderborn University, Germany.
 Over the years it emerged to a collection of [IO helper](https://github.com/fgnt/paderbox/tree/master/paderbox/io), [feature extraction](https://github.com/fgnt/paderbox/tree/master/paderbox/transform) modules and numerous smaller tools adding functionality to Numpy, Pandas, and others.
