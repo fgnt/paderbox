@@ -26,8 +26,8 @@ from paderbox.visualization.colormap import cmaps
 
 
 __all__ = [
-    'figure_context',
     'axes_context',
+    'figure_context',
     'LatexContextManager',
     # 'DollarFormatter',
 ]
@@ -57,24 +57,24 @@ class DollarFormatter(ScalarFormatter):
         if len(self.locs) == 0:
             return ''
         else:
-            if not type(x) is str:
+            if not isinstance(x, str):
                 if self.formatting is not None and x % 1:
                     s = self.formatting.format(x)
                 else:
                     s = self.pprint_val(x)
-                return '\$' + self.fix_minus(s) + '\$'
+                return rf'\${self.fix_minus(s)}\$'
             else:
                 return x
 
 
-class LatexContextManager(object):
+class LatexContextManager:  # pylint: disable=too-many-instance-attributes
     """ Context manager used for plotting which exports and calls Inkscape.
 
     """
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments
             self,
             filename,
-            export_type=None,  # eps recommended (alternative pdf), because pdf is in Inkscape 0.91 r not working
+            export_type=None,
             build_folder=None,
             figure_size=(8.0, 6.0),
             formatter=None,
@@ -100,18 +100,21 @@ class LatexContextManager(object):
                 eps (svg and eps_tex and eps export) and
                 pdf (svg and pdf_tex and pdf export)
 
+            Note: Recommended export_type is eps because pdf is not working
+                in Inkscape 0.91r
         Returns:
 
         """
         assert filename.endswith('.svg')
         self.filename = filename
-        self.formatter = DollarFormatter(formatting=ticks_formatting) \
-            if formatter is None else formatter
+        self.formatter = (DollarFormatter(formatting=ticks_formatting)
+                          if formatter is None else formatter)
         self.figure_size = figure_size
         self.format_x = format_x
         self.format_y = format_y
         self.palette = palette
-        self.build_folder = build_folder if build_folder is not None else path.dirname(filename)
+        self.build_folder = (build_folder if build_folder is not None
+                             else path.dirname(filename))
         if extra_rc is None:
             self.extra_rc = dict()
         else:
@@ -122,7 +125,6 @@ class LatexContextManager(object):
         extra_rc = {
             'svg.fonttype': 'none',
             'text.usetex': False,
-            'text.latex.unicode': False,
             'axes.unicode_minus': False
         }
         extra_rc.update(self.extra_rc)
@@ -133,7 +135,7 @@ class LatexContextManager(object):
             palette=self.palette,
         )
 
-    def __exit__(self, type, value, tb):
+    def __exit__(self, exec_type, exec_value, exec_tb):
         figure = plt.gcf()
         for ax in figure.get_axes():
             if self.format_x:
@@ -286,6 +288,7 @@ class _AxesHandler:
             )
 
     def get_axes(self, *, row, col):
+        """Select axes from subplots by row and column."""
         while row >= len(self.subplots):
             self.subplots.append(self._new_subplot())
         axes = self.subplots[row][1]
