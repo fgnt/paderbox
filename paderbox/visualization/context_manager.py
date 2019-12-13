@@ -143,7 +143,12 @@ class LatexContextManager(object):
         if self.filename is not None:
             try:
                 plt.savefig(self.filename)
-
+            except FileNotFoundError as e:
+                if not path.exists(path.dirname(self.filename)):
+                    foldername = path.realpath(path.dirname(self.filename))
+                    print('The folder {} does not exist.'.format(foldername))
+                print(f'Could not save file {self.filename}. msg: {e:s}')
+            else:
                 if platform.system() == 'Darwin':  # OS X
                     inkscape_path = ('/Applications/Inkscape.app/' +
                                      'Contents/Resources/bin/inkscape')
@@ -151,58 +156,53 @@ class LatexContextManager(object):
                     inkscape_path = 'inkscape'
 
                 if self.export_type is not None:
-                    # try:
-                        # inkscape --help
-                        # -z, --without-gui  Do not use X server (only process
-                        #                    files from console)
+                    # inkscape --help
+                    # -z, --without-gui  Do not use X server (only process
+                    #                    files from console)
 
-                        # inkscape -z --export-area-page fig.svg --export-eps=fig.eps --export-latex
-                        build_file = os.path.splitext(path.join(self.build_folder, path.basename(self.filename)))[0]\
-                                     + '.' + self.export_type
+                    # inkscape -z --export-area-page fig.svg \
+                    #   --export-eps=fig.eps --export-latex
+                    stem = os.path.splitext(path.basename(self.filename))[0]
+                    build_file = path.join(self.build_folder, stem)
+                    build_file += f'.{self.export_type}'
 
-                        cmd = [
-                            inkscape_path, '-z', '--export-area-page',  # '--export-area-drawing',
-                            os.path.realpath(self.filename),
-                            '--export-{}={}'.format(
-                                self.export_type,
-                                os.path.realpath(build_file)),
-                            '--export-latex'
-                        ]
-                        # print(*cmd)
-                        subprocess.run(cmd)
-                    # except:
-                    #     print('Could not perform Inkscape export: {}.'.format(' '.join(cmd)))
-            except FileNotFoundError as e:
-                if not path.exists(path.dirname(self.filename)):
-                    print('The folder {} does not exist.'.format(path.realpath(path.dirname(self.filename))))
-
-                print('Could not save file {}. msg: {}'.format(self.filename, str(e)))
-            # except:
-            #    print('Could not save file {}.'.format(self.filename))
+                    cmd = [
+                        inkscape_path, '-z', '--export-area-page',
+                        # '--export-area-drawing',
+                        os.path.realpath(self.filename),
+                        '--export-{}={}'.format(
+                            self.export_type,
+                            os.path.realpath(build_file)),
+                        '--export-latex'
+                    ]
+                    try:
+                        subprocess.run(cmd, check=True)
+                    except subprocess.CalledProcessError as e:
+                        print('Could not perform Inkscape export: {e:!r}')
 
 
-def figure_context(
-    seaborn_axes_style='whitegrid',
-    seaborn_plotting_context='notebook',
-    font_scale=1.0,
-    line_width=3,
-    figure_size=(8.0, 6.0),
-    palette='muted',
-    extra_rc=None,
-    color_skip=0,
+def figure_context(  # pylint: disable=too-many-arguments
+        seaborn_axes_style='whitegrid',
+        seaborn_plotting_context='notebook',
+        font_scale=1.0,
+        line_width=3,
+        figure_size=(8.0, 6.0),
+        palette='muted',
+        extra_rc=None,
+        color_skip=0,
 ):
     """ Helper to create a plotting style with auto completion.
 
     :param seaborn_axes_style:
         One of the seaborn axes style presets. You can choose from
         `darkgrid``, ``whitegrid``, ``dark``, ``white``, and ``ticks``
-        and find further details in the
-        `seaborn tutorial <http://stanford.edu/~mwaskom/software/seaborn-dev/tutorial/aesthetics.html#styling-figures-with-axes-style-and-set-style>`_.
+        and find further details in the `seaborn tutorial
+        <https://seaborn.pydata.org/tutorial/aesthetics.html>`_.
     :param seaborn_plotting_context:
         One of the seaborn plotting contexts. You can choose from
         ``notebook``, ``paper``, ``talk``, and ``poster``.
-        Further details are here in the
-        `seaborn tutorial <http://stanford.edu/~mwaskom/software/seaborn-dev/generated/seaborn.plotting_context.html#seaborn-plotting-context>`_.
+        Further details are here in the `seaborn tutorial
+        <https://seaborn.pydata.org/generated/seaborn.plotting_context.html>`_.
     :param font_scale:
         The font scale scales all fonts at the same time relative
         to the seaborn plotting context default.
