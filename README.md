@@ -5,12 +5,12 @@ Over the years it emerged to a collection of [IO helper](https://github.com/fgnt
 
 The main purpose here is to limit code duplication across our [other public repositories](https://github.com/fgnt).
 
-We ensured that most functions/ classes contain Python Docstrings such that automatic tooltips of your favorite is supported.
+We ensured that most functions/ classes contain Python Docstrings such that automatic tooltips for most functions are supported.
 It was deliberately decided against a lengthy documentation: most emphasis is put on the Python Docstrings and code readability itself.
 
 
 # Examples
-Without going through all functions, we here select to examples which demonstrate why we rely on this very implementation.
+Without going through all functions, we here select two examples which demonstrate why we rely on this very implementation.
 
 
 ## Short-time Fourier transform
@@ -30,7 +30,7 @@ Numerous [STFT tests](https://github.com/fgnt/paderbox/blob/master/tests/transfo
 
 The function `paderbox.play.play()` is a somewhat elaborated wrapper around `IPython.display.Audio`.
 A single function allows to play audio from the waveform, from the STFT signal, and from file.
-It therefore serves as a great to within Jupyter Notebooks and heps for quick inspection of simulation results.
+It therefore serves as a great tool within Jupyter Notebooks and helps for quick inspection of simulation results.
 
 # How to cite?
 
@@ -38,4 +38,4 @@ There is no clear way how to cite this repository for research.
 However, we would be grateful if directly import from this repository if you use, e.g., the STFT.
 We are also fine when you copy the code as long as it remains visible where you copied the code from.
 
-If you use one of our other repositories relying on this work we would be thankful if you respect citation hints in that repository.
+If you use one of our other repositories relying on this work we would be thankful if you respect citation hints for that repository.
