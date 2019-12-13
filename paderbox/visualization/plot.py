@@ -29,10 +29,6 @@ __all__ = [
 ]
 
 
-class _ChainerVariableWarning(UserWarning):
-    pass
-
-
 def create_subplot(f):
     """ This decorator creates a subplot and passes the axes object if needed.
 
