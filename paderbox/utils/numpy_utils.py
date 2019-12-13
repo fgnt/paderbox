@@ -140,6 +140,12 @@ def segment_axis_v2(x, length: int, shift: int, axis: int=-1,
                 [2, 3, 4, 5],
                 [4, 5, 6, 7],
                 [6, 7, 8, 9]])
+        >>> segment_axis_v2(torch.tensor(np.arange(11)), 4, 2)  # simple example
+        tensor([[ 0,  1,  2,  3],
+                [ 2,  3,  4,  5],
+                [ 4,  5,  6,  7],
+                [ 6,  7,  8,  9],
+                [ 8,  9, 10,  0]])
     """
     backend = Dispatcher({
         'numpy': 'numpy',
@@ -149,12 +155,22 @@ def segment_axis_v2(x, length: int, shift: int, axis: int=-1,
 
     if backend == 'numpy':
         xp = np
+        pad = np.pad
     elif backend == 'cupy':
         import cupy
         xp = cupy
+        pad = cupy.pad
     elif backend == 'torch':
-        import torch
+        import torch.nn
+        import torch.nn.functional
         xp = torch
+        def pad(array, pad_width, mode, constant_values=0):
+            return torch.nn.functional.pad(
+                array,
+                pad=tuple(pad_width.ravel()),
+                mode=mode,
+                value=constant_values,
+            )
     else:
         raise Exception('Can not happen')
 
@@ -186,17 +202,17 @@ def segment_axis_v2(x, length: int, shift: int, axis: int=-1,
         if x.shape[axis] < length:
             npad = np.zeros([ndim, 2], dtype=np.int)
             npad[axis, 1] = length - x.shape[axis]
-            x = xp.pad(x, pad_width=npad, mode=pad_mode, **pad_kwargs)
+            x = pad(x, pad_width=npad, mode=pad_mode, **pad_kwargs)
         elif shift != 1 and (x.shape[axis] + shift - length) % shift != 0:
             npad = np.zeros([ndim, 2], dtype=np.int)
             npad[axis, 1] = shift - ((x.shape[axis] + shift - length) % shift)
-            x = xp.pad(x, pad_width=npad, mode=pad_mode, **pad_kwargs)
+            x = pad(x, pad_width=npad, mode=pad_mode, **pad_kwargs)
 
     elif end == 'conv_pad':
         assert shift == 1, shift
         npad = np.zeros([ndim, 2], dtype=np.int)
         npad[axis, :] = length - shift
-        x = xp.pad(x, pad_width=npad, mode=pad_mode, **pad_kwargs)
+        x = pad(x, pad_width=npad, mode=pad_mode, **pad_kwargs)
     elif end is None:
         assert (x.shape[axis] + shift - length) % shift == 0, \
             '{} = x.shape[axis]({}) + shift({}) - length({})) % shift({})' \
