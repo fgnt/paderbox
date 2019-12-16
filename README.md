@@ -1,3 +1,9 @@
+[![Build Status](https://dev.azure.com/fgnt/fgnt/_apis/build/status/fgnt.paderbox?branchName=master)](https://dev.azure.com/fgnt/fgnt/_build/latest?definitionId=2&branchName=master)
+[![Azure DevOps tests](https://img.shields.io/azure-devops/tests/fgnt/fgnt/2)](https://dev.azure.com/fgnt/fgnt/_build/latest?definitionId=2&branchName=master)
+[![Azure DevOps coverage](https://img.shields.io/azure-devops/coverage/fgnt/fgnt/2)](https://dev.azure.com/fgnt/fgnt/_build/latest?definitionId=2&branchName=master)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/fgnt/paderbox/master/LICENSE)
+
+
 # Paderbox: A collection of utilities for audio / speech processing
 
 This repository started in late 2014 as an internal development repository for the [Communications Engineering Group](https://ei.uni-paderborn.de/nt/) at Paderborn University, Germany.
