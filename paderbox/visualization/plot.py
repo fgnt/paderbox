@@ -8,10 +8,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import paderbox.transform
-from pb_bss.extraction.beamform_utils import (
-    get_steering_vector,
-    get_farfield_time_difference_of_arrival,
-)
 
 
 __all__ = [
@@ -728,6 +724,11 @@ def labeled_line_plot(probabilities, label_handler=None, ax=None, batch=0):
 @create_subplot
 def beampattern(W, sensor_positions, fft_size, sample_rate,
                 source_angles=None, ax=None, resolution=360):
+    from pb_bss.extraction.beamform_utils import (
+        get_steering_vector,
+        get_farfield_time_difference_of_arrival,
+    )
+
     if source_angles is None:
         source_angles = np.arange(-np.pi, np.pi, 2 * np.pi / resolution)
         source_angles = np.vstack(
