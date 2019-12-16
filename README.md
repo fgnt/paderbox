@@ -1,10 +1,9 @@
+# Paderbox: A collection of utilities for audio / speech processing
+
 [![Build Status](https://dev.azure.com/fgnt/fgnt/_apis/build/status/fgnt.paderbox?branchName=master)](https://dev.azure.com/fgnt/fgnt/_build/latest?definitionId=2&branchName=master)
 [![Azure DevOps tests](https://img.shields.io/azure-devops/tests/fgnt/fgnt/2)](https://dev.azure.com/fgnt/fgnt/_build/latest?definitionId=2&branchName=master)
 [![Azure DevOps coverage](https://img.shields.io/azure-devops/coverage/fgnt/fgnt/2)](https://dev.azure.com/fgnt/fgnt/_build/latest?definitionId=2&branchName=master)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/fgnt/paderbox/master/LICENSE)
-
-
-# Paderbox: A collection of utilities for audio / speech processing
 
 This repository started in late 2014 as an internal development repository for the [Communications Engineering Group](https://ei.uni-paderborn.de/nt/) at Paderborn University, Germany.
 Over the years it emerged to a collection of [IO helper](https://github.com/fgnt/paderbox/tree/master/paderbox/io), [feature extraction](https://github.com/fgnt/paderbox/tree/master/paderbox/transform) modules and numerous smaller tools adding functionality to Numpy, Pandas, and others.
