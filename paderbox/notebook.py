@@ -65,12 +65,6 @@ __all__ = [
     "np",
     "datetime",
     "py_query",
-    "Chime3",
-    "Chime4",
-    "Reverb",
-    "AudioReader",
-    "LimitAudioLength",
-    "AlignmentReader"
 ]
 
 
