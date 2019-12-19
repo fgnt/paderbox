@@ -51,14 +51,7 @@ steps:
     trap 'echo -e "$ $BASH_COMMAND"' DEBUG
     pip install pytest pytest-azurepipelines
     pip install pytest-cov
-    pytest \
-      tests \
-      paderbox \
-      -m "not matlab" \
-      --doctest-modules --doctest-continue-on-failure \
-      --junitxml=junit/test-results.xml \
-      --cov=paderbox --cov-report=xml --cov-report=html \
-      --ignore "tests/speech_enhancement_tests/generate_data_file.py"
+    pytest tests paderbox -v
   displayName: 'pytest'
 
 - task: PublishTestResults@2
