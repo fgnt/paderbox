@@ -6,6 +6,8 @@ find something useful if you alter it a little bit.
 """
 
 import collections
+import os
+import sys
 
 
 def update_dict(d, u):
@@ -57,3 +59,18 @@ def interleave(*lists):
                 iterators[iter_idx] = None
         if all(i is None for i in iterators):
             return
+
+
+class PrintSuppressor:
+    """Context manager to suppress print output.
+
+    Source: https://stackoverflow.com/a/45669280
+    """
+    # pylint: disable=attribute-defined-outside-init
+    def __enter__(self):
+        self._original_stdout = sys.stdout
+        sys.stdout = open(os.devnull, 'w')
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stdout.close()
+        sys.stdout = self._original_stdout
