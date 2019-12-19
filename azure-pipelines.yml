@@ -6,6 +6,12 @@
 # See https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/hosted?view=azure-devops
 # for vmImage. e.g. ubuntu-18.04, ubuntu-latest, ...
 # Note: ubuntu-latest is not ubuntu-18.04. But I do not know why.
+#
+# Python 3.8 does not work at the moment.
+# librosa needs numba
+# numba needs llvmlite
+# llvmlite can not be installed, see:
+#     https://github.com/numba/llvmlite/issues/527
 
 trigger:
 - master
@@ -18,27 +24,27 @@ strategy:
     Ubuntu18Python37:
       IMAGE_NAME: 'ubuntu-18.04'
       python.version: '3.7'
-    Ubuntu18Python38:
-      IMAGE_NAME: 'ubuntu-18.04'
-      python.version: '3.8'
+    # Ubuntu18Python38:
+    #   IMAGE_NAME: 'ubuntu-18.04'
+    #   python.version: '3.8'
     Ubuntu16Python36:
       IMAGE_NAME: 'ubuntu-16.04'
       python.version: '3.6'
     Ubuntu16Python37:
       IMAGE_NAME: 'ubuntu-16.04'
       python.version: '3.7'
-    Ubuntu16Python38:
-      IMAGE_NAME: 'ubuntu-16.04'
-      python.version: '3.8'
+    # Ubuntu16Python38:
+    #   IMAGE_NAME: 'ubuntu-16.04'
+    #   python.version: '3.8'
     OSXPython36:
       IMAGE_NAME: 'macos-10.13'
       python.version: '3.6'
     OSXPython37:
       IMAGE_NAME: 'macos-10.13'
       python.version: '3.7'
-    OSXPython38:
-      IMAGE_NAME: 'macos-10.13'
-      python.version: '3.8'
+    # OSXPython38:
+    #   IMAGE_NAME: 'macos-10.13'
+    #   python.version: '3.8'
 pool:
   vmImage: $(IMAGE_NAME)
 
