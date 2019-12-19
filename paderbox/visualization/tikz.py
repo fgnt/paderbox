@@ -1,3 +1,4 @@
+import pathlib
 import re
 import tempfile
 import textwrap
@@ -203,3 +204,65 @@ class Tikz2svg:
         except Exception as e:
             display(Code(code, language='tex'))
             raise
+
+
+def plot_to_tikz_embedded_png(
+        name, png_path=pathlib.Path('.'), tikz_path=pathlib.Path('.'),
+        tex_image_prefix='images', width='\\plotwidth', xlabel='', ylabel='',
+        colors='', additional_tikz_content='', dpi=300):
+    """
+    Creates a tikz file that has a png image as background that is created using
+    the current matplotlib figure.
+
+    Example:
+        >>> from matplotlib import pyplot as plt
+        >>> import numpy as np
+        >>> data = np.random.randn(2, 100)
+        >>> _ = plt.scatter(*data)
+        >>> plot_to_tikz_embedded_png('test')
+
+    Args:
+        name: name of the figure (png and tikz file)
+        png_path: path to place the png file
+        tikz_path: path to place the tikz file
+        tex_image_prefix: prefix used in the tikz file to reference the image
+            folder
+        width: width of the plot. Can be a string as e.g. `.5\columnwidth`
+        xlabel: Label for x-axis
+        ylabel: Label for y-axis
+        colors: Color definitions are placed at the beginning of the tikzpicture
+        additional_tikz_content: optional content. Is inserted behind the
+            embedded png and before '\end{axis}'.
+        dpi: Dots per inch for the png export
+    """
+    from matplotlib import pyplot as plt
+
+    # Make sure no axis is drawn and no whitespace appears
+    plt.axis('off')
+    plt.xticks([])
+    plt.yticks([])
+
+    # Create png file
+    plt.savefig(str(png_path / f'{name}.png'), bbox_inches='tight',
+                pad_inches=0, dpi=dpi)
+
+    # Create tikz
+    xmin, xmax = plt.xlim()
+    ymin, ymax = plt.ylim()
+
+    with (tikz_path / f'{name}.tikz').open('w', encoding='utf-8') as f:
+        f.write(f"""
+    \\begin{{tikzpicture}}[trim axis left, trim axis right]
+            {colors}
+            \\begin{{axis}}[
+            xmin={xmin},xmax={xmax},ymin={ymin},ymax={ymax},
+            axis on top,
+            width={width}, scale only axis,
+            ylabel style={{at={{(axis description cs:0.075,.5) }} }},
+            xlabel={xlabel},
+            ylabel={ylabel}]
+            \\addplot graphics[xmin={xmin},ymin={ymin},xmax={xmax},ymax={ymax}] {{{tex_image_prefix}/{name}.png}};
+            {additional_tikz_content}
+        \\end{{axis}}
+    \\end{{tikzpicture}}
+    """)
