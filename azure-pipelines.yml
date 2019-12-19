@@ -12,6 +12,10 @@
 # numba needs llvmlite
 # llvmlite can not be installed, see:
 #     https://github.com/numba/llvmlite/issues/527
+#
+# ubuntu-16.04 has the wrong sox version.
+#
+# Figure out, how sox can be installed in macos-10.13
 
 trigger:
 - master
@@ -27,21 +31,21 @@ strategy:
     # Ubuntu18Python38:
     #   IMAGE_NAME: 'ubuntu-18.04'
     #   python.version: '3.8'
-    Ubuntu16Python36:
-      IMAGE_NAME: 'ubuntu-16.04'
-      python.version: '3.6'
-    Ubuntu16Python37:
-      IMAGE_NAME: 'ubuntu-16.04'
-      python.version: '3.7'
+    # Ubuntu16Python36:
+    #   IMAGE_NAME: 'ubuntu-16.04'
+    #   python.version: '3.6'
+    # Ubuntu16Python37:
+    #   IMAGE_NAME: 'ubuntu-16.04'
+    #   python.version: '3.7'
     # Ubuntu16Python38:
     #   IMAGE_NAME: 'ubuntu-16.04'
     #   python.version: '3.8'
-    OSXPython36:
-      IMAGE_NAME: 'macos-10.13'
-      python.version: '3.6'
-    OSXPython37:
-      IMAGE_NAME: 'macos-10.13'
-      python.version: '3.7'
+    # OSXPython36:
+    #   IMAGE_NAME: 'macos-10.13'
+    #   python.version: '3.6'
+    # OSXPython37:
+    #   IMAGE_NAME: 'macos-10.13'
+    #   python.version: '3.7'
     # OSXPython38:
     #   IMAGE_NAME: 'macos-10.13'
     #   python.version: '3.8'
