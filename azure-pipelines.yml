@@ -34,7 +34,6 @@ steps:
     python --version
   displayName: 'Show versions'
 
-
 - script: |
     # Print cmd before executing
     trap 'echo -e "$ $BASH_COMMAND"' DEBUG
@@ -46,7 +45,7 @@ steps:
     pip install git+https://github.com/fgnt/pb_bss.git#egg=pb_bss[all]  # Remove pb_bss, when all corresponding tests are moved to pb_bss
   displayName: 'Install dependencies'
 
-- bash: |
+- script: |
     # Print cmd before executing
     trap 'echo -e "$ $BASH_COMMAND"' DEBUG
     pip install pytest pytest-azurepipelines
