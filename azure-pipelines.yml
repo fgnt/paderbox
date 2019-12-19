@@ -51,7 +51,11 @@ steps:
     trap 'echo -e "$ $BASH_COMMAND"' DEBUG
     pip install pytest pytest-azurepipelines
     pip install pytest-cov
-    pytest tests paderbox -v
+    pytest \
+      tests \
+      paderbox \
+      -v \
+      --test-run-title="Pytest $(IMAGE_NAME) py$(python.version)"
   displayName: 'pytest'
 
 - task: PublishTestResults@2
