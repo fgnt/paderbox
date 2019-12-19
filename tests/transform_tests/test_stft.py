@@ -208,7 +208,7 @@ class TestSTFTMethods(unittest.TestCase):
         tc.assert_equal(for_result.shape, (1024,))
 
     def test_biorthogonal_window_inverts_analysis_window(self):
-        from paderbox.utils.numpy_utils import roll_zeropad
+        from paderbox.array import roll_zeropad
 
         def inf_shift_add(analysis_window, shift):
             influence_width = ((len(analysis_window) - 1) // shift)
@@ -228,7 +228,7 @@ class TestSTFTMethods(unittest.TestCase):
         tc.assert_allclose(s, 1)
 
     def test_biorthogonal_window_inverts_analysis_window_kaldi_parameter(self):
-        from paderbox.utils.numpy_utils import roll_zeropad
+        from paderbox.array import roll_zeropad
 
         def inf_shift_add(analysis_window, shift):
             influence_width = ((len(analysis_window) - 1) // shift)

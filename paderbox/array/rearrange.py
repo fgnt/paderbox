@@ -1,10 +1,16 @@
 import re
 import numpy as np
-import collections
-import numbers
 from numpy.core.einsumfunc import _parse_einsum_input
-from dataclasses import dataclass
-from paderbox.utils.mapping import Dispatcher
+
+from paderbox.array.segment import segment_axis
+
+
+__all__ = [
+    'split_complex_features',
+    'merge_complex_features',
+    'tbf_to_tbchw',
+    'morph',
+]
 
 
 def split_complex_features(X):
@@ -55,7 +61,7 @@ def tbf_to_tbchw(x, left_context, right_context, step_width,
                ((left_context, right_context), (0, 0), (0, 0)),
                mode=pad_mode, **pad_kwargs)
     window_size = left_context + right_context + 1
-    return segment_axis_v2(
+    return segment_axis(
         x, window_size, step_width, axis=0, end='cut'
     ).transpose(0, 2, 3, 1)[:, :, None, :, :]
 

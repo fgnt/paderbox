@@ -1,10 +1,6 @@
-import re
 import numpy as np
-import collections
-import numbers
-from numpy.core.einsumfunc import _parse_einsum_input
-from dataclasses import dataclass
-from paderbox.utils.mapping import Dispatcher
+
+from paderbox.array.rearrange import tbf_to_tbchw
 
 
 def stack_context(X, left_context=0, right_context=0, step_width=1):

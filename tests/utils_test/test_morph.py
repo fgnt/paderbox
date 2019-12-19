@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import paderbox.testing as tc
-from paderbox.utils.numpy_utils import morph
+from paderbox.array import morph
 
 
 T, B, F = 40, 6, 50

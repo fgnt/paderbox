@@ -1,14 +1,9 @@
-import re
 import numpy as np
-import collections
-import numbers
-from numpy.core.einsumfunc import _parse_einsum_input
-from dataclasses import dataclass
 from paderbox.utils.mapping import Dispatcher
 
 
-def segment_axis_v2(x, length: int, shift: int, axis: int=-1,
-                    end='pad', pad_mode='constant', pad_value=0):
+def segment_axis(x, length: int, shift: int, axis: int=-1,
+                 end='pad', pad_mode='constant', pad_value=0):
     """Originally from http://wiki.scipy.org/Cookbook/SegmentAxis
 
     Generate a new array that chops the given array along the given axis
@@ -34,25 +29,25 @@ def segment_axis_v2(x, length: int, shift: int, axis: int=-1,
 
     Examples:
         >>> # import cupy as np
-        >>> segment_axis_v2(np.arange(10), 4, 2)  # simple example
+        >>> segment_axis(np.arange(10), 4, 2)  # simple example
         array([[0, 1, 2, 3],
                [2, 3, 4, 5],
                [4, 5, 6, 7],
                [6, 7, 8, 9]])
-        >>> segment_axis_v2(np.arange(10), 4, -2)  # negative shift
+        >>> segment_axis(np.arange(10), 4, -2)  # negative shift
         array([[6, 7, 8, 9],
                [4, 5, 6, 7],
                [2, 3, 4, 5],
                [0, 1, 2, 3]])
-        >>> segment_axis_v2(np.arange(5).reshape(5), 4, 1, axis=0)
+        >>> segment_axis(np.arange(5).reshape(5), 4, 1, axis=0)
         array([[0, 1, 2, 3],
                [1, 2, 3, 4]])
-        >>> segment_axis_v2(np.arange(5).reshape(5), 4, 2, axis=0, end='cut')
+        >>> segment_axis(np.arange(5).reshape(5), 4, 2, axis=0, end='cut')
         array([[0, 1, 2, 3]])
-        >>> segment_axis_v2(np.arange(5).reshape(5), 4, 2, axis=0, end='pad')
+        >>> segment_axis(np.arange(5).reshape(5), 4, 2, axis=0, end='pad')
         array([[0, 1, 2, 3],
                [2, 3, 4, 0]])
-        >>> segment_axis_v2(np.arange(5).reshape(5), 4, 1, axis=0, end='conv_pad')
+        >>> segment_axis(np.arange(5).reshape(5), 4, 1, axis=0, end='conv_pad')
         array([[0, 0, 0, 0],
                [0, 0, 0, 1],
                [0, 0, 1, 2],
@@ -61,29 +56,29 @@ def segment_axis_v2(x, length: int, shift: int, axis: int=-1,
                [2, 3, 4, 0],
                [3, 4, 0, 0],
                [4, 0, 0, 0]])
-        >>> segment_axis_v2(np.arange(6).reshape(6), 4, 2, axis=0, end='pad')
+        >>> segment_axis(np.arange(6).reshape(6), 4, 2, axis=0, end='pad')
         array([[0, 1, 2, 3],
                [2, 3, 4, 5]])
-        >>> segment_axis_v2(np.arange(10).reshape(2, 5), 4, 1, axis=-1)
+        >>> segment_axis(np.arange(10).reshape(2, 5), 4, 1, axis=-1)
         array([[[0, 1, 2, 3],
                 [1, 2, 3, 4]],
         <BLANKLINE>
                [[5, 6, 7, 8],
                 [6, 7, 8, 9]]])
-        >>> segment_axis_v2(np.arange(10).reshape(5, 2).T, 4, 1, axis=1)
+        >>> segment_axis(np.arange(10).reshape(5, 2).T, 4, 1, axis=1)
         array([[[0, 2, 4, 6],
                 [2, 4, 6, 8]],
         <BLANKLINE>
                [[1, 3, 5, 7],
                 [3, 5, 7, 9]]])
-        >>> segment_axis_v2(np.asfortranarray(np.arange(10).reshape(2, 5)),
+        >>> segment_axis(np.asfortranarray(np.arange(10).reshape(2, 5)),
         ...                 4, 1, axis=1)
         array([[[0, 1, 2, 3],
                 [1, 2, 3, 4]],
         <BLANKLINE>
                [[5, 6, 7, 8],
                 [6, 7, 8, 9]]])
-        >>> segment_axis_v2(np.arange(8).reshape(2, 2, 2).transpose(1, 2, 0),
+        >>> segment_axis(np.arange(8).reshape(2, 2, 2).transpose(1, 2, 0),
         ...                 2, 1, axis=0, end='cut')
         array([[[[0, 4],
                  [1, 5]],
@@ -91,30 +86,30 @@ def segment_axis_v2(x, length: int, shift: int, axis: int=-1,
                 [[2, 6],
                  [3, 7]]]])
         >>> a = np.arange(7).reshape(7)
-        >>> b = segment_axis_v2(a, 4, -2, axis=0, end='cut')
+        >>> b = segment_axis(a, 4, -2, axis=0, end='cut')
         >>> a += 1  # a and b point to the same memory
         >>> b
         array([[3, 4, 5, 6],
                [1, 2, 3, 4]])
 
-        >>> segment_axis_v2(np.arange(7), 8, 1, axis=0, end='pad').shape
+        >>> segment_axis(np.arange(7), 8, 1, axis=0, end='pad').shape
         (1, 8)
-        >>> segment_axis_v2(np.arange(8), 8, 1, axis=0, end='pad').shape
+        >>> segment_axis(np.arange(8), 8, 1, axis=0, end='pad').shape
         (1, 8)
-        >>> segment_axis_v2(np.arange(9), 8, 1, axis=0, end='pad').shape
+        >>> segment_axis(np.arange(9), 8, 1, axis=0, end='pad').shape
         (2, 8)
-        >>> segment_axis_v2(np.arange(7), 8, 2, axis=0, end='cut').shape
+        >>> segment_axis(np.arange(7), 8, 2, axis=0, end='cut').shape
         (0, 8)
-        >>> segment_axis_v2(np.arange(8), 8, 2, axis=0, end='cut').shape
+        >>> segment_axis(np.arange(8), 8, 2, axis=0, end='cut').shape
         (1, 8)
-        >>> segment_axis_v2(np.arange(9), 8, 2, axis=0, end='cut').shape
+        >>> segment_axis(np.arange(9), 8, 2, axis=0, end='cut').shape
         (1, 8)
 
         >>> x = np.arange(1, 10)
         >>> filter_ = np.array([1, 2, 3])
         >>> np.convolve(x, filter_)
         array([ 1,  4, 10, 16, 22, 28, 34, 40, 46, 42, 27])
-        >>> x_ = segment_axis_v2(x, len(filter_), 1, end='conv_pad')
+        >>> x_ = segment_axis(x, len(filter_), 1, end='conv_pad')
         >>> x_
         array([[0, 0, 1],
                [0, 1, 2],
@@ -130,17 +125,17 @@ def segment_axis_v2(x, length: int, shift: int, axis: int=-1,
         >>> x_ @ filter_[::-1]  # Equal to convolution
         array([ 1,  4, 10, 16, 22, 28, 34, 40, 46, 42, 27])
 
-        >>> segment_axis_v2(np.arange(19), 16, 4, axis=-1, end='pad')
+        >>> segment_axis(np.arange(19), 16, 4, axis=-1, end='pad')
         array([[ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15],
                [ 4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18,  0]])
 
         >>> import torch
-        >>> segment_axis_v2(torch.tensor(np.arange(10)), 4, 2)  # simple example
+        >>> segment_axis(torch.tensor(np.arange(10)), 4, 2)  # simple example
         tensor([[0, 1, 2, 3],
                 [2, 3, 4, 5],
                 [4, 5, 6, 7],
                 [6, 7, 8, 9]])
-        >>> segment_axis_v2(torch.tensor(np.arange(11)), 4, 2)  # simple example
+        >>> segment_axis(torch.tensor(np.arange(11)), 4, 2)  # simple example
         tensor([[ 0,  1,  2,  3],
                 [ 2,  3,  4,  5],
                 [ 4,  5,  6,  7],

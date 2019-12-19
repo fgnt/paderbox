@@ -1,10 +1,6 @@
-import re
 import numpy as np
 import collections
 import numbers
-from numpy.core.einsumfunc import _parse_einsum_input
-from dataclasses import dataclass
-from paderbox.utils.mapping import Dispatcher
 
 
 def to_ndarray(data, copy=True):

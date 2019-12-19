@@ -27,7 +27,7 @@ from paderbox.io.play import play
 from paderbox.transform import fbank
 from paderbox.transform import istft
 from paderbox.transform import stft
-from paderbox.utils.numpy_utils import morph
+from paderbox.array import morph
 from paderbox.utils.pandas_utils import py_query
 from paderbox.visualization import figure_context
 from paderbox.visualization import axes_context

@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from paderbox.utils.numpy_utils import split_complex_features, merge_complex_features
+from paderbox.array import split_complex_features, merge_complex_features
 
 T, B, F = 400, 6, 513
 A = np.random.uniform(size=(T, B, F)) + 1j * np.random.uniform(size=(T, B, F))

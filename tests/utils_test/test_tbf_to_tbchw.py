@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-from paderbox.utils.numpy_utils import tbf_to_tbchw
+from paderbox.array import tbf_to_tbchw
 
 class TestTBFtoTBCHW(unittest.TestCase):
 

@@ -9,8 +9,8 @@ import numpy as np
 from numpy.fft import rfft, irfft
 from scipy import signal
 
-from paderbox.utils.numpy_utils import roll_zeropad
-from paderbox.utils.numpy_utils import segment_axis_v2
+from paderbox.array import roll_zeropad
+from paderbox.array import segment_axis
 from paderbox.utils.mapping import Dispatcher
 
 
@@ -81,7 +81,7 @@ def stft(
         window_length=window_length,
     )
 
-    time_signal_seg = segment_axis_v2(
+    time_signal_seg = segment_axis(
         time_signal,
         window_length,
         shift=shift,
@@ -556,7 +556,7 @@ def istft(
          stft_signal.shape[-2] * shift + window_length - shift))
 
     # Get the correct view to time_signal
-    time_signal_seg = segment_axis_v2(
+    time_signal_seg = segment_axis(
         time_signal, window_length, shift, end=None
     )
 
