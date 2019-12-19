@@ -129,6 +129,8 @@ def segment_axis(x, length: int, shift: int, axis: int=-1,
         array([[ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15],
                [ 4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18,  0]])
 
+        >>> import pytest
+        >>> pytest.skip('Azure has problems to import torch -> seg fault')
         >>> import torch
         >>> segment_axis(torch.tensor(np.arange(10)), 4, 2)  # simple example
         tensor([[0, 1, 2, 3],
