@@ -9,28 +9,28 @@ import paderbox as pb
     'file_name,load_fails,load_unsafe',
     [
         pytest.param(
-            file_name, load_fails, load_unsafe,
+            file_name, load_fails, load_unsafe, **kwargs,
             id=f'{file_name.replace("file.", "").replace(".", "_")}_load_fails_{load_fails}_load_unsafe_{load_unsafe}'
         )
-        for file_name, load_fails, load_unsafe in [
-            ('file.json', False, False),
-            ('file.yaml', False, False),
-            ('file.pkl', True, False),
-            ('file.pkl', False, True),
-            ('file.dill', True, False),
-            ('file.dill', False, True),
-            ('file.wav', False, False),
-            ('file.mat', False, False),
-            ('file.npy', True, False),
-            ('file.npy', False, True),
-            ('file.npz', False, False),
-            ('file.pth', True, False),
-            ('file.pth', False, True),
-            ('file.json.gz', False, False),
-            ('file.pkl.gz', True, False),
-            ('file.pkl.gz', False, True),
-            ('file.npy.gz', True, False),
-            ('file.npy.gz', False, True),
+        for file_name, load_fails, load_unsafe, kwargs in [
+            ('file.json', False, False, {}),
+            ('file.yaml', False, False, {}),
+            ('file.pkl', True, False, {}),
+            ('file.pkl', False, True, {}),
+            ('file.dill', True, False, {}),
+            ('file.dill', False, True, {}),
+            ('file.wav', False, False, {}),
+            ('file.mat', False, False, {}),
+            ('file.npy', True, False, {}),
+            ('file.npy', False, True, {}),
+            ('file.npz', False, False, {}),
+            ('file.pth', True, False, {'marks': pytest.mark.torch}),
+            ('file.pth', False, True, {'marks': pytest.mark.torch}),
+            ('file.json.gz', False, False, {}),
+            ('file.pkl.gz', True, False, {}),
+            ('file.pkl.gz', False, True, {}),
+            ('file.npy.gz', True, False, {}),
+            ('file.npy.gz', False, True, {}),
         ]
     ]
 )
