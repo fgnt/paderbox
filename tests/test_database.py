@@ -4,7 +4,7 @@ import lazy_dataset
 from lazy_dataset.database import DictDatabase
 
 
-class IteratorTest(unittest.TestCase):
+class DatasetTest(unittest.TestCase):
     def setUp(self):
         self.json = dict(
             datasets=dict(
@@ -29,175 +29,175 @@ class IteratorTest(unittest.TestCase):
             list(self.json['datasets'].keys())
         )
 
-    def test_iterator(self):
-        iterator = self.db.get_dataset('train')
-        example_ids = [e['example_id'] for e in iterator]
+    def test_dataset(self):
+        dataset = self.db.get_dataset('train')
+        example_ids = [e['example_id'] for e in dataset]
         self.assertListEqual(
             example_ids,
             list(self.json['datasets']['train'].keys())
         )
-        _ = iterator['a']
-        _ = iterator['b']
-        _ = iterator[0]
-        _ = iterator[1]
-        _ = iterator[:1][0]
+        _ = dataset['a']
+        _ = dataset['b']
+        _ = dataset[0]
+        _ = dataset[1]
+        _ = dataset[:1][0]
 
-    def test_iterator_contains(self):
-        iterator = self.db.get_dataset('train')
+    def test_dataset_contains(self):
+        dataset = self.db.get_dataset('train')
         with self.assertRaises(Exception):
             # contains should be unsupported
-            'a' in iterator
+            'a' in dataset
 
-    def test_map_iterator(self):
-        iterator = self.db.get_dataset('train')
+    def test_map_dataset(self):
+        dataset = self.db.get_dataset('train')
 
         def map_fn(d):
             d['example_id'] = d['example_id'].upper()
             return d
 
-        iterator = iterator.map(map_fn)
-        example_ids = [e['example_id'] for e in iterator]
+        dataset = dataset.map(map_fn)
+        example_ids = [e['example_id'] for e in dataset]
         self.assertListEqual(
             example_ids,
             'A B'.split()
         )
-        _ = iterator['a']
-        _ = iterator[0]
-        _ = iterator[:1][0]
+        _ = dataset['a']
+        _ = dataset[0]
+        _ = dataset[:1][0]
 
-    def test_filter_iterator(self):
-        iterator = self.db.get_dataset('train')
+    def test_filter_dataset(self):
+        dataset = self.db.get_dataset('train')
 
         def filter_fn(d):
             return not d['example_id'] == 'b'
 
-        iterator = iterator.filter(filter_fn)
-        example_ids = [e['example_id'] for e in iterator]
+        dataset = dataset.filter(filter_fn)
+        example_ids = [e['example_id'] for e in dataset]
         self.assertListEqual(
             example_ids,
             'a'.split()
         )
-        _ = iterator['a']
+        _ = dataset['a']
         with self.assertRaises(IndexError):
-            _ = iterator['b']
+            _ = dataset['b']
         with self.assertRaises(AssertionError):
-            _ = iterator[0]
+            _ = dataset[0]
         with self.assertRaises(AssertionError):
-            _ = iterator[:1]
+            _ = dataset[:1]
 
-    def test_concatenate_iterator(self):
-        train_iterator = self.db.get_dataset('train')
-        test_iterator = self.db.get_dataset('test')
-        iterator = train_iterator.concatenate(test_iterator)
-        example_ids = [e['example_id'] for e in iterator]
+    def test_concatenate_dataset(self):
+        train_dataset = self.db.get_dataset('train')
+        test_dataset = self.db.get_dataset('test')
+        dataset = train_dataset.concatenate(test_dataset)
+        example_ids = [e['example_id'] for e in dataset]
         self.assertListEqual(
             example_ids,
             'a b c'.split()
         )
         self.assertEqual(
-            iterator['a']['example_id'],
+            dataset['a']['example_id'],
             'a'
         )
         self.assertEqual(
-            iterator[0]['example_id'],
+            dataset[0]['example_id'],
             'a'
         )
-        _ = iterator[:1][0]
+        _ = dataset[:1][0]
 
-    def test_concatenate_iterator_double_keys(self):
-        train_iterator = self.db.get_dataset('train')
-        iterator = train_iterator.concatenate(train_iterator)
-        example_ids = [e['example_id'] for e in iterator]
+    def test_concatenate_dataset_double_keys(self):
+        train_dataset = self.db.get_dataset('train')
+        dataset = train_dataset.concatenate(train_dataset)
+        example_ids = [e['example_id'] for e in dataset]
         self.assertListEqual(
             example_ids,
             'a b a b'.split()
         )
         with self.assertRaises(AssertionError):
-            _ = iterator['a']
+            _ = dataset['a']
         self.assertEqual(
-            iterator[0]['example_id'],
+            dataset[0]['example_id'],
             'a'
         )
-        _ = iterator[:1][0]
+        _ = dataset[:1][0]
 
-    def test_multiple_concatenate_iterator(self):
-        train_iterator = self.db.get_dataset('train')
-        iterator = train_iterator.concatenate(train_iterator)
-        example_ids = [e['example_id'] for e in iterator]
+    def test_multiple_concatenate_dataset(self):
+        train_dataset = self.db.get_dataset('train')
+        dataset = train_dataset.concatenate(train_dataset)
+        example_ids = [e['example_id'] for e in dataset]
         self.assertListEqual(
             example_ids,
             'a b a b'.split()
         )
-        _ = iterator[:1][0]
+        _ = dataset[:1][0]
 
-    def test_zip_iterator(self):
+    def test_zip_dataset(self):
         import numpy as np
-        train_iterator = self.db.get_dataset('train')
+        train_dataset = self.db.get_dataset('train')
 
         # Change the key order
         np.random.seed(2)
-        train_iterator_2 = train_iterator.shuffle(False)
+        train_dataset_2 = train_dataset.shuffle(False)
 
-        iterator = lazy_dataset.key_zip(train_iterator, train_iterator_2)
-        iterator_2 = lazy_dataset.key_zip(train_iterator_2, train_iterator)
+        dataset = lazy_dataset.key_zip(train_dataset, train_dataset_2)
+        dataset_2 = lazy_dataset.key_zip(train_dataset_2, train_dataset)
 
 
-        example_ids = [e['example_id'] for e in train_iterator]
+        example_ids = [e['example_id'] for e in train_dataset]
         self.assertListEqual(
             example_ids,
             'a b'.split()
         )
 
-        example_ids = [e['example_id'] for e in train_iterator_2]
+        example_ids = [e['example_id'] for e in train_dataset_2]
         self.assertListEqual(
             example_ids,
-            'b a'.split()  # train_iterator_2 has swapped keys
+            'b a'.split()  # train_dataset_2 has swapped keys
         )
-        self.assertEqual(  # iterator defined order
-            list(iterator),
+        self.assertEqual(  # dataset defined order
+            list(dataset),
             [({'dataset': 'train', 'example_id': 'a'},
               {'dataset': 'train', 'example_id': 'a'}),
              ({'dataset': 'train', 'example_id': 'b'},
               {'dataset': 'train', 'example_id': 'b'})]
         )
-        self.assertEqual(  # train_iterator_2 defined order
-            list(iterator_2),
+        self.assertEqual(  # train_dataset_2 defined order
+            list(dataset_2),
             [({'dataset': 'train', 'example_id': 'b'},
               {'dataset': 'train', 'example_id': 'b'}),
              ({'dataset': 'train', 'example_id': 'a'},
               {'dataset': 'train', 'example_id': 'a'})]
         )
 
-    def test_slice_iterator(self):
-        base_iterator = self.db.get_dataset('train')
-        base_iterator = base_iterator.concatenate(base_iterator)
-        iterator = base_iterator[:4]
-        example_ids = [e['example_id'] for e in iterator]
+    def test_slice_dataset(self):
+        base_dataset = self.db.get_dataset('train')
+        base_dataset = base_dataset.concatenate(base_dataset)
+        dataset = base_dataset[:4]
+        example_ids = [e['example_id'] for e in dataset]
         self.assertListEqual(
             example_ids,
             'a b a b'.split()
         )
-        iterator = base_iterator[:3]
-        example_ids = [e['example_id'] for e in iterator]
+        dataset = base_dataset[:3]
+        example_ids = [e['example_id'] for e in dataset]
         self.assertListEqual(
             example_ids,
             'a b a'.split()
         )
-        iterator = base_iterator[:5]  # Should this work?
-        example_ids = [e['example_id'] for e in iterator]
+        dataset = base_dataset[:5]  # Should this work?
+        example_ids = [e['example_id'] for e in dataset]
         self.assertListEqual(
             example_ids,
             'a b a b'.split()
         )
-        _ = base_iterator[:2]
-        _ = base_iterator[:1]
-        _ = base_iterator[:0]  # Should this work?
+        _ = base_dataset[:2]
+        _ = base_dataset[:1]
+        _ = base_dataset[:0]  # Should this work?
 
     # def tearDown(self):
     #     shutil.rmtree(str(self.temp_directory))
 
 
-class UniqueIDIteratorTest(unittest.TestCase):
+class UniqueIDDatasetTest(unittest.TestCase):
     def setUp(self):
         self.d = dict(
             datasets=dict(
@@ -215,8 +215,8 @@ class UniqueIDIteratorTest(unittest.TestCase):
 
     def test_duplicate_id(self):
         with self.assertRaises(AssertionError):
-            iterator = self.db.get_dataset('train test'.split())
-            _ = iterator.keys()
+            dataset = self.db.get_dataset('train test'.split())
+            _ = dataset.keys()
 
     def test_duplicate_id_with_prepend_dataset_name(self):
         _ = self.db.get_dataset('train test'.split())
