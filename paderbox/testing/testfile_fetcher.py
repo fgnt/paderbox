@@ -1,5 +1,5 @@
 import urllib.request as url
-from pathlib import Path
+from paderbox.io.cache_dir import get_cache_dir
 
 
 def fetch_file_from_url(fpath, file):
@@ -14,12 +14,7 @@ def fetch_file_from_url(fpath, file):
     Returns: Path to file
 
     """
-
-    # Write in the cache folder at the git root of this repository
-    dirname = Path(__file__).resolve().absolute().parents[2]
-    path = dirname / "cache"
-    if not path.exists():
-        path.mkdir()
+    path = get_cache_dir()
 
     if not (path / file).exists():
         datapath = url.urlopen(fpath)
