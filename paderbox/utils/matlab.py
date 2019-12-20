@@ -1,8 +1,10 @@
-from cached_property import cached_property
-import socket
-import warnings
 import os.path
 import shutil
+import socket
+import warnings
+
+from cached_property import cached_property
+
 from paderbox.io.data_dir import matlab_toolbox, matlab_r2015a, matlab_license
 
 
