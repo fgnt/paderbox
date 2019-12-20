@@ -17,7 +17,7 @@ def get_cache_dir() -> Path:
     Returns:
         Path to a cache dir
 
-    >>> get_cache_dir()  # doctest: +ELLIPSIS
+    >>> get_cache_dir()  # doctest: +SKIP
     PosixPath('.../paderbox/cache')
 
     """
