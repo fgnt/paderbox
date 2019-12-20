@@ -27,8 +27,10 @@ def dump_hdf5(obj, filename, force=True, _print_warnings=False):
 
     Returns:
 
+    >>> from paderbox.io.cache_dir import get_cache_dir
     >>> from contextlib import redirect_stderr
     >>> import sys
+    >>> file = get_cache_dir() / 'tmp.hdf5'
     >>> ex = {
     ...    'name': 'stefan',
     ...    'age':  np.int64(24),
@@ -50,11 +52,11 @@ def dump_hdf5(obj, filename, force=True, _print_warnings=False):
     ...        'kronecker2d': np.identity(3)
     ...    }
     ... }
-    >>> dump_hdf5(ex, 'tmp_foo.hdf5', True, _print_warnings=True)
+    >>> dump_hdf5(ex, file, True, _print_warnings=True)
     >>> ex = {
     ...    'fav_numbers4': {2,4,4.3}, # currently not supported
     ... }
-    >>> dump_hdf5(ex, 'tmp_foo.hdf5', True, _print_warnings=True)
+    >>> dump_hdf5(ex, file, True, _print_warnings=True)
     WARNING: Cannot save <class 'set'> type for key "fav_numbers4". Skip this item.
     """
     _ReportInterface.__save_dict_to_hdf5__(
@@ -81,22 +83,24 @@ def update_hdf5(
            - throw an exception
            - print a warning and do not write
 
+    >>> from paderbox.io.cache_dir import get_cache_dir
     >>> from pprint import pprint
+    >>> file = get_cache_dir() / 'tmp.hdf5'
     >>> ex = {
     ...    'name': 'stefan',
     ... }
-    >>> dump_hdf5(ex, 'tmp_foo.hdf5', True)
-    >>> pprint(load_hdf5('tmp_foo.hdf5'))
+    >>> dump_hdf5(ex, file, True)
+    >>> pprint(load_hdf5(file))
     {'name': 'stefan'}
-    >>> update_hdf5('peter', 'tmp_foo.hdf5', '/name')
+    >>> update_hdf5('peter', file, '/name')
     Traceback (most recent call last):
     ...
     Exception: Path '/name' already exists. Set allow_overwrite to True if you want to overwrite the value. ATTENTION: Overwrite mean overwrite the index, not the data. The data can never be erased.
-    >>> update_hdf5('peter', 'tmp_foo.hdf5', '/name', allow_overwrite=True)
-    >>> pprint(load_hdf5('tmp_foo.hdf5'))
+    >>> update_hdf5('peter', file, '/name', allow_overwrite=True)
+    >>> pprint(load_hdf5(file))
     {'name': 'peter'}
-    >>> update_hdf5({'name': 1}, 'tmp_foo.hdf5', '/', allow_overwrite=True)
-    >>> pprint(load_hdf5('tmp_foo.hdf5'))
+    >>> update_hdf5({'name': 1}, file, '/', allow_overwrite=True)
+    >>> pprint(load_hdf5(file))
     {'name': 1}
     """
     if not isinstance(obj, dict):
@@ -131,6 +135,8 @@ def rewrite_hdf5(filename):
 def load_hdf5(filename, path='/'):
     """
 
+    >>> from paderbox.io.cache_dir import get_cache_dir
+    >>> file = get_cache_dir() / 'tmp.hdf5'
     >>> ex = {
     ...    'name': 'stefan',
     ...    'age':  np.int64(24),
@@ -150,8 +156,8 @@ def load_hdf5(filename, path='/'):
     ...        'kronecker2d': np.identity(3)
     ...    }
     ... }
-    >>> dump_hdf5(ex, 'tmp_foo.hdf5', True)
-    >>> ex_load = load_hdf5('tmp_foo.hdf5')
+    >>> dump_hdf5(ex, file, True)
+    >>> ex_load = load_hdf5(file)
     >>> from pprint import pprint
     >>> ex_load['fav_tensors']['kronecker2d'][0, 0]
     1.0
@@ -190,7 +196,9 @@ def tree_hdf5(
     ToDo:
         Handle list in the same way as load and dump
 
+    >>> from paderbox.io.cache_dir import get_cache_dir
     >>> from IPython.lib.pretty import pprint
+    >>> file = get_cache_dir() / 'tmp.hdf5'
     >>> ex = {
     ...    'name': 'stefan',
     ...    'age':  np.int64(24),
@@ -210,8 +218,8 @@ def tree_hdf5(
     ...        'kronecker2d': np.identity(3)
     ...    }
     ... }
-    >>> dump_hdf5(ex, 'tmp_foo.hdf5', True)
-    >>> pprint(tree_hdf5('tmp_foo.hdf5'))
+    >>> dump_hdf5(ex, file, True)
+    >>> pprint(tree_hdf5(file))
     ['/age',
      '/age2',
      '/age3',
@@ -429,10 +437,11 @@ class _ReportInterface(object):
     @classmethod
     def __recursively_load_dict_contents_from_group__(cls, h5file, path):
         """
-
+        >>> from paderbox.io.cache_dir import get_cache_dir
+        >>> file = get_cache_dir() / 'tmp.hdf5'
         >>> ex = {'key': [1, 2, 3]}
-        >>> dump_hdf5(ex, 'tmp_foo.hdf5', True)
-        >>> ex_load = load_hdf5('tmp_foo.hdf5')
+        >>> dump_hdf5(ex, file, True)
+        >>> ex_load = load_hdf5(file)
         >>> ex_load
         {'key': [1, 2, 3]}
         """

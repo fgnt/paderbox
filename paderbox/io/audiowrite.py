@@ -44,21 +44,22 @@ def dump_audio(
 
     >>> from paderbox.utils.process_caller import run_process
     >>> from paderbox.io import load_audio
+    >>> from paderbox.io.cache_dir import get_cache_dir
     >>> a = np.array([1, 2, -4, 4], dtype=np.int16)
     >>> import io, os
     >>> # file = io.BytesIO()
-    >>> file = Path('tmp_audio_data.wav')
+    >>> file = get_cache_dir() / 'tmp_audio_data.wav'
     >>> dump_audio(a, file, normalize=False)
     >>> load_audio(file) * 2**15
     array([ 1.,  2., -4.,  4.])
-    >>> print(run_process(f'file {file}').stdout)
-    tmp_audio_data.wav: RIFF (little-endian) data, WAVE audio, Microsoft PCM, 16 bit, mono 16000 Hz
+    >>> print('stdout:', run_process(f'file {file}').stdout)  # doctest: +ELLIPSIS
+    stdout: .../tmp_audio_data.wav: RIFF (little-endian) data, WAVE audio, Microsoft PCM, 16 bit, mono 16000 Hz
     <BLANKLINE>
     >>> dump_audio(a, file, normalize=True)
     >>> load_audio(file)
     array([ 0.24996948,  0.49996948, -0.99996948,  0.99996948])
-    >>> print(run_process(f'file {file}').stdout)
-    tmp_audio_data.wav: RIFF (little-endian) data, WAVE audio, Microsoft PCM, 16 bit, mono 16000 Hz
+    >>> print('stdout:', run_process(f'file {file}').stdout)  # doctest: +ELLIPSIS
+    stdout: .../tmp_audio_data.wav: RIFF (little-endian) data, WAVE audio, Microsoft PCM, 16 bit, mono 16000 Hz
     <BLANKLINE>
 
     >>> data = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]) / 32
@@ -69,15 +70,15 @@ def dump_audio(
     >>> load_audio(file)
     array([0.     , 0.03125, 0.0625 , 0.09375, 0.125  , 0.15625, 0.1875 ,
            0.21875, 0.25   , 0.28125])
-    >>> print(run_process(f'file {file}').stdout)
-    tmp_audio_data.wav: RIFF (little-endian) data, WAVE audio, Microsoft PCM, 16 bit, mono 16000 Hz
+    >>> print('stdout:', run_process(f'file {file}').stdout)  # doctest: +ELLIPSIS
+    stdout: .../tmp_audio_data.wav: RIFF (little-endian) data, WAVE audio, Microsoft PCM, 16 bit, mono 16000 Hz
     <BLANKLINE>
     >>> dump_audio(np.array([16, 24]) / 32, file, normalize=False, start=1)
     >>> load_audio(file)
     array([0.     , 0.5    , 0.75   , 0.09375, 0.125  , 0.15625, 0.1875 ,
            0.21875, 0.25   , 0.28125])
-    >>> print(run_process(f'file {file}').stdout)
-    tmp_audio_data.wav: RIFF (little-endian) data, WAVE audio, Microsoft PCM, 16 bit, mono 16000 Hz
+    >>> print('stdout:', run_process(f'file {file}').stdout)  # doctest: +ELLIPSIS
+    stdout: ...tmp_audio_data.wav: RIFF (little-endian) data, WAVE audio, Microsoft PCM, 16 bit, mono 16000 Hz
     <BLANKLINE>
     >>> dump_audio(np.array([16, 24, 24, 24]) / 32, file, normalize=False, start=9)
     >>> load_audio(file)
@@ -93,10 +94,10 @@ def dump_audio(
            0.75   , 0.75   , 0.75   ])
     >>> load_audio(file).shape
     (24,)
-    >>> print(run_process(f'file {file}').stdout)
-    tmp_audio_data.wav: RIFF (little-endian) data, WAVE audio, Microsoft PCM, 16 bit, mono 16000 Hz
+    >>> print('stdout:', run_process(f'file {file}').stdout)  # doctest: +ELLIPSIS
+    stdout: .../tmp_audio_data.wav: RIFF (little-endian) data, WAVE audio, Microsoft PCM, 16 bit, mono 16000 Hz
     <BLANKLINE>
-    >>> os.remove('tmp_audio_data.wav')
+    >>> os.remove(file)
     >>> dump_audio(np.array([16, 24, 24, 24]) / 32, file, normalize=False, start=20)
     >>> load_audio(file)
     array([0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  ,
@@ -104,8 +105,8 @@ def dump_audio(
            0.75, 0.75])
     >>> load_audio(file).shape
     (24,)
-    >>> print(run_process(f'file {file}').stdout)
-    tmp_audio_data.wav: RIFF (little-endian) data, WAVE audio, Microsoft PCM, 16 bit, mono 16000 Hz
+    >>> print('stdout:', run_process(f'file {file}').stdout)  # doctest: +ELLIPSIS
+    stdout: .../tmp_audio_data.wav: RIFF (little-endian) data, WAVE audio, Microsoft PCM, 16 bit, mono 16000 Hz
     <BLANKLINE>
 
     >>> data = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]) / 32
@@ -116,9 +117,9 @@ def dump_audio(
     >>> load_audio(file)
     array([0.     , 0.03125, 0.0625 , 0.09375, 0.125  , 0.15625, 0.1875 ,
            0.21875, 0.25   , 0.28125])
-    >>> print(run_process(f'soxi {file}').stdout)
+    >>> print(run_process(f'soxi {file}').stdout)  # doctest: +ELLIPSIS
     <BLANKLINE>
-    Input File     : 'tmp_audio_data.wav'
+    Input File     : '.../tmp_audio_data.wav'
     Channels       : 1
     Sample Rate    : 16000
     Precision      : 54-bit
@@ -132,9 +133,9 @@ def dump_audio(
     >>> load_audio(file, dtype=None)
     array([0.     , 0.03125, 0.0625 , 0.09375, 0.125  , 0.15625, 0.1875 ,
            0.21875, 0.25   , 0.28125], dtype=float32)
-    >>> print(run_process(f'soxi {file}').stdout)
+    >>> print(run_process(f'soxi {file}').stdout)  # doctest: +ELLIPSIS
     <BLANKLINE>
-    Input File     : 'tmp_audio_data.wav'
+    Input File     : '.../tmp_audio_data.wav'
     Channels       : 1
     Sample Rate    : 16000
     Precision      : 25-bit

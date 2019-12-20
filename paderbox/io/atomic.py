@@ -38,22 +38,24 @@ def open_atomic(file, mode, *args, force=False, **kwargs):
     Examples:
 
     Procure a file with some content
-    >>> with open('.tmp.io.txt', 'w') as f:
+    >>> from paderbox.io.cache_dir import get_cache_dir
+    >>> file = get_cache_dir() / 'tmp.io.txt'
+    >>> with open(file, 'w') as f:
     ...     f.write('test\\nbla')
     8
-    >>> with open('.tmp.io.txt', 'r') as f:
+    >>> with open(file, 'r') as f:
     ...     print(f.read())
     test
     bla
 
     Read the file and write to the file the same content
     (with open_atomic no problem)
-    >>> with open('.tmp.io.txt', 'r') as src:
-    ...     with open_atomic('.tmp.io.txt', 'w') as f:
+    >>> with open(file, 'r') as src:
+    ...     with open_atomic(file, 'w') as f:
     ...         for line in src:
     ...             f.write(line)
     ...     src.seek(0)
-    ...     with open_atomic('.tmp.io.txt', 'w') as f:
+    ...     with open_atomic(file, 'w') as f:
     ...         for line in src:
     ...             f.write(line + 'second write\\n')
     5
@@ -61,7 +63,7 @@ def open_atomic(file, mode, *args, force=False, **kwargs):
     0
     18
     16
-    >>> with open('.tmp.io.txt', 'r') as f:
+    >>> with open(file, 'r') as f:
     ...     print(f.read())
     test
     second write
@@ -70,50 +72,50 @@ def open_atomic(file, mode, *args, force=False, **kwargs):
 
     Read the file and write to the file the same content
     (with open this does not work)
-    >>> with open('.tmp.io.txt', 'r') as src:
-    ...     with open('.tmp.io.txt', 'w') as dst:
+    >>> with open(file, 'r') as src:
+    ...     with open(file, 'w') as dst:
     ...         for line in src:
     ...             f.write(line)
-    >>> with open('.tmp.io.txt', 'r') as f:
+    >>> with open(file, 'r') as f:
     ...     print(f.read())
     <BLANKLINE>
-    >>> with open_atomic('.tmp.io.txt', 'w') as f:
+    >>> with open_atomic(file, 'w') as f:
     ...     f.write('test\\nbla')
     ...     f.write('test\\nbla')
     8
     8
-    >>> with open('.tmp.io.txt', 'r') as f:
+    >>> with open(file, 'r') as f:
     ...     print(f.read())
     test
     blatest
     bla
 
     When an exception occurs do not write anything (except force is True)
-    >>> with open_atomic('.tmp.io.txt', 'w') as f:
+    >>> with open_atomic(file, 'w') as f:
     ...     f.write('sdkfg\\nbla')
     ...     raise Exception
     Traceback (most recent call last):
     ...
     Exception
-    >>> with open('.tmp.io.txt', 'r') as f:
+    >>> with open(file, 'r') as f:
     ...     print(f.read())
     test
     blatest
     bla
-    >>> with open_atomic('.tmp.io.txt', 'w', force=True) as f:
+    >>> with open_atomic(file, 'w', force=True) as f:
     ...     f.write('sdkfg\\nbla')
     ...     raise Exception
     Traceback (most recent call last):
     ...
     Exception
-    >>> with open('.tmp.io.txt', 'r') as f:
+    >>> with open(file, 'r') as f:
     ...     print(f.read())
     sdkfg
     bla
 
-    >>> with open_atomic('.tmp.io.txt', 'w') as f:
+    >>> with open_atomic(file, 'w') as f:
     ...     print('Name:', f.name)  # doctest: +ELLIPSIS
-    Name: .../.tmp.io.txt...
+    Name: .../tmp.io.txt...
     """
     file = normalize_path(file, as_str=True, allow_fd=False)
 
