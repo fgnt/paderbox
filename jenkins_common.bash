@@ -10,14 +10,13 @@ trap 'echo -e "${green}$ $BASH_COMMAND ${NC}"' DEBUG
 # Force Exit 0
 trap 'exit 0' EXIT SIGINT SIGTERM
 
-source /net/software/python/2018_12/anaconda/bin/activate
+source /net/software/python/2020_01/anaconda/bin/activate
 
 # Use a pseudo virtualenv, http://stackoverflow.com/questions/2915471/install-a-python-package-into-a-different-directory-using-pip
 mkdir -p venv
 export PYTHONUSERBASE=$(readlink -m venv)
 
 # paths
-# TOOLBOX=$(readlink -f ./toolbox)
 TOOLBOX="$(dirname $(readlink -f ${BASH_SOURCE[0]}))"
 
 # Refresh files...
