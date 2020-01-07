@@ -40,7 +40,7 @@ It therefore serves as a great tool within Jupyter Notebooks and helps for quick
 # How to cite?
 
 There is no clear way how to cite this repository for research.
-However, we would be grateful if directly import from this repository if you use, e.g., the STFT.
+However, we would be grateful for direct imports from this repository if you use, e.g., the STFT.
 We are also fine when you copy the code as long as it remains visible where you copied the code from.
 
 If you use one of our other repositories relying on this work we would be thankful if you respect citation hints for that repository.
