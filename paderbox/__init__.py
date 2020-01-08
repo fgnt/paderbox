@@ -16,6 +16,7 @@ with open(FFT_FILE) as f:
         )
 
 __all__ = [
+    'array',
     'io',
     'math',
     'notebook',
