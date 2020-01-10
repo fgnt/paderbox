@@ -77,7 +77,6 @@ def download_file(remote_file, local_file, exist_ok=False):
 def extract_file(local_file, exist_ok=False):
     """
     If local_file is .zip or .tar.gz files are extracted.
-    If local_file is .zip a common first level folder is omitted.
 
     Args:
         local_file:
@@ -90,49 +89,41 @@ def extract_file(local_file, exist_ok=False):
     if path.isfile(local_file):
 
         if local_file.endswith('.zip'):
-
             with zipfile.ZipFile(local_file, "r") as z:
-                # Trick to omit first level folder
-                parts = []
-                for name in z.namelist():
-                    if not name.endswith('/'):
-                        parts.append(name.split('/')[:-1])
-                prefix = path.commonprefix(parts)
-                prefix = prefix[0] + '/' if prefix else ''
-                offset = len(prefix)
-
                 # Start extraction
                 members = z.infolist()
                 for i, member in enumerate(members):
-                    if member.filename != prefix:
-                        member.filename = member.filename[offset:]
-                        if not path.isfile(
-                                path.join(local_dir, member.filename)
-                        ):
-                            try:
-                                z.extract(member=member, path=local_dir)
-                            except KeyboardInterrupt:
-                                # Delete latest file, since most likely it
-                                # was not extracted fully
-                                os.remove(
-                                    path.join(local_dir, member.filename)
-                                )
-
-                                # Quit
-                                sys.exit()
-                        elif not exist_ok:
-                            raise FileExistsError(path.join(local_dir, member.filename))
+                    target_file = path.join(local_dir, member.filename)
+                    if not path.isfile(target_file):
+                        try:
+                            z.extract(member=member, path=local_dir)
+                        except KeyboardInterrupt:
+                            # Delete latest file, since most likely it
+                            # was not extracted fully
+                            if path.isfile(target_file):
+                                os.remove(target_file)
+                            # Quit
+                            sys.exit()
+                    elif not exist_ok:
+                        raise FileExistsError(target_file)
             os.remove(local_file)
 
         elif local_file.endswith('.tar.gz'):
             with tarfile.open(local_file, "r:gz") as tar:
                 for i, tar_info in enumerate(tar):
-                    if not path.isfile(
-                        path.join(local_dir, tar_info.name)
-                    ):
-                        tar.extract(tar_info, local_dir)
+                    target_file = path.join(local_dir, tar_info.name)
+                    if not path.isfile(target_file):
+                        try:
+                            tar.extract(tar_info, local_dir)
+                        except KeyboardInterrupt:
+                            # Delete latest file, since most likely it
+                            # was not extracted fully
+                            if path.isfile(target_file):
+                                os.remove(target_file)
+                            # Quit
+                            sys.exit()
                     elif not exist_ok:
-                        raise FileExistsError(path.join(local_dir, tar_info.name))
+                        raise FileExistsError(target_file)
                     tar.members = []
             os.remove(local_file)
 
