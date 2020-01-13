@@ -26,6 +26,8 @@ def download_file(remote_file, local_file, exist_ok=False):
     if not local_file.exists():
         def progress_hook(t):
             """
+            https://raw.githubusercontent.com/tqdm/tqdm/master/examples/tqdm_wget.py
+            
             Wraps tqdm instance. Don't forget to close() or __exit__()
             the tqdm instance once you're done with it (easiest using
             `with` syntax).
