@@ -102,8 +102,7 @@ def extract_file(local_file, exist_ok=False):
                             # was not extracted fully
                             if target_file.exists():
                                 os.remove(target_file)
-                            # Quit
-                            sys.exit()
+                            raise
                     elif not exist_ok:
                         raise FileExistsError(target_file)
             os.remove(local_file)
@@ -120,8 +119,7 @@ def extract_file(local_file, exist_ok=False):
                             # was not extracted fully
                             if target_file.exists():
                                 os.remove(target_file)
-                            # Quit
-                            sys.exit()
+                            raise
                     elif not exist_ok:
                         raise FileExistsError(target_file)
                     tar.members = []
@@ -144,8 +142,6 @@ def download_file_list(file_list, target_dir, exist_ok=False, logger=None):
 
     target_dir = Path(target_dir)
     os.makedirs(target_dir, exist_ok=True)
-    # Set socket timeout
-    socket.setdefaulttimeout(120)
 
     item_progress = tqdm(
         file_list, desc="{0: <25s}".format('Download files'),
