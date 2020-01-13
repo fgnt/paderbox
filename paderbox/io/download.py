@@ -4,7 +4,7 @@ import socket
 import sys
 import tarfile
 import zipfile
-from os import path
+from pathlib import Path
 from urllib.request import urlretrieve
 
 from tqdm import tqdm
@@ -22,7 +22,8 @@ def download_file(remote_file, local_file, exist_ok=False):
     Returns:
 
     """
-    if not path.isfile(local_file):
+    local_file = Path(local_file)
+    if not local_file.exists():
         def progress_hook(t):
             """
             Wraps tqdm instance. Don't forget to close() or __exit__()
@@ -50,11 +51,9 @@ def download_file(remote_file, local_file, exist_ok=False):
 
             return inner
 
-        tmp_file = local_file + '_tmp_file'
+        tmp_file = str(local_file) + '.tmp'
         with tqdm(
-                desc="{0: >25s}".format(
-                    path.splitext(remote_file.split('/')[-1])[0]
-                ),
+                desc="{0: >25s}".format(Path(remote_file).stem),
                 file=sys.stdout,
                 unit='B',
                 unit_scale=True,
@@ -63,7 +62,7 @@ def download_file(remote_file, local_file, exist_ok=False):
                 ascii=True
         ) as t:
             urlretrieve(
-                remote_file,
+                str(remote_file),
                 filename=tmp_file,
                 reporthook=progress_hook(t),
                 data=None
@@ -85,22 +84,23 @@ def extract_file(local_file, exist_ok=False):
     Returns:
 
     """
-    local_dir = path.dirname(local_file)
-    if path.isfile(local_file):
+    local_file = Path(local_file)
+    local_dir = local_file.parent
+    if local_file.exists():
 
-        if local_file.endswith('.zip'):
+        if local_file.name.endswith('.zip'):
             with zipfile.ZipFile(local_file, "r") as z:
                 # Start extraction
                 members = z.infolist()
                 for i, member in enumerate(members):
-                    target_file = path.join(local_dir, member.filename)
-                    if not path.isfile(target_file):
+                    target_file = local_dir / member.filename
+                    if not target_file.exists():
                         try:
                             z.extract(member=member, path=local_dir)
                         except KeyboardInterrupt:
                             # Delete latest file, since most likely it
                             # was not extracted fully
-                            if path.isfile(target_file):
+                            if target_file.exists():
                                 os.remove(target_file)
                             # Quit
                             sys.exit()
@@ -108,17 +108,17 @@ def extract_file(local_file, exist_ok=False):
                         raise FileExistsError(target_file)
             os.remove(local_file)
 
-        elif local_file.endswith('.tar.gz'):
+        elif local_file.name.endswith('.tar.gz'):
             with tarfile.open(local_file, "r:gz") as tar:
                 for i, tar_info in enumerate(tar):
-                    target_file = path.join(local_dir, tar_info.name)
-                    if not path.isfile(target_file):
+                    target_file = local_dir / tar_info.name
+                    if not target_file.exists():
                         try:
                             tar.extract(tar_info, local_dir)
                         except KeyboardInterrupt:
                             # Delete latest file, since most likely it
                             # was not extracted fully
-                            if path.isfile(target_file):
+                            if target_file.exists():
                                 os.remove(target_file)
                             # Quit
                             sys.exit()
@@ -142,8 +142,8 @@ def download_file_list(file_list, target_dir, exist_ok=False, logger=None):
 
     """
 
+    target_dir = Path(target_dir)
     os.makedirs(target_dir, exist_ok=True)
-
     # Set socket timeout
     socket.setdefaulttimeout(120)
 
@@ -156,7 +156,7 @@ def download_file_list(file_list, target_dir, exist_ok=False, logger=None):
         local_files.append(
             download_file(
                 remote_file,
-                path.join(target_dir, path.basename(remote_file)),
+                target_dir / Path(remote_file).name,
                 exist_ok=exist_ok
             )
         )
@@ -172,7 +172,7 @@ def download_file_list(file_list, target_dir, exist_ok=False, logger=None):
     if logger is not None:
         logger.info('Starting Extraction')
     for _id, local_file in enumerate(item_progress):
-        if local_file and path.isfile(local_file):
+        if local_file and local_file.exists():
             if logger is not None:
                 logger.info(
                     '  {title:<15s} [{item_id:d}/{total:d}] {package:<30s}'
