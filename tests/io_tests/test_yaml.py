@@ -22,3 +22,6 @@ def test_yaml_dump():
 
         pb.io.dump_yaml(data, path)
         assert path.read_text() == 'a: 1\nb: 2\n'
+
+        pb.io.dump_yaml_unsafe(data, path)
+        assert path.read_text() == 'a: 1\nb: 2\n'
