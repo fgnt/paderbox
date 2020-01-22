@@ -152,7 +152,7 @@ def load_yaml(path):
         return yaml.safe_load(path)
     elif isinstance(path, (str, Path)):
         path = Path(path).expanduser()
-        with path.open('w') as f:
+        with path.open() as f:
             return yaml.safe_load(f)
     else:
         raise TypeError(path)
@@ -174,7 +174,7 @@ def load_yaml_unsafe(path):
         return yaml.unsafe_load(path)
     elif isinstance(path, (str, Path)):
         path = Path(path).expanduser()
-        with path.open('w') as f:
+        with path.open() as f:
             return yaml.unsafe_load(f)
     else:
         raise TypeError(path)
