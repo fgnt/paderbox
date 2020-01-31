@@ -28,6 +28,6 @@ source "${TOOLBOX}/bash/kaldi.bash"
 # Refresh toolbox
 pip uninstall --quiet --yes paderbox
 pip show paderbox
-pip install --quiet --user -e ${TOOLBOX}
+pip install --quiet --user -e ${TOOLBOX}[test]
 pip show paderbox
 
