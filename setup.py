@@ -123,9 +123,8 @@ setup(
     # for example:
     # $ pip install -e .[test]
     extras_require={
-        'vis': visualization,
+        'full': visualization,
         'test': test + visualization,
-        'all': visualization + test
     },
 
     ext_modules=cythonize([
