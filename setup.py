@@ -18,10 +18,8 @@ from Cython.Build import cythonize
 
 here = path.abspath(path.dirname(__file__))
 
-# script specific dependencies
-scripts = ['tabulate']
 # visualization specific dependencies
-visualization = ['seaborn', 'IPython', 'ipywidgets', 'beautifulsoup4']
+visualization = ['seaborn', 'IPython', 'ipywidgets', 'beautifulsoup4', 'tabulate']
 # dependencies only required during test
 test = ['pytest', 'torch', 'covarage']
 
@@ -126,9 +124,8 @@ setup(
     # $ pip install -e .[test]
     extras_require={
         'vis': visualization,
-        'scripts': scripts,
         'test': test + visualization,
-        'all': visualization + scripts + test
+        'all': visualization + test
     },
 
     ext_modules=cythonize([
