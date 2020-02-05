@@ -40,7 +40,7 @@ setup(
     # https://packaging.python.org/en/latest/single_source_version.html
     version='0.0.0',
 
-    description='Collection of utilities in the nt department of the UPB',
+    description='Collection of utilities in the department of communications engineering  of the UPB',
     long_description=long_description,
 
     # The project's main homepage.
