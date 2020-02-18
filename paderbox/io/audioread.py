@@ -10,6 +10,7 @@ from pathlib import Path
 
 import numpy as np
 import soundfile
+import audioread
 
 import paderbox.utils.process_caller as pc
 from paderbox.io.path_utils import normalize_path
@@ -166,22 +167,35 @@ def load_audio(
         raise ValueError(unit)
 
     try:
-        with soundfile.SoundFile(
-                path,
-                'r',
-        ) as f:
-            if dtype is None:
-                from paderbox.utils.mapping import Dispatcher
-                mapping = Dispatcher({
-                    'PCM_16': np.int16,
-                    'FLOAT': np.float32,
-                    'DOUBLE': np.float64,
-                })
-                dtype = mapping[f.subtype]
+        if path[-3:] == 'm4a':
+            with audioread.audio_open(
+                    path
+            ) as f:
+                samplerate = f.samplerate
+                duration = f.duration
+                data = []
+                scale = 1. / float(1 << (15))
+                for buf in f:
+                    data.append(
+                        np.frombuffer(buf, "<i2").astype(np.float64) * scale)
+                signal = np.concatenate(data)
+        else:
+            with soundfile.SoundFile(
+                    path,
+                    'r',
+            ) as f:
+                if dtype is None:
+                    from paderbox.utils.mapping import Dispatcher
+                    mapping = Dispatcher({
+                        'PCM_16': np.int16,
+                        'FLOAT': np.float32,
+                        'DOUBLE': np.float64,
+                    })
+                    dtype = mapping[f.subtype]
 
-            frames = f._prepare_read(start=start, stop=stop, frames=frames)
-            data = f.read(frames=frames, dtype=dtype, fill_value=fill_value)
-        signal, sample_rate = data, f.samplerate
+                frames = f._prepare_read(start=start, stop=stop, frames=frames)
+                data = f.read(frames=frames, dtype=dtype, fill_value=fill_value)
+            signal, sample_rate = data, f.samplerate
     except RuntimeError as e:
         if isinstance(path, (Path, str)):
             from paderbox.utils.process_caller import run_process
