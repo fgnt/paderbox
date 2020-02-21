@@ -10,7 +10,7 @@ from pathlib import Path
 
 import numpy as np
 import soundfile
-import audioread
+import audioread as ar
 
 import paderbox.utils.process_caller as pc
 from paderbox.io.path_utils import normalize_path
@@ -168,7 +168,7 @@ def load_audio(
 
     try:
         if path[-3:] == 'm4a':
-            with audioread.audio_open(
+            with ar.audio_open(
                     path
             ) as f:
                 samplerate = f.samplerate
