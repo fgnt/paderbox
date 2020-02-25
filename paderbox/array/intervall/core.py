@@ -1,7 +1,7 @@
 from pathlib import Path
 import collections
 import numpy as np
-from pb_chime5.utils.intervall_array_util import (
+from paderbox.array.intervall.util import (
     cy_non_intersection,
     cy_intersection,
     cy_parse_item,
@@ -21,7 +21,7 @@ def ArrayIntervall_from_str(string, shape):
     ArrayIntervall("0:142464640", shape=(242464640,))
 
     """
-    ai = ArrayIntervall(shape)
+    ai = zeros(shape)
     if string == '':
         print('empty intervall found')
         pass
@@ -30,13 +30,6 @@ def ArrayIntervall_from_str(string, shape):
             string = string + ','
         try:
             ai.add_intervals_from_str(string)
-            # intervalls = eval(f'np.s_[{string}]')
-            # ai.add_intervals(intervalls)
-            # for item in eval(f'np.s_[{string}]'):
-            #     try:
-            #         ai[item] = 1
-            #     except Exception as e:
-            #         raise Exception(item, ai) from e
         except Exception as e:
             raise Exception(string) from e
     return ai
@@ -54,7 +47,7 @@ def ArrayIntervalls_from_rttm(rttm_file, shape=None, sample_rate=16000):
     SPEAKER S02 1 0 1 <NA> <NA> 1 <NA>
     SPEAKER S02 1 2 1 <NA> <NA> 1 <NA>
     SPEAKER S02 1 0 2 <NA> <NA> 2 <NA>
-    {'S02': {'1': ArrayIntervall("0:16000, 32000:512016000", shape=None), '2': ArrayIntervall("0:32000", shape=None)}}
+    {'S02': {'1': ArrayIntervall("0:16000, 32000:48000", shape=None), '2': ArrayIntervall("0:32000", shape=None)}}
     """
 
     # Description for rttm files copied from kaldi chime6 receipt
@@ -76,10 +69,9 @@ def ArrayIntervalls_from_rttm(rttm_file, shape=None, sample_rate=16000):
     rttm_file = Path(rttm_file)
     lines = rttm_file.read_text().splitlines()
 
-    # ai = ArrayIntervall(shape)
     # SPEAKER S02_U06.ENH 1   40.60    3.22 <NA> <NA> P05 <NA>
 
-    data = collections.defaultdict(lambda: ArrayIntervall(shape))
+    data = collections.defaultdict(lambda: zeros(shape))
 
     for line in lines:
         parts = line.split()
@@ -100,25 +92,85 @@ def ArrayIntervalls_from_rttm(rttm_file, shape=None, sample_rate=16000):
 
     return deflatten(data, sep=None)
 
+
+def zeros(shape=None):
+    """
+    Instantiate an ArrayIntervall filled with zeros.
+
+    Note: The difference from numpy is, that the argument shape is optional.
+          When shape is None, some operations aren't supported, because the
+          length is unknown.
+          e.g. array_intervall[:] fails, because the length is unknown, while
+               array_intervall[:1000] will work.
+
+    Args:
+        shape: None, int or tuple/list that contains one int.
+
+    Returns:
+        ArrayIntervall
+
+    Examples:
+
+        >>> ai = zeros(10)
+        >>> ai
+        ArrayIntervall("", shape=(10,))
+        >>> ai[2:3] = 1
+        >>> ai
+        ArrayIntervall("2:3", shape=(10,))
+        >>> ai[:]  # getitem converts the ArrayIntervall to numpy
+        array([False, False,  True, False, False, False, False, False, False,
+               False])
+
+        >>> ai = zeros()
+        >>> ai
+        ArrayIntervall("", shape=None)
+        >>> ai[2:3] = 1
+        >>> ai
+        ArrayIntervall("2:3", shape=None)
+        >>> ai[:]
+        Traceback (most recent call last):
+        ...
+        RuntimeError: You tried to slice an ArrayIntervall with unknown shape without a stop value.
+        This is not supported, either the shape has to be known
+        or you have to specify a stop value for the slice (i.e. array_intervall[:stop])
+        You called the array intervall with:
+            array_intervall[slice(None, None, None)]
+        >>> ai[:10]  # getitem converts the ArrayIntervall to numpy
+        array([False, False,  True, False, False, False, False, False, False,
+               False])
+
+    """
+    ai = ArrayIntervall.__new__(ArrayIntervall)
+
+    if isinstance(shape, int):
+        shape = [shape]
+
+    if shape is not None:
+        assert len(shape) == 1, shape
+        shape = tuple(shape)
+
+    ai.shape = shape
+    return ai
+
+
 class ArrayIntervall:
     from_str = staticmethod(ArrayIntervall_from_str)
 
-    @staticmethod
-    def from_array(array):
+    def __init__(self, array):
         """
-        >>> ai = ArrayIntervall.from_array(np.array([1, 1, 0, 1, 0, 0, 1, 1, 0], dtype=np.bool))
+        >>> ai = ArrayIntervall(np.array([1, 1, 0, 1, 0, 0, 1, 1, 0], dtype=np.bool))
         >>> ai
         ArrayIntervall("0:2, 3:4, 6:8", shape=(9,))
         >>> ai[:]
         array([ True,  True, False,  True, False, False,  True,  True, False])
         >>> a = np.array([1, 1, 1, 1], dtype=np.bool)
-        >>> assert all(a == ArrayIntervall.from_array(a)[:])
+        >>> assert all(a == ArrayIntervall(a)[:])
         >>> a = np.array([0, 0, 0, 0], dtype=np.bool)
-        >>> assert all(a == ArrayIntervall.from_array(a)[:])
+        >>> assert all(a == ArrayIntervall(a)[:])
         >>> a = np.array([0, 1, 1, 0], dtype=np.bool)
-        >>> assert all(a == ArrayIntervall.from_array(a)[:])
+        >>> assert all(a == ArrayIntervall(a)[:])
         >>> a = np.array([1, 0, 0, 1], dtype=np.bool)
-        >>> assert all(a == ArrayIntervall.from_array(a)[:])
+        >>> assert all(a == ArrayIntervall(a)[:])
 
         """
         array = np.asarray(array)
@@ -136,18 +188,20 @@ class ArrayIntervall:
         if array[-1] == 1:
             falling = falling + [len(array)]
 
-        ai = ArrayIntervall(shape=array.shape)
+        # ai = ArrayIntervall(shape=array.shape)
+        self.shape = array.shape
         for start, stop in zip(rising, falling):
-            ai[start:stop] = 1
+            self[start:stop] = 1
 
-        return ai
+        # return ai
 
     def __reduce__(self):
         """
         >>> from IPython.lib.pretty import pprint
         >>> import pickle
         >>> import jsonpickle, json
-        >>> ai = ArrayIntervall_from_str('1:4, 5:20, 21:25', shape=50)
+        >>> from paderbox.array.intervall.core import ArrayIntervall
+        >>> ai = ArrayIntervall.from_str('1:4, 5:20, 21:25', shape=50)
         >>> ai
         ArrayIntervall("1:4, 5:20, 21:25", shape=(50,))
         >>> pickle.loads(pickle.dumps(ai))
@@ -155,27 +209,13 @@ class ArrayIntervall:
         >>> jsonpickle.loads(jsonpickle.dumps(ai))
         ArrayIntervall("1:4, 5:20, 21:25", shape=(50,))
         >>> pprint(json.loads(jsonpickle.dumps(ai)))
-        {'py/reduce': [{'py/function': 'chime5.util.intervall_array.ArrayIntervall_from_str'},
+        {'py/reduce': [{'py/function': 'paderbox.array.intervall.core.ArrayIntervall_from_str'},
           {'py/tuple': ['1:4, 5:20, 21:25', 50]},
           None,
           None,
           None]}
         """
         return self.from_str, (self._intervals_as_str, self.shape[-1])
-
-    def __init__(self, shape):
-        if isinstance(shape, int):
-            shape = [shape]
-
-        if shape is None:
-            pass
-        else:
-            assert len(shape) == 1, shape
-
-            shape = tuple(shape)
-            # self._intervals = (,)
-
-        self.shape = shape
 
     _intervals_normalized = True
     # _normalized_intervals = ()
@@ -187,9 +227,8 @@ class ArrayIntervall:
     @property
     def normalized_intervals(self):
         if not self._intervals_normalized:
-            # print('normalized_intervals', self._intervals)
             self._intervals = self._normalize(self._intervals)
-            # print('normalized_intervals', self._intervals)
+            self._intervals_normalized = True
         return self._intervals
 
     @property
@@ -200,11 +239,6 @@ class ArrayIntervall:
     def intervals(self, item):
         self._intervals_normalized = False
         self._intervals = tuple(item)
-
-    # @intervals.setter
-    # def intervals(self, value):
-    #     self._intervals_normalized = False
-    #     self._intervals = value
 
     @staticmethod
     def _normalize(intervals):
@@ -254,34 +288,7 @@ class ArrayIntervall:
     def __repr__(self):
         return f'{self.__class__.__name__}("{self._intervals_as_str}", shape={self.shape})'
 
-    def _parse_item(self, item):
-        assert isinstance(item, (slice)), (type(item), item)
-        assert item.step is None, (item)
-
-        start = item.start
-        stop = item.stop
-
-        if start is None:
-            start = 0
-        if stop is None:
-            stop = self.shape[-1]
-
-        for v in [start, stop]:
-            assert v >= 0, (v, item)
-            if self.shape is not None:
-                assert v <= self.shape[-1], (v, item)
-
-        if start < 0:
-            size = self.shape[-1]
-            start = start % size
-        if stop < 0:
-            size = self.shape[-1]
-            stop = start % size
-
-        return start, stop
-
     def add_intervals_from_str(self, string_intervals):
-
         self.intervals = self.intervals + cy_str_to_intervalls(string_intervals)
 
     def add_intervals(self, intervals):
@@ -298,8 +305,7 @@ class ArrayIntervall:
 
     def __setitem__(self, item, value):
         """
-
-        >>> ai = ArrayIntervall(50)
+        >>> ai = zeros(50)
         >>> ai[10:15] = 1
         >>> ai
         ArrayIntervall("10:15", shape=(50,))
@@ -331,107 +337,36 @@ class ArrayIntervall:
         >>> ai
         ArrayIntervall("0:4, 5:10, 11:12, 13:50", shape=(50,))
 
+        >>> ai = zeros(50)
+        >>> ai[:] = 1
+        >>> ai[10:40] = 0
+        >>> ai
+        ArrayIntervall("0:10, 40:50", shape=(50,))
+
         """
 
         start, stop = cy_parse_item(item, self.shape)
 
-        if np.isscalar(value) and value == 1:
-            self.intervals = self.intervals + ((start, stop),)
-            # self.intervals = self._union([start, stop], self.intervals)
+        if np.isscalar(value):
+            if value == 1:
+                self.intervals = self.intervals + ((start, stop),)
+            elif value == 0:
+                self.intervals = cy_non_intersection((start, stop), self.intervals)
+            else:
+                raise ValueError(value)
         elif isinstance(value, (tuple, list, np.ndarray)):
             assert len(value) == stop - start, (start, stop, len(value), value)
-            ai = ArrayIntervall.from_array(value)
+            ai = ArrayIntervall(value)
             intervals = self.intervals
-            # intervals = self._non_intersection([start, stop], intervals)
-
             intervals = cy_non_intersection((start, stop), intervals)
-
             self.intervals = intervals + tuple([(s+start, e+start) for s, e in ai.intervals])
-            # self.append_intervals(*ai.intervals)
-            # for i_start, i_stop in ai.intervals:
-                # intervals = self._union([i_start + start, start + i_stop], intervals)
-            # self.intervals = intervals
         else:
             raise NotImplementedError(value)
-
-    @staticmethod
-    def _union(interval, intervals):
-        start, end = interval
-        new_interval = []
-
-        # intervals = np.asarray(intervals)
-
-        for i in intervals:
-            i_start, i_end = i
-            if (i_start <= end and start <= i_end) or (
-                    start <= i_end and i_start <= end):
-                start = min(start, i_start)
-                end = max(end, i_end)
-            else:
-                new_interval.append(i)
-        new_interval.append((start, end))
-        return list(sorted(new_interval))
-
-    @staticmethod
-    def _intersection(interval, intervals):
-        start, end = interval
-        # new_interval = []
-        #
-        # for i in intervals:
-        #     i_start, i_end = i
-        #     i_start = max(start, i_start)
-        #     i_end = min(end, i_end)
-        #     if i_start < i_end:
-        #         new_interval.append((i_start, i_end))
-        #
-        # return list(sorted(new_interval))
-        if len(intervals) > 0:
-            new_interval = np.array(intervals, copy=True)
-            new_interval[:, 0] = np.maximum(start, new_interval[:, 0])
-            new_interval[:, 1] = np.minimum(end, new_interval[:, 1])
-            return [(s, e) for s, e in new_interval if s < e]
-        else:
-            return intervals
-
-    @staticmethod
-    def _non_intersection(interval, intervals):
-        start, end = interval
-        new_interval = []
-
-        for i in intervals:
-            i_start, i_end = i
-
-            if start < i_start < end:
-                i_start = end
-            elif start < i_end < end:
-                i_end = start
-            elif i_start < start and end < i_end:
-                new_interval.append((i_start, start))
-                i_start = end
-
-            if i_start < i_end:
-                new_interval.append((i_start, i_end))
-
-        return list(sorted(new_interval))
-        # if len(intervals) > 0:
-        #     new_interval = np.array(intervals, copy=True)
-        #
-        #     index = np.logical_and(start < new_interval[:, 0], new_interval[:, 0] < end)
-        #     new_interval[index, 0] = end
-        #     index = np.logical_and(start < new_interval[:, 1], new_interval[:, 1] < end)
-        #     new_interval[index, 1] = start
-        #     index = np.logical_and(new_interval[:, 0] < start, end < new_interval[:, 1])
-        #     further = [[i_start, start] for i_start in new_interval[index, 0]]
-        #     new_interval[index, 0] = end
-        #
-        #     return tuple(map(tuple, new_interval.tolist())) + tuple(map(tuple, further))
-        # else:
-        #     return intervals
 
     def __getitem__(self, item):
         """
 
-        >>> ai = ArrayIntervall(50)
+        >>> ai = zeros(50)
         >>> ai[19:26]
         array([False, False, False, False, False, False, False])
         >>> ai[10:20] = 1
@@ -442,9 +377,7 @@ class ArrayIntervall:
         array([ True, False, False, False, False, False,  True])
 
         """
-        start, stop = self._parse_item(item)
-
-        # intervals = self._intersection((start, stop), self.normalized_intervals)
+        start, stop = cy_parse_item(item, self.shape)
         intervals = cy_intersection((start, stop), self.normalized_intervals)
 
         arr = np.zeros(stop - start, dtype=np.bool)
@@ -453,3 +386,12 @@ class ArrayIntervall:
             arr[i_start - start:i_end - start] = True
 
         return arr
+
+    def __or__(self, other):
+        if not isinstance(other, ArrayIntervall):
+            return NotImplemented
+        else:
+            assert other.shape == self.shape, (self.shape, other.shape)
+            ai = zeros(shape=self.shape)
+            ai.intervals = self.intervals + other.intervals
+            return ai
