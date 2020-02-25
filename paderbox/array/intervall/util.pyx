@@ -75,7 +75,16 @@ def cy_parse_item(item, shape):
     else:
         start = item.start
     if item.stop is None:
-        assert shape is not None
+        if shape is None:
+            raise RuntimeError(
+                'You tried to slice an ArrayIntervall with unknown shape '
+                'without a stop value.\n'
+                'This is not supported, either the shape has to be known\n'
+                'or you have to specify a stop value for the slice '
+                '(i.e. array_intervall[:stop])\n'
+                'You called the array intervall with:\n'
+                f'    array_intervall[{item}]'
+            )
         stop = size
     else:
         stop = item.stop

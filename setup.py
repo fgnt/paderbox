@@ -147,6 +147,7 @@ setup(
     },
 
     ext_modules=cythonize([
+        'paderbox/array/intervall/util.pyx',
     ],
         annotate=True,
     ),
