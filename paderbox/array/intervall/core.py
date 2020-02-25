@@ -135,7 +135,30 @@ class ArrayIntervall:
         for start, stop in zip(rising, falling):
             self[start:stop] = 1
 
-        # return ai
+    def __array__(self, dtype=np.bool):
+        """
+        Special numpy method. This method is used from numpy to cast foreign
+        types to numpy.
+
+        Example for the add operation:
+            >>> a = np.array([0, 1, 2])
+            >>> ai = ArrayIntervall([True, False, True])
+            >>> ai + a
+            array([1, 1, 3])
+            >>> ai = zeros()
+            >>> ai + a
+            Traceback (most recent call last):
+            ...
+            RuntimeError: You cannot cast an ArrayIntervall to numpy,
+            when the shape is unknown.
+        """
+        assert dtype == np.bool, dtype
+        if self.shape is None:
+            raise RuntimeError(
+                f'You cannot cast an {self.__class__.__name__} to numpy,\n'
+                f'when the shape is unknown.')
+        else:
+            return self[:]
 
     def __reduce__(self):
         """
