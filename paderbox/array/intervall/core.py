@@ -175,10 +175,7 @@ class ArrayIntervall:
         ArrayIntervall("1:4, 5:20, 21:25", shape=(50,))
         >>> pprint(json.loads(jsonpickle.dumps(ai)))
         {'py/reduce': [{'py/function': 'paderbox.array.intervall.core.ArrayIntervall_from_str'},
-          {'py/tuple': ['1:4, 5:20, 21:25', 50]},
-          None,
-          None,
-          None]}
+          {'py/tuple': ['1:4, 5:20, 21:25', 50]}]}
         """
         return self.from_str, (self._intervals_as_str, self.shape[-1])
 
