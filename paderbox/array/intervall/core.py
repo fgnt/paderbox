@@ -1,3 +1,9 @@
+'''
+ArrayIntervall offers a user readable object for stashing activity information.
+In combination with jsonpickle this allows for a low resource possibility to save
+activity information for large time streams.   
+'''
+
 from pathlib import Path
 import collections
 import numpy as np
