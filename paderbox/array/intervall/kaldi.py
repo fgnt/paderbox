@@ -29,6 +29,14 @@ def from_kaldi_segments_str(segments_str, shape=None, sample_rate=16000, round_f
     >>> from_kaldi_segments_str(s, sample_rate=1000)
     {'S02_U06.ENH': ArrayIntervall("41210:41870, 101230:103370", shape=None)}
 
+    >>> s = 'S02_U06.ENH-0004121-0004187 S02_U06.ENH 41.21 41.87\\n'
+    >>> s += 'S02_U06.ENH-0010122-0010337 S02_U06.ENH BUG 101.23 103.37\\n'
+    >>> from_kaldi_segments_str(s, sample_rate=1000)
+    Traceback (most recent call last):
+    ...
+    ValueError: Expect "<uttID> <fileID> <start> <end>".
+    Got ['S02_U06.ENH-0010122-0010337', 'S02_U06.ENH', 'BUG', '101.23', '103.37']
+
     """
     from paderbox.utils.nested import deflatten
 
@@ -43,9 +51,14 @@ def from_kaldi_segments_str(segments_str, shape=None, sample_rate=16000, round_f
     for line in lines:
         parts = line.split()
         #
-        file_id = parts[1]
-        begin_time = decimal.Decimal(parts[2])
-        end_time = decimal.Decimal(parts[3])
+        try:
+            _, file_id, begin_time, end_time = parts
+        except ValueError:
+            raise ValueError(
+                'Expect "<uttID> <fileID> <start> <end>".\n'
+                f'Got {parts}') from None
+        begin_time = decimal.Decimal(begin_time)
+        end_time = decimal.Decimal(end_time)
         if round_fn:
             begin_time = round_fn(begin_time)
             end_time = round_fn(end_time)
