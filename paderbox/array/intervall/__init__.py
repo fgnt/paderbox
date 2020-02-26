@@ -17,3 +17,5 @@ from .core import ArrayIntervall
 from .rttm import from_rttm
 from .rttm import from_rttm_str
 from .rttm import to_rttm_str
+from .kaldi import from_kaldi_segments
+from .kaldi import from_kaldi_segments_str
