@@ -129,3 +129,5 @@ def resample_sox(signal: np.ndarray, *, in_rate, out_rate):
         signal_resampled = signal_resampled.reshape(channels, -1, order='F')
 
     return signal_resampled / normalizer
+
+resample = resample_sox
