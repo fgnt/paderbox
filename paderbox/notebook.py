@@ -71,6 +71,7 @@ __all__ = [
 def pprint(obj, verbose=False, max_width=79, newline='\n',
            max_seq_length=IPython.lib.pretty.MAX_SEQ_LENGTH,
            max_array_length=50,
+           np_suppress_small=True,
            ):
     """
     Copy of IPython.lib.pretty.pprint.
@@ -78,9 +79,15 @@ def pprint(obj, verbose=False, max_width=79, newline='\n',
     original.
 
     >>> pprint([np.array([1]), np.array([1]*100)])
-    [array([1]), ndarray(shape=(100,), dtype=int64)]
+    [array([1]), array(shape=(100,), dtype=int64)]
     >>> print([np.array([1])])
     [array([1])]
+
+    >>> import torch
+    >>> pprint([torch.tensor([1]), torch.tensor([1]*100)])
+    [tensor([1]), tensor(shape=(100,), dtype=int64)]
+    >>> print([torch.tensor([1])])
+    [tensor([1])]
     """
 
     class MyRepresentationPrinter(IPython.lib.pretty.RepresentationPrinter):
@@ -92,21 +99,30 @@ def pprint(obj, verbose=False, max_width=79, newline='\n',
                     # Use repr or str?
                     # repr -> array([...])
                     # str -> [...]
-                    p.text(repr(obj))
+                    p.text(np.array_repr(
+                        obj, suppress_small=np_suppress_small))
                 else:
                     p.text(
-                        f'{obj.__class__.__name__}'
+                        # f'{obj.__class__.__name__}'  # ndarray
+                        f'{obj.__class__.__name__.replace("nd", "")}'
                         f'(shape={obj.shape}, dtype={obj.dtype})'
                     )
 
             def _ipy_pprint_tensor(obj, p, cycle):
-                p.text(
-                    f'{obj.__class__.__name__}'
-                    f'('
-                    f'shape={tuple(obj.shape)}, '
-                    f'dtype={str(obj.dtype).replace("torch.", "")}'
-                    f')'
-                )
+                # Following the indroduction in
+                # https://github.com/pytorch/pytorch/issues/15683
+                # it is unlikely, that torch will introduce a suppress.
+                if obj.numel() <= max_array_length:
+                    p.text(repr(obj))
+                else:
+                    p.text(
+                        # f'{obj.__class__.__name__}'  # Tensor
+                        f'{obj.__class__.__name__.lower()}'
+                        f'('
+                        f'shape={tuple(obj.shape)}, '
+                        f'dtype={str(obj.dtype).replace("torch.", "")}'
+                        f')'
+                    )
 
             self.type_pprinters[np.ndarray] = _ipy_pprint_ndarray
             self.deferred_pprinters[('torch', 'Tensor')] = _ipy_pprint_tensor
