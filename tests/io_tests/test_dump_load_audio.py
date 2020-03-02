@@ -1,8 +1,10 @@
+import io
+
 import numpy as np
 import soundfile
 
 from paderbox.io import load_audio
-from paderbox.io.audiowrite import dump_audio
+from paderbox.io.audiowrite import dump_audio, dumps_audio
 from paderbox.testing.testfile_fetcher import get_file_path
     
 import pytest
@@ -86,6 +88,8 @@ class TestIOAudio:
         assert get_audio_type(path) == dumped_type
         b = load_audio(path, dtype=load_type)
         assert b.dtype == loaded_dtype
+        content = io.BytesIO(dumps_audio(a, dtype=dump_type, normalize=False))
+        c = load_audio(content, dtype=load_type)
 
     @pytest.mark.parametrize("file,fails",
     [

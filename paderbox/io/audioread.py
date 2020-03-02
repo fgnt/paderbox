@@ -167,7 +167,7 @@ def load_audio(
         raise ValueError(unit)
 
     try:
-        if Path(path).suffix == '.m4a':
+        if isinstance(path, (str, Path)) and (Path(path).suffix == '.m4a'):
             assert (start == 0 and stop is None), \
                 'audioread does not support partial loading of audio files'
             with ar.audio_open(
