@@ -201,7 +201,7 @@ def load_audio(
     except RuntimeError as e:
         if isinstance(path, (Path, str)):
             from paderbox.utils.process_caller import run_process
-            cp = run_process(f'file {path}')
+            cp = run_process(['file', f'{path}'])
             stdout = cp.stdout
             if Path(path).suffix == '.wav':
                 # Improve exception msg for NIST SPHERE files.
