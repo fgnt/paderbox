@@ -7,9 +7,12 @@ import pandas as pd
 def py_query(
         data: pd.DataFrame,
         query,
+        *,
         use_pd_query=False,
         allow_empty_result=False,
         setup_code='',
+        globals=None,
+        return_selected_data=True,
 ):
     """
     Alternative: pd.DataFrame.query:
@@ -39,17 +42,38 @@ def py_query(
        a  b
     1  3  4
 
+    To access column names that aren't valid python identifiers (e.g. the name
+    contains a whitespace), you have to use the kwargs dictionary:
+    >>> df = pd.DataFrame([{'a b': 1, 'b': 2}, {'a b': 3, 'b': 4}])
+    >>> py_query(df, 'kwargs["a b"] == 1')
+       a b  b
+    0    1  2
+
+    When you need a package function, you have to specify it in the globals
+    dict. e.g.:
+    >>> import numpy as np
+    >>> df = pd.DataFrame([{'a': 1, 'b': 2}, {'a': 3, 'b': 4}])
+    >>> py_query(df, 'np.equal(a, 1)', globals={'np': np})
+       a  b
+    0  1  2
+
     Args:
-        data:
+        data: pandas.DataFrame
         query: str or list of str. If list of str the strings get join by a
-            logical and to be a str. For examples see doctest.
+            logical `and` to be a str. For examples see doctest.
              Note: Use index to get access to the index.
         use_pd_query:  Pandas query is much faster but limited
         allow_empty_result:
-        setup_code: Additional code which runs before the query conditions.
+        setup_code: legacy argument, Superseded by the globals argument.
+            Additional code which runs before the query conditions.
             You may use this for additional imports.
+        globals: Specify some global names. Useful for imports. See doctest how
+            to use it.
+        return_selected_data: Whether to return the selection of the data or
+            the selection indices.
 
     Returns:
+        data[selection] if not return_selection else selection
 
     """
     if query is False:
@@ -77,23 +101,49 @@ def py_query(
     else:
         assert use_pd_query is False, use_pd_query
 
+    keywords = ['index'] + list(data)
+
+    def is_valid_variable_name(name):
+        import ast
+        # https://stackoverflow.com/a/36331242/5766934
+        try:
+            ast.parse('{} = None'.format(name))
+            return True
+        except (SyntaxError, ValueError, TypeError):
+            return False
+
+    keywords = [
+        k
+        for k in keywords
+        if is_valid_variable_name(k)
+    ] + ['**kwargs']
+
     d = {}
     code = f"""
-def func({', '.join(['index'] + list(data))}):
+def func({', '.join(keywords)}):
     {setup_code}
-    return {query}
-"""
     try:
-        exec(code, {}, d)
+        return {query}
+    except Exception:
+        raise Exception('See above error message. Locals are:', locals())
+"""
+
+    if globals is None:
+        globals = {}
+    else:
+        globals = globals.copy()
+    try:
+        exec(code, globals, d)
         func = d['func']
     except Exception as e:
         raise Exception(code) from e
 
     selection = data.apply(lambda row: func(row.name, **row), axis=1)
-    data = data[selection]
-
-    assert allow_empty_result or len(data) > 0, len(data)
-    return data
+    assert allow_empty_result or len(selection) > 0, len(selection)
+    if return_selected_data:
+        return data[selection]
+    else:
+        return selection
 
 
 def _unique_elements(pd_series):
