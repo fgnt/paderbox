@@ -12,7 +12,7 @@ def py_query(
         allow_empty_result=False,
         setup_code='',
         globals=None,
-        return_selection=False,
+        return_selected_data=True,
 ):
     """
     Alternative: pd.DataFrame.query:
@@ -69,8 +69,8 @@ def py_query(
             You may use this for additional imports.
         globals: Specify some global names. Useful for imports. See doctest how
             to use it.
-        return_selection: Whether to return the selection of the data or the
-            selection indices.
+        return_selected_data: Whether to return the selection of the data or
+            the selection indices.
 
     Returns:
         data[selection] if not return_selection else selection
@@ -139,13 +139,11 @@ def func({', '.join(keywords)}):
         raise Exception(code) from e
 
     selection = data.apply(lambda row: func(row.name, **row), axis=1)
-    if return_selection:
-        return selection
+    assert allow_empty_result or len(selection) > 0, len(selection)
+    if return_selected_data:
+        return data[selection]
     else:
-        data = data[selection]
-
-        assert allow_empty_result or len(data) > 0, len(data)
-        return data
+        return selection
 
 
 def _unique_elements(pd_series):
