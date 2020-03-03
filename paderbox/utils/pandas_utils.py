@@ -67,7 +67,8 @@ def py_query(
         setup_code: legacy argument, Superseded by the globals argument.
             Additional code which runs before the query conditions.
             You may use this for additional imports.
-        globals: Specify some global names. Useful for imports.
+        globals: Specify some global names. Useful for imports. See doctest how
+            to use it.
         return_selection: Whether to return the selection of the data or the
             selection indices.
 
