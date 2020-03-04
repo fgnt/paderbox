@@ -18,6 +18,12 @@ from Cython.Build import cythonize
 
 here = path.abspath(path.dirname(__file__))
 
+# visualization specific dependencies
+visualization = ['seaborn', 'IPython', 'ipywidgets',
+                 'beautifulsoup4', 'tabulate']
+# dependencies only required during test
+test = ['pytest', 'torch', 'covarage']
+
 # Get the long description from the relevant file
 try:
     with open(path.join(here, 'DESCRIPTION.rst'), encoding='utf-8') as f:
