@@ -22,7 +22,7 @@ here = path.abspath(path.dirname(__file__))
 visualization = ['seaborn', 'IPython', 'ipywidgets',
                  'beautifulsoup4', 'tabulate']
 # dependencies only required during test
-test = ['pytest', 'torch', 'covarage']
+test = ['pytest', 'torch', 'coverage']
 
 # Get the long description from the relevant file
 try:
