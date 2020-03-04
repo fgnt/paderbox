@@ -33,14 +33,14 @@ setup(
     # https://packaging.python.org/en/latest/single_source_version.html
     version='0.0.0',
 
-    description='Collection of utilities in the nt department',
+    description='Collection of utilities in the department of communications engineering  of the UPB',
     long_description=long_description,
 
     # The project's main homepage.
-    url='http://nt.upb.de/',
+    url='https://github.com/fgnt/paderbox/',
 
     # Author details
-    author='Department of Communications Engineering',
+    author='Department of Communications Engineering, Paderborn University',
     author_email='sek@nt.upb.de',
 
     # Choose your license
@@ -79,18 +79,13 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
         'numpy',
-        'tabulate',
         'scipy',
-        'seaborn',
         'tqdm',
         'pyyaml',
         'dill',
         "dataclasses; python_version<'3.7'",  # dataclasses is in py37 buildin
         'pathos',  # Multiprocessing alternative
         'pip',
-        'IPython',
-        'ipywidgets',
-        'scikit-learn',
         'pyzmq',
         # 'pymatbridge',  # need pyzmq to be installed manually
         'h5py',
@@ -107,43 +102,25 @@ setup(
         ),
         'memory_profiler',
         'cached_property',
-        'editdistance',
-        # 'Pyro4',
-        # 'psutil',
-        # 'plumbum',
-        'click',
         'fire',
-        'typecheck-decorator',
-        'natsort',
-        # 'pymongo',  # Used to generate and check Sacred IDs
-        'coverage',  # for nosetests --with-coverage
-        'beautifulsoup4',
         'soundfile',
-        'pysoundfile',  # for German speech database
         'wavefile',  # for reading .flac audio
-        'nose',
-        'parameterized',
-        'sh',
         'pycallgraph',  # Used in profiling module
-        # 'pafy',  # Download Youtube files for some databases
         'lazy_dataset',  # used for iteration over database examples
         'librosa',  # Used for FBanks
-        'torch',  # Doctest for segment_axis
     ],
 
     # Installation problems in a clean, new environment:
     # 1. `cython` and `scipy` must be installed manually before using
     # `pip install`
-    # 2. `pyzmq` has to be installed manually, otherwise `pymatbridge` will
-    # complain
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
     # for example:
-    # $ pip install -e .[dev,test]
+    # $ pip install -e .[all]
     extras_require={
-        'dev': ['check-manifest'],
-        'test': ['coverage'],
+        'visualization': visualization,
+        'all': test + visualization,
     },
 
     ext_modules=cythonize([
