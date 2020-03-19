@@ -177,6 +177,7 @@ async def async_run_process(
         False: Directly called, recommended, when cmd is a list, because when
             for example strings contains whitespaces they are not interpreted.
 
+    >>> from paderbox.utils.process_caller import async_run_process
     >>> def run_process(*args, **kwargs):
     ...     import asyncio
     ...     loop = asyncio.get_event_loop()
@@ -206,7 +207,7 @@ async def async_run_process(
     >>> run_process('exit 1')  # doctest: +ELLIPSIS
     Traceback (most recent call last):
     ...
-    process_caller.CalledProcessError: Command 'exit 1' returned non-zero exit status 1.
+    paderbox.utils.process_caller.CalledProcessError: Command 'exit 1' returned non-zero exit status 1.
     ...
 
     # Run multiple processes in parallel
