@@ -131,7 +131,7 @@ def run_process(
         ) from e
 
 
-async def async_run_process(
+async def run_process_async(
         cmd,
         *,
         shell=None,
@@ -177,11 +177,11 @@ async def async_run_process(
         False: Directly called, recommended, when cmd is a list, because when
             for example strings contains whitespaces they are not interpreted.
 
-    >>> from paderbox.utils.process_caller import async_run_process
+    >>> from paderbox.utils.process_caller import run_process_async
     >>> def run_process(*args, **kwargs):
     ...     import asyncio
     ...     loop = asyncio.get_event_loop()
-    ...     return loop.run_until_complete(async_run_process(*args, **kwargs))
+    ...     return loop.run_until_complete(run_process_async(*args, **kwargs))
 
     # Effect of universal_newlines
     >>> run_process('echo Hello')
@@ -215,8 +215,8 @@ async def async_run_process(
     >>> loop = asyncio.get_event_loop()
     >>> # in py37 `asyncio.run(...)`
     >>> loop.run_until_complete(asyncio.gather(
-    ...     async_run_process('echo Hello'),
-    ...     async_run_process('echo World'),
+    ...     run_process_async('echo Hello'),
+    ...     run_process_async('echo World'),
     ... ))
     [CompletedProcess(args='echo Hello', returncode=0, stdout='Hello\\n', stderr=''), CompletedProcess(args='echo World', returncode=0, stdout='World\\n', stderr='')]
 
