@@ -9,8 +9,36 @@ DEFAULT_ENV = os.environ.copy()
 class CalledProcessError(subprocess.CalledProcessError):
     def __str__(self):
         # Improve error msg with stdout and stderr
-        return '{}\n\nStdout:\n{}\n\nStderr:\n{}'.format(
-            super().__str__(), self.stdout, self.stderr
+
+        def as_str(txt):
+            if isinstance(txt, bytes):
+                return txt.decode()
+            else:
+                return txt
+
+        return (
+            f'{super().__str__()}\n\n'
+            f'Stdout ({type(self.stdout).__name__}):\n'
+            f'{as_str(self.stdout)}\n\n'
+            f'Stderr ({type(self.stderr).__name__}):\n'
+            f'{as_str(self.stderr)}'
+        )
+
+    def __repr__(self):
+        # Improve error msg with stdout and stderr
+
+        def as_str(txt):
+            if isinstance(txt, bytes):
+                return txt.decode()
+            else:
+                return txt
+
+        return (
+            f'{super().__repr__()}\n\n'
+            f'Stdout ({type(self.stdout).__name__}):\n'
+            f'{as_str(self.stdout)}\n\n'
+            f'Stderr ({type(self.stderr).__name__}):\n'
+            f'{as_str(self.stderr)}'
         )
 
 
