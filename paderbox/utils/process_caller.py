@@ -93,8 +93,10 @@ def run_process(
     # Example, where shell=False is usefull
     >>> run_process(['echo', 'Hello World'])
     CompletedProcess(args=['echo', 'Hello World'], returncode=0, stdout='Hello World\\n', stderr='')
-    >>> run_process(['echo', 'Hello World'], shell=True)
+    >>> run_process(['echo', 'Hello World'], shell=True)  # fails
     CompletedProcess(args=['echo', 'Hello World'], returncode=0, stdout='\\n', stderr='')
+    >>> run_process('echo', shell=True)
+    CompletedProcess(args='echo', returncode=0, stdout='\\n', stderr='')
     >>> run_process(['echo', 'Hello World'], shell=False)
     CompletedProcess(args=['echo', 'Hello World'], returncode=0, stdout='Hello World\\n', stderr='')
 
@@ -127,6 +129,136 @@ def run_process(
             output=e.output,
             stderr=e.stderr
         ) from e
+
+
+async def async_run_process(
+        cmd,
+        *,
+        shell=None,
+        check=True,
+        environment=None,
+        cwd=None,
+        input=None,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True
+):
+    """
+    This is a utility to have a async version of subprocess.run with changed
+    defaults. The returned object will be an awaitable object that yields the
+    CompletedProcess.
+    The changed defaults are:
+     - stdout and stderr is captured (disable with stdout=None, stderr=None)
+     - output is checked
+     - shell is True when cmd is a string
+        - If shell is True:
+          - The shell need to split the command
+          - Wildcard support
+          - environment variable support
+          - pipe support (e.g. `cat <file> | wc -l`)
+     - universal_newlines:
+        - https://stackoverflow.com/a/38182530
+        - Enable text_mode i.e. use strings and not bytes
+
+    ToDo:
+        Add a tee argument and display the stdout and stderr immediately and
+        return the output. Need test for input, example password ask.
+        Inspiration with aysncio: https://stackoverflow.com/a/25755038/5766934
+
+    cmd: str or list of [string, bytes, os.PathLike]
+
+    universal_newlines:
+        stdout will be a string and not a byte array
+    shell:
+        If None, shell is set to True if cmd is a str else shell is set to False
+        (i.e. when it is a list)
+        True: pass command through the shell with "shell" parsing.
+            i.e. wildcards, environment variables, etc.
+        False: Directly called, recommended, when cmd is a list, because when
+            for example strings contains whitespaces they are not interpreted.
+
+    >>> def run_process(*args, **kwargs):
+    ...     import asyncio
+    ...     loop = asyncio.get_event_loop()
+    ...     return loop.run_until_complete(async_run_process(*args, **kwargs))
+
+    # Effect of universal_newlines
+    >>> run_process('echo Hello')
+    CompletedProcess(args='echo Hello', returncode=0, stdout='Hello\\n', stderr='')
+    >>> run_process('echo Hello', universal_newlines=False)
+    CompletedProcess(args='echo Hello', returncode=0, stdout=b'Hello\\n', stderr=b'')
+
+    >>> # This would print 'Hello' to stdout. Doctests cannot handle this case.
+    >>> # run_process('echo Hello', stdout=None)
+
+    # Example, where shell=False is usefull
+    >>> run_process(['echo', 'Hello World'])
+    CompletedProcess(args=['echo', 'Hello World'], returncode=0, stdout='Hello World\\n', stderr='')
+    >>> run_process(['echo', 'Hello World'], shell=True)
+    Traceback (most recent call last):
+    ...
+    ValueError: ('Expected str and not list when shell is True, got:', ['echo', 'Hello World'])
+    >>> run_process(['echo', 'Hello World'], shell=False)
+    CompletedProcess(args=['echo', 'Hello World'], returncode=0, stdout='Hello World\\n', stderr='')
+
+    >>> run_process('exit 0')
+    CompletedProcess(args='exit 0', returncode=0, stdout='', stderr='')
+    >>> run_process('exit 1')  # doctest: +ELLIPSIS
+    Traceback (most recent call last):
+    ...
+    process_caller.CalledProcessError: Command 'exit 1' returned non-zero exit status 1.
+    ...
+
+    # Run multiple processes in parallel
+    >>> import asyncio
+    >>> loop = asyncio.get_event_loop()
+    >>> # in py37 `asyncio.run(...)`
+    >>> loop.run_until_complete(asyncio.gather(
+    ...     async_run_process('echo Hello'),
+    ...     async_run_process('echo World'),
+    ... ))
+    [CompletedProcess(args='echo Hello', returncode=0, stdout='Hello\\n', stderr=''), CompletedProcess(args='echo World', returncode=0, stdout='World\\n', stderr='')]
+
+    """
+    import asyncio
+
+    if shell is None:
+        if isinstance(cmd, str):
+            shell = True
+        else:
+            shell = False
+
+    kwargs = dict(
+        stdout=stdout,
+        stderr=stderr,
+        env=environment,
+        cwd=cwd
+    )
+
+    if shell:
+        if isinstance(cmd, (tuple, list)):
+            raise ValueError(
+                f'Expected str and not list when shell is {shell}, got:', cmd)
+        else:
+            process = await asyncio.create_subprocess_shell(cmd, **kwargs)
+    else:
+        process = await asyncio.create_subprocess_exec(*cmd, **kwargs)
+    stdout, stderr = await process.communicate(input=input)
+
+    if universal_newlines:
+        if stdout is not None:
+            assert isinstance(stdout, bytes), (type(stdout), stdout)
+            stdout = stdout.decode()
+        if stderr is not None:
+            assert isinstance(stderr, bytes), (type(stderr), stderr)
+            stderr = stderr.decode()
+
+    returncode = process.returncode
+    if check and returncode:
+        raise CalledProcessError(
+            returncode, cmd, output=stdout, stderr=stderr)
+
+    return subprocess.CompletedProcess(cmd, returncode, stdout, stderr)
 
 
 def run_processes(cmds, sleep_time=None, ignore_return_code=False,
