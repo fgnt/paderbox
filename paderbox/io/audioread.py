@@ -7,6 +7,7 @@ import tempfile
 import wave
 from io import BytesIO
 from pathlib import Path
+import functools
 
 import numpy as np
 import soundfile
@@ -233,6 +234,60 @@ def load_audio(
         return signal, sample_rate
     else:
         return signal
+
+
+def recursive_load_audio(
+        path,
+        *,
+        frames=-1,
+        start=0,
+        stop=None,
+        dtype=np.float64,
+        fill_value=None,
+        expected_sample_rate=None,
+        unit='samples',
+        return_sample_rate=False,
+):
+    """
+    Recursively loads all leafs (i.e. tuple/list entry or dict value) in the
+    object `path`. `path` can be a nested structure, but can also be a str or
+    pathlib.Path. When the entry type was a tuple or list, try to convert that
+    object to a np.array with a dytpe different from np.object.
+
+    For an explanation of the arguments, see `load_audio`.
+
+    >>> from paderbox.testing.testfile_fetcher import get_file_path
+    >>> from paderbox.notebook import pprint
+    >>> path1 = get_file_path('speech.wav')
+    >>> path2 = get_file_path('sample.wav')
+    >>> pprint(recursive_load_audio(path1))
+    array(shape=(49600,), dtype=float64)
+    >>> pprint(recursive_load_audio([path1, path1]))
+    array(shape=(2, 49600), dtype=float64)
+    >>> pprint(recursive_load_audio([path1, path2]))
+    [array(shape=(49600,), dtype=float64), array(shape=(38520,), dtype=float64)]
+    >>> pprint(recursive_load_audio({'a': path1, 'b': path1}))
+    {'a': array(shape=(49600,), dtype=float64),
+     'b': array(shape=(49600,), dtype=float64)}
+    >>> pprint(recursive_load_audio([path1, (path2, path2)]))
+    [array(shape=(49600,), dtype=float64), array(shape=(2, 38520), dtype=float64)]
+
+    """
+    kwargs = locals().copy()
+    path = kwargs.pop('path')
+
+    if isinstance(path, (tuple, list)):
+        data = [recursive_load_audio(a, **kwargs) for a in path]
+
+        np_data = np.array(data)
+        if np_data.dtype != np.object:
+            return np_data
+        else:
+            return data
+    elif isinstance(path, dict):
+        return {k: recursive_load_audio(v, **kwargs) for k, v in path.items()}
+    else:
+        return load_audio(path, **kwargs)
 
 
 def audioread(path, offset=0.0, duration=None, expected_sample_rate=None):

@@ -36,7 +36,7 @@ from paderbox.io.yaml_module import (
     dump_yaml_unsafe,
     dumps_yaml_unsafe,
 )
-from paderbox.io.audioread import load_audio
+from paderbox.io.audioread import load_audio, recursive_load_audio
 from paderbox.io.audiowrite import dump_audio, dumps_audio
 from paderbox.io.file_handling import (
     mkdir_p,
@@ -48,6 +48,7 @@ from .wrapper_dump import dump
 
 __all__ = [
     "load_audio",
+    "recursive_load_audio",
     "dump_audio",
     "dumps_audio",
     "load_json",
