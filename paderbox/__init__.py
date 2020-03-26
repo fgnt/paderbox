@@ -55,6 +55,7 @@ def _lazy_import_submodules(__path__, __name__, __package__):
                 return importlib.import_module(f'{__package__}.{item}')
             else:
                 atters = dir(self) + list(_available_submodules)
+                atters = list(dict.fromkeys(atters))  # drop duplicates
                 import difflib
                 # Suggestions are sorted by their similarity.
                 suggestions = difflib.get_close_matches(
