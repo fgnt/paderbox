@@ -62,6 +62,8 @@ def cy_parse_item(item, shape):
 
     if shape is not None:
         size = shape[-1]
+    else:
+        size = -1  # dummy assignment for c code
 
     if not isinstance(item, (slice)):
         raise AssertionError(

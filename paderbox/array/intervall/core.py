@@ -101,11 +101,84 @@ def zeros(shape=None):
     return ai
 
 
+def ones(shape=None):
+    """
+    Instantiate an ArrayIntervall filled with ones.
+
+    Note: The difference from numpy is, that the argument shape is optional.
+          When shape is None, some operations aren't supported, because the
+          length is unknown.
+          e.g. array_intervall[:] fails, because the length is unknown, while
+               array_intervall[:1000] will work.
+
+    Args:
+        shape: None, int or tuple/list that contains one int.
+
+    Returns:
+        ArrayIntervall
+
+    Examples:
+
+        >>> ai = ones(10)
+        >>> ai
+        ArrayIntervall("", shape=(10,), inverse_mode=True)
+        >>> ai[2:3] = 0
+        >>> ai
+        ArrayIntervall("2:3", shape=(10,), inverse_mode=True)
+        >>> ai[:]  # getitem converts the ArrayIntervall to numpy
+        array([ True,  True, False,  True,  True,  True,  True,  True,  True,
+                True])
+
+        >>> ai = ones()
+        >>> ai
+        ArrayIntervall("", shape=None, inverse_mode=True)
+        >>> ai[2:3] = 0
+        >>> ai
+        ArrayIntervall("2:3", shape=None, inverse_mode=True)
+        >>> ai[:]
+        Traceback (most recent call last):
+        ...
+        RuntimeError: You tried to slice an ArrayIntervall with unknown shape without a stop value.
+        This is not supported, either the shape has to be known
+        or you have to specify a stop value for the slice (i.e. array_intervall[:stop])
+        You called the array intervall with:
+            array_intervall[slice(None, None, None)]
+        >>> ai[:10]  # getitem converts the ArrayIntervall to numpy
+        array([ True,  True, False,  True,  True,  True,  True,  True,  True,
+                True])
+
+    """
+    ai = ArrayIntervall.__new__(ArrayIntervall)
+    ai.inverse_mode = True
+
+    if isinstance(shape, int):
+        shape = [shape]
+
+    if shape is not None:
+        assert len(shape) == 1, shape
+        shape = tuple(shape)
+
+    ai.shape = shape
+    return ai
+
+
 class ArrayIntervall:
     from_str = staticmethod(ArrayIntervall_from_str)
+    inverse_mode = False
 
-    def __init__(self, array):
+    def __init__(self, array, inverse_mode=False):
         """
+
+        Args:
+            array: 
+            inverse_mode:
+                Flag to indicate what the intervals represent:
+                 - False: Intervals represent True
+                 - True: Intervals represent False
+                This flag is nessesary to when the shape is unknown.
+                The use does not need to care about this flag. The default is
+                fine.
+
         >>> ai = ArrayIntervall(np.array([1, 1, 0, 1, 0, 0, 1, 1, 0], dtype=np.bool))
         >>> ai
         ArrayIntervall("0:2, 3:4, 6:8", shape=(9,))
@@ -125,6 +198,8 @@ class ArrayIntervall:
         assert array.ndim == 1, (array.ndim, array)
         assert array.dtype == np.bool, (np.bool, array)
 
+        if inverse_mode:
+            array = np.logical_not(array)
         diff = np.diff(array.astype(np.int32))
 
         rising = list(np.atleast_1d(np.squeeze(np.where(diff > 0), axis=0)) + 1)
@@ -137,9 +212,23 @@ class ArrayIntervall:
             falling = falling + [len(array)]
 
         # ai = ArrayIntervall(shape=array.shape)
+        self.inverse_mode = inverse_mode
         self.shape = array.shape
-        for start, stop in zip(rising, falling):
-            self[start:stop] = 1
+
+        if inverse_mode:
+            for start, stop in zip(rising, falling):
+                self[start:stop] = 0
+        else:
+            for start, stop in zip(rising, falling):
+                self[start:stop] = 1
+
+    def __copy__(self):
+        if self.inverse_mode:
+            ai = ones(shape=self.shape)
+        else:
+            ai = zeros(shape=self.shape)
+        ai.intervals = self.intervals
+        return ai
 
     def __array__(self, dtype=np.bool):
         """
@@ -254,7 +343,10 @@ class ArrayIntervall:
         return i_str
 
     def __repr__(self):
-        return f'{self.__class__.__name__}("{self._intervals_as_str}", shape={self.shape})'
+        if self.inverse_mode:
+            return f'{self.__class__.__name__}("{self._intervals_as_str}", shape={self.shape}, inverse_mode={self.inverse_mode})'
+        else:
+            return f'{self.__class__.__name__}("{self._intervals_as_str}", shape={self.shape})'
 
     def add_intervals_from_str(self, string_intervals):
         self.intervals = self.intervals + cy_str_to_intervalls(string_intervals)
@@ -316,15 +408,23 @@ class ArrayIntervall:
         start, stop = cy_parse_item(item, self.shape)
 
         if np.isscalar(value):
-            if value == 1:
-                self.intervals = self.intervals + ((start, stop),)
-            elif value == 0:
-                self.intervals = cy_non_intersection((start, stop), self.intervals)
+            if self.inverse_mode:
+                if value == 0:
+                    self.intervals = self.intervals + ((start, stop),)
+                elif value == 1:
+                    self.intervals = cy_non_intersection((start, stop), self.intervals)
+                else:
+                    raise ValueError(value)
             else:
-                raise ValueError(value)
+                if value == 1:
+                    self.intervals = self.intervals + ((start, stop),)
+                elif value == 0:
+                    self.intervals = cy_non_intersection((start, stop), self.intervals)
+                else:
+                    raise ValueError(value)
         elif isinstance(value, (tuple, list, np.ndarray)):
-            assert len(value) == stop - start, (start, stop, len(value), value)
-            ai = ArrayIntervall(value)
+            assert len(value) == stop - start, (start, stop, stop - start, len(value), value)
+            ai = ArrayIntervall(value, inverse_mode=self.inverse_mode)
             intervals = self.intervals
             intervals = cy_non_intersection((start, stop), intervals)
             self.intervals = intervals + tuple([(s+start, e+start) for s, e in ai.intervals])
@@ -348,18 +448,225 @@ class ArrayIntervall:
         start, stop = cy_parse_item(item, self.shape)
         intervals = cy_intersection((start, stop), self.normalized_intervals)
 
-        arr = np.zeros(stop - start, dtype=np.bool)
+        if self.inverse_mode:
+            arr = np.ones(stop - start, dtype=np.bool)
 
-        for i_start, i_end in intervals:
-            arr[i_start - start:i_end - start] = True
+            for i_start, i_end in intervals:
+                arr[i_start - start:i_end - start] = False
+        else:
+            arr = np.zeros(stop - start, dtype=np.bool)
+
+            for i_start, i_end in intervals:
+                arr[i_start - start:i_end - start] = True
 
         return arr
 
+    def sum(self, axis=None, out=None):
+        """
+        >>> a = ArrayIntervall([True, True, False, False])
+        >>> np.sum(a)
+        2
+        >>> a = ArrayIntervall([True, False, False, True])
+        >>> np.sum(a)
+        2
+        """
+        assert out is None, (out, axis, self)
+        assert axis is None, (axis, out, self)
+        a, b = np.sum(self.normalized_intervals, axis=0)
+        return b - a
+
     def __or__(self, other):
+        """
+        >>> a1 = ArrayIntervall([True, True, False, False])
+        >>> a2 = ArrayIntervall([True, False, True, False])
+        >>> print(a1 | a2, (a1 | a2)[:])
+        ArrayIntervall("0:3", shape=(4,)) [ True  True  True False]
+        >>> a1 = ArrayIntervall([True, True, False, False], inverse_mode=True)
+        >>> a2 = ArrayIntervall([True, False, True, False], inverse_mode=True)
+        >>> print(a1 | a2, (a1 | a2)[:])
+        ArrayIntervall("3:4", shape=(4,), inverse_mode=True) [ True  True  True False]
+        """
         if not isinstance(other, ArrayIntervall):
             return NotImplemented
-        else:
+        elif self.inverse_mode is False and other.inverse_mode is False:
             assert other.shape == self.shape, (self.shape, other.shape)
             ai = zeros(shape=self.shape)
             ai.intervals = self.intervals + other.intervals
             return ai
+        # elif self.inverse_mode is True and other.inverse_mode is True:
+        #     assert other.shape == self.shape, (self.shape, other.shape)
+        #     ai = zeros(shape=self.shape)
+        #     ai.intervals = self.intervals + other.intervals
+
+        elif self.inverse_mode is True and other.inverse_mode is True:
+            return ~((~self) & (~other))
+        else:
+            raise NotImplementedError(self.inverse_mode, other.inverse_mode)
+
+    def __invert__(self):
+        """
+        >>> a = ArrayIntervall([True, False])
+        >>> ~ a
+        ArrayIntervall("0:1", shape=(2,), inverse_mode=True)
+        >>> print(a[:])
+        [ True False]
+        >>> print((~a)[:])
+        [False  True]
+
+        >>> (~ones())[:3]
+        array([False, False, False])
+        >>> (~zeros())[:3]
+        array([ True,  True,  True])
+        """
+        if self.inverse_mode:
+            ai = zeros(shape=self.shape)
+        else:
+            ai = ones(shape=self.shape)
+        ai.intervals = self.intervals
+        return ai
+
+    def __and__(self, other):
+        """
+        >>> a1 = ArrayIntervall([True, True, False, False])
+        >>> a2 = ArrayIntervall([True, False, True, False])
+        >>> print(a1 & a2, (a1 & a2)[:])
+        ArrayIntervall("0:1", shape=(4,)) [ True False False False]
+        >>> a1 = ArrayIntervall([True, True, False, False], inverse_mode=True)
+        >>> a2 = ArrayIntervall([True, False, True, False], inverse_mode=True)
+        >>> print(a1 & a2, (a1 & a2)[:])
+        ArrayIntervall("1:4", shape=(4,), inverse_mode=True) [ True False False False]
+
+        >>> np.logical_and(a1, a2)
+        array([ True, False, False, False])
+        """
+        if not isinstance(other, ArrayIntervall):
+            return NotImplemented
+        elif self.inverse_mode is True and other.inverse_mode is True:
+            # short circuit
+            return ~((~self) | (~other))
+        elif self.inverse_mode is False and other.inverse_mode is False:
+            assert other.shape == self.shape, (self.shape, other.shape)
+            ai = zeros(shape=self.shape)
+
+            normalized_intervals = self.normalized_intervals
+            intervals = []
+            for (start, stop) in other.normalized_intervals:
+                intervals.extend(cy_intersection(
+                    (start, stop), normalized_intervals))
+
+            ai.intervals = intervals
+            return ai
+        else:
+            raise NotImplementedError(self.inverse_mode, other.inverse_mode)
+
+    def __xor__(self, other):
+        """
+        >>> a1 = ArrayIntervall([True, True, False, False])
+        >>> a2 = ArrayIntervall([True, False, True, False])
+        >>> print(a1 ^ a2, (a1 ^ a2)[:])
+        ArrayIntervall("1:3", shape=(4,)) [False  True  True False]
+        >>> a1 = ArrayIntervall([True, True, False, False], inverse_mode=True)
+        >>> a2 = ArrayIntervall([True, False, True, False], inverse_mode=True)
+        >>> print(a1 ^ a2, (a1 ^ a2)[:])
+        ArrayIntervall("1:3", shape=(4,)) [False  True  True False]
+        """
+        if not isinstance(other, ArrayIntervall):
+            return NotImplemented
+        elif (self.inverse_mode is False and other.inverse_mode is False)\
+                or self.inverse_mode is True and other.inverse_mode is True:
+            ai = zeros(shape=self.shape)
+            ai.intervals = ArrayIntervall._normalize([
+                (start, stop)
+                for start, stop, a_, b_ in _yield_sections(
+                    self.normalized_intervals,
+                    other.normalized_intervals,
+                )
+                if a_ ^ b_
+            ])
+            return ai
+        else:
+            raise NotImplementedError(self.inverse_mode, other.inverse_mode)
+
+
+
+def _yield_sections(a_intervals, b_intervals):
+    """
+    >>> a = ArrayIntervall._normalize([(0, 2), (6, 8), (20, 30), (33, 35)])
+    >>> b = ArrayIntervall._normalize([(1, 3), (10, 15), (22, 28), (35, 37)])
+    >>> a
+    ((0, 2), (6, 8), (20, 30), (33, 35))
+    >>> b
+    ((1, 3), (10, 15), (22, 28), (35, 37))
+    >>> for s in _yield_sections(a, b):
+    ...     print(s)
+    (0, 1, True, False)
+    (1, 2, True, True)
+    (2, 3, False, True)
+    (3, 6, False, False)
+    (6, 8, True, False)
+    (8, 10, False, False)
+    (10, 15, False, True)
+    (15, 20, False, False)
+    (20, 22, True, False)
+    (22, 28, True, True)
+    (28, 30, True, False)
+    (30, 33, False, False)
+    (33, 35, True, False)
+    (35, 37, False, True)
+
+    >>> c = ArrayIntervall._normalize([
+    ...     (start, stop)
+    ...     for start, stop, a_, b_ in _yield_sections(a, b)
+    ...     if a_ ^ b_
+    ... ])
+    >>> c
+    ((0, 1), (2, 3), (6, 8), (10, 15), (20, 22), (28, 30), (33, 37))
+    """
+
+    a_intervals_iter = iter(a_intervals)
+    b_intervals_iter = iter(b_intervals)
+
+    a_start, a_end = next(a_intervals_iter)
+    b_start, b_end = next(b_intervals_iter)
+
+    current_position = 0
+
+    # while True:
+    for _ in range(10 * (len(a_intervals) + len(b_intervals))):
+        if a_start > current_position and b_start > current_position:
+            new_pos = min(a_start, b_start)
+            yield (current_position, new_pos, False, False)
+            current_position = new_pos
+
+        elif a_start <= current_position and b_start > current_position:
+            new_pos = min(a_end, b_start)
+            yield (current_position, new_pos, True, False)
+            current_position = new_pos
+
+        elif a_start > current_position and b_start <= current_position:
+            new_pos = min(b_end, a_start)
+            yield (current_position, new_pos, False, True)
+            current_position = new_pos
+
+        elif a_start == current_position or b_start == current_position:
+            new_pos = min(a_end, b_end)
+            yield (current_position, new_pos, True, True)
+            current_position = new_pos
+
+        else:
+            raise RuntimeError(current_position, a_start, a_end, b_start, b_end)
+
+        if current_position == a_end:
+            try:
+                a_start, a_end = next(a_intervals_iter)
+            except StopIteration:
+                a_start = float('inf')
+
+        if current_position == b_end:
+            try:
+                b_start, b_end = next(b_intervals_iter)
+            except StopIteration:
+                b_start = float('inf')
+
+        if current_position == max(a_end, b_end):
+            break

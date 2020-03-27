@@ -11,11 +11,12 @@ The motivation to write this class was to store the voice/source/speech
 activity information (e.g. there is speech from sample 16000 to sample 48000)
 of a long audio file (> 2h) in memory.
 """
-from .core import zeros
+from .core import zeros, ones
 from .core import ArrayIntervall
 
 from .rttm import from_rttm
 from .rttm import from_rttm_str
+from .rttm import to_rttm
 from .rttm import to_rttm_str
 from .kaldi import from_kaldi_segments
 from .kaldi import from_kaldi_segments_str
