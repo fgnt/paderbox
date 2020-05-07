@@ -54,10 +54,10 @@ test = [
 
 # Get the long description from the relevant file
 try:
-    with open(path.join(here, 'DESCRIPTION.rst'), encoding='utf-8') as f:
+    with open(path.join(here, 'README.md'), encoding='utf-8') as f:
         long_description = f.read()
 except FileNotFoundError:
-    long_description=''
+    long_description = ''
 
 setup(
     name='paderbox',
