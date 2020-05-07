@@ -194,33 +194,38 @@ class ArrayIntervall:
         >>> assert all(a == ArrayIntervall(a)[:])
 
         """
-        array = np.asarray(array)
-        assert array.ndim == 1, (array.ndim, array)
-        assert array.dtype == np.bool, (np.bool, array)
-
-        if inverse_mode:
-            array = np.logical_not(array)
-        diff = np.diff(array.astype(np.int32))
-
-        rising = list(np.atleast_1d(np.squeeze(np.where(diff > 0), axis=0)) + 1)
-        falling = list(np.atleast_1d(np.squeeze(np.where(diff < 0), axis=0)) + 1)
-
-        if array[0] == 1:
-            rising = [0] + rising
-
-        if array[-1] == 1:
-            falling = falling + [len(array)]
-
-        # ai = ArrayIntervall(shape=array.shape)
-        self.inverse_mode = inverse_mode
-        self.shape = array.shape
-
-        if inverse_mode:
-            for start, stop in zip(rising, falling):
-                self[start:stop] = 0
+        if isinstance(array, ArrayIntervall):
+            self.shape = array.shape
+            self.inverse_mode = array.inverse_mode
+            self.intervals = array.intervals
         else:
-            for start, stop in zip(rising, falling):
-                self[start:stop] = 1
+            array = np.asarray(array)
+            assert array.ndim == 1, (array.ndim, array)
+            assert array.dtype == np.bool, (np.bool, array)
+
+            if inverse_mode:
+                array = np.logical_not(array)
+            diff = np.diff(array.astype(np.int32))
+
+            rising = list(np.atleast_1d(np.squeeze(np.where(diff > 0), axis=0)) + 1)
+            falling = list(np.atleast_1d(np.squeeze(np.where(diff < 0), axis=0)) + 1)
+
+            if array[0] == 1:
+                rising = [0] + rising
+
+            if array[-1] == 1:
+                falling = falling + [len(array)]
+
+            # ai = ArrayIntervall(shape=array.shape)
+            self.inverse_mode = inverse_mode
+            self.shape = array.shape
+
+            if inverse_mode:
+                for start, stop in zip(rising, falling):
+                    self[start:stop] = 0
+            else:
+                for start, stop in zip(rising, falling):
+                    self[start:stop] = 1
 
     def __copy__(self):
         if self.inverse_mode:
@@ -443,8 +448,23 @@ class ArrayIntervall:
         ArrayIntervall("10:20, 25:30", shape=(50,))
         >>> ai[19:26]
         array([ True, False, False, False, False, False,  True])
-
+        >>> ai[19]
+        True
+        >>> ai[5]
+        False
+        >>> ai[49]
+        False
+        >>> ai[29]
+        True
+     
         """
+        if isinstance(item, (int, np.integer)):
+            # Could be optimized
+            for s, e in self.normalized_intervals:
+                if e > item:
+                    return (item >= s) ^ self.inverse_mode
+            return self.inverse_mode
+
         start, stop = cy_parse_item(item, self.shape)
         intervals = cy_intersection((start, stop), self.normalized_intervals)
 
@@ -572,21 +592,9 @@ class ArrayIntervall:
         """
         if not isinstance(other, ArrayIntervall):
             return NotImplemented
-        elif (self.inverse_mode is False and other.inverse_mode is False)\
-                or self.inverse_mode is True and other.inverse_mode is True:
-            ai = zeros(shape=self.shape)
-            ai.intervals = ArrayIntervall._normalize([
-                (start, stop)
-                for start, stop, a_, b_ in _yield_sections(
-                    self.normalized_intervals,
-                    other.normalized_intervals,
-                )
-                if a_ ^ b_
-            ])
-            return ai
         else:
-            raise NotImplementedError(self.inverse_mode, other.inverse_mode)
-
+            import operator
+            return _combine(operator.__xor__, self, other)
 
 
 def _yield_sections(a_intervals, b_intervals):
@@ -670,3 +678,80 @@ def _yield_sections(a_intervals, b_intervals):
 
         if current_position == max(a_end, b_end):
             break
+
+
+def _combine(func, *array_intervals, out=None):
+    """
+
+    >>> import operator
+    >>> ai1 = ArrayIntervall(np.array([0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0], dtype=bool))
+    >>> ai1
+    ArrayIntervall("3:5, 8:10", shape=(11,))
+    >>> ai2 = ArrayIntervall(np.array([0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0], dtype=bool))
+    >>> ai2
+    ArrayIntervall("6:10", shape=(11,))
+    >>> _combine(operator.__or__, ai1, ai2)
+    ArrayIntervall("3:5, 6:10", shape=(11,))
+    >>> _combine(operator.__and__, ai1, ai2)
+    ArrayIntervall("8:10", shape=(11,))
+    >>> _combine(operator.__xor__, ai1, ai2)
+    ArrayIntervall("3:5, 6:8", shape=(11,))
+    >>> _combine(operator.__not__, ai1)
+    ArrayIntervall("0:3, 5:8, 10:11", shape=(11,))
+
+    >>> ai1.shape = None
+    >>> ai2.shape = None
+    >>> ai1
+    ArrayIntervall("3:5, 8:10", shape=None)
+    >>> ai2
+    ArrayIntervall("6:10", shape=None)
+    >>> _combine(operator.__or__, ai1, ai2)
+    ArrayIntervall("3:5, 6:10", shape=None)
+    >>> _combine(operator.__and__, ai1, ai2)
+    ArrayIntervall("8:10", shape=None)
+    >>> _combine(operator.__xor__, ai1, ai2)
+    ArrayIntervall("3:5, 6:8", shape=None)
+    >>> _combine(operator.__not__, ai1)
+    ArrayIntervall("3:5, 8:10", shape=None, inverse_mode=True)
+    >>> _combine(operator.__not__, ai1)[:11]
+    array([ True,  True,  True, False, False,  True,  True,  True, False,
+           False,  True])
+
+    """
+
+    edges = {0,}
+    for ai in array_intervals:
+        ai: ArrayIntervall
+        for start_end in ai.normalized_intervals:
+            edges.update(start_end)
+
+    edges = sorted(edges)
+
+    values = [ai[edges[-1]] for ai in array_intervals]
+    last = func(*values)
+    
+    if out is None:
+        shapes = [ai.shape for ai in array_intervals]
+        assert len(set(shapes)) == 1, shapes
+        shape = shapes[0]
+
+        if shape is None:
+            if last:
+                out = ones(shape=shape)
+            else:
+                out = zeros(shape=shape)
+        else:
+            out = zeros(shape=shape)
+            out[edges[-1]:] = last
+    else:
+        out: ArrayIntervall
+        if out.shape is None:
+            assert last == out.inverse_mode, (last, func, values, out, )
+        else:
+            out[edges[-1]:] = last
+
+    for s, e in zip(edges, edges[1:]):
+        values = [ai[s] for ai in array_intervals]
+        # print(s, e, values, func(*values))
+        out[s:e] = func(*[ai[s] for ai in array_intervals])
+    return out

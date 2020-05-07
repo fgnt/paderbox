@@ -33,16 +33,25 @@ def load_csv(file):
     ...
 
     """
-    import csv
+    import csv, io
+
+    if not isinstance(file, io.IOBase):
+        with open(file, 'r') as fd:
+            return load_csv(fd)
 
     def zip_same(a, b):
         assert len(a) == len(b), (len(a), len(b), a, b)
         return zip(a, b)
 
-    with open(file, 'r') as fd:
-        iterator = csv.reader(fd)
-        header = next(iterator)
-        return [
-            dict(zip_same(header, row))
-            for row in iterator
-        ]
+    # with open(file, 'r') as fd:
+    iterator = csv.reader(file)
+    header = next(iterator)
+    return [
+        dict(zip_same(header, row))
+        for row in iterator
+    ]
+
+def loads_csv(content):
+    import io
+    return load_csv(io.StringIO(content))
+

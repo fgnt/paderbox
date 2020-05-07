@@ -45,6 +45,7 @@ def play(
         scale=1,
         name=None,
         stereo=False,
+        normalize=True,
 ):
     """ Tries to guess, what the input data is. Plays time series and stft.
 
@@ -65,6 +66,8 @@ def play(
                  displayed
     :param stereo: If set to true, you can listen to channel as defined by
         `channel` parameter and the next channel at the same time.
+    :param normalize: It true, normalize the data to have values in the range
+        from 0 to 1. Can only be disabled with newer IPython versions.
     :return:
     """
     if isinstance(data, dict):
@@ -121,7 +124,7 @@ def play(
     assert stereo or len(data.shape) == 1, data.shape
 
     if scale != 1:
-        assert scale > 1, \
+        assert scale > 1 or (not normalize), \
             'Only Amplification with clipping is supported. \n' \
             'Note: IPython.display.Audio scales the input, therefore a ' \
             'np.clip can increase the power, but not decrease it. ' \
@@ -133,10 +136,20 @@ def play(
         assert len(data.shape) == 2, data.shape
         assert data.shape[0] == 2, data.shape
 
-    if name is None:
-        display(Audio(data, rate=sample_rate))
+    if normalize:
+        # ToDo: disable this version specific check
+        # ipython 7.3.0 has no `normalize` argument and normalize couldn't
+        # be disabled
+        kwargs = {}
     else:
-        na = NamedAudio(data, rate=sample_rate)
+        # ipython 7.12.0 `Audio` has a `normalize` argument see
+        # https://github.com/ipython/ipython/pull/11650
+        kwargs = {'normalize': normalize}
+
+    if name is None:
+        display(Audio(data, rate=sample_rate, **kwargs))
+    else:
+        na = NamedAudio(data, rate=sample_rate, **kwargs)
         na.name = name
         display(na)
 
