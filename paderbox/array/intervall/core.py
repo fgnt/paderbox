@@ -448,8 +448,23 @@ class ArrayIntervall:
         ArrayIntervall("10:20, 25:30", shape=(50,))
         >>> ai[19:26]
         array([ True, False, False, False, False, False,  True])
-
+        >>> ai[19]
+        True
+        >>> ai[5]
+        False
+        >>> ai[49]
+        False
+        >>> ai[29]
+        True
+     
         """
+        if isinstance(item, (int, np.integer)):
+            # Could be optimized
+            for s, e in self.normalized_intervals:
+                if e > item:
+                    return (item >= s) ^ self.inverse_mode
+            return self.inverse_mode
+
         start, stop = cy_parse_item(item, self.shape)
         intervals = cy_intersection((start, stop), self.normalized_intervals)
 
