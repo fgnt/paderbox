@@ -587,7 +587,7 @@ def mask( # pylint: disable=unused-argument
         signal, ax=None, limits=(0, 1), log=False,
         colorbar=True, batch=0, sample_rate=None, stft_size=None,
         stft_shift=None, x_label=None, y_label=None, z_label='Mask',
-        z_scale=None
+        z_scale=None, cmap=None,
 ):
     """
     Plots any mask with values between zero and one.
