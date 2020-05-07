@@ -38,14 +38,17 @@ A single function allows to play audio from the waveform, from the STFT signal, 
 It therefore serves as a great tool within Jupyter Notebooks and helps for quick inspection of simulation results.
 
 # Installation
-
-Clone this repository and install it as follows
+Install it from PyPI with pip
+```bash
+pip install paderbox
+```
+or clone this repository and install it as follows
 ```bash
 git clone https://github.com/fgnt/paderbox.git
 cd paderbox
 pip install --editable .[all]
 ```
-The `[all]` flag is optional and indicate to install all dependencies.
+The `[all]` flag is optional and indicates to install all dependencies.
 Remove it, when you want to have the minimal dependencies.
 
 # How to cite?
