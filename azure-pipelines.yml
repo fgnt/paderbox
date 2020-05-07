@@ -79,8 +79,7 @@ steps:
 - script: |
     # Print cmd before executing
     trap 'echo -e "$ $BASH_COMMAND"' DEBUG
-    pip install pytest pytest-azurepipelines
-    pip install pytest-cov
+    pip install pytest-azurepipelines
     pytest \
       tests \
       paderbox \
