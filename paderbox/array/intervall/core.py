@@ -194,33 +194,38 @@ class ArrayIntervall:
         >>> assert all(a == ArrayIntervall(a)[:])
 
         """
-        array = np.asarray(array)
-        assert array.ndim == 1, (array.ndim, array)
-        assert array.dtype == np.bool, (np.bool, array)
-
-        if inverse_mode:
-            array = np.logical_not(array)
-        diff = np.diff(array.astype(np.int32))
-
-        rising = list(np.atleast_1d(np.squeeze(np.where(diff > 0), axis=0)) + 1)
-        falling = list(np.atleast_1d(np.squeeze(np.where(diff < 0), axis=0)) + 1)
-
-        if array[0] == 1:
-            rising = [0] + rising
-
-        if array[-1] == 1:
-            falling = falling + [len(array)]
-
-        # ai = ArrayIntervall(shape=array.shape)
-        self.inverse_mode = inverse_mode
-        self.shape = array.shape
-
-        if inverse_mode:
-            for start, stop in zip(rising, falling):
-                self[start:stop] = 0
+        if isinstance(array, ArrayIntervall):
+            self.shape = array.shape
+            self.inverse_mode = array.inverse_mode
+            self.intervals = array.intervals
         else:
-            for start, stop in zip(rising, falling):
-                self[start:stop] = 1
+            array = np.asarray(array)
+            assert array.ndim == 1, (array.ndim, array)
+            assert array.dtype == np.bool, (np.bool, array)
+
+            if inverse_mode:
+                array = np.logical_not(array)
+            diff = np.diff(array.astype(np.int32))
+
+            rising = list(np.atleast_1d(np.squeeze(np.where(diff > 0), axis=0)) + 1)
+            falling = list(np.atleast_1d(np.squeeze(np.where(diff < 0), axis=0)) + 1)
+
+            if array[0] == 1:
+                rising = [0] + rising
+
+            if array[-1] == 1:
+                falling = falling + [len(array)]
+
+            # ai = ArrayIntervall(shape=array.shape)
+            self.inverse_mode = inverse_mode
+            self.shape = array.shape
+
+            if inverse_mode:
+                for start, stop in zip(rising, falling):
+                    self[start:stop] = 0
+            else:
+                for start, stop in zip(rising, falling):
+                    self[start:stop] = 1
 
     def __copy__(self):
         if self.inverse_mode:
