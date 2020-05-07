@@ -11,7 +11,6 @@ import functools
 
 import numpy as np
 import soundfile
-import audioread as ar
 
 import paderbox.utils.process_caller as pc
 from paderbox.io.path_utils import normalize_path
@@ -169,9 +168,10 @@ def load_audio(
 
     try:
         if isinstance(path, (str, Path)) and (Path(path).suffix == '.m4a'):
+            import audioread
             assert (start == 0 and stop is None), \
                 'audioread does not support partial loading of audio files'
-            with ar.audio_open(
+            with audioread.audio_open(
                     path
             ) as f:
                 samplerate = f.samplerate

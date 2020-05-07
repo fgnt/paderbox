@@ -22,7 +22,35 @@ here = path.abspath(path.dirname(__file__))
 visualization = ['seaborn', 'IPython', 'ipywidgets',
                  'beautifulsoup4', 'tabulate']
 # dependencies only required during test
-test = ['pytest', 'torch', 'coverage']
+test = [
+    'pytest',
+    'pytest-cov',
+    'torch',
+    'coverage',
+    'h5py',
+    'pyyaml>=5.1',  # See https://msg.pyyaml.org/load
+    'librosa',  # Used for FBanks
+    'wavefile',  # for reading .flac audio
+    'dill',
+    'pathos',
+    # 'pyzmq',
+    # 'pymatbridge',  # need pyzmq to be installed manually
+    'tqdm',
+    'fire',
+    'pycallgraph',  # Used in profiling module
+    (
+        # line_profiler does not work in python 3.7
+        # https://github.com/rkern/line_profiler/issues/132
+        # 'line_profiler; python_version<"3.7"'
+        'line_profiler'
+        if sys.version_info < (3, 7) else
+        # Install from repo works also in py37:
+        # 'line_profiler @ git+https://github.com/rkern/line_profiler; python_version>="3.7"'
+        'line_profiler @ git+https://github.com/rkern/line_profiler'
+        # `; python_version<"3.7"` does not work with `git+...`
+    ),
+    'memory_profiler',
+]
 
 # Get the long description from the relevant file
 try:
@@ -39,7 +67,7 @@ setup(
     # https://packaging.python.org/en/latest/single_source_version.html
     version='0.0.0',
 
-    description='Collection of utilities in the department of communications engineering  of the UPB',
+    description='Collection of utilities in the department of communications engineering of the UPB',
     long_description=long_description,
 
     # The project's main homepage.
@@ -69,11 +97,11 @@ setup(
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
-        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
     ],
 
     # What does your project relate to?
-    keywords='sample setuptools development',
+    keywords='audio speech',
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
@@ -86,34 +114,9 @@ setup(
     install_requires=[
         'numpy',
         'scipy',
-        'tqdm',
-        'pyyaml',
-        'dill',
         "dataclasses; python_version<'3.7'",  # dataclasses is in py37 buildin
-        'pathos',  # Multiprocessing alternative
-        'pip',
-        'pyzmq',
-        # 'pymatbridge',  # need pyzmq to be installed manually
-        'h5py',
-        (
-            # line_profiler does not work in python 3.7
-            # https://github.com/rkern/line_profiler/issues/132
-            # 'line_profiler; python_version<"3.7"'
-            'line_profiler'
-            if sys.version_info < (3, 7) else
-            # Install from repo works also in py37:
-            # 'line_profiler @ git+https://github.com/rkern/line_profiler; python_version>="3.7"'
-            'line_profiler @ git+https://github.com/rkern/line_profiler'
-            # `; python_version<"3.7"` does not work with `git+...`
-        ),
-        'memory_profiler',
-        'cached_property',
-        'fire',
         'soundfile',
-        'wavefile',  # for reading .flac audio
-        'pycallgraph',  # Used in profiling module
-        'lazy_dataset',  # used for iteration over database examples
-        'librosa',  # Used for FBanks
+        'cached_property',
     ],
 
     # Installation problems in a clean, new environment:
