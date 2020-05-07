@@ -20,7 +20,7 @@ pip install --upgrade bump2version
 
 ```bash
 bump2version --verbose --tag patch  # major, minor or patch
-python setup.py sdist bdist_wheel
+python setup.py sdist  # bdist_wheel  # It is difficult to get bdist_wheel working with binary files
 git push origin --tags
 twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 twine upload dist/*
