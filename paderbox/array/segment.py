@@ -143,6 +143,12 @@ def segment_axis(x, length: int, shift: int, axis: int=-1,
                 [ 4,  5,  6,  7],
                 [ 6,  7,  8,  9],
                 [ 8,  9, 10,  0]])
+        >>> segment_axis(torch.tensor([np.arange(11)]), 4, 2)  # simple example
+    tensor([[[ 0,  1,  2,  3],
+             [ 2,  3,  4,  5],
+             [ 4,  5,  6,  7],
+             [ 6,  7,  8,  9],
+             [ 8,  9, 10,  0]]])
     """
     backend = Dispatcher({
         'numpy': 'numpy',
@@ -162,9 +168,12 @@ def segment_axis(x, length: int, shift: int, axis: int=-1,
         import torch.nn.functional
         xp = torch
         def pad(array, pad_width, mode, constant_values=0):
+            # Torch has reverse mode for padding,
+            # i.e. start to specify the last dimension.
+            # Hence: pad_width[::-1]
             return torch.nn.functional.pad(
                 array,
-                pad=tuple(pad_width.ravel()),
+                pad=tuple(pad_width[::-1].ravel()),
                 mode=mode,
                 value=constant_values,
             )
