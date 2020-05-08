@@ -40,16 +40,17 @@ It therefore serves as a great tool within Jupyter Notebooks and helps for quick
 # Installation
 Install it from PyPI with pip
 ```bash
-pip install paderbox
+pip install paderbox`[all]`
 ```
-or clone this repository and install it as follows
+The `[all]` flag is optional and indicates to install all dependencies.
+Remove it, when you want to have the minimal dependencies.
+
+Alternatively, you can clone this repository and install it as follows
 ```bash
 git clone https://github.com/fgnt/paderbox.git
 cd paderbox
 pip install --editable .[all]
 ```
-The `[all]` flag is optional and indicates to install all dependencies.
-Remove it, when you want to have the minimal dependencies.
 
 # How to cite?
 
