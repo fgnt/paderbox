@@ -66,6 +66,11 @@ def from_rttm(rttm_file, shape=None, sample_rate=16000):
     SPEAKER S02 1 2 1 <NA> <NA> 1 <NA>
     SPEAKER S02 1 0 2 <NA> <NA> 2 <NA>
     {'S02': {'1': ArrayIntervall("0:16000, 32000:48000", shape=None), '2': ArrayIntervall("0:32000", shape=None)}}
+
+    >>> file = 'https://raw.githubusercontent.com/nateanl/chime6_rttm/master/dev_rttm'
+    >>> print(str(from_rttm(file))[:73])
+    {'S09_U06.ENH': {'P25': ArrayIntervall("1049280:1077280, 1105600:1108960,
+
     """
 
     kwargs = dict(shape=shape, sample_rate=sample_rate)
@@ -75,10 +80,19 @@ def from_rttm(rttm_file, shape=None, sample_rate=16000):
             from_rttm(f, **kwargs)
             for f in rttm_file
         ])
-    
-    rttm_file = Path(rttm_file)
+
+    if str(rttm_file).startswith('http'):
+        # Same logic as IPython.display.DisplayObject.__init__
+
+        import urllib.request
+        resource = urllib.request.urlopen(rttm_file)
+        # https://stackoverflow.com/a/19156107/5766934
+        data = resource.read().decode(resource.headers.get_content_charset())
+    else:
+        data = Path(rttm_file).read_text()
+
     return from_rttm_str(
-        rttm_file.read_text(), **kwargs)
+        data, **kwargs)
 
 
 def from_rttm_str(rttm_str, shape=None, sample_rate=16000):
@@ -94,7 +108,7 @@ def from_rttm_str(rttm_str, shape=None, sample_rate=16000):
 
     for line in lines:
         parts = line.split()
-        assert parts[0] == 'SPEAKER'
+        assert parts[0] == 'SPEAKER', parts
         file_id = parts[1]
         channel_id = parts[2]
         begin_time = decimal.Decimal(parts[3])
