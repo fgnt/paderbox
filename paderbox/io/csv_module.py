@@ -1,5 +1,5 @@
 
-def load_csv(file):
+def load_csv(file, sniffer=False, sniffer_sample_length=1024):
     """
     Load a csv file to python.
 
@@ -35,13 +35,17 @@ def load_csv(file):
     """
     import csv, io
 
-    if not isinstance(file, io.IOBase):
+    if not isinstance(file, io.TextIOBase):
         with open(file, 'r') as fd:
             return load_csv(fd)
 
     def zip_same(a, b):
         assert len(a) == len(b), (len(a), len(b), a, b)
         return zip(a, b)
+
+    # https://docs.python.org/3/library/csv.html#csv.Sniffer
+    dialect = csv.Sniffer().sniff(file.read(sniffer_sample_length))
+    file.seek(0)
 
     # with open(file, 'r') as fd:
     iterator = csv.reader(file)
