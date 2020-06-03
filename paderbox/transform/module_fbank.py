@@ -23,7 +23,7 @@ class MelTransform:
             n_mels: Optional[int] = 40,
             fmin: Optional[int] = 50,
             fmax: Optional[int] = None,
-            log: bool = True
+            log: bool = True,
     ):
         """
         Transforms linear spectrogram to (log) mel spectrogram.
@@ -55,17 +55,14 @@ class MelTransform:
     @cached_property
     def fbanks(self):
         """Create filterbank matrix according to member variables."""
-        import librosa
-        fbanks = librosa.filters.mel(
+        fbanks = get_fbanks(
             n_mels=self.n_mels,
-            n_fft=self.fft_length,
-            sr=self.sample_rate,
+            fft_length=self.fft_length,
+            sample_rate=self.sample_rate,
             fmin=self.fmin,
             fmax=self.fmax,
-            htk=True,
-            norm=None
         )
-        fbanks = fbanks / fbanks.sum(axis=-1, keepdims=True)
+        fbanks = fbanks / (fbanks.sum(axis=-1, keepdims=True) + 1e-6)
         return fbanks.T
 
     @cached_property
@@ -152,13 +149,54 @@ def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
     return feature
 
 
+def get_fbanks(
+        n_mels, sample_rate, fft_length, fmin=0., fmax=None, warping_fn=None
+):
+    """Computes mel filter banks
+
+    Args:
+        n_mels: number of mel filter banks
+        sample_rate:
+        fft_length:
+        fmin: onset frequency of the first filter
+        fmax: offset frequency of the last filter
+        warping_fn: optional function to warp the filter center frequencies,
+            e.g., VTLP (https://www.cs.utoronto.ca/~hinton/absps/perturb.pdf)
+
+    Returns:
+
+    """
+    fmax = sample_rate/2 if fmax is None else fmax
+    if fmax < 0:
+        fmax = fmax % sample_rate/2
+    f = mel2hz(np.linspace(hz2mel(fmin), hz2mel(fmax), n_mels+2))
+    if warping_fn is not None:
+        f = warping_fn(f)
+    k = hz2bin(f, sample_rate, fft_length)
+    centers = k[..., 1:-1, None]
+    onsets = np.minimum(k[..., :-2, None], centers - 1)
+    offsets = np.maximum(k[..., 2:, None], centers + 1)
+    idx = np.arange(fft_length/2+1)
+    fbanks = np.maximum(
+        np.minimum(
+            (idx-onsets)/(centers-onsets),
+            (idx-offsets)/(centers-offsets)
+        ),
+        0
+    )
+    return fbanks
+
+
 def hz2mel(hz):
     """Convert a value in Hertz to Mels
 
-    :param hz: a value in Hz. This can also be a numpy array, conversion
-        proceeds element-wise.
-    :returns: a value in Mels. If an array was passed in, an identical sized
+    Args:
+        hz: a value in Hz. This can also be a numpy array, conversion proceeds
+            element-wise.
+
+    Returns: a value in Mels. If an array was passed in, an identical sized
         array is returned.
+
     """
     return 2595 * np.log10(1 + hz / 700.0)
 
@@ -166,12 +204,45 @@ def hz2mel(hz):
 def mel2hz(mel):
     """Convert a value in Mels to Hertz
 
-    :param mel: a value in Mels. This can also be a numpy array, conversion
-        proceeds element-wise.
-    :returns: a value in Hertz. If an array was passed in, an identical sized
+    Args:
+        mel: a value in Mels. This can also be a numpy array, conversion
+            proceeds element-wise.
+
+    Returns: a value in Hz. If an array was passed in, an identical sized
         array is returned.
+
     """
     return 700 * (10 ** (mel / 2595.0) - 1)
+
+
+def bin2hz(k, sample_rate, fft_length):
+    """Convert a fft bin to Hz
+
+    Args:
+        k: fft bin index. This can also be a numpy array, conversion proceeds
+            element-wise.
+        sample_rate:
+        fft_length:
+
+    Returns:
+
+    """
+    return sample_rate * k / fft_length
+
+
+def hz2bin(f, sample_rate, fft_length):
+    """Convert Hz to fft bin idx (soft, i.e. return value is a float not an int)
+
+    Args:
+        f: a value in Hz. This can also be a numpy array, conversion proceeds
+            element-wise.
+        sample_rate:
+        fft_length:
+
+    Returns:
+
+    """
+    return f * fft_length / sample_rate
 
 
 def logfbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,

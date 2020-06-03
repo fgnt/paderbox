@@ -39,5 +39,3 @@ class TestSTFTMethods(unittest.TestCase):
             rand, transform.module_fbank.mel2hz(
                 transform.module_fbank.hz2mel(rand)))
         tc.assert_almost_equal(rand, transform.module_fbank.hz2mel(transform.module_fbank.mel2hz(rand)))
-
-
