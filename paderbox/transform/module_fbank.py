@@ -24,6 +24,7 @@ class MelTransform:
             fmin: Optional[int] = 50,
             fmax: Optional[int] = None,
             log: bool = True,
+            eps: float = 1e-18,
     ):
         """
         Transforms linear spectrogram to (log) mel spectrogram.
@@ -51,6 +52,7 @@ class MelTransform:
         self.fmin = fmin
         self.fmax = fmax
         self.log = log
+        self.eps = eps
 
     @cached_property
     def fbanks(self):
@@ -62,7 +64,7 @@ class MelTransform:
             fmin=self.fmin,
             fmax=self.fmax,
         )
-        fbanks = fbanks / (fbanks.sum(axis=-1, keepdims=True) + 1e-6)
+        fbanks = fbanks / (fbanks.sum(axis=-1, keepdims=True) + self.eps)
         return fbanks.T
 
     @cached_property
@@ -73,7 +75,7 @@ class MelTransform:
     def __call__(self, x):
         x = np.dot(x, self.fbanks)
         if self.log:
-            x = np.log(x + 1e-18)
+            x = np.log(x + self.eps)
         return x
 
     def inverse(self, x):
@@ -248,21 +250,23 @@ def hz2bin(f, sample_rate, fft_length):
 def logfbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
              number_of_filters=23, stft_size=512, lowest_frequency=0,
              highest_frequency=None, preemphasis_factor=0.97,
-             window=scipy.signal.windows.hamming, denoise=False):
+             window=scipy.signal.windows.hamming, denoise=False, eps=1e-18):
     """Generates log fbank features from time signal.
 
     Simply wraps fbank function. See parameters there.
     """
-    return np.log(fbank(
-        time_signal,
-        sample_rate=sample_rate,
-        window_length=window_length,
-        stft_shift=stft_shift,
-        number_of_filters=number_of_filters,
-        stft_size=stft_size,
-        lowest_frequency=lowest_frequency,
-        highest_frequency=highest_frequency,
-        preemphasis_factor=preemphasis_factor,
-        window=window,
-        denoise=denoise
-    ))
+    return np.log(
+        fbank(
+            time_signal,
+            sample_rate=sample_rate,
+            window_length=window_length,
+            stft_shift=stft_shift,
+            number_of_filters=number_of_filters,
+            stft_size=stft_size,
+            lowest_frequency=lowest_frequency,
+            highest_frequency=highest_frequency,
+            preemphasis_factor=preemphasis_factor,
+            window=window,
+            denoise=denoise
+        ) + eps
+    )
