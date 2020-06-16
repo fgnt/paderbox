@@ -69,6 +69,8 @@ __all__ = [
     "update_hdf5",
     "load_pickle",
     "dump_pickle",
+    "load_csv",
+    "loads_csv",
     "mkdir_p",
     "symlink",
     "SummaryEncoder",

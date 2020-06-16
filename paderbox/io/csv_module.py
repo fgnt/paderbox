@@ -1,13 +1,13 @@
-
+from typing import Optional, List
 
 def load_csv(
         file,
         *,
-        fieldnames=None,
-        dialect="excel",
-        sniffer=False,
-        sniffer_sample_length=1024,
-):
+        fieldnames: Optional[List[str]]=None,
+        dialect: str="excel",
+        sniffer: bool=False,
+        sniffer_sample_length: int=1024,
+) -> List[dict]:
     """
     Load a csv file to python.
 
