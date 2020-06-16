@@ -71,21 +71,22 @@ def load_csv(
     [{'a': '1', 'b': '2', 'c': '3'}, {'a': '4', 'b': '5', 'c': '6'}]
 
     """
-    import csv, io
+    import csv, io, contextlib
 
-    if not isinstance(file, io.TextIOBase):
-        with open(file, 'r') as fd:
-            return load_csv(fd)
+    with contextlib.ExitStack() as exit_stack:
+        if not isinstance(file, io.TextIOBase):
+            file = exit_stack.enter_context(open(file, 'r'))
 
-    if sniffer:
-        # https://docs.python.org/3/library/csv.html#csv.Sniffer
-        dialect = csv.Sniffer().sniff(file.read(sniffer_sample_length))
-        file.seek(0)
+        if sniffer:
+            # https://docs.python.org/3/library/csv.html#csv.Sniffer
+            dialect = csv.Sniffer().sniff(file.read(sniffer_sample_length))
+            file.seek(0)
 
-    iterator = csv.DictReader(file, fieldnames=fieldnames, dialect=dialect)
+        iterator = csv.DictReader(file, fieldnames=fieldnames, dialect=dialect)
 
-    # Remove ordereddict, since CPython 3.6 and Python 3.7 no longer necessary.
-    return list(map(dict, iterator))
+        # Remove ordereddict, since CPython 3.6 and Python 3.7 no longer
+        # necessary.
+        return list(map(dict, iterator))
 
 
 def loads_csv(
