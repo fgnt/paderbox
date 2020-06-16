@@ -9,7 +9,7 @@ def load_csv(
         sniffer: bool = False,
         sniffer_sample_length: int = 1024,
 ) -> List[dict]:
-    """
+    r"""
     Load a csv file to python.
 
     This function should imitate pandas.read_csv, but should return instead
@@ -59,14 +59,14 @@ def load_csv(
 
     When the a csv file does not use the standard `dialect` (i.e. 'excel'),
     you can use the sniffer flag to detect the `dialect`
-    >>> content = 'a b c\\n1 2 3\\n4 5 6'
+    >>> content = 'a b c\n1 2 3\n4 5 6'
     >>> loads_csv(content)
     [{'a b c': '1 2 3'}, {'a b c': '4 5 6'}]
     >>> loads_csv(content, sniffer=True)
     [{'a': '1', 'b': '2', 'c': '3'}, {'a': '4', 'b': '5', 'c': '6'}]
     >>> loads_csv(content, fieldnames=['d', 'e', 'f'], sniffer=True)
     [{'d': 'a', 'e': 'b', 'f': 'c'}, {'d': '1', 'e': '2', 'f': '3'}, {'d': '4', 'e': '5', 'f': '6'}]
-    >>> content = 'a\\tb\\tc\\n1\\t2\\t3\\n4\\t5\\t6'
+    >>> content = 'a\tb\tc\n1\t2\t3\n4\t5\t6'
     >>> loads_csv(content, sniffer=True)
     [{'a': '1', 'b': '2', 'c': '3'}, {'a': '4', 'b': '5', 'c': '6'}]
 
