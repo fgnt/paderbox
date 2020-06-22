@@ -10,7 +10,9 @@ trap 'echo -e "${green}$ $BASH_COMMAND ${NC}"' DEBUG
 # Force Exit 0
 trap 'exit 0' EXIT SIGINT SIGTERM
 
-source /net/software/python/2020_01/anaconda/bin/activate
+PYTHON_PATH=/net/software/python/2020_01/anaconda
+
+source $PYTHON_PATH/bin/activate
 
 # Use a pseudo virtualenv, http://stackoverflow.com/questions/2915471/install-a-python-package-into-a-different-directory-using-pip
 mkdir -p venv
@@ -20,7 +22,7 @@ export PYTHONUSERBASE=$(readlink -m venv)
 TOOLBOX="$(dirname $(readlink -f ${BASH_SOURCE[0]}))"
 
 # Refresh files...
-ls /net/ssd/software/conda/lib/python3.6/lib-dynload/../../ > /dev/null
+ls $PYTHON_PATH/lib/python3.6/lib-dynload/../../ > /dev/null
 
 # adds a KALDI_ROOT
 source "${TOOLBOX}/bash/kaldi.bash"
