@@ -10,7 +10,7 @@ trap 'echo -e "${green}$ $BASH_COMMAND ${NC}"' DEBUG
 # Force Exit 0
 trap 'exit 0' EXIT SIGINT SIGTERM
 
-PYTHON_PATH=/net/software/python/2020_01/anaconda
+PYTHON_PATH=/net/software/python/2020_06/anaconda
 
 source $PYTHON_PATH/bin/activate
 
