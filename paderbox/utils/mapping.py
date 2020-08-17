@@ -1,12 +1,20 @@
+
+
 class DispatchError(KeyError):
     def __str__(self):
-        if len(self.args) == 2:
+        if len(self.args) == 2 and isinstance(self.args[0], str):
             item, keys = self.args
             import difflib
             # Suggestions are sorted by their similarity.
-            suggestions = difflib.get_close_matches(
-                item, keys, cutoff=0, n=100
-            )
+            try:
+                suggestions = difflib.get_close_matches(
+                    item, keys, cutoff=0, n=100
+                )
+            except TypeError:
+                keys = map(str, keys)
+                suggestions = difflib.get_close_matches(
+                    item, keys, cutoff=0, n=100
+                )
             return f'Invalid option {item!r}.\n' \
                    f'Close matches: {suggestions!r}.'
         else:
@@ -29,4 +37,4 @@ class Dispatcher(dict):
         try:
             return super().__getitem__(item)
         except KeyError as e:
-            raise DispatchError(item, self.keys()) from e
+            raise DispatchError(item, self.keys()) from None

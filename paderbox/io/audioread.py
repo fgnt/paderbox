@@ -5,6 +5,7 @@ import inspect
 import os
 import tempfile
 import wave
+import types
 from io import BytesIO
 from pathlib import Path
 import functools
@@ -276,7 +277,7 @@ def recursive_load_audio(
     kwargs = locals().copy()
     path = kwargs.pop('path')
 
-    if isinstance(path, (tuple, list)):
+    if isinstance(path, (tuple, list, types.GeneratorType)):
         data = [recursive_load_audio(a, **kwargs) for a in path]
 
         np_data = np.array(data)

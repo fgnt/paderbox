@@ -3,7 +3,7 @@ import IPython.lib.pretty
 import numpy as np
 
 
-def pprint(obj, verbose=False, max_width=79, newline='\n',
+def pprint(obj, *objs, verbose=False, max_width=79, newline='\n',
            max_seq_length=IPython.lib.pretty.MAX_SEQ_LENGTH,
            max_array_length=50,
            np_suppress_small=True,
@@ -64,7 +64,12 @@ def pprint(obj, verbose=False, max_width=79, newline='\n',
 
     printer = MyRepresentationPrinter(sys.stdout, verbose, max_width, newline,
                                       max_seq_length=max_seq_length)
-    printer.pretty(obj)
+
+    if len(objs):
+        printer.pretty((obj, *objs))
+    else:
+        printer.pretty(obj)
+
     printer.flush()
     sys.stdout.write(newline)
     sys.stdout.flush()
