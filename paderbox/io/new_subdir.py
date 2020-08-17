@@ -27,16 +27,16 @@ def _removesuffix(self: str, suffix: str) -> str:
 
 
 def get_new_subdir(
-        basedir,
+        basedir: [str, Path],
         *,
-        id_naming='index',
-        mkdir=True,
-        prefix=None,
-        suffix=None,
-        consider_mpi=False,
-        dry_run=False,
+        id_naming: [str, callable]='index',
+        mkdir: bool=True,
+        prefix: str=None,
+        suffix: str=None,
+        consider_mpi: bool=False,
+        dry_run: bool=False,
 ):
-    """Determine a new non existant sub directory.
+    """Determine a new non-existent sub directory.
 
     Features:
      - With mkdir: Thread and process save.
@@ -45,7 +45,7 @@ def get_new_subdir(
 
     Args:
         basedir:
-            The new folder will be inside this directory
+            The new subdir will be inside this directory
         id_naming:
             The id naming that is used for the folder name.
              - str: 'index':
@@ -75,12 +75,13 @@ def get_new_subdir(
             happen
              - When mkdir is True every process will get another folder.
                i.e. each process has a folder just for this process.
-             - When mkdir is False it is likely that all get the same folder,
-               but this is not guarantied. Never use mpi with consider_mpi and
-               mkdir disabled.
+             - Warning: Never use mpi, when `mkdir is False` and
+               `consider_mpi is False`. Depending on some random factors
+               (e.g. python startup time) all workers could get the same
+               folder, but mostly some get the same folder and some different.
+               You never want this.
         dry_run:
-            Similar to mkdir. When true, disable mkdir and print the folder
-            name.
+            When true, disables mkdir and prints the folder name.
 
     Returns:
         pathlib.Path of the new subdir
