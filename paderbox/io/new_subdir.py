@@ -71,7 +71,7 @@ def get_new_subdir(
         consider_mpi:
             If True, only search on one mpi process for the folder and
             distribute the folder name.
-            When using mpi with this option disables the following can/will
+            When using mpi (and `consider_mpi is False`) the following can/will
             happen
              - When mkdir is True every process will get another folder.
                i.e. each process has a folder just for this process.
