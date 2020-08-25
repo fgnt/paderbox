@@ -719,7 +719,7 @@ class STFT:
 
         return x
 
-    def inverse(self, x):
+    def inverse(self, x, num_samples=None):
         """
         Computes inverse stft
 
@@ -737,7 +737,8 @@ class STFT:
             window_length=self.window_length,
             window=self.window,
             symmetric_window=self.symmetric_window,
-            fading=self.fading
+            fading=self.fading,
+            num_samples=num_samples,
         )
 
     def samples_to_frames(self, samples):
