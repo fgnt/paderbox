@@ -248,6 +248,9 @@ def _samples_to_stft_frames(
     >>> _samples_to_stft_frames(21, 16, 4, fading='full')
     9
 
+    >>> _samples_to_stft_frames(np.array([19, 20, 21]), 16, 4, fading='full')
+    array([8, 8, 9])
+
     >>> stft(np.zeros(19), 16, 4).shape
     (8, 9)
     >>> stft(np.zeros(20), 16, 4).shape
@@ -271,10 +274,12 @@ def _samples_to_stft_frames(
         samples = samples + (1 + (fading != 'half')) * pad_width
 
     # I changed this from np.ceil to math.ceil, to yield an integer result.
-    frames = (samples - size + shift) / shift
     if pad:
-        return ceil(frames)
-    return int(frames)
+        frames = (samples - size + shift + shift - 1) // shift
+    else:
+        frames = (samples - size + shift) // shift
+
+    return frames
 
 
 def _stft_frames_to_samples(
