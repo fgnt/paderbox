@@ -1,3 +1,5 @@
+import copy
+
 import collections
 import itertools
 
@@ -125,7 +127,7 @@ def nested_merge(default_dict, *update_dicts, allow_update=True, inplace=False):
     The last dict has the highest priority when allow_update is True.
     When allow_update is False, it is assumed, that no values gets overwritten.
 
-    When inplace is True, the default_dict is manypulated inplace. This is
+    When inplace is True, the default_dict is manipulated inplace. This is
     useful for `collections.defaultdict`.
 
     # Example from: https://stackoverflow.com/q/3232943/5766934
@@ -189,15 +191,13 @@ def nested_merge(default_dict, *update_dicts, allow_update=True, inplace=False):
         for d in dicts
     ])
 
-    if inplace:
-        for k in keys:
-            default_dict[k] = get_value_for_key(k)
-        return default_dict
-    else:
-        return default_dict.__class__({
-            k: get_value_for_key(k)
-            for k in keys
-        })
+    if not inplace:
+        default_dict = copy.copy(default_dict)
+
+    for k in keys:
+        default_dict[k] = get_value_for_key(k)
+
+    return default_dict
 
 
 def nested_op(
