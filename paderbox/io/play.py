@@ -2,35 +2,11 @@ import sys
 import os
 from pathlib import Path
 
-from IPython.display import display
-from IPython.display import Audio
 import numpy as np
 from scipy import signal
 
 from paderbox.io.audioread import load_audio
 from paderbox.transform import istft
-
-
-class NamedAudio(Audio):
-    name = None
-
-    def _repr_html_(self):
-        audio_html = super()._repr_html_()
-
-        assert self.name is not None
-
-        return """
-        <table style="width:100%">
-            <tr>
-                <td style="width:25%">
-                    {}
-                </td>
-                <td style="width:75%">
-                    {}
-                </td>
-            </tr>
-        </table>
-        """.format(self.name, audio_html)
 
 
 def play(
@@ -146,9 +122,30 @@ def play(
         # https://github.com/ipython/ipython/pull/11650
         kwargs = {'normalize': normalize}
 
+    from IPython.display import display
+    from IPython.display import Audio
     if name is None:
         display(Audio(data, rate=sample_rate, **kwargs))
     else:
+        class NamedAudio(Audio):
+            name = None
+            def _repr_html_(self):
+                audio_html = super()._repr_html_()
+
+                assert self.name is not None
+
+                return """
+                <table style="width:100%">
+                    <tr>
+                        <td style="width:25%">
+                            {}
+                        </td>
+                        <td style="width:75%">
+                            {}
+                        </td>
+                    </tr>
+                </table>
+                """.format(self.name, audio_html)
         na = NamedAudio(data, rate=sample_rate, **kwargs)
         na.name = name
         display(na)
