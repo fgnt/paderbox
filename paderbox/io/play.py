@@ -129,6 +129,7 @@ def play(
     else:
         class NamedAudio(Audio):
             name = None
+            
             def _repr_html_(self):
                 audio_html = super()._repr_html_()
 
