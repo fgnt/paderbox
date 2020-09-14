@@ -379,7 +379,7 @@ def sample_index_to_stft_frame_index(sample, window_length, shift, fading='full'
 
 
 def stft_frame_index_to_sample_index(
-        frame_index, window_length, shift, pad=True, fading=None, mode='center', num_samples=None
+        frame_index, window_length, shift, pad=True, fading='full', mode='center', num_samples=None
 ):
     """Computes first, center or last sample index from frame index
 
@@ -389,16 +389,20 @@ def stft_frame_index_to_sample_index(
         shift: stft hop size
         pad: True if stft uses padding else False
         fading: fading used in stft
-        mode: states the sample to return \in {'first','center','last'}. Default is 'center'.
-        num_samples: total number of samples in the source signal
+        mode: states the sample to return \in {'first','center','last'}.
+            With 'center' the higher sample index is returned when center lies
+            between two samples. Default is 'center'.
+        num_samples: total number of samples in the source signal.
+            When not None, returned sample index is at most num_samples - 1.
+            Also allows negative frame_index.
 
     Returns: sample index as int
 
-    >>> stft_frame_index_to_sample_index(1, 400, 160, mode='first')
+    >>> stft_frame_index_to_sample_index(1, 400, 160, mode='first', fading=None)
     160
-    >>> stft_frame_index_to_sample_index(1, 400, 160, mode='center')
+    >>> stft_frame_index_to_sample_index(1, 400, 160, mode='center', fading=None)
     360
-    >>> stft_frame_index_to_sample_index(1, 400, 160, mode='last')
+    >>> stft_frame_index_to_sample_index(1, 400, 160, mode='last', fading=None)
     559
     >>> stft_frame_index_to_sample_index(0, 400, 160, mode='first', fading='full')
     0
@@ -406,13 +410,13 @@ def stft_frame_index_to_sample_index(
     0
     >>> stft_frame_index_to_sample_index(2, 400, 160, mode='first', fading='full')
     80
-    >>> stft_frame_index_to_sample_index(2, 400, 160, mode='first', num_samples=800)
+    >>> stft_frame_index_to_sample_index(2, 400, 160, mode='first', fading=None, num_samples=800)
     320
-    >>> stft_frame_index_to_sample_index(3, 400, 160, mode='last', num_samples=800)
+    >>> stft_frame_index_to_sample_index(3, 400, 160, mode='last', fading=None, num_samples=800)
     799
-    >>> stft_frame_index_to_sample_index(-1, 400, 160, mode='last', num_samples=800)
+    >>> stft_frame_index_to_sample_index(-1, 400, 160, mode='last', fading=None, num_samples=800)
     799
-    >>> stft_frame_index_to_sample_index(3, 400, 160, mode='last', pad=False, num_samples=800)
+    >>> stft_frame_index_to_sample_index(3, 400, 160, mode='last', pad=False, fading=None, num_samples=800)
     Traceback (most recent call last):
     AssertionError: (3, 3)
     >>> stft_frame_index_to_sample_index(np.array([1]), 400, 160, mode='center', fading='full')
@@ -843,7 +847,9 @@ class STFT:
 
         Args:
             frame_index:
-            mode: states the sample to return \in {'first','center','last'}. Default is 'center'.
+            mode: states the sample to return \in {'first','center','last'}.
+                With 'center' the higher sample index is returned when center
+                lies between two samples. Default is 'center'.
 
         Returns:
 
