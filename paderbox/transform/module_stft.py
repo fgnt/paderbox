@@ -378,6 +378,73 @@ def sample_index_to_stft_frame_index(sample, window_length, shift, fading='full'
     return frame
 
 
+def stft_frame_index_to_sample_index(
+        frame_index, size, shift, pad=True, fading=None, mode='center', num_samples=None
+):
+    """Computes first, center or last sample index from frame index
+
+    Args:
+        frame_index:
+        size: stft window wize
+        shift: stft hop size
+        pad: True if stft uses padding else False
+        fading: fading used in stft
+        mode: states the sample to return \in {'first','center','last'}. Default is 'center'.
+        num_samples: total number of samples in the source signal
+
+    Returns: sample index as int
+
+    >>> stft_frame_index_to_sample_index(1, 400, 160, mode='first')
+    160
+    >>> stft_frame_index_to_sample_index(1, 400, 160, mode='center')
+    360
+    >>> stft_frame_index_to_sample_index(1, 400, 160, mode='last')
+    559
+    >>> stft_frame_index_to_sample_index(0, 400, 160, mode='first', fading='full')
+    0
+    >>> stft_frame_index_to_sample_index(1, 400, 160, mode='first', fading='full')
+    0
+    >>> stft_frame_index_to_sample_index(2, 400, 160, mode='first', fading='full')
+    80
+    >>> stft_frame_index_to_sample_index(2, 400, 160, mode='first', num_samples=800)
+    320
+    >>> stft_frame_index_to_sample_index(3, 400, 160, mode='last', num_samples=800)
+    799
+    >>> stft_frame_index_to_sample_index(-1, 400, 160, mode='last', num_samples=800)
+    799
+    >>> stft_frame_index_to_sample_index(3, 400, 160, mode='last', pad=False, num_samples=800)
+    Traceback (most recent call last):
+    AssertionError: (3, 3)
+    >>> stft_frame_index_to_sample_index(np.array([1]), 400, 160, mode='center', fading='full')
+    array([120])
+    >>> stft_frame_index_to_sample_index(np.array([1,2]), 400, 160, mode='center', fading='full')
+    array([120, 280])
+    """
+    if num_samples is not None:
+        num_frames = _samples_to_stft_frames(
+            num_samples, size, shift, pad=pad, fading=fading
+        )
+        if np.array(frame_index < 0).any():
+            assert np.array(frame_index < 0).all(), frame_index
+            frame_index = num_frames + frame_index
+        assert np.array(frame_index < num_frames).all(), (frame_index, num_frames)
+    assert np.array(frame_index >= 0).all(), frame_index
+    sample_idx = frame_index * shift
+    assert fading in [None, True, False, 'full', 'half'], fading
+    if fading not in [None, False]:
+        fading_width = ((1 + (fading != 'half')) * (size - shift)) // 2
+        sample_idx -= fading_width
+    if mode == 'center':
+        sample_idx += size//2
+    elif mode == 'last':
+        sample_idx += size - 1
+    elif mode != 'first':
+        raise ValueError(f'Invalid mode {mode}')
+    if num_samples is not None and np.array(sample_idx > num_samples).any():
+        sample_idx = (sample_idx < num_samples) * sample_idx + (sample_idx >= num_samples) * (num_samples - 1)
+    return (sample_idx > 0) * sample_idx
+
+
 def _biorthogonal_window_loopy(analysis_window, shift):
     """
     This version of the synthesis calculation is as close as possible to the
@@ -769,6 +836,22 @@ class STFT:
         """
         return sample_index_to_stft_frame_index(
             sample_index, self.window_length, self.shift, fading=self.fading
+        )
+
+    def frame_index_to_sample_index(self, frame_index, mode='center'):
+        """Computes first, center or last sample index from frame index
+
+        Args:
+            frame_index:
+            mode: states the sample to return \in {'first','center','last'}. Default is 'center'.
+
+        Returns:
+
+        """
+        return stft_frame_index_to_sample_index(
+            frame_index, self.window_length, self.shift,
+            pad=self.pad, fading=self.fading,
+            mode=mode
         )
 
     def frames_to_samples(self, frames):
