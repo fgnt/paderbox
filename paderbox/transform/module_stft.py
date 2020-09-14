@@ -379,13 +379,13 @@ def sample_index_to_stft_frame_index(sample, window_length, shift, fading='full'
 
 
 def stft_frame_index_to_sample_index(
-        frame_index, size, shift, pad=True, fading=None, mode='center', num_samples=None
+        frame_index, window_length, shift, pad=True, fading=None, mode='center', num_samples=None
 ):
     """Computes first, center or last sample index from frame index
 
     Args:
         frame_index:
-        size: stft window wize
+        window_length: stft window length
         shift: stft hop size
         pad: True if stft uses padding else False
         fading: fading used in stft
@@ -422,7 +422,7 @@ def stft_frame_index_to_sample_index(
     """
     if num_samples is not None:
         num_frames = _samples_to_stft_frames(
-            num_samples, size, shift, pad=pad, fading=fading
+            num_samples, window_length, shift, pad=pad, fading=fading
         )
         if np.array(frame_index < 0).any():
             assert np.array(frame_index < 0).all(), frame_index
@@ -432,12 +432,12 @@ def stft_frame_index_to_sample_index(
     sample_idx = frame_index * shift
     assert fading in [None, True, False, 'full', 'half'], fading
     if fading not in [None, False]:
-        fading_width = ((1 + (fading != 'half')) * (size - shift)) // 2
+        fading_width = ((1 + (fading != 'half')) * (window_length - shift)) // 2
         sample_idx -= fading_width
     if mode == 'center':
-        sample_idx += size//2
+        sample_idx += window_length // 2
     elif mode == 'last':
-        sample_idx += size - 1
+        sample_idx += window_length - 1
     elif mode != 'first':
         raise ValueError(f'Invalid mode {mode}')
     if num_samples is not None and np.array(sample_idx > num_samples).any():
