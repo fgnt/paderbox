@@ -99,7 +99,25 @@ class TestSTFTMethods(unittest.TestCase):
 
         tc.assert_almost_equal(x, istft(X, 1024, 256)[:len(x)])
         tc.assert_equal(X.shape, (154, 513))
-
+    
+    def test_restore_time_signal_from_stft_and_istft_odd_parameter(self):
+        x = self.x
+        import random
+        kwargs = dict(
+            # size=np.random.randint(100, 200),
+            size=151,  # Test uneven size
+            shift=np.random.randint(40, 100),
+            window=random.choice(['blackman', 'hann', 'hamming']),
+            fading='full',
+        )
+        X = stft(x, **kwargs)
+        x_hat = istft(X, **kwargs, num_samples=x.shape[-1])
+        assert x_hat.dtype == np.float64, (x_hat.dtype, x.dtype)
+        tc.assert_almost_equal(
+            x, x_hat,
+            err_msg=str(kwargs)
+        )
+    
     def test_restore_time_signal_from_stft_and_istft_with_num_samples(self):
         x = self.x
         X = stft(x)

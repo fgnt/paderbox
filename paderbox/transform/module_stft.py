@@ -4,6 +4,7 @@ This file contains the STFT function and related helper functions.
 import string
 import typing
 from math import ceil
+import dataclasses
 
 import numpy as np
 from numpy.fft import rfft, irfft
@@ -640,7 +641,9 @@ def istft(
     np.add.at(
         time_signal_seg,
         ...,
-        window * np.real(irfft(stft_signal))[..., :window_length]
+        window * np.real(
+            irfft(stft_signal, n=size)
+        )[..., :window_length]
     )
     # The [..., :window_length] is the inverse of the window padding in rfft.
 
@@ -723,48 +726,31 @@ def get_stft_center_frequencies(size=1024, sample_rate=16000):
     frequency_index = np.arange(0, size/2 + 1)
     return frequency_index * sample_rate / size
 
-
+@dataclasses.dataclass()
 class STFT:
-    def __init__(
-            self,
-            shift: int,
-            size: int,
-            window_length: int = None,
-            window: str = "blackman",
-            symmetric_window: bool = False,
-            pad: bool = True,
-            fading: typing.Optional[typing.Union[bool, str]] = 'full'
-    ):
-        """
-        Transforms audio data to STFT.
-        Also allows to invert stft as well as reconstruct phase information
-        from magnitudes using griffin lim algorithm.
+    """
+    Transforms audio data to STFT.
+    Also allows to invert stft as well as reconstruct phase information
+    from magnitudes using griffin lim algorithm.
 
-        Args:
-            shift:
-            size:
-            window_length:
-            window:
-            symmetric_window:
-            fading:
-            pad:
 
-        >>> stft = STFT(160, 512, fading='full')
-        >>> audio_data=np.zeros(8000)
-        >>> x = stft(audio_data)
-        >>> x.shape
-        (53, 257)
-        """
-        self.shift = shift
-        self.size = size
-        self.window_length = window_length if window_length is not None \
-            else size
-        if isinstance(window, str):
-            window = getattr(signal.windows, window)
-        self.window = window
-        self.symmetric_window = symmetric_window
-        self.fading = fading
-        self.pad = pad
+    >>> stft = STFT(160, 512, fading='full')
+    >>> audio_data=np.zeros(8000)
+    >>> x = stft(audio_data)
+    >>> x.shape
+    (53, 257)
+    """
+    shift: int
+    size: int
+    window_length: int = None
+    window: str = "blackman"
+    symmetric_window: bool = False
+    pad: bool = True
+    fading: typing.Optional[typing.Union[bool, str]] = 'full'
+    
+    def __post_init__(self):
+        if self.window_length is None:
+            self.window_length = self.size
 
     def __call__(self, x):
         """

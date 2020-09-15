@@ -4,7 +4,6 @@ import threading
 from pathlib import Path
 
 import soundfile
-from scipy.io.wavfile import write as wav_write
 
 from paderbox.utils.mapping import Dispatcher
 from paderbox.io.path_utils import normalize_path
@@ -250,6 +249,8 @@ def audiowrite(data, path, sample_rate=16000, normalize=False, threaded=True):
         thread
     :return: The number of clipped samples
     """
+    from scipy.io.wavfile import write as wav_write
+
     assert isinstance(path, (str, Path, io.BytesIO)), path
     assert data.dtype.kind in ['i', 'f'], (data.shape, data.dtype)
 
