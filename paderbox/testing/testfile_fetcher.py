@@ -2,7 +2,7 @@ import urllib.request as url
 from paderbox.io.cache_dir import get_cache_dir
 
 
-def fetch_file_from_url(fpath, file):
+def fetch_file_from_url(fpath, file=None):
     """
     Checks if local cache directory possesses an example named <file>.
     If not found, loads data from urlpath and stores it under <fpath>
@@ -15,6 +15,10 @@ def fetch_file_from_url(fpath, file):
 
     """
     path = get_cache_dir()
+
+    if file is None:
+        # remove difficult letters
+        file = fpath.replace(':', '_').replace('/', '_')
 
     if not (path / file).exists():
         datapath = url.urlopen(fpath)
@@ -41,8 +45,14 @@ def get_file_path(file_name):
 
     url_ = {
         'sample.wav': _pb_bss + "speech_source_0.wav",
+
+        'observation.wav': _pb_bss+"observation.wav",  # multi channel
         'speech_source_0.wav': _pb_bss+"speech_source_0.wav",
+        'speech_source_1.wav': _pb_bss+"speech_source_1.wav",
         'speech_image_0.wav': _pb_bss+"speech_image_0.wav",  # multi channel
+        'speech_image_1.wav': _pb_bss+"speech_image_1.wav",  # multi channel
+        'noise_image.wav': _pb_bss+"noise_image.wav",  # multi channel
+
         'speech.wav': _pesq + "speech.wav",
         "speech_bab_0dB.wav": _pesq + "speech_bab_0dB.wav",
 
