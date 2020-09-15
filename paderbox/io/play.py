@@ -3,10 +3,8 @@ import os
 from pathlib import Path
 
 import numpy as np
-from scipy import signal
 
 from paderbox.io.audioread import load_audio
-from paderbox.transform import istft
 
 
 def play(
@@ -15,7 +13,7 @@ def play(
         sample_rate=16000,
         size=1024,
         shift=256,
-        window=signal.blackman,
+        window='blackman',
         window_length: int=None,
         *,
         scale=1,
@@ -79,6 +77,8 @@ def play(
         if len(data.shape) == 2:
             data = data[channel, :]
     elif np.iscomplexobj(data):
+        from paderbox.transform import istft
+
         assert data.shape[-1] == size // 2 + \
             1, ('Wrong number of frequency bins', data.shape, size)
 
