@@ -108,11 +108,13 @@ class TestSTFTMethods(unittest.TestCase):
             size=151,  # Test uneven size
             shift=np.random.randint(40, 100),
             window=random.choice(['blackman', 'hann', 'hamming']),
-            fading=random.choice(['full', 'half', False]),
+            fading='full',
         )
         X = stft(x, **kwargs)
+        x_hat = istft(X, **kwargs, num_samples=x.shape[-1])
+        assert x_hat.dtype == np.float64, (x_hat.dtype, x.dtype)
         tc.assert_almost_equal(
-            x, istft(X, **kwargs, num_samples=x.shape[-1]),
+            x, x_hat,
             err_msg=str(kwargs)
         )
     
