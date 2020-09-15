@@ -640,7 +640,9 @@ def istft(
     np.add.at(
         time_signal_seg,
         ...,
-        window * np.real(irfft(stft_signal))[..., :window_length]
+        window * np.real(
+            irfft(stft_signal, n=size)
+        )[..., :window_length]
     )
     # The [..., :window_length] is the inverse of the window padding in rfft.
 
