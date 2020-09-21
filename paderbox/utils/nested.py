@@ -94,7 +94,11 @@ def deflatten(d, sep='.', maxdepth=-1):
         for sub_key in keys[:-1]:
             if sub_key not in sub_dict:
                 sub_dict[sub_key] = {}
+            assert isinstance(sub_dict[sub_key], dict), (
+                f'Conflicting keys! {keys}'
+            )
             sub_dict = sub_dict[sub_key]
+        assert keys[-1] not in sub_dict, f'Conflicting keys! {keys}'
         sub_dict[keys[-1]] = v
     return ret
 
