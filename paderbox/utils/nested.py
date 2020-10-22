@@ -160,7 +160,7 @@ def nested_merge(default_dict, *update_dicts, allow_update=True, inplace=False):
         if inplace:
             return default_dict
         else:
-            return default_dict.__class__(default_dict)
+            return copy.deepcopy(default_dict)
 
     dicts = [default_dict, *update_dicts]
 
@@ -171,9 +171,14 @@ def nested_merge(default_dict, *update_dicts, allow_update=True, inplace=False):
             if key in d.keys()
         ]
         if isinstance(values[-1], collections.abc.Mapping):
-            return nested_merge(*[
-                v for v in values if isinstance(v, collections.abc.Mapping)
-            ], allow_update=allow_update, inplace=inplace)
+            assert all(
+                isinstance(v, collections.abc.Mapping) for v in values
+            ), (
+                'Mixed updates of scalars and mappings are currently not '
+                'allowed', values
+            )
+            return nested_merge(
+                *values, allow_update=allow_update, inplace=inplace)
         else:
             if not allow_update:
                 try:
