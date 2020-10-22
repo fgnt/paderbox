@@ -154,13 +154,24 @@ def nested_merge(default_dict, *update_dicts, allow_update=True, inplace=False):
     AssertionError: [{'bar': 1}, 0]
     >>> nested_merge({'foo': {'bar': 1}}, {'blub': 0}, allow_update=False)
     {'foo': {'bar': 1}, 'blub': 0}
+    >>> nested_merge({'foo': {'blub': 0}}, {'foo': 1}, {'foo': {'bar': 1}})
+    {'foo': {'bar': 1}}
+    >>> nested_merge({'foo': 1}, {'foo': {'bar': 1}}, allow_update=False)
+    Traceback (most recent call last):
+    ...
+    AssertionError: [1, {'bar': 1}]
+    >>> nested_merge({'foo': {'bar': 1}}, {'foo': {'bar': 1}}, allow_update=False)
+    {'foo': {'bar': 1}}
+    >>> nested_merge({'foo': {'bar': 1}}, {'foo': {'blub': 1}}, allow_update=False)
+    {'foo': {'bar': 1, 'blub': 1}}
+
 
     """
     if len(update_dicts) == 0:
         if inplace:
             return default_dict
         else:
-            return copy.deepcopy(default_dict)
+            return copy.copy(default_dict)
 
     dicts = [default_dict, *update_dicts]
 
@@ -171,14 +182,16 @@ def nested_merge(default_dict, *update_dicts, allow_update=True, inplace=False):
             if key in d.keys()
         ]
         if isinstance(values[-1], collections.abc.Mapping):
-            assert all(
-                isinstance(v, collections.abc.Mapping) for v in values
-            ), (
-                'Mixed updates of scalars and mappings are currently not '
-                'allowed', values
-            )
+            mapping_values = []
+            for value in values[::-1]:
+                if isinstance(value, collections.abc.Mapping):
+                    mapping_values.insert(0, value)
+                else:
+                    break
+            if not allow_update:
+                assert len(mapping_values) == len(values), values
             return nested_merge(
-                *values, allow_update=allow_update, inplace=inplace)
+                *mapping_values, allow_update=allow_update, inplace=inplace)
         else:
             if not allow_update:
                 try:
