@@ -311,11 +311,17 @@ def sample_index_to_stft_frame_index(sample, window_length, shift, fading='full'
     """
     Calculates the best frame index for a given sample index
 
-    :param sample: Sample index in time domain.
-    :param size: FFT size.
-    :param shift: Hop in samples.
+    :param sample: sample index in time domain.
+    :param window_length: stft window length.
+    :param shift: stft hop size.
+    :param fading: fading used in stft
     :return: Best STFT frame index.
 
+    ## ## ## ##
+     # ## ## ## #
+       ## ## ## ##
+        # ## ## ## #
+    00 00 12 34 56 ...
 
     ## ## ## ##
        ## ## ## ##
@@ -323,20 +329,17 @@ def sample_index_to_stft_frame_index(sample, window_length, shift, fading='full'
              ## ## ## ##
     00 00 01 12 23 34 45
 
-
-    ## ## ## ##
-     # ## ## ## #
-       ## ## ## ##
-        # ## ## ## #
-    00 00 01 23 5 ...
-          12 34 6 ...
-
     ## ## ## #
        ## ## ## #
           ## ## ## #
              ## ## ## #
+    00 00 11 22 33 44 55
+
     ## ## ## #
-    00 00 01 12 23 34 45
+     # ## ## # #
+       ## ## ## #
+        # ## ## ##
+    00 00 12 23 ...
 
     >>> [sample_index_to_stft_frame_index(i, 8, 1, fading=None) for i in range(12)]
     [0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8]
