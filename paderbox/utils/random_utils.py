@@ -6,6 +6,9 @@ def str_to_random_state(string):
     """
     This functions outputs a consistent random state dependent on
     an input string.
+    
+    >>> print(consistent_random_state(''))
+    RandomState(MT19937)
     """
     import hashlib
     hash_value = hashlib.sha256(string.encode("utf-8"))
