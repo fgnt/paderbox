@@ -7,10 +7,10 @@ def str_to_random_state(string):
     This functions outputs a consistent random state dependent on
     an input string.
     """
-    from hashlib import md5
-    hash_value = md5(string.encode())
+    import hashlib
+    hash_value = hashlib.sha256(string.encode("utf-8"))
     hash_value = int(hash_value.hexdigest(), 16)
-    hash_value = hash_value % 2 ** 32 - 1
+    hash_value = hash_value % 2 ** 32
     return np.random.RandomState(hash_value)
 
 
