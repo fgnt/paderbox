@@ -2,6 +2,18 @@ import numpy as np
 from functools import wraps
 
 
+def consistent_random_state(string):
+    """
+    This functions outputs a consistent random state dependent on
+    an input string.
+    """
+    from hashlib import md5
+    hash_value = md5(string.encode())
+    hash_value = int(hash_value.hexdigest(), 16)
+    hash_value = hash_value % 2 ** 32 - 1
+    return np.random.RandomState(hash_value)
+
+
 def _force_correct_shape(f):
     """ This decorator sets the seed and fix the snr.
 

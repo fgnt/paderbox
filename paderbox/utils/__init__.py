@@ -10,7 +10,7 @@ __all__ = [
     'pandas_utils',
     'process_caller',
     'profiling',
-    'random_utils',
+    'random',
     'strip_solution',
     'timer',
     'nested'
