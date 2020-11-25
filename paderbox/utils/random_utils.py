@@ -2,7 +2,7 @@ import numpy as np
 from functools import wraps
 
 
-def consistent_random_state(string):
+def str_to_random_state(string):
     """
     This functions outputs a consistent random state dependent on
     an input string.
