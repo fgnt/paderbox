@@ -311,11 +311,17 @@ def sample_index_to_stft_frame_index(sample, window_length, shift, fading='full'
     """
     Calculates the best frame index for a given sample index
 
-    :param sample: Sample index in time domain.
-    :param size: FFT size.
-    :param shift: Hop in samples.
+    :param sample: sample index in time domain.
+    :param window_length: stft window length.
+    :param shift: stft hop size.
+    :param fading: fading used in stft
     :return: Best STFT frame index.
 
+    ## ## ## ##
+     # ## ## ## #
+       ## ## ## ##
+        # ## ## ## #
+    00 00 12 34 56 ...
 
     ## ## ## ##
        ## ## ## ##
@@ -323,38 +329,35 @@ def sample_index_to_stft_frame_index(sample, window_length, shift, fading='full'
              ## ## ## ##
     00 00 01 12 23 34 45
 
-
-    ## ## ## ##
-     # ## ## ## #
-       ## ## ## ##
-        # ## ## ## #
-    00 00 01 23 5 ...
-          12 34 6 ...
-
     ## ## ## #
        ## ## ## #
           ## ## ## #
              ## ## ## #
+    00 00 11 22 33 44 55
+
     ## ## ## #
-    00 00 01 12 23 34 45
+     # ## ## # #
+       ## ## ## #
+        # ## ## ##
+    00 00 12 23 ...
 
     >>> [sample_index_to_stft_frame_index(i, 8, 1, fading=None) for i in range(12)]
     [0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8]
     >>> [sample_index_to_stft_frame_index(i, 8, 2, fading=None) for i in range(10)]
-    [0, 0, 0, 0, 1, 1, 2, 2, 3, 3]
+    [0, 0, 0, 0, 0, 1, 1, 2, 2, 3]
     >>> [sample_index_to_stft_frame_index(i, 7, 2, fading=None) for i in range(10)]
     [0, 0, 0, 0, 1, 1, 2, 2, 3, 3]
     >>> [sample_index_to_stft_frame_index(i, 7, 1, fading=None) for i in range(10)]
     [0, 0, 0, 0, 1, 2, 3, 4, 5, 6]
 
     >>> [sample_index_to_stft_frame_index(i, 8, 1, fading='full') for i in range(12)]
-    [7, 7, 7, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     >>> [sample_index_to_stft_frame_index(i, 8, 2, fading='full') for i in range(10)]
-    [3, 3, 3, 3, 4, 4, 5, 5, 6, 6]
+    [1, 2, 2, 3, 3, 4, 4, 5, 5, 6]
     >>> [sample_index_to_stft_frame_index(i, 7, 2, fading='full') for i in range(10)]
-    [3, 3, 3, 3, 4, 4, 5, 5, 6, 6]
+    [1, 2, 2, 3, 3, 4, 4, 5, 5, 6]
     >>> [sample_index_to_stft_frame_index(i, 7, 1, fading='full') for i in range(10)]
-    [6, 6, 6, 6, 7, 8, 9, 10, 11, 12]
+    [3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 
     >>> stft(np.zeros([8]), size=8, shift=2).shape
     (7, 5)
@@ -364,17 +367,17 @@ def sample_index_to_stft_frame_index(sample, window_length, shift, fading='full'
     (3, 5)
     """
 
-    if (window_length + 1) // 2 > sample:
-        frame = 0
-    else:
-        frame = (sample - (window_length + 1) // 2) // shift + 1
-
     assert fading in [None, True, False, 'full', 'half'], fading
     if fading not in [None, False]:
         pad_width = (window_length - shift)
         if fading == 'half':
             pad_width //= 2
-        frame = frame + ceil(pad_width / shift)
+        sample += pad_width
+
+    if ((window_length - shift) // 2) > sample:
+        frame = 0
+    else:
+        frame = (sample - (window_length - shift) // 2) // shift
 
     return frame
 
@@ -725,6 +728,7 @@ def get_stft_center_frequencies(size=1024, sample_rate=16000):
     """
     frequency_index = np.arange(0, size/2 + 1)
     return frequency_index * sample_rate / size
+
 
 @dataclasses.dataclass()
 class STFT:
