@@ -485,12 +485,11 @@ class _ReportInterface(object):
             elif isinstance(item, h5py._hl.dataset.Dataset):
                 # dataset.value has been deprecated. Use dataset[()] instead.
                 ans[key] = item[()]
-                if isinstance(ans[key], str):
-                    if ans[key] == 'None':
-                        ans[key] = None
                 if isinstance(ans[key], bytes):
                     if LooseVersion(h5py.__version__) >= '3.0.0':
                         ans[key] = ans[key].decode()
+                    if ans[key] == 'None':
+                        ans[key] = None
 
             elif isinstance(item, h5py._hl.group.Group):
                 ans[key] = cls.__recursively_load_dict_contents_from_group__(
