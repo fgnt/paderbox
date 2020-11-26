@@ -82,6 +82,15 @@ def deflatten(d, sep='.', maxdepth=-1):
     {'a': 1, 'c': {'a': 2, 'b': {'x': 5, 'y': 10}}, 'd': [1, 2, 3]}
     >>> deflatten({('a', 'b'): 'd', ('a', 'c'): 'e'}, sep=None)
     {'a': {'b': 'd', 'c': 'e'}}
+    >>> deflatten({'a.b': 1, 'a': 2})
+    Traceback (most recent call last):
+      ...
+    AssertionError: Conflicting keys! ('a',)
+    >>> deflatten({'a': 1, 'a.b': 2})
+    Traceback (most recent call last):
+      ...
+    AssertionError: Conflicting keys! ('a', 'b')
+
     """
     ret = {}
     if sep is not None:
@@ -94,7 +103,11 @@ def deflatten(d, sep='.', maxdepth=-1):
         for sub_key in keys[:-1]:
             if sub_key not in sub_dict:
                 sub_dict[sub_key] = {}
+            assert isinstance(sub_dict[sub_key], dict), (
+                f'Conflicting keys! {keys}'
+            )
             sub_dict = sub_dict[sub_key]
+        assert keys[-1] not in sub_dict, f'Conflicting keys! {keys}'
         sub_dict[keys[-1]] = v
     return ret
 
