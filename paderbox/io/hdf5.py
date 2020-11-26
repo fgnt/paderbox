@@ -1,8 +1,9 @@
-import io
 import os
 import warnings
 
 import numpy as np
+
+from distutils.version import LooseVersion
 
 
 __all__ = ['dump_hdf5', 'update_hdf5', 'load_hdf5']
@@ -33,6 +34,7 @@ def dump_hdf5(obj, filename, force=True, _print_warnings=False):
     >>> file = get_cache_dir() / 'tmp.hdf5'
     >>> ex = {
     ...    'name': 'stefan',
+    ...    'name2': 'stefan'.encode(),
     ...    'age':  np.int64(24),
     ...    'age2':  25,
     ...    'age3':  25j,
@@ -358,7 +360,7 @@ class _ReportInterface(object):
             # save strings, numpy.int64, and numpy.float64 types
             if isinstance(item, (np.int64, np.float64, np.float32,
                                  np.complex64, np.complex128,
-                                 str, complex, int, float)):
+                                 complex, int, float)):
                 ckeck_exists()
 
                 h5file[cur_path] = item
@@ -368,6 +370,25 @@ class _ReportInterface(object):
                 if not h5file[cur_path][()] == item and \
                         not np.isnan(item) and \
                         not np.isnan(h5file[cur_path][()]):
+                    raise ValueError('The data representation in the HDF5 '
+                                     'file does not match the original dict.')
+            elif isinstance(item, bytes):
+                ckeck_exists()
+
+                h5file[cur_path] = np.void(item)
+                if not h5file[cur_path][()] == np.void(item):
+                    raise ValueError('The data representation in the HDF5 '
+                                     'file does not match the original dict.')
+            elif isinstance(item, str):
+                ckeck_exists()
+                h5file[cur_path] = item
+                # This query is necessary since h5py changed string
+                # handling after version 3.0.0 to dumping strings as bytes
+                if LooseVersion(h5py.__version__) >= '3.0.0':
+                    test_item = item.encode('utf-8')
+                else:
+                    test_item = item
+                if not h5file[cur_path][()] == test_item:
                     raise ValueError('The data representation in the HDF5 '
                                      'file does not match the original dict.')
             elif isinstance(item, type(None)):
@@ -464,9 +485,16 @@ class _ReportInterface(object):
             elif isinstance(item, h5py._hl.dataset.Dataset):
                 # dataset.value has been deprecated. Use dataset[()] instead.
                 ans[key] = item[()]
-                if isinstance(ans[key], str):
+                if isinstance(ans[key], bytes):
+
+                    # This query is necessary since h5py changed string
+                    # handling after version 3.0.0 to dumping strings as bytes
+                    if LooseVersion(h5py.__version__) >= '3.0.0':
+                        ans[key] = ans[key].decode()
+
                     if ans[key] == 'None':
                         ans[key] = None
+
             elif isinstance(item, h5py._hl.group.Group):
                 ans[key] = cls.__recursively_load_dict_contents_from_group__(
                     h5file, path + key + '/')
