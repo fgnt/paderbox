@@ -368,7 +368,6 @@ class _ReportInterface(object):
                 # NaN compares negative in Python.
                 # dataset.value has been deprecated. Use dataset[()] instead.
                 if not h5file[cur_path][()] == item and \
-                        not isinstance(item, str) and \
                         not np.isnan(item) and \
                         not np.isnan(h5file[cur_path][()]):
                     raise ValueError('The data representation in the HDF5 '
@@ -383,7 +382,8 @@ class _ReportInterface(object):
             elif isinstance(item, str):
                 ckeck_exists()
                 h5file[cur_path] = item
-
+                # This query is necessary since h5py changed string
+                # handling after version 3.0.0 to dumping strings as bytes
                 if LooseVersion(h5py.__version__) >= '3.0.0':
                     test_item = item.encode('utf-8')
                 else:
@@ -486,8 +486,12 @@ class _ReportInterface(object):
                 # dataset.value has been deprecated. Use dataset[()] instead.
                 ans[key] = item[()]
                 if isinstance(ans[key], bytes):
+
+                    # This query is necessary since h5py changed string
+                    # handling after version 3.0.0 to dumping strings as bytes
                     if LooseVersion(h5py.__version__) >= '3.0.0':
                         ans[key] = ans[key].decode()
+
                     if ans[key] == 'None':
                         ans[key] = None
 
