@@ -491,9 +491,8 @@ class _ReportInterface(object):
                     # handling after version 3.0.0 to dumping strings as bytes
                     if LooseVersion(h5py.__version__) >= '3.0.0':
                         ans[key] = ans[key].decode()
-
-                    if ans[key] == 'None':
-                        ans[key] = None
+                if ans[key] == 'None':
+                    ans[key] = None
 
             elif isinstance(item, h5py._hl.group.Group):
                 ans[key] = cls.__recursively_load_dict_contents_from_group__(
