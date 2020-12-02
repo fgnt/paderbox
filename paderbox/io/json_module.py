@@ -13,6 +13,8 @@ class Encoder(json.JSONEncoder):
             return int(obj)
         elif isinstance(obj, np.floating):
             return float(obj)
+        elif isinstance(obj, np.bool_):
+            return bool(obj)
         elif str(type(obj)) == "<class 'chainer.variable.Variable'>":
             return obj.num.tolist()
         elif isinstance(obj, np.ndarray):
