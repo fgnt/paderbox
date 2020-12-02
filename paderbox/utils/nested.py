@@ -281,7 +281,7 @@ def nested_op(
                 broadcast=broadcast,
                 mapping_type=mapping_type,
                 sequence_type=sequence_type,
-                keep_type=keep_type
+                keep_type=keep_type,
             )
             for key in keys
         }
