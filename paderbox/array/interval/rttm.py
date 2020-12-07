@@ -68,7 +68,7 @@ def from_rttm(rttm_file, shape=None, sample_rate=16000):
     {'S02': {'1': ArrayInterval("0:16000, 32000:48000", shape=None), '2': ArrayInterval("0:32000", shape=None)}}
 
     >>> file = 'https://raw.githubusercontent.com/nateanl/chime6_rttm/master/dev_rttm'
-    >>> print(str(from_rttm(file))[:73])
+    >>> print(str(from_rttm(file))[:72])
     {'S09_U06.ENH': {'P25': ArrayInterval("1049280:1077280, 1105600:1108960,
 
     """
