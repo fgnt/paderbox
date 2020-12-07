@@ -12,7 +12,7 @@ activity information (e.g. there is speech from sample 16000 to sample 48000)
 of a long audio file (> 2h) in memory.
 """
 from .core import zeros, ones
-from .core import ArrayIntervall
+from .core import ArrayInterval
 
 from .rttm import from_rttm
 from .rttm import from_rttm_str

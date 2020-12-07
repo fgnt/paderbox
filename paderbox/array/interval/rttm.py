@@ -25,7 +25,7 @@ import decimal
 
 import numpy as np
 
-from paderbox.array.intervall.core import ArrayIntervall, zeros
+from paderbox.array.interval.core import ArrayInterval, zeros
 
 
 def _merge_dicts(*dicts):
@@ -53,7 +53,7 @@ def from_rttm(rttm_file, shape=None, sample_rate=16000):
     Returns:
         Nested dictionary. The keys of the outer dict will the the file-ids.
         The inner dict has as keys the name (i.e. speaker name or id).
-        The values of the inner dict will be an array intervall.
+        The values of the inner dict will be an array interval.
 
     >>> import tempfile
     >>> with tempfile.TemporaryDirectory() as tmpdir:
@@ -167,7 +167,7 @@ def to_rttm_str(data, sample_rate=16000):
         for name in keys:
             content = data[file_id][name]
             if isinstance(content, np.ndarray):
-                content = ArrayIntervall(content)
+                content = ArrayInterval(content)
             for begin, end in content.intervals:
                 duration = decimal.Decimal(int(end - begin)) / sample_rate
                 begin = decimal.Decimal(int(begin)) / sample_rate

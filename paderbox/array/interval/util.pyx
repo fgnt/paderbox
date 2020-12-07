@@ -79,13 +79,13 @@ def cy_parse_item(item, shape):
     if item.stop is None:
         if shape is None:
             raise RuntimeError(
-                'You tried to slice an ArrayIntervall with unknown shape '
+                'You tried to slice an ArrayInterval with unknown shape '
                 'without a stop value.\n'
                 'This is not supported, either the shape has to be known\n'
                 'or you have to specify a stop value for the slice '
-                '(i.e. array_intervall[:stop])\n'
-                'You called the array intervall with:\n'
-                f'    array_intervall[{item}]'
+                '(i.e. array_interval[:stop])\n'
+                'You called the array interval with:\n'
+                f'    array_interval[{item}]'
             )
         stop = size
     else:
@@ -107,31 +107,31 @@ def cy_parse_item(item, shape):
     return start, stop
 
 
-def cy_str_to_intervalls(string):
+def cy_str_to_intervals(string):
 
     cdef:
-        str intervalls_string
-        str intervall_string
+        str intervals_string
+        str interval_string
         str start_str
         str end_str
         int start
         int end
         list intervals
 
-    intervalls_string = string
+    intervals_string = string
 
 #     start, end = interval
     intervals = []
 
 #     for i_start, i_end in intervals:
 
-    for intervall_string in intervalls_string.replace(' ', '').strip(',').split(','):
+    for interval_string in intervals_string.replace(' ', '').strip(',').split(','):
 
         try:
-            start_str, end_str = intervall_string.split(':')
+            start_str, end_str = interval_string.split(':')
         except Exception as e:
-            print('intervall_string in cy_str_to_intervalls', repr(intervall_string))
-            raise Exception(intervall_string) from e
+            print('interval_string in cy_str_to_intervals', repr(interval_string))
+            raise Exception(interval_string) from e
         start = int(start_str)
         end = int(end_str)
 

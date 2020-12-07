@@ -4,8 +4,8 @@ import decimal
 
 import numpy as np
 
-from paderbox.array.intervall.core import zeros
-from paderbox.array.intervall.rttm import _merge_dicts
+from paderbox.array.interval.core import zeros
+from paderbox.array.interval.rttm import _merge_dicts
 
 
 def from_kaldi_segments(segments_file, shape=None, sample_rate=16000, round_fn=None):
