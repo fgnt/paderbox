@@ -165,8 +165,6 @@ class ArrayInterval:
 
     def __init__(self, array, inverse_mode: bool = False):
         """
-
-
         The `ArrayInterval` is in many cases equivalent to a 1-dimensional
         boolean numpy array that stores activity information in an efficient
         way.
@@ -174,10 +172,10 @@ class ArrayInterval:
         Args:
             array: 
             inverse_mode:
-                Flag to indicate what the intervals represent:
-                 - False: Intervals represent activity (i.e., `True`)
-                 - True: Intervals represent silcence (i.e., `False`)
-                This flag is nessesary to when the shape is unknown.
+                Internal flag to indicate what the intervals represent:
+                 - `False`: Intervals represent `True`
+                 - `True`: Intervals represent `False`
+                This flag is nessesary when the shape is unknown.
                 The user does not need to care about this flag. The default is
                 fine.
 
