@@ -1,11 +1,11 @@
-'''
-ArrayInterval offers a user readable object for stashing activity information.
-In combination with jsonpickle this allows for a low resource possibility to save
-activity information for large time streams.   
-'''
+"""
+`ArrayInterval` offers a user-readable object for stashing activity information.
+In combination with jsonpickle this allows for a low resource possibility to
+save activity information for large time streams.
+"""
 
-from pathlib import Path
-import collections
+from typing import Optional, Union, Iterable
+
 import numpy as np
 from paderbox.array.interval.util import (
     cy_non_intersection,
@@ -41,24 +41,23 @@ def ArrayInterval_from_str(string, shape):
     return ai
 
 
-def zeros(shape=None):
+def zeros(shape: Optional[Union[int, tuple, list]] = None) -> 'ArrayInterval':
     """
-    Instantiate an ArrayInterval filled with zeros.
+    Instantiate an `ArrayInterval` filled with zeros.
 
-    Note: The difference from numpy is, that the argument shape is optional.
-          When shape is None, some operations aren't supported, because the
+    Note: The difference from numpy is that the argument shape is optional.
+          When shape is None, some operations aren't supported because the
           length is unknown.
-          e.g. array_interval[:] fails, because the length is unknown, while
-               array_interval[:1000] will work.
+          e.g. array_interval[:] fails because the length is unknown, while
+               array_interval[:1000] works.
 
     Args:
-        shape: None, int or tuple/list that contains one int.
+        shape: `None`, `int` or `tuple`/`list` that contains one `int`.
 
     Returns:
-        ArrayInterval
+        `ArrayInterval` filled with zeros
 
     Examples:
-
         >>> ai = zeros(10)
         >>> ai
         ArrayInterval("", shape=(10,))
@@ -101,24 +100,23 @@ def zeros(shape=None):
     return ai
 
 
-def ones(shape=None):
+def ones(shape: Optional[Union[int, tuple, list]] = None) -> 'ArrayInterval':
     """
-    Instantiate an ArrayInterval filled with ones.
+    Instantiate an `ArrayInterval` filled with ones.
 
-    Note: The difference from numpy is, that the argument shape is optional.
-          When shape is None, some operations aren't supported, because the
+    Note: The difference from numpy is that the argument shape is optional.
+          When `shape` is `None`, some operations aren't supported because the
           length is unknown.
-          e.g. array_interval[:] fails, because the length is unknown, while
-               array_interval[:1000] will work.
+          e.g. array_interval[:] fails because the length is unknown, while
+               array_interval[:1000] works.
 
-    Args:
-        shape: None, int or tuple/list that contains one int.
+        Args:
+        shape: `None`, `int` or `tuple`/`list` that contains one `int`.
 
     Returns:
-        ArrayInterval
+        `ArrayInterval` filled with ones
 
     Examples:
-
         >>> ai = ones(10)
         >>> ai
         ArrayInterval("", shape=(10,), inverse_mode=True)
@@ -146,7 +144,6 @@ def ones(shape=None):
         >>> ai[:10]  # getitem converts the ArrayInterval to numpy
         array([ True,  True, False,  True,  True,  True,  True,  True,  True,
                 True])
-
     """
     ai = ArrayInterval.__new__(ArrayInterval)
     ai.inverse_mode = True
@@ -166,32 +163,38 @@ class ArrayInterval:
     from_str = staticmethod(ArrayInterval_from_str)
     inverse_mode = False
 
-    def __init__(self, array, inverse_mode=False):
+    def __init__(self, array, inverse_mode: bool = False):
         """
+
+
+        The `ArrayInterval` is in many cases equivalent to a 1-dimensional
+        boolean numpy array that stores activity information in an efficient
+        way.
 
         Args:
             array: 
             inverse_mode:
                 Flag to indicate what the intervals represent:
-                 - False: Intervals represent True
-                 - True: Intervals represent False
+                 - False: Intervals represent activity (i.e., `True`)
+                 - True: Intervals represent silcence (i.e., `False`)
                 This flag is nessesary to when the shape is unknown.
-                The use does not need to care about this flag. The default is
+                The user does not need to care about this flag. The default is
                 fine.
 
-        >>> ai = ArrayInterval(np.array([1, 1, 0, 1, 0, 0, 1, 1, 0], dtype=np.bool))
-        >>> ai
-        ArrayInterval("0:2, 3:4, 6:8", shape=(9,))
-        >>> ai[:]
-        array([ True,  True, False,  True, False, False,  True,  True, False])
-        >>> a = np.array([1, 1, 1, 1], dtype=np.bool)
-        >>> assert all(a == ArrayInterval(a)[:])
-        >>> a = np.array([0, 0, 0, 0], dtype=np.bool)
-        >>> assert all(a == ArrayInterval(a)[:])
-        >>> a = np.array([0, 1, 1, 0], dtype=np.bool)
-        >>> assert all(a == ArrayInterval(a)[:])
-        >>> a = np.array([1, 0, 0, 1], dtype=np.bool)
-        >>> assert all(a == ArrayInterval(a)[:])
+        Examples:
+            >>> ai = ArrayInterval(np.array([1, 1, 0, 1, 0, 0, 1, 1, 0], dtype=np.bool))
+            >>> ai
+            ArrayInterval("0:2, 3:4, 6:8", shape=(9,))
+            >>> ai[:]
+            array([ True,  True, False,  True, False, False,  True,  True, False])
+            >>> a = np.array([1, 1, 1, 1], dtype=np.bool)
+            >>> assert all(a == ArrayInterval(a)[:])
+            >>> a = np.array([0, 0, 0, 0], dtype=np.bool)
+            >>> assert all(a == ArrayInterval(a)[:])
+            >>> a = np.array([0, 1, 1, 0], dtype=np.bool)
+            >>> assert all(a == ArrayInterval(a)[:])
+            >>> a = np.array([1, 0, 0, 1], dtype=np.bool)
+            >>> assert all(a == ArrayInterval(a)[:])
 
         """
         if isinstance(array, ArrayInterval):
@@ -237,7 +240,7 @@ class ArrayInterval:
 
     def __array__(self, dtype=np.bool):
         """
-        Special numpy method. This method is used from numpy to cast foreign
+        Special numpy method. This method is used by numpy to cast foreign
         types to numpy.
 
         Example for the add operation:
@@ -287,14 +290,24 @@ class ArrayInterval:
         return self.shape[0]
 
     @property
-    def normalized_intervals(self):
+    def normalized_intervals(self) -> tuple:
+        """
+        Normalized intervals. Normalized here means that overlapping intervals
+        are merged.
+
+        Note:
+            Changes the internal representation to the normalized intervals.
+        """
         if not self._intervals_normalized:
             self._intervals = self._normalize(self._intervals)
             self._intervals_normalized = True
         return self._intervals
 
     @property
-    def intervals(self):
+    def intervals(self) -> tuple:
+        """
+        A representation of the intervals as tuples of start and end values.
+        """
         return self._intervals
 
     @intervals.setter
@@ -325,11 +338,11 @@ class ArrayInterval:
             except IndexError:
                 break
             try:
-                next_s, next_e = intervals[i+1]
+                next_s, next_e = intervals[i + 1]
                 while next_s <= e:
                     e = max(e, next_e)
-                    del intervals[i+1]
-                    next_s, next_e = intervals[i+1]
+                    del intervals[i + 1]
+                    next_s, next_e = intervals[i + 1]
             except IndexError:
                 pass
             finally:
@@ -353,15 +366,23 @@ class ArrayInterval:
         else:
             return f'{self.__class__.__name__}("{self._intervals_as_str}", shape={self.shape})'
 
-    def add_intervals_from_str(self, string_intervals):
+    def add_intervals_from_str(self, string_intervals: str):
+        """
+        Adds intervals from a string representation.
+
+        Args:
+            string_intervals: Format "<start>:<end>,<start>:<end>..."
+        """
         self.intervals = self.intervals + cy_str_to_intervals(string_intervals)
 
-    def add_intervals(self, intervals):
+    def add_intervals(self, intervals: Iterable[slice]):
         """
-        for item in intervals:
-            self[item] = 1
+        Adds intervals from a list of slices.
 
-        # This function is equal to above example code, but significant faster.
+        Equivalent to, but significantly faster than:
+            for item in intervals:
+                self[item] = 1
+
         """
         # Short circuit
         self.intervals = self.intervals + tuple(
@@ -432,7 +453,7 @@ class ArrayInterval:
             ai = ArrayInterval(value, inverse_mode=self.inverse_mode)
             intervals = self.intervals
             intervals = cy_non_intersection((start, stop), intervals)
-            self.intervals = intervals + tuple([(s+start, e+start) for s, e in ai.intervals])
+            self.intervals = intervals + tuple([(s + start, e + start) for s, e in ai.intervals])
         else:
             raise NotImplementedError(value)
 
@@ -719,7 +740,7 @@ def _combine(func, *array_intervals, out=None):
 
     """
 
-    edges = {0,}
+    edges = {0, }
     for ai in array_intervals:
         ai: ArrayInterval
         for start_end in ai.normalized_intervals:
@@ -729,7 +750,7 @@ def _combine(func, *array_intervals, out=None):
 
     values = [ai[edges[-1]] for ai in array_intervals]
     last = func(*values)
-    
+
     if out is None:
         shapes = [ai.shape for ai in array_intervals]
         assert len(set(shapes)) == 1, shapes
@@ -746,7 +767,7 @@ def _combine(func, *array_intervals, out=None):
     else:
         out: ArrayInterval
         if out.shape is None:
-            assert last == out.inverse_mode, (last, func, values, out, )
+            assert last == out.inverse_mode, (last, func, values, out,)
         else:
             out[edges[-1]:] = last
 
