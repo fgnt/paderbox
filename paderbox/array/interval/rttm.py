@@ -25,7 +25,7 @@ import decimal
 
 import numpy as np
 
-from paderbox.array.intervall.core import ArrayIntervall, zeros
+from paderbox.array.interval.core import ArrayInterval, zeros
 
 
 def _merge_dicts(*dicts):
@@ -53,7 +53,7 @@ def from_rttm(rttm_file, shape=None, sample_rate=16000):
     Returns:
         Nested dictionary. The keys of the outer dict will the the file-ids.
         The inner dict has as keys the name (i.e. speaker name or id).
-        The values of the inner dict will be an array intervall.
+        The values of the inner dict will be an array interval.
 
     >>> import tempfile
     >>> with tempfile.TemporaryDirectory() as tmpdir:
@@ -65,11 +65,11 @@ def from_rttm(rttm_file, shape=None, sample_rate=16000):
     SPEAKER S02 1 0 1 <NA> <NA> 1 <NA>
     SPEAKER S02 1 2 1 <NA> <NA> 1 <NA>
     SPEAKER S02 1 0 2 <NA> <NA> 2 <NA>
-    {'S02': {'1': ArrayIntervall("0:16000, 32000:48000", shape=None), '2': ArrayIntervall("0:32000", shape=None)}}
+    {'S02': {'1': ArrayInterval("0:16000, 32000:48000", shape=None), '2': ArrayInterval("0:32000", shape=None)}}
 
     >>> file = 'https://raw.githubusercontent.com/nateanl/chime6_rttm/master/dev_rttm'
-    >>> print(str(from_rttm(file))[:73])
-    {'S09_U06.ENH': {'P25': ArrayIntervall("1049280:1077280, 1105600:1108960,
+    >>> print(str(from_rttm(file))[:72])
+    {'S09_U06.ENH': {'P25': ArrayInterval("1049280:1077280, 1105600:1108960,
 
     """
 
@@ -132,7 +132,7 @@ def to_rttm_str(data, sample_rate=16000):
     data: nested dictionary:
      - `data[file_id][speaker_id] = activity`
      - `activity` is an boolian array that indicate activity or not on sample
-       resolution (e.g. ArrayIntervall or np.array)
+       resolution (e.g. ArrayInterval or np.array)
 
 
     >>> ar1 = zeros(None)
@@ -142,7 +142,7 @@ def to_rttm_str(data, sample_rate=16000):
     >>> ar2[0:32000] = 1
     >>> data = {'S02': {'1': ar1, '2': ar2}}
     >>> data
-    {'S02': {'1': ArrayIntervall("0:16000, 32000:48000", shape=None), '2': array([ True,  True,  True, ..., False, False, False])}}
+    {'S02': {'1': ArrayInterval("0:16000, 32000:48000", shape=None), '2': array([ True,  True,  True, ..., False, False, False])}}
     >>> print(to_rttm_str(data))
     SPEAKER S02 1 0 1 <NA> <NA> 1 <NA>
     SPEAKER S02 1 2 1 <NA> <NA> 1 <NA>
@@ -167,7 +167,7 @@ def to_rttm_str(data, sample_rate=16000):
         for name in keys:
             content = data[file_id][name]
             if isinstance(content, np.ndarray):
-                content = ArrayIntervall(content)
+                content = ArrayInterval(content)
             for begin, end in content.intervals:
                 duration = decimal.Decimal(int(end - begin)) / sample_rate
                 begin = decimal.Decimal(int(begin)) / sample_rate

@@ -1,35 +1,35 @@
-'''
-ArrayIntervall offers a user readable object for stashing activity information.
-In combination with jsonpickle this allows for a low resource possibility to save
-activity information for large time streams.   
-'''
+"""
+`ArrayInterval` offers a user-readable object for stashing activity information.
+In combination with jsonpickle this allows for a low resource possibility to
+save activity information for large time streams.
+"""
 
-from pathlib import Path
-import collections
+from typing import Optional, Union, Iterable
+
 import numpy as np
-from paderbox.array.intervall.util import (
+from paderbox.array.interval.util import (
     cy_non_intersection,
     cy_intersection,
     cy_parse_item,
-    cy_str_to_intervalls,
+    cy_str_to_intervals,
 )
 
 
-def ArrayIntervall_from_str(string, shape):
+def ArrayInterval_from_str(string, shape):
     """
-    >>> ArrayIntervall_from_str('1:4, 5:20, 21:25', shape=50)
-    ArrayIntervall("1:4, 5:20, 21:25", shape=(50,))
-    >>> ArrayIntervall_from_str('1:4', shape=50)
-    ArrayIntervall("1:4", shape=(50,))
-    >>> ArrayIntervall_from_str('1:4,', shape=50)
-    ArrayIntervall("1:4", shape=(50,))
-    >>> ArrayIntervall_from_str('0:142464640,', shape=242464640)
-    ArrayIntervall("0:142464640", shape=(242464640,))
+    >>> ArrayInterval_from_str('1:4, 5:20, 21:25', shape=50)
+    ArrayInterval("1:4, 5:20, 21:25", shape=(50,))
+    >>> ArrayInterval_from_str('1:4', shape=50)
+    ArrayInterval("1:4", shape=(50,))
+    >>> ArrayInterval_from_str('1:4,', shape=50)
+    ArrayInterval("1:4", shape=(50,))
+    >>> ArrayInterval_from_str('0:142464640,', shape=242464640)
+    ArrayInterval("0:142464640", shape=(242464640,))
 
     """
     ai = zeros(shape)
     if string == '':
-        print('empty intervall found')
+        print('empty interval found')
         pass
     else:
         if not ',' in string:
@@ -41,54 +41,53 @@ def ArrayIntervall_from_str(string, shape):
     return ai
 
 
-def zeros(shape=None):
+def zeros(shape: Optional[Union[int, tuple, list]] = None) -> 'ArrayInterval':
     """
-    Instantiate an ArrayIntervall filled with zeros.
+    Instantiate an `ArrayInterval` filled with zeros.
 
-    Note: The difference from numpy is, that the argument shape is optional.
-          When shape is None, some operations aren't supported, because the
+    Note: The difference from numpy is that the argument shape is optional.
+          When shape is None, some operations aren't supported because the
           length is unknown.
-          e.g. array_intervall[:] fails, because the length is unknown, while
-               array_intervall[:1000] will work.
+          e.g. array_interval[:] fails because the length is unknown, while
+               array_interval[:1000] works.
 
     Args:
-        shape: None, int or tuple/list that contains one int.
+        shape: `None`, `int` or `tuple`/`list` that contains one `int`.
 
     Returns:
-        ArrayIntervall
+        `ArrayInterval` filled with zeros
 
     Examples:
-
         >>> ai = zeros(10)
         >>> ai
-        ArrayIntervall("", shape=(10,))
+        ArrayInterval("", shape=(10,))
         >>> ai[2:3] = 1
         >>> ai
-        ArrayIntervall("2:3", shape=(10,))
-        >>> ai[:]  # getitem converts the ArrayIntervall to numpy
+        ArrayInterval("2:3", shape=(10,))
+        >>> ai[:]  # getitem converts the ArrayInterval to numpy
         array([False, False,  True, False, False, False, False, False, False,
                False])
 
         >>> ai = zeros()
         >>> ai
-        ArrayIntervall("", shape=None)
+        ArrayInterval("", shape=None)
         >>> ai[2:3] = 1
         >>> ai
-        ArrayIntervall("2:3", shape=None)
+        ArrayInterval("2:3", shape=None)
         >>> ai[:]
         Traceback (most recent call last):
         ...
-        RuntimeError: You tried to slice an ArrayIntervall with unknown shape without a stop value.
+        RuntimeError: You tried to slice an ArrayInterval with unknown shape without a stop value.
         This is not supported, either the shape has to be known
-        or you have to specify a stop value for the slice (i.e. array_intervall[:stop])
-        You called the array intervall with:
-            array_intervall[slice(None, None, None)]
-        >>> ai[:10]  # getitem converts the ArrayIntervall to numpy
+        or you have to specify a stop value for the slice (i.e. array_interval[:stop])
+        You called the array interval with:
+            array_interval[slice(None, None, None)]
+        >>> ai[:10]  # getitem converts the ArrayInterval to numpy
         array([False, False,  True, False, False, False, False, False, False,
                False])
 
     """
-    ai = ArrayIntervall.__new__(ArrayIntervall)
+    ai = ArrayInterval.__new__(ArrayInterval)
 
     if isinstance(shape, int):
         shape = [shape]
@@ -101,54 +100,52 @@ def zeros(shape=None):
     return ai
 
 
-def ones(shape=None):
+def ones(shape: Optional[Union[int, tuple, list]] = None) -> 'ArrayInterval':
     """
-    Instantiate an ArrayIntervall filled with ones.
+    Instantiate an `ArrayInterval` filled with ones.
 
-    Note: The difference from numpy is, that the argument shape is optional.
-          When shape is None, some operations aren't supported, because the
+    Note: The difference from numpy is that the argument shape is optional.
+          When `shape` is `None`, some operations aren't supported because the
           length is unknown.
-          e.g. array_intervall[:] fails, because the length is unknown, while
-               array_intervall[:1000] will work.
+          e.g. array_interval[:] fails because the length is unknown, while
+               array_interval[:1000] works.
 
-    Args:
-        shape: None, int or tuple/list that contains one int.
+        Args:
+        shape: `None`, `int` or `tuple`/`list` that contains one `int`.
 
     Returns:
-        ArrayIntervall
+        `ArrayInterval` filled with ones
 
     Examples:
-
         >>> ai = ones(10)
         >>> ai
-        ArrayIntervall("", shape=(10,), inverse_mode=True)
+        ArrayInterval("", shape=(10,), inverse_mode=True)
         >>> ai[2:3] = 0
         >>> ai
-        ArrayIntervall("2:3", shape=(10,), inverse_mode=True)
-        >>> ai[:]  # getitem converts the ArrayIntervall to numpy
+        ArrayInterval("2:3", shape=(10,), inverse_mode=True)
+        >>> ai[:]  # getitem converts the ArrayInterval to numpy
         array([ True,  True, False,  True,  True,  True,  True,  True,  True,
                 True])
 
         >>> ai = ones()
         >>> ai
-        ArrayIntervall("", shape=None, inverse_mode=True)
+        ArrayInterval("", shape=None, inverse_mode=True)
         >>> ai[2:3] = 0
         >>> ai
-        ArrayIntervall("2:3", shape=None, inverse_mode=True)
+        ArrayInterval("2:3", shape=None, inverse_mode=True)
         >>> ai[:]
         Traceback (most recent call last):
         ...
-        RuntimeError: You tried to slice an ArrayIntervall with unknown shape without a stop value.
+        RuntimeError: You tried to slice an ArrayInterval with unknown shape without a stop value.
         This is not supported, either the shape has to be known
-        or you have to specify a stop value for the slice (i.e. array_intervall[:stop])
-        You called the array intervall with:
-            array_intervall[slice(None, None, None)]
-        >>> ai[:10]  # getitem converts the ArrayIntervall to numpy
+        or you have to specify a stop value for the slice (i.e. array_interval[:stop])
+        You called the array interval with:
+            array_interval[slice(None, None, None)]
+        >>> ai[:10]  # getitem converts the ArrayInterval to numpy
         array([ True,  True, False,  True,  True,  True,  True,  True,  True,
                 True])
-
     """
-    ai = ArrayIntervall.__new__(ArrayIntervall)
+    ai = ArrayInterval.__new__(ArrayInterval)
     ai.inverse_mode = True
 
     if isinstance(shape, int):
@@ -162,39 +159,43 @@ def ones(shape=None):
     return ai
 
 
-class ArrayIntervall:
-    from_str = staticmethod(ArrayIntervall_from_str)
+class ArrayInterval:
+    from_str = staticmethod(ArrayInterval_from_str)
     inverse_mode = False
 
-    def __init__(self, array, inverse_mode=False):
+    def __init__(self, array, inverse_mode: bool = False):
         """
+        The `ArrayInterval` is in many cases equivalent to a 1-dimensional
+        boolean numpy array that stores activity information in an efficient
+        way.
 
         Args:
             array: 
             inverse_mode:
-                Flag to indicate what the intervals represent:
-                 - False: Intervals represent True
-                 - True: Intervals represent False
-                This flag is nessesary to when the shape is unknown.
-                The use does not need to care about this flag. The default is
+                Internal flag to indicate what the intervals represent:
+                 - `False`: Intervals represent `True`
+                 - `True`: Intervals represent `False`
+                This flag is nessesary when the shape is unknown.
+                The user does not need to care about this flag. The default is
                 fine.
 
-        >>> ai = ArrayIntervall(np.array([1, 1, 0, 1, 0, 0, 1, 1, 0], dtype=np.bool))
-        >>> ai
-        ArrayIntervall("0:2, 3:4, 6:8", shape=(9,))
-        >>> ai[:]
-        array([ True,  True, False,  True, False, False,  True,  True, False])
-        >>> a = np.array([1, 1, 1, 1], dtype=np.bool)
-        >>> assert all(a == ArrayIntervall(a)[:])
-        >>> a = np.array([0, 0, 0, 0], dtype=np.bool)
-        >>> assert all(a == ArrayIntervall(a)[:])
-        >>> a = np.array([0, 1, 1, 0], dtype=np.bool)
-        >>> assert all(a == ArrayIntervall(a)[:])
-        >>> a = np.array([1, 0, 0, 1], dtype=np.bool)
-        >>> assert all(a == ArrayIntervall(a)[:])
+        Examples:
+            >>> ai = ArrayInterval(np.array([1, 1, 0, 1, 0, 0, 1, 1, 0], dtype=np.bool))
+            >>> ai
+            ArrayInterval("0:2, 3:4, 6:8", shape=(9,))
+            >>> ai[:]
+            array([ True,  True, False,  True, False, False,  True,  True, False])
+            >>> a = np.array([1, 1, 1, 1], dtype=np.bool)
+            >>> assert all(a == ArrayInterval(a)[:])
+            >>> a = np.array([0, 0, 0, 0], dtype=np.bool)
+            >>> assert all(a == ArrayInterval(a)[:])
+            >>> a = np.array([0, 1, 1, 0], dtype=np.bool)
+            >>> assert all(a == ArrayInterval(a)[:])
+            >>> a = np.array([1, 0, 0, 1], dtype=np.bool)
+            >>> assert all(a == ArrayInterval(a)[:])
 
         """
-        if isinstance(array, ArrayIntervall):
+        if isinstance(array, ArrayInterval):
             self.shape = array.shape
             self.inverse_mode = array.inverse_mode
             self.intervals = array.intervals
@@ -216,7 +217,7 @@ class ArrayIntervall:
             if array[-1] == 1:
                 falling = falling + [len(array)]
 
-            # ai = ArrayIntervall(shape=array.shape)
+            # ai = ArrayInterval(shape=array.shape)
             self.inverse_mode = inverse_mode
             self.shape = array.shape
 
@@ -237,19 +238,19 @@ class ArrayIntervall:
 
     def __array__(self, dtype=np.bool):
         """
-        Special numpy method. This method is used from numpy to cast foreign
+        Special numpy method. This method is used by numpy to cast foreign
         types to numpy.
 
         Example for the add operation:
             >>> a = np.array([0, 1, 2])
-            >>> ai = ArrayIntervall([True, False, True])
+            >>> ai = ArrayInterval([True, False, True])
             >>> ai + a
             array([1, 1, 3])
             >>> ai = zeros()
             >>> ai + a
             Traceback (most recent call last):
             ...
-            RuntimeError: You cannot cast an ArrayIntervall to numpy,
+            RuntimeError: You cannot cast an ArrayInterval to numpy,
             when the shape is unknown.
         """
         assert dtype == np.bool, dtype
@@ -265,16 +266,16 @@ class ArrayIntervall:
         >>> from IPython.lib.pretty import pprint
         >>> import pickle
         >>> import jsonpickle, json
-        >>> from paderbox.array.intervall.core import ArrayIntervall
-        >>> ai = ArrayIntervall.from_str('1:4, 5:20, 21:25', shape=50)
+        >>> from paderbox.array.interval.core import ArrayInterval
+        >>> ai = ArrayInterval.from_str('1:4, 5:20, 21:25', shape=50)
         >>> ai
-        ArrayIntervall("1:4, 5:20, 21:25", shape=(50,))
+        ArrayInterval("1:4, 5:20, 21:25", shape=(50,))
         >>> pickle.loads(pickle.dumps(ai))
-        ArrayIntervall("1:4, 5:20, 21:25", shape=(50,))
+        ArrayInterval("1:4, 5:20, 21:25", shape=(50,))
         >>> jsonpickle.loads(jsonpickle.dumps(ai))
-        ArrayIntervall("1:4, 5:20, 21:25", shape=(50,))
+        ArrayInterval("1:4, 5:20, 21:25", shape=(50,))
         >>> pprint(json.loads(jsonpickle.dumps(ai)))
-        {'py/reduce': [{'py/function': 'paderbox.array.intervall.core.ArrayIntervall_from_str'},
+        {'py/reduce': [{'py/function': 'paderbox.array.interval.core.ArrayInterval_from_str'},
           {'py/tuple': ['1:4, 5:20, 21:25', 50]}]}
         """
         return self.from_str, (self._intervals_as_str, self.shape[-1])
@@ -287,14 +288,24 @@ class ArrayIntervall:
         return self.shape[0]
 
     @property
-    def normalized_intervals(self):
+    def normalized_intervals(self) -> tuple:
+        """
+        Normalized intervals. Normalized here means that overlapping intervals
+        are merged.
+
+        Note:
+            Changes the internal representation to the normalized intervals.
+        """
         if not self._intervals_normalized:
             self._intervals = self._normalize(self._intervals)
             self._intervals_normalized = True
         return self._intervals
 
     @property
-    def intervals(self):
+    def intervals(self) -> tuple:
+        """
+        A representation of the intervals as tuples of start and end values.
+        """
         return self._intervals
 
     @intervals.setter
@@ -305,17 +316,17 @@ class ArrayIntervall:
     @staticmethod
     def _normalize(intervals):
         """
-        >>> ArrayIntervall._normalize([])
+        >>> ArrayInterval._normalize([])
         ()
-        >>> ArrayIntervall._normalize([(0, 1)])
+        >>> ArrayInterval._normalize([(0, 1)])
         ((0, 1),)
-        >>> ArrayIntervall._normalize([(0, 1), (2, 3)])
+        >>> ArrayInterval._normalize([(0, 1), (2, 3)])
         ((0, 1), (2, 3))
-        >>> ArrayIntervall._normalize([(0, 1), (20, 30)])
+        >>> ArrayInterval._normalize([(0, 1), (20, 30)])
         ((0, 1), (20, 30))
-        >>> ArrayIntervall._normalize([(0, 1), (1, 3)])
+        >>> ArrayInterval._normalize([(0, 1), (1, 3)])
         ((0, 3),)
-        >>> ArrayIntervall._normalize([(0, 1), (1, 3), (3, 10)])
+        >>> ArrayInterval._normalize([(0, 1), (1, 3), (3, 10)])
         ((0, 10),)
         """
         intervals = [(s, e) for s, e in sorted(intervals) if s < e]
@@ -325,11 +336,11 @@ class ArrayIntervall:
             except IndexError:
                 break
             try:
-                next_s, next_e = intervals[i+1]
+                next_s, next_e = intervals[i + 1]
                 while next_s <= e:
                     e = max(e, next_e)
-                    del intervals[i+1]
-                    next_s, next_e = intervals[i+1]
+                    del intervals[i + 1]
+                    next_s, next_e = intervals[i + 1]
             except IndexError:
                 pass
             finally:
@@ -353,15 +364,23 @@ class ArrayIntervall:
         else:
             return f'{self.__class__.__name__}("{self._intervals_as_str}", shape={self.shape})'
 
-    def add_intervals_from_str(self, string_intervals):
-        self.intervals = self.intervals + cy_str_to_intervalls(string_intervals)
-
-    def add_intervals(self, intervals):
+    def add_intervals_from_str(self, string_intervals: str):
         """
-        for item in intervals:
-            self[item] = 1
+        Adds intervals from a string representation.
 
-        # This function is equal to above example code, but significant faster.
+        Args:
+            string_intervals: Format "<start>:<end>,<start>:<end>..."
+        """
+        self.intervals = self.intervals + cy_str_to_intervals(string_intervals)
+
+    def add_intervals(self, intervals: Iterable[slice]):
+        """
+        Adds intervals from a list of slices.
+
+        Equivalent to, but significantly faster than:
+            for item in intervals:
+                self[item] = 1
+
         """
         # Short circuit
         self.intervals = self.intervals + tuple(
@@ -373,40 +392,40 @@ class ArrayIntervall:
         >>> ai = zeros(50)
         >>> ai[10:15] = 1
         >>> ai
-        ArrayIntervall("10:15", shape=(50,))
+        ArrayInterval("10:15", shape=(50,))
         >>> ai[5:10] = 1
         >>> ai
-        ArrayIntervall("5:15", shape=(50,))
+        ArrayInterval("5:15", shape=(50,))
         >>> ai[1:4] = 1
         >>> ai
-        ArrayIntervall("1:4, 5:15", shape=(50,))
+        ArrayInterval("1:4, 5:15", shape=(50,))
         >>> ai[15:20] = 1
         >>> ai
-        ArrayIntervall("1:4, 5:20", shape=(50,))
+        ArrayInterval("1:4, 5:20", shape=(50,))
         >>> ai[21:25] = 1
         >>> ai
-        ArrayIntervall("1:4, 5:20, 21:25", shape=(50,))
+        ArrayInterval("1:4, 5:20, 21:25", shape=(50,))
         >>> ai[10:15] = 1
         >>> ai
-        ArrayIntervall("1:4, 5:20, 21:25", shape=(50,))
+        ArrayInterval("1:4, 5:20, 21:25", shape=(50,))
         >>> ai[0:50] = 1
         >>> ai[0:0] = 1
         >>> ai
-        ArrayIntervall("0:50", shape=(50,))
+        ArrayInterval("0:50", shape=(50,))
         >>> ai[3:6]
         array([ True,  True,  True])
         >>> ai[3:6] = np.array([ True,  False,  True])
         >>> ai
-        ArrayIntervall("0:4, 5:50", shape=(50,))
+        ArrayInterval("0:4, 5:50", shape=(50,))
         >>> ai[10:13] = np.array([ False,  True,  False])
         >>> ai
-        ArrayIntervall("0:4, 5:10, 11:12, 13:50", shape=(50,))
+        ArrayInterval("0:4, 5:10, 11:12, 13:50", shape=(50,))
 
         >>> ai = zeros(50)
         >>> ai[:] = 1
         >>> ai[10:40] = 0
         >>> ai
-        ArrayIntervall("0:10, 40:50", shape=(50,))
+        ArrayInterval("0:10, 40:50", shape=(50,))
 
         """
 
@@ -429,10 +448,10 @@ class ArrayIntervall:
                     raise ValueError(value)
         elif isinstance(value, (tuple, list, np.ndarray)):
             assert len(value) == stop - start, (start, stop, stop - start, len(value), value)
-            ai = ArrayIntervall(value, inverse_mode=self.inverse_mode)
+            ai = ArrayInterval(value, inverse_mode=self.inverse_mode)
             intervals = self.intervals
             intervals = cy_non_intersection((start, stop), intervals)
-            self.intervals = intervals + tuple([(s+start, e+start) for s, e in ai.intervals])
+            self.intervals = intervals + tuple([(s + start, e + start) for s, e in ai.intervals])
         else:
             raise NotImplementedError(value)
 
@@ -445,7 +464,7 @@ class ArrayIntervall:
         >>> ai[10:20] = 1
         >>> ai[25:30] = 1
         >>> ai
-        ArrayIntervall("10:20, 25:30", shape=(50,))
+        ArrayInterval("10:20, 25:30", shape=(50,))
         >>> ai[19:26]
         array([ True, False, False, False, False, False,  True])
         >>> ai[19]
@@ -483,10 +502,10 @@ class ArrayIntervall:
 
     def sum(self, axis=None, out=None):
         """
-        >>> a = ArrayIntervall([True, True, False, False])
+        >>> a = ArrayInterval([True, True, False, False])
         >>> np.sum(a)
         2
-        >>> a = ArrayIntervall([True, False, False, True])
+        >>> a = ArrayInterval([True, False, False, True])
         >>> np.sum(a)
         2
         """
@@ -497,16 +516,16 @@ class ArrayIntervall:
 
     def __or__(self, other):
         """
-        >>> a1 = ArrayIntervall([True, True, False, False])
-        >>> a2 = ArrayIntervall([True, False, True, False])
+        >>> a1 = ArrayInterval([True, True, False, False])
+        >>> a2 = ArrayInterval([True, False, True, False])
         >>> print(a1 | a2, (a1 | a2)[:])
-        ArrayIntervall("0:3", shape=(4,)) [ True  True  True False]
-        >>> a1 = ArrayIntervall([True, True, False, False], inverse_mode=True)
-        >>> a2 = ArrayIntervall([True, False, True, False], inverse_mode=True)
+        ArrayInterval("0:3", shape=(4,)) [ True  True  True False]
+        >>> a1 = ArrayInterval([True, True, False, False], inverse_mode=True)
+        >>> a2 = ArrayInterval([True, False, True, False], inverse_mode=True)
         >>> print(a1 | a2, (a1 | a2)[:])
-        ArrayIntervall("3:4", shape=(4,), inverse_mode=True) [ True  True  True False]
+        ArrayInterval("3:4", shape=(4,), inverse_mode=True) [ True  True  True False]
         """
-        if not isinstance(other, ArrayIntervall):
+        if not isinstance(other, ArrayInterval):
             return NotImplemented
         elif self.inverse_mode is False and other.inverse_mode is False:
             assert other.shape == self.shape, (self.shape, other.shape)
@@ -525,9 +544,9 @@ class ArrayIntervall:
 
     def __invert__(self):
         """
-        >>> a = ArrayIntervall([True, False])
+        >>> a = ArrayInterval([True, False])
         >>> ~ a
-        ArrayIntervall("0:1", shape=(2,), inverse_mode=True)
+        ArrayInterval("0:1", shape=(2,), inverse_mode=True)
         >>> print(a[:])
         [ True False]
         >>> print((~a)[:])
@@ -547,19 +566,19 @@ class ArrayIntervall:
 
     def __and__(self, other):
         """
-        >>> a1 = ArrayIntervall([True, True, False, False])
-        >>> a2 = ArrayIntervall([True, False, True, False])
+        >>> a1 = ArrayInterval([True, True, False, False])
+        >>> a2 = ArrayInterval([True, False, True, False])
         >>> print(a1 & a2, (a1 & a2)[:])
-        ArrayIntervall("0:1", shape=(4,)) [ True False False False]
-        >>> a1 = ArrayIntervall([True, True, False, False], inverse_mode=True)
-        >>> a2 = ArrayIntervall([True, False, True, False], inverse_mode=True)
+        ArrayInterval("0:1", shape=(4,)) [ True False False False]
+        >>> a1 = ArrayInterval([True, True, False, False], inverse_mode=True)
+        >>> a2 = ArrayInterval([True, False, True, False], inverse_mode=True)
         >>> print(a1 & a2, (a1 & a2)[:])
-        ArrayIntervall("1:4", shape=(4,), inverse_mode=True) [ True False False False]
+        ArrayInterval("1:4", shape=(4,), inverse_mode=True) [ True False False False]
 
         >>> np.logical_and(a1, a2)
         array([ True, False, False, False])
         """
-        if not isinstance(other, ArrayIntervall):
+        if not isinstance(other, ArrayInterval):
             return NotImplemented
         elif self.inverse_mode is True and other.inverse_mode is True:
             # short circuit
@@ -581,16 +600,16 @@ class ArrayIntervall:
 
     def __xor__(self, other):
         """
-        >>> a1 = ArrayIntervall([True, True, False, False])
-        >>> a2 = ArrayIntervall([True, False, True, False])
+        >>> a1 = ArrayInterval([True, True, False, False])
+        >>> a2 = ArrayInterval([True, False, True, False])
         >>> print(a1 ^ a2, (a1 ^ a2)[:])
-        ArrayIntervall("1:3", shape=(4,)) [False  True  True False]
-        >>> a1 = ArrayIntervall([True, True, False, False], inverse_mode=True)
-        >>> a2 = ArrayIntervall([True, False, True, False], inverse_mode=True)
+        ArrayInterval("1:3", shape=(4,)) [False  True  True False]
+        >>> a1 = ArrayInterval([True, True, False, False], inverse_mode=True)
+        >>> a2 = ArrayInterval([True, False, True, False], inverse_mode=True)
         >>> print(a1 ^ a2, (a1 ^ a2)[:])
-        ArrayIntervall("1:3", shape=(4,)) [False  True  True False]
+        ArrayInterval("1:3", shape=(4,)) [False  True  True False]
         """
-        if not isinstance(other, ArrayIntervall):
+        if not isinstance(other, ArrayInterval):
             return NotImplemented
         else:
             import operator
@@ -599,8 +618,8 @@ class ArrayIntervall:
 
 def _yield_sections(a_intervals, b_intervals):
     """
-    >>> a = ArrayIntervall._normalize([(0, 2), (6, 8), (20, 30), (33, 35)])
-    >>> b = ArrayIntervall._normalize([(1, 3), (10, 15), (22, 28), (35, 37)])
+    >>> a = ArrayInterval._normalize([(0, 2), (6, 8), (20, 30), (33, 35)])
+    >>> b = ArrayInterval._normalize([(1, 3), (10, 15), (22, 28), (35, 37)])
     >>> a
     ((0, 2), (6, 8), (20, 30), (33, 35))
     >>> b
@@ -622,7 +641,7 @@ def _yield_sections(a_intervals, b_intervals):
     (33, 35, True, False)
     (35, 37, False, True)
 
-    >>> c = ArrayIntervall._normalize([
+    >>> c = ArrayInterval._normalize([
     ...     (start, stop)
     ...     for start, stop, a_, b_ in _yield_sections(a, b)
     ...     if a_ ^ b_
@@ -684,44 +703,44 @@ def _combine(func, *array_intervals, out=None):
     """
 
     >>> import operator
-    >>> ai1 = ArrayIntervall(np.array([0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0], dtype=bool))
+    >>> ai1 = ArrayInterval(np.array([0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0], dtype=bool))
     >>> ai1
-    ArrayIntervall("3:5, 8:10", shape=(11,))
-    >>> ai2 = ArrayIntervall(np.array([0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0], dtype=bool))
+    ArrayInterval("3:5, 8:10", shape=(11,))
+    >>> ai2 = ArrayInterval(np.array([0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0], dtype=bool))
     >>> ai2
-    ArrayIntervall("6:10", shape=(11,))
+    ArrayInterval("6:10", shape=(11,))
     >>> _combine(operator.__or__, ai1, ai2)
-    ArrayIntervall("3:5, 6:10", shape=(11,))
+    ArrayInterval("3:5, 6:10", shape=(11,))
     >>> _combine(operator.__and__, ai1, ai2)
-    ArrayIntervall("8:10", shape=(11,))
+    ArrayInterval("8:10", shape=(11,))
     >>> _combine(operator.__xor__, ai1, ai2)
-    ArrayIntervall("3:5, 6:8", shape=(11,))
+    ArrayInterval("3:5, 6:8", shape=(11,))
     >>> _combine(operator.__not__, ai1)
-    ArrayIntervall("0:3, 5:8, 10:11", shape=(11,))
+    ArrayInterval("0:3, 5:8, 10:11", shape=(11,))
 
     >>> ai1.shape = None
     >>> ai2.shape = None
     >>> ai1
-    ArrayIntervall("3:5, 8:10", shape=None)
+    ArrayInterval("3:5, 8:10", shape=None)
     >>> ai2
-    ArrayIntervall("6:10", shape=None)
+    ArrayInterval("6:10", shape=None)
     >>> _combine(operator.__or__, ai1, ai2)
-    ArrayIntervall("3:5, 6:10", shape=None)
+    ArrayInterval("3:5, 6:10", shape=None)
     >>> _combine(operator.__and__, ai1, ai2)
-    ArrayIntervall("8:10", shape=None)
+    ArrayInterval("8:10", shape=None)
     >>> _combine(operator.__xor__, ai1, ai2)
-    ArrayIntervall("3:5, 6:8", shape=None)
+    ArrayInterval("3:5, 6:8", shape=None)
     >>> _combine(operator.__not__, ai1)
-    ArrayIntervall("3:5, 8:10", shape=None, inverse_mode=True)
+    ArrayInterval("3:5, 8:10", shape=None, inverse_mode=True)
     >>> _combine(operator.__not__, ai1)[:11]
     array([ True,  True,  True, False, False,  True,  True,  True, False,
            False,  True])
 
     """
 
-    edges = {0,}
+    edges = {0, }
     for ai in array_intervals:
-        ai: ArrayIntervall
+        ai: ArrayInterval
         for start_end in ai.normalized_intervals:
             edges.update(start_end)
 
@@ -729,7 +748,7 @@ def _combine(func, *array_intervals, out=None):
 
     values = [ai[edges[-1]] for ai in array_intervals]
     last = func(*values)
-    
+
     if out is None:
         shapes = [ai.shape for ai in array_intervals]
         assert len(set(shapes)) == 1, shapes
@@ -744,9 +763,9 @@ def _combine(func, *array_intervals, out=None):
             out = zeros(shape=shape)
             out[edges[-1]:] = last
     else:
-        out: ArrayIntervall
+        out: ArrayInterval
         if out.shape is None:
-            assert last == out.inverse_mode, (last, func, values, out, )
+            assert last == out.inverse_mode, (last, func, values, out,)
         else:
             out[edges[-1]:] = last
 

@@ -1,7 +1,7 @@
 """
-This folder contains the class ArrayIntervall.
+This folder contains the class ArrayInterval.
 
-The ArrayIntervall is very similar to a boolean 1 dimensional numpy array.
+The ArrayInterval is very similar to a boolean 1 dimensional numpy array.
 It should work as a replacement where such a numpy array could be used.
 The advantage of this class is, that it has a memory efficient storage, when
 the 1d array represents intervals. This class only stores the slice boundaries,
@@ -12,7 +12,7 @@ activity information (e.g. there is speech from sample 16000 to sample 48000)
 of a long audio file (> 2h) in memory.
 """
 from .core import zeros, ones
-from .core import ArrayIntervall
+from .core import ArrayInterval
 
 from .rttm import from_rttm
 from .rttm import from_rttm_str

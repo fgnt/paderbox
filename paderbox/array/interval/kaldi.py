@@ -4,8 +4,8 @@ import decimal
 
 import numpy as np
 
-from paderbox.array.intervall.core import zeros
-from paderbox.array.intervall.rttm import _merge_dicts
+from paderbox.array.interval.core import zeros
+from paderbox.array.interval.rttm import _merge_dicts
 
 
 def from_kaldi_segments(segments_file, shape=None, sample_rate=16000, round_fn=None):
@@ -27,7 +27,7 @@ def from_kaldi_segments_str(segments_str, shape=None, sample_rate=16000, round_f
     >>> s = 'S02_U06.ENH-0004121-0004187 S02_U06.ENH 41.21 41.87\\n'
     >>> s += 'S02_U06.ENH-0010122-0010337 S02_U06.ENH 101.23 103.37\\n'
     >>> from_kaldi_segments_str(s, sample_rate=1000)
-    {'S02_U06.ENH': ArrayIntervall("41210:41870, 101230:103370", shape=None)}
+    {'S02_U06.ENH': ArrayInterval("41210:41870, 101230:103370", shape=None)}
 
     >>> s = 'S02_U06.ENH-0004121-0004187 S02_U06.ENH 41.21 41.87\\n'
     >>> s += 'S02_U06.ENH-0010122-0010337 S02_U06.ENH BUG 101.23 103.37\\n'
