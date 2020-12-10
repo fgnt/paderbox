@@ -1,5 +1,4 @@
 import numpy as np
-from functools import wraps
 from scipy.stats import truncnorm, truncexpon
 import dataclasses
 
@@ -16,6 +15,7 @@ __all__ = [
     'pos_def_hermitian',
     'Uniform',
     'LogUniform',
+    'Normal',
     'TruncatedNormal',
     'LogTruncatedNormal',
     'TruncatedExponential',
@@ -37,59 +37,90 @@ def str_to_random_state(string):
     return np.random.RandomState(hash_value)
 
 
-def _force_correct_shape(f):
-    """decorator allowing to pass shape as tuple as well
-
-    Args:
-        f: wrapped function
-
-    Returns:
-
-    """
-    @wraps(f)
-    def wrapper(*shape, **kwargs):
-        if len(shape) > 0 and isinstance(shape[0], (tuple, list)):
-            assert len(shape) == 1, shape
-            shape = shape[0]
-
-        return f(*shape, **kwargs)
-
-    return wrapper
+def _force_correct_shape(shape):
+    if len(shape) > 0 and isinstance(shape[0], (tuple, list)):
+        assert len(shape) == 1, shape
+        shape = shape[0]
+    return shape
 
 
-def _add_kwarg_dtype(default):
-    """ returns decorator adding the kwarg dtype to the wrapped function and
-    handles the sampling of a certain dtype.
+@dataclasses.dataclass
+class _Sampler:
+    dtype: type = np.float64
 
-    Args:
-        default: default dtype
+    def _sample(self, *shape):
+        raise NotImplementedError
 
-    Returns:
+    def __call__(self, *shape):
+        shape = _force_correct_shape(shape)
 
-    """
-    def _decorator(f):
-        @wraps(f)
-        def wrapper(*shape, dtype=default, **kwargs):
+        def _f(dtype_local):
+            return np.array(self._sample(*shape), dtype=dtype_local)
 
-            def _f(dtype_local):
-                return np.array(f(*shape, **kwargs), dtype=dtype_local)
-
-            if dtype in (np.float32, np.float64):
-                return _f(dtype)
-            elif dtype is np.complex64:
-                return _f(np.float32) + 1j * _f(np.float32)
-            elif dtype is np.complex128:
-                return _f(np.float64) + 1j * _f(np.float64)
-            else:
-                raise ValueError(f'Invalid dtype {dtype}')
-
-        return wrapper
-    return _decorator
+        if self.dtype in (np.float32, np.float64):
+            return _f(self.dtype)
+        elif self.dtype is np.complex64:
+            return _f(np.float32) + 1j * _f(np.float32)
+        elif self.dtype is np.complex128:
+            return _f(np.float64) + 1j * _f(np.float64)
+        else:
+            raise ValueError(f'Invalid dtype {self.dtype}')
 
 
-@_force_correct_shape
-@_add_kwarg_dtype(default=np.float64)
-def uniform(*shape, low=-1., high=1.):
+@dataclasses.dataclass
+class Uniform(_Sampler):
+    low: float = 0.
+    high: float = 1.
+
+    def _sample(self, *shape):
+        return np.random.uniform(low=self.low, high=self.high, size=shape)
+
+
+@dataclasses.dataclass
+class LogUniform(Uniform):
+    def _sample(self, *shape):
+        return np.exp(super()._sample(*shape))
+
+
+@dataclasses.dataclass
+class Normal(_Sampler):
+    loc: float = 0.
+    scale: float = 1.
+
+    def _sample(self, *shape):
+        return self.scale * np.random.randn(*shape) + self.loc
+
+
+@dataclasses.dataclass
+class TruncatedNormal(Normal):
+    truncation: float = 3.
+
+    def _sample(self, *shape):
+        return truncnorm(
+            -self.truncation / self.scale,
+            self.truncation / self.scale, self.loc,
+            self.scale
+        ).rvs(shape)
+
+
+@dataclasses.dataclass
+class LogTruncatedNormal(TruncatedNormal):
+    def _sample(self, *shape):
+        return np.exp(super()._sample(*shape))
+
+
+@dataclasses.dataclass
+class TruncatedExponential(_Sampler):
+    loc: float = 0.
+    scale: float = 1.
+    truncation: float = 3.
+    dtype: type = np.float64
+
+    def _sample(self, *shape):
+        return truncexpon(self.truncation / self.scale, self.loc, self.scale).rvs(shape)
+
+
+def uniform(*shape, low=0., high=1., dtype=np.float64):
     """
 
     Args:
@@ -112,12 +143,10 @@ def uniform(*shape, low=-1., high=1.):
     >>> x.shape, x.dtype
     ((2, 3), dtype('complex128'))
     """
-    return np.random.uniform(low=low, high=high, size=shape)
+    return Uniform(low=low, high=high, dtype=dtype)(*shape)
 
 
-@_force_correct_shape
-@_add_kwarg_dtype(default=np.float64)
-def log_uniform(*shape, low=-1., high=1.):
+def log_uniform(*shape, low=0., high=1., dtype=np.float64):
     """
 
     Args:
@@ -138,12 +167,10 @@ def log_uniform(*shape, low=-1., high=1.):
     >>> x.shape, x.dtype
     ((2, 3), dtype('complex128'))
     """
-    return np.exp(np.random.uniform(low=low, high=high, size=shape))
+    return LogUniform(low=low, high=high, dtype=dtype)(*shape)
 
 
-@_force_correct_shape
-@_add_kwarg_dtype(default=np.float64)
-def randn(*shape):
+def randn(*shape, dtype=np.float64):
     """
 
     Args:
@@ -162,10 +189,10 @@ def randn(*shape):
     >>> x.shape, x.dtype
     ((2, 3), dtype('complex128'))
     """
-    return np.random.randn(*shape)
+    return Normal(dtype=dtype)(*shape)
 
 
-def normal(*shape, loc=0., scale=1., dtype=np.complex128):
+def normal(*shape, loc=0., scale=1., dtype=np.float64):
     """
 
     Args:
@@ -176,13 +203,21 @@ def normal(*shape, loc=0., scale=1., dtype=np.complex128):
 
     Returns:
 
+    >>> x = randn()
+    >>> x.ndim
+    0
+    >>> x = randn(2, 3)
+    >>> x.shape, x.dtype
+    ((2, 3), dtype('float64'))
+    >>> x = randn(2, 3, dtype=np.complex128)
+    >>> x.shape, x.dtype
+    ((2, 3), dtype('complex128'))
+
     """
-    return scale * randn(*shape, dtype=dtype) + loc
+    return Normal(loc=loc, scale=scale, dtype=dtype)(*shape)
 
 
-@_force_correct_shape
-@_add_kwarg_dtype(default=np.float64)
-def truncated_normal(*shape, loc=0., scale=1., truncation=3.):
+def truncated_normal(*shape, loc=0., scale=1., truncation=3., dtype=np.float64):
     """samples from normal distribution with high deviations being truncated
 
     Args:
@@ -206,14 +241,10 @@ def truncated_normal(*shape, loc=0., scale=1., truncation=3.):
     >>> x.shape, x.dtype
     ((2, 3), dtype('complex128'))
     """
-    return (
-        truncnorm(-truncation / scale, truncation / scale, loc, scale).rvs(shape)
-    )
+    return TruncatedNormal(loc=loc, scale=scale, truncation=truncation, dtype=dtype)(*shape)
 
 
-@_force_correct_shape
-@_add_kwarg_dtype(default=np.float64)
-def log_truncated_normal(*shape, loc=0., scale=.5, truncation=3.):
+def log_truncated_normal(*shape, loc=0., scale=.5, truncation=3., dtype=np.float64):
     """exp(.) of truncated-normal distributed random variables
 
     Args:
@@ -239,12 +270,10 @@ def log_truncated_normal(*shape, loc=0., scale=.5, truncation=3.):
     >>> x.shape, x.dtype
     ((2, 3), dtype('complex128'))
     """
-    return np.exp(truncnorm(-truncation / scale, truncation / scale, loc, scale).rvs(shape))
+    return LogTruncatedNormal(loc=loc, scale=scale, truncation=truncation, dtype=dtype)(*shape)
 
 
-@_force_correct_shape
-@_add_kwarg_dtype(default=np.float64)
-def truncated_exponential(*shape, loc=0., scale=1., truncation=3.):
+def truncated_exponential(*shape, loc=0., scale=1., truncation=3., dtype=np.float64):
     """
 
     Args:
@@ -268,10 +297,9 @@ def truncated_exponential(*shape, loc=0., scale=1., truncation=3.):
     >>> x.shape, x.dtype
     ((2, 3), dtype('complex128'))
     """
-    return truncexpon(truncation / scale, loc, scale).rvs(shape)
+    return TruncatedExponential(loc=loc, scale=scale, truncation=truncation, dtype=dtype)(*shape)
 
 
-@_force_correct_shape
 def hermitian(*shape, dtype=np.complex128):
     """ Assures a random positive-semidefinite hermitian matrix.
 
@@ -282,6 +310,8 @@ def hermitian(*shape, dtype=np.complex128):
     Returns:
 
     """
+
+    shape = _force_correct_shape(shape)
     assert len(shape) >= 2 and shape[-1] == shape[-2], shape
     matrix = uniform(*shape, dtype=dtype)
     matrix = matrix + np.swapaxes(matrix, -1, -2).conj()
@@ -289,7 +319,6 @@ def hermitian(*shape, dtype=np.complex128):
     return matrix
 
 
-@_force_correct_shape
 def pos_def_hermitian(*shape, dtype=np.complex128):
     """Assures a random POSITIVE-DEFINITE hermitian matrix.
 
@@ -302,70 +331,7 @@ def pos_def_hermitian(*shape, dtype=np.complex128):
     Returns:
 
     """
+    shape = _force_correct_shape(shape)
     matrix = hermitian(*shape, dtype=dtype)
     matrix += np.broadcast_to(shape[-1] * 2 * np.eye(shape[-1]), shape)
     return matrix
-
-
-@dataclasses.dataclass
-class Uniform:
-    low: float = -1.
-    high: float = 1.
-    dtype: type = np.float64
-
-    def __call__(self, *shape):
-        return uniform(*shape, low=self.low, high=self.high, dtype=self.dtype)
-
-
-@dataclasses.dataclass
-class LogUniform:
-    low: float = -1.
-    high: float = 1.
-    dtype: type = np.float64
-
-    def __call__(self, *shape):
-        return log_uniform(
-            *shape, low=self.low, high=self.high, dtype=self.dtype
-        )
-
-
-@dataclasses.dataclass
-class TruncatedNormal:
-    loc: float = 0.
-    scale: float = 1.
-    truncation: float = 3.
-    dtype: type = np.float64
-
-    def __call__(self, *shape):
-        return truncated_normal(
-            *shape, loc=self.loc, scale=self.scale, truncation=self.truncation,
-            dtype=self.dtype
-        )
-
-
-@dataclasses.dataclass
-class LogTruncatedNormal:
-    loc: float = 0.
-    scale: float = 1.
-    truncation: float = 3.
-    dtype: type = np.float64
-
-    def __call__(self, *shape):
-        return log_truncated_normal(
-            *shape, loc=self.loc, scale=self.scale, truncation=self.truncation,
-            dtype=self.dtype
-        )
-
-
-@dataclasses.dataclass
-class TruncatedExponential:
-    loc: float = 0.
-    scale: float = 1.
-    truncation: float = 3.
-    dtype: type = np.float64
-
-    def __call__(self, *shape):
-        return truncated_exponential(
-            *shape, loc=self.loc, scale=self.scale, truncation=self.truncation,
-            dtype=self.dtype
-        )
