@@ -1,5 +1,7 @@
 import numpy as np
 from functools import wraps
+from scipy.stats import truncnorm, truncexpon
+import dataclasses
 
 
 def str_to_random_state(string):
@@ -25,9 +27,8 @@ def _force_correct_shape(f):
     """
     @wraps(f)
     def wrapper(*shape, **kwargs):
-        if not shape:
-            shape = (1,)
-        elif isinstance(shape[0], (tuple, list)):
+        if len(shape) > 0 and isinstance(shape[0], (tuple, list)):
+            assert len(shape) == 1, shape
             shape = shape[0]
 
         return f(*shape, **kwargs)
@@ -35,63 +36,281 @@ def _force_correct_shape(f):
     return wrapper
 
 
-@_force_correct_shape
-def uniform(*shape, data_type=np.complex128):
+def _add_kwarg_dtype(default):
+    def _decorator(f):
+        @wraps(f)
+        def wrapper(*shape, dtype=default, **kwargs):
 
-    def _uniform(data_type_local):
-        return np.random.uniform(-1, 1, shape).astype(data_type_local)
+            def _f(dtype_local):
+                return np.array(f(*shape, **kwargs), dtype=dtype_local)
 
-    if data_type in (np.float32, np.float64):
-        return _uniform(data_type)
-    elif data_type is np.complex64:
-        return _uniform(np.float32) + 1j * _uniform(np.float32)
-    elif data_type is np.complex128:
-        return _uniform(np.float64) + 1j * _uniform(np.float64)
+            if dtype in (np.float32, np.float64):
+                return _f(dtype)
+            elif dtype is np.complex64:
+                return _f(np.float32) + 1j * _f(np.float32)
+            elif dtype is np.complex128:
+                return _f(np.float64) + 1j * _f(np.float64)
+            else:
+                raise ValueError(f'Invalid dtype {dtype}')
 
-
-@_force_correct_shape
-def randn(*shape, dtype=np.complex128):
-
-    def _randn(data_type_local):
-        return np.random.randn(*shape).astype(data_type_local)
-
-    if dtype in (np.float32, np.float64):
-        return _randn(dtype)
-    elif dtype is np.complex64:
-        return _randn(np.float32) + 1j * _randn(np.float32)
-    elif dtype is np.complex128:
-        return _randn(np.float64) + 1j * _randn(np.float64)
-
-
-def normal(*shape, dtype=np.complex128):
-    return randn(*shape, dtype=dtype)
+        return wrapper
+    return _decorator
 
 
 @_force_correct_shape
-def hermitian(*shape, data_type=np.complex128):
+@_add_kwarg_dtype(default=np.float64)
+def uniform(*shape, low=-1., high=1.):
+    """
+
+    Args:
+        *shape:
+        low:
+        high:
+        dtype:
+
+    Returns:
+
+    >>> x = uniform()
+    >>> x.ndim
+    0
+    >>> x.dtype
+    dtype('float64')
+    >>> x = uniform(2, 3)
+    >>> x.shape, x.dtype
+    ((2, 3), dtype('float64'))
+    >>> x = uniform(2, 3, dtype=np.complex128)
+    >>> x.shape, x.dtype
+    ((2, 3), dtype('complex128'))
+    """
+    return np.random.uniform(low=low, high=high, size=None if len(shape) == 0 else shape)
+
+
+@_force_correct_shape
+@_add_kwarg_dtype(default=np.float64)
+def log_uniform(*shape, low=-1., high=1.):
+    """
+
+    Args:
+        *shape:
+        low:
+        high:
+        dtype:
+
+    Returns:
+
+    >>> x = log_uniform()
+    >>> x.ndim
+    0
+    >>> x = log_uniform(2, 3)
+    >>> x.shape, x.dtype
+    ((2, 3), dtype('float64'))
+    >>> x = log_uniform(2, 3, dtype=np.complex128)
+    >>> x.shape, x.dtype
+    ((2, 3), dtype('complex128'))
+    """
+    return np.exp(np.random.uniform(low=low, high=high, size=None if len(shape) == 0 else shape))
+
+
+@_force_correct_shape
+@_add_kwarg_dtype(default=np.float64)
+def randn(*shape):
+    """
+
+    Args:
+        *shape:
+        dtype:
+
+    Returns:
+
+    >>> x = randn()
+    >>> x.ndim
+    0
+    >>> x = randn(2, 3)
+    >>> x.shape, x.dtype
+    ((2, 3), dtype('float64'))
+    >>> x = randn(2, 3, dtype=np.complex128)
+    >>> x.shape, x.dtype
+    ((2, 3), dtype('complex128'))
+    """
+    return np.random.randn(*shape)
+
+
+def normal(*shape, loc=0., scale=1., dtype=np.complex128):
+    """
+
+    Args:
+        *shape:
+        loc:
+        scale:
+        dtype:
+
+    Returns:
+
+    """
+    return scale * randn(*shape, dtype=dtype) + loc
+
+
+@_force_correct_shape
+@_add_kwarg_dtype(default=np.float64)
+def truncated_normal(*shape, loc=0., scale=1., truncation=3.):
+    """
+
+    Args:
+        *shape:
+        loc:
+        scale:
+        truncation:
+        dtype:
+
+    Returns:
+
+    >>> x = truncated_normal()
+    >>> x.ndim
+    0
+    >>> x = truncated_normal(2, 3)
+    >>> x.shape, x.dtype
+    ((2, 3), dtype('float64'))
+    >>> x = truncated_normal(2, 3, dtype=np.complex128)
+    >>> x.shape, x.dtype
+    ((2, 3), dtype('complex128'))
+    """
+    return (
+        truncnorm(-truncation / scale, truncation / scale, loc, scale).rvs(shape)
+    )
+
+
+@_force_correct_shape
+@_add_kwarg_dtype(default=np.float64)
+def log_truncated_normal(*shape, loc=0., scale=.5, truncation=3.):
+    """
+
+    Args:
+        *shape:
+        loc:
+        scale:
+        truncation:
+        dtype:
+
+    Returns:
+
+    >>> x = log_truncated_normal()
+    >>> x.ndim
+    0
+    >>> x = log_truncated_normal(2, 3)
+    >>> x.shape, x.dtype
+    ((2, 3), dtype('float64'))
+    >>> x = log_truncated_normal(2, 3, dtype=np.complex128)
+    >>> x.shape, x.dtype
+    ((2, 3), dtype('complex128'))
+    """
+    return np.exp(truncnorm(-truncation / scale, truncation / scale, loc, scale).rvs(shape))
+
+
+@_force_correct_shape
+@_add_kwarg_dtype(default=np.float64)
+def truncated_exponential(*shape, loc=0., scale=1., truncation=3.):
+    """
+
+    Args:
+        *shape:
+        loc:
+        scale:
+        truncation:
+
+    Returns:
+
+    >>> x = truncated_exponential()
+    >>> x.ndim
+    0
+    >>> x = truncated_exponential(2, 3)
+    >>> x.shape, x.dtype
+    ((2, 3), dtype('float64'))
+    >>> x = truncated_exponential(2, 3, dtype=np.complex128)
+    >>> x.shape, x.dtype
+    ((2, 3), dtype('complex128'))
+    """
+    return truncexpon(truncation / scale, loc, scale).rvs(shape)
+
+
+@_force_correct_shape
+def hermitian(*shape, dtype=np.complex128):
     """ Assures a random positive-semidefinite hermitian matrix.
 
     :param shape:
-    :param data_type:
+    :param dtype:
     :return:
     """
-    assert shape[-1] == shape[-2]
-    matrix = uniform(shape, data_type)
+    assert len(shape) >= 2 and shape[-1] == shape[-2], shape
+    matrix = uniform(*shape, dtype=dtype)
     matrix = matrix + np.swapaxes(matrix, -1, -2).conj()
     np.testing.assert_allclose(matrix, np.swapaxes(matrix, -1, -2).conj())
     return matrix
 
 
 @_force_correct_shape
-def pos_def_hermitian(*shape, data_type=np.complex128):
+def pos_def_hermitian(*shape, dtype=np.complex128):
     """ Assures a random POSITIVE-DEFINITE hermitian matrix.
 
     TODO: Can this be changed? Why do we need 2?
 
     :param shape:
-    :param data_type:
+    :param dtype:
     :return:
     """
-    matrix = hermitian(*shape, data_type=data_type)
+    matrix = hermitian(*shape, dtype=dtype)
     matrix += np.broadcast_to(shape[-1] * 2 * np.eye(shape[-1]), shape)
     return matrix
+
+
+@dataclasses.dataclass
+class Uniform:
+    low: float = -1.
+    high: float = 1.
+
+    def __call__(self, *shape):
+        return uniform(*shape, low=self.low, high=self.high)
+
+
+@dataclasses.dataclass
+class LogUniform:
+    low: float = -1.
+    high: float = 1.
+
+    def __call__(self, *shape):
+        return log_uniform(*shape, low=self.low, high=self.high)
+
+
+@dataclasses.dataclass
+class TruncatedNormal:
+    loc: float = 0.
+    scale: float = 1.
+    truncation: float = 3.
+
+    def __call__(self, *shape):
+        return truncated_normal(
+            *shape, loc=self.loc, scale=self.scale, truncation=self.truncation
+        )
+
+
+@dataclasses.dataclass
+class LogTruncatedNormal:
+    loc: float = 0.
+    scale: float = 1.
+    truncation: float = 3.
+
+    def __call__(self, *shape):
+        return log_truncated_normal(
+            *shape, loc=self.loc, scale=self.scale, truncation=self.truncation
+        )
+
+
+@dataclasses.dataclass
+class TruncatedExponential:
+    loc: float = 0.
+    scale: float = 1.
+    truncation: float = 3.
+
+    def __call__(self, *shape):
+        return truncated_exponential(
+            *shape, loc=self.loc, scale=self.scale, truncation=self.truncation
+        )
