@@ -7,7 +7,7 @@ import paderbox.utils.random_utils as random
 class TestRandom(unittest.TestCase):
     def test_uniform_scalar(self):
         scalar = random.uniform()
-        tc.assert_equal(scalar.shape, (1,))
+        tc.assert_equal(scalar.shape, ())
 
     def test_hermitian_2D(self):
         shape = (2, 2)

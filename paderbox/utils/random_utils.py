@@ -20,11 +20,6 @@ def str_to_random_state(string):
 
 
 def _force_correct_shape(f):
-    """ This decorator sets the seed and fix the snr.
-
-    :param f: Function to be wrapped
-    :return: noise_signal
-    """
     @wraps(f)
     def wrapper(*shape, **kwargs):
         if len(shape) > 0 and isinstance(shape[0], (tuple, list)):
