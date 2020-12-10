@@ -20,6 +20,14 @@ def str_to_random_state(string):
 
 
 def _force_correct_shape(f):
+    """decorator allowing to pass shape as tuple as well
+
+    Args:
+        f: wrapped function
+
+    Returns:
+
+    """
     @wraps(f)
     def wrapper(*shape, **kwargs):
         if len(shape) > 0 and isinstance(shape[0], (tuple, list)):
@@ -32,6 +40,15 @@ def _force_correct_shape(f):
 
 
 def _add_kwarg_dtype(default):
+    """ returns decorator adding the kwarg dtype to the wrapped function and
+    handles the sampling of a certain dtype.
+
+    Args:
+        default: default dtype
+
+    Returns:
+
+    """
     def _decorator(f):
         @wraps(f)
         def wrapper(*shape, dtype=default, **kwargs):
@@ -231,9 +248,12 @@ def truncated_exponential(*shape, loc=0., scale=1., truncation=3.):
 def hermitian(*shape, dtype=np.complex128):
     """ Assures a random positive-semidefinite hermitian matrix.
 
-    :param shape:
-    :param dtype:
-    :return:
+    Args:
+        *shape:
+        dtype:
+
+    Returns:
+
     """
     assert len(shape) >= 2 and shape[-1] == shape[-2], shape
     matrix = uniform(*shape, dtype=dtype)
@@ -244,13 +264,16 @@ def hermitian(*shape, dtype=np.complex128):
 
 @_force_correct_shape
 def pos_def_hermitian(*shape, dtype=np.complex128):
-    """ Assures a random POSITIVE-DEFINITE hermitian matrix.
+    """Assures a random POSITIVE-DEFINITE hermitian matrix.
 
     TODO: Can this be changed? Why do we need 2?
 
-    :param shape:
-    :param dtype:
-    :return:
+    Args:
+        *shape:
+        dtype:
+
+    Returns:
+
     """
     matrix = hermitian(*shape, dtype=dtype)
     matrix += np.broadcast_to(shape[-1] * 2 * np.eye(shape[-1]), shape)
@@ -261,18 +284,22 @@ def pos_def_hermitian(*shape, dtype=np.complex128):
 class Uniform:
     low: float = -1.
     high: float = 1.
+    dtype: type = np.float64
 
     def __call__(self, *shape):
-        return uniform(*shape, low=self.low, high=self.high)
+        return uniform(*shape, low=self.low, high=self.high, dtype=self.dtype)
 
 
 @dataclasses.dataclass
 class LogUniform:
     low: float = -1.
     high: float = 1.
+    dtype: type = np.float64
 
     def __call__(self, *shape):
-        return log_uniform(*shape, low=self.low, high=self.high)
+        return log_uniform(
+            *shape, low=self.low, high=self.high, dtype=self.dtype
+        )
 
 
 @dataclasses.dataclass
@@ -280,10 +307,12 @@ class TruncatedNormal:
     loc: float = 0.
     scale: float = 1.
     truncation: float = 3.
+    dtype: type = np.float64
 
     def __call__(self, *shape):
         return truncated_normal(
-            *shape, loc=self.loc, scale=self.scale, truncation=self.truncation
+            *shape, loc=self.loc, scale=self.scale, truncation=self.truncation,
+            dtype=self.dtype
         )
 
 
@@ -292,10 +321,12 @@ class LogTruncatedNormal:
     loc: float = 0.
     scale: float = 1.
     truncation: float = 3.
+    dtype: type = np.float64
 
     def __call__(self, *shape):
         return log_truncated_normal(
-            *shape, loc=self.loc, scale=self.scale, truncation=self.truncation
+            *shape, loc=self.loc, scale=self.scale, truncation=self.truncation,
+            dtype=self.dtype
         )
 
 
@@ -304,8 +335,10 @@ class TruncatedExponential:
     loc: float = 0.
     scale: float = 1.
     truncation: float = 3.
+    dtype: type = np.float64
 
     def __call__(self, *shape):
         return truncated_exponential(
-            *shape, loc=self.loc, scale=self.scale, truncation=self.truncation
+            *shape, loc=self.loc, scale=self.scale, truncation=self.truncation,
+            dtype=self.dtype
         )
