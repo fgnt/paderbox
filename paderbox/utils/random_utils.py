@@ -3,6 +3,24 @@ from functools import wraps
 from scipy.stats import truncnorm, truncexpon
 import dataclasses
 
+__all__ = [
+    'str_to_random_state',
+    'uniform',
+    'log_uniform',
+    'randn',
+    'normal',
+    'truncated_normal',
+    'log_truncated_normal',
+    'truncated_exponential',
+    'hermitian',
+    'pos_def_hermitian',
+    'Uniform',
+    'LogUniform',
+    'TruncatedNormal',
+    'LogTruncatedNormal',
+    'TruncatedExponential',
+]
+
 
 def str_to_random_state(string):
     """
@@ -94,7 +112,7 @@ def uniform(*shape, low=-1., high=1.):
     >>> x.shape, x.dtype
     ((2, 3), dtype('complex128'))
     """
-    return np.random.uniform(low=low, high=high, size=None if len(shape) == 0 else shape)
+    return np.random.uniform(low=low, high=high, size=shape)
 
 
 @_force_correct_shape
@@ -120,7 +138,7 @@ def log_uniform(*shape, low=-1., high=1.):
     >>> x.shape, x.dtype
     ((2, 3), dtype('complex128'))
     """
-    return np.exp(np.random.uniform(low=low, high=high, size=None if len(shape) == 0 else shape))
+    return np.exp(np.random.uniform(low=low, high=high, size=shape))
 
 
 @_force_correct_shape
@@ -165,13 +183,15 @@ def normal(*shape, loc=0., scale=1., dtype=np.complex128):
 @_force_correct_shape
 @_add_kwarg_dtype(default=np.float64)
 def truncated_normal(*shape, loc=0., scale=1., truncation=3.):
-    """
+    """samples from normal distribution with high deviations being truncated
 
     Args:
         *shape:
         loc:
         scale:
-        truncation:
+        truncation: max deviation from loc beyond which the distribution is
+            truncated. E.g., with a loc of 1 and truncation of 3 the
+            distribution is truncated at -2 and +4.
         dtype:
 
     Returns:
@@ -194,13 +214,17 @@ def truncated_normal(*shape, loc=0., scale=1., truncation=3.):
 @_force_correct_shape
 @_add_kwarg_dtype(default=np.float64)
 def log_truncated_normal(*shape, loc=0., scale=.5, truncation=3.):
-    """
+    """exp(.) of truncated-normal distributed random variables
 
     Args:
         *shape:
         loc:
         scale:
-        truncation:
+        truncation: max deviation from loc beyond which the normal distribution
+            (in log domain) is truncated. E.g., with a loc of 1 and truncation
+            of 3 the normal distribution (in log-domain) is truncated at -2
+            and +4 and hence the log-normal distribution is truncated at
+            exp(-2) and exp(+4).
         dtype:
 
     Returns:
@@ -227,7 +251,10 @@ def truncated_exponential(*shape, loc=0., scale=1., truncation=3.):
         *shape:
         loc:
         scale:
-        truncation:
+        truncation: max deviation from loc beyond which the distribution
+            is truncated. E.g., with a loc of 1  and truncation of 3 the
+            distribution is truncated at +4.
+        dtype:
 
     Returns:
 
