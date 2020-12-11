@@ -48,14 +48,17 @@ def _force_correct_shape(shape):
 class _Sampler:
     dtype: type = np.float64
 
-    def _sample(self, *shape):
+    def __post_init__(self):
+        assert self.dtype in (np.float32, np.float64, np.complex64, np.complex128), self.dtype
+
+    def _sample(self, shape):
         raise NotImplementedError
 
     def __call__(self, *shape):
         shape = _force_correct_shape(shape)
 
         def _f(dtype_local):
-            return np.array(self._sample(*shape), dtype=dtype_local)
+            return np.array(self._sample(shape), dtype=dtype_local)
 
         if self.dtype in (np.float32, np.float64):
             return _f(self.dtype)
@@ -72,14 +75,18 @@ class Uniform(_Sampler):
     low: float = 0.
     high: float = 1.
 
-    def _sample(self, *shape):
+    def __post_init__(self):
+        super().__post_init__()
+        assert self.low < self.high, (self.low, self.high)
+
+    def _sample(self, shape):
         return np.random.uniform(low=self.low, high=self.high, size=shape)
 
 
 @dataclasses.dataclass
 class LogUniform(Uniform):
-    def _sample(self, *shape):
-        return np.exp(super()._sample(*shape))
+    def _sample(self, shape):
+        return np.exp(super()._sample(shape))
 
 
 @dataclasses.dataclass
@@ -87,7 +94,11 @@ class Normal(_Sampler):
     loc: float = 0.
     scale: float = 1.
 
-    def _sample(self, *shape):
+    def __post_init__(self):
+        super().__post_init__()
+        assert self.scale > 0, self.scale
+
+    def _sample(self, shape):
         return self.scale * np.random.randn(*shape) + self.loc
 
 
@@ -95,7 +106,7 @@ class Normal(_Sampler):
 class TruncatedNormal(Normal):
     truncation: float = 3.
 
-    def _sample(self, *shape):
+    def _sample(self, shape):
         return truncnorm(
             -self.truncation / self.scale,
             self.truncation / self.scale, self.loc,
@@ -105,8 +116,8 @@ class TruncatedNormal(Normal):
 
 @dataclasses.dataclass
 class LogTruncatedNormal(TruncatedNormal):
-    def _sample(self, *shape):
-        return np.exp(super()._sample(*shape))
+    def _sample(self, shape):
+        return np.exp(super()._sample(shape))
 
 
 @dataclasses.dataclass
@@ -116,7 +127,11 @@ class TruncatedExponential(_Sampler):
     truncation: float = 3.
     dtype: type = np.float64
 
-    def _sample(self, *shape):
+    def __post_init__(self):
+        super().__post_init__()
+        assert self.scale > 0, self.scale
+
+    def _sample(self, shape):
         return truncexpon(self.truncation / self.scale, self.loc, self.scale).rvs(shape)
 
 
@@ -142,6 +157,16 @@ def uniform(*shape, low=0., high=1., dtype=np.float64):
     >>> x = uniform(2, 3, dtype=np.complex128)
     >>> x.shape, x.dtype
     ((2, 3), dtype('complex128'))
+    >>> x = uniform(2, 3, dtype=np.int64)
+    Traceback (most recent call last):
+        ...
+        assert self.dtype in (np.float32, np.float64, np.complex64, np.complex128), self.dtype
+    AssertionError: <class 'numpy.int64'>
+    >>> x = uniform(2, 3, low=2.)
+    Traceback (most recent call last):
+        ...
+        assert self.low < self.high, (self.low, self.high)
+    AssertionError: (2.0, 1.0)
     """
     return Uniform(low=low, high=high, dtype=dtype)(*shape)
 
@@ -166,6 +191,16 @@ def log_uniform(*shape, low=0., high=1., dtype=np.float64):
     >>> x = log_uniform(2, 3, dtype=np.complex128)
     >>> x.shape, x.dtype
     ((2, 3), dtype('complex128'))
+    >>> x = log_uniform(2, 3, dtype=np.int64)
+    Traceback (most recent call last):
+        ...
+        assert self.dtype in (np.float32, np.float64, np.complex64, np.complex128), self.dtype
+    AssertionError: <class 'numpy.int64'>
+    >>> x = log_uniform(2, 3, low=2.)
+    Traceback (most recent call last):
+        ...
+        assert self.low < self.high, (self.low, self.high)
+    AssertionError: (2.0, 1.0)
     """
     return LogUniform(low=low, high=high, dtype=dtype)(*shape)
 
@@ -188,6 +223,11 @@ def randn(*shape, dtype=np.float64):
     >>> x = randn(2, 3, dtype=np.complex128)
     >>> x.shape, x.dtype
     ((2, 3), dtype('complex128'))
+    >>> x = randn(2, 3, dtype=np.int64)
+    Traceback (most recent call last):
+        ...
+        assert self.dtype in (np.float32, np.float64, np.complex64, np.complex128), self.dtype
+    AssertionError: <class 'numpy.int64'>
     """
     return Normal(dtype=dtype)(*shape)
 
@@ -203,15 +243,25 @@ def normal(*shape, loc=0., scale=1., dtype=np.float64):
 
     Returns:
 
-    >>> x = randn()
+    >>> x = normal()
     >>> x.ndim
     0
-    >>> x = randn(2, 3)
+    >>> x = normal(2, 3)
     >>> x.shape, x.dtype
     ((2, 3), dtype('float64'))
-    >>> x = randn(2, 3, dtype=np.complex128)
+    >>> x = normal(2, 3, dtype=np.complex128)
     >>> x.shape, x.dtype
     ((2, 3), dtype('complex128'))
+    >>> x = normal(2, 3, dtype=np.int64)
+    Traceback (most recent call last):
+        ...
+        assert self.dtype in (np.float32, np.float64, np.complex64, np.complex128), self.dtype
+    AssertionError: <class 'numpy.int64'>
+    >>> x = normal(2, 3, scale=-1)
+    Traceback (most recent call last):
+        ...
+        assert self.scale > 0, self.scale
+    AssertionError: -1
 
     """
     return Normal(loc=loc, scale=scale, dtype=dtype)(*shape)
@@ -240,6 +290,17 @@ def truncated_normal(*shape, loc=0., scale=1., truncation=3., dtype=np.float64):
     >>> x = truncated_normal(2, 3, dtype=np.complex128)
     >>> x.shape, x.dtype
     ((2, 3), dtype('complex128'))
+    >>> x = truncated_normal(2, 3, dtype=np.int64)
+    Traceback (most recent call last):
+        ...
+        assert self.dtype in (np.float32, np.float64, np.complex64, np.complex128), self.dtype
+    AssertionError: <class 'numpy.int64'>
+    >>> x = truncated_normal(2, 3, scale=-1)
+    Traceback (most recent call last):
+        ...
+        assert self.scale > 0, self.scale
+    AssertionError: -1
+
     """
     return TruncatedNormal(loc=loc, scale=scale, truncation=truncation, dtype=dtype)(*shape)
 
@@ -269,6 +330,17 @@ def log_truncated_normal(*shape, loc=0., scale=.5, truncation=3., dtype=np.float
     >>> x = log_truncated_normal(2, 3, dtype=np.complex128)
     >>> x.shape, x.dtype
     ((2, 3), dtype('complex128'))
+    >>> x = log_truncated_normal(2, 3, dtype=np.int64)
+    Traceback (most recent call last):
+        ...
+        assert self.dtype in (np.float32, np.float64, np.complex64, np.complex128), self.dtype
+    AssertionError: <class 'numpy.int64'>
+    >>> x = log_truncated_normal(2, 3, scale=-1)
+    Traceback (most recent call last):
+        ...
+        assert self.scale > 0, self.scale
+    AssertionError: -1
+
     """
     return LogTruncatedNormal(loc=loc, scale=scale, truncation=truncation, dtype=dtype)(*shape)
 
@@ -296,6 +368,17 @@ def truncated_exponential(*shape, loc=0., scale=1., truncation=3., dtype=np.floa
     >>> x = truncated_exponential(2, 3, dtype=np.complex128)
     >>> x.shape, x.dtype
     ((2, 3), dtype('complex128'))
+    >>> x = truncated_exponential(2, 3, dtype=np.int64)
+    Traceback (most recent call last):
+        ...
+        assert self.dtype in (np.float32, np.float64, np.complex64, np.complex128), self.dtype
+    AssertionError: <class 'numpy.int64'>
+    >>> x = truncated_exponential(2, 3, scale=-1)
+    Traceback (most recent call last):
+        ...
+        assert self.scale > 0, self.scale
+    AssertionError: -1
+
     """
     return TruncatedExponential(loc=loc, scale=scale, truncation=truncation, dtype=dtype)(*shape)
 
