@@ -92,7 +92,7 @@ class MelTransform:
             x = x @ self.fbanks
         else:
             independent_axis = [ax if ax >= 0 else x.ndim+ax for ax in self.independent_axis]
-            assert all([ax < x.ndim-1 for ax in independent_axis])
+            assert all([0 <= ax < x.ndim-1 for ax in independent_axis]), self.independent_axis
             size = [
                 x.shape[i] if i in independent_axis else 1
                 for i in range(x.ndim-1)
@@ -106,8 +106,9 @@ class MelTransform:
                 warping_fn=self.warping_fn,
                 size=size,
             ).astype(np.float32)
-            fbanks = fbanks / (fbanks.sum(axis=-1, keepdims=True) + 1e-6)
+            fbanks = fbanks / (fbanks.sum(axis=-1, keepdims=True) + self.eps)
             fbanks = fbanks.swapaxes(-2, -1)
+            # The following is the same as `np.einsum('...F,...FN->...N', x, fbanks)`, but much faster (see https://github.com/fgnt/paderbox/pull/35).
             if fbanks.shape[-3] == 1:
                 x = x @ fbanks.squeeze(-3)
             else:
