@@ -41,6 +41,8 @@ class MelTransform:
             log: apply log to mel spectrogram
             eps:
             warping_fn: function to (randomly) remap fbank center frequencies
+            independent_axis: independent axis for which independently warped
+                filter banks are used.
 
         >>> mel_transform = MelTransform(16000, 512, 40)
         >>> spec = np.zeros((3, 1, 100, 257))
