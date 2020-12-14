@@ -30,8 +30,7 @@ class MelTransform:
             warping_fn=None,
             independent_axis=(0,),
     ):
-        """
-        Transforms linear spectrogram to (log) mel spectrogram.
+        """Transforms linear spectrogram to (log) mel spectrogram.
 
         Args:
             number_of_filters: number of filters to be applied
@@ -268,7 +267,7 @@ def hz2bin(frequency, sample_rate, stft_size):
 def hz_warping(
         frequency, warp_factor, boundary_frequency_ratio, highest_frequency
 ):
-    """Performs piece wise linear warping of frequencies [Hz].
+    """Performs piece wise linear warping of frequencies in Hz.
     http://www.cs.toronto.edu/~ndjaitly/jaitly-icml13.pdf
 
     Args:
@@ -415,8 +414,7 @@ def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
           number_of_filters=23, stft_size=512, lowest_frequency=0,
           highest_frequency=None, preemphasis_factor=0.97,
           window=scipy.signal.windows.hamming, denoise=False):
-    """
-    Compute Mel-filterbank energy features from an audio signal.
+    """Compute Mel-filterbank energy features from an audio signal.
 
     Source: https://github.com/jameslyons/python_speech_features
     Tutorial: http://www.practicalcryptography.com/miscellaneous/machine-learning/guide-mel-frequency-cepstral-coefficients-mfccs/ # noqa
