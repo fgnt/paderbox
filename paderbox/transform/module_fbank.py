@@ -11,6 +11,7 @@ import scipy.signal
 from paderbox.transform.module_filter import preemphasis_with_offset_compensation
 from paderbox.transform.module_stft import stft
 from paderbox.transform.module_stft import stft_to_spectrogram
+import dataclasses
 
 
 # pylint: disable=too-many-arguments,line-too-long
@@ -27,7 +28,7 @@ class MelTransform:
             eps: float = 1e-18,
             *,
             warping_fn=None,
-            independent_axis=0,
+            independent_axis=(0,),
     ):
         """
         Transforms linear spectrogram to (log) mel spectrogram.
@@ -44,7 +45,9 @@ class MelTransform:
             independent_axis: independent axis for which independently warped
                 filter banks are used.
 
-        >>> mel_transform = MelTransform(16000, 512, 40)
+        >>> sample_rate = 16000
+        >>> highest_frequency = sample_rate/2
+        >>> mel_transform = MelTransform(sample_rate, 512, 40, highest_frequency=highest_frequency)
         >>> spec = np.zeros((3, 1, 100, 257))
         >>> logmelspec = mel_transform(spec)
         >>> logmelspec.shape
@@ -53,8 +56,12 @@ class MelTransform:
         >>> rec.shape
         (3, 1, 100, 257)
         >>> from paderbox.utils.random_utils import Uniform
-        >>> warping_fn = HzWarping(alpha_sampling_fn=Uniform(low=.9, high=1.1), fhi_ratio_sampling_fn=Uniform(low=.6,high=.7))
-        >>> mel_transform = MelTransform(16000, 512, 40, warping_fn=warping_fn)
+        >>> warping_fn = HzWarping(\
+                warp_factor_sampling_fn=Uniform(low=.9, high=1.1),\
+                boundary_frequency_ratio_sampling_fn=Uniform(low=.6,high=.7),\
+                highest_frequency=highest_frequency,\
+            )
+        >>> mel_transform = MelTransform(sample_rate, 512, 40, warping_fn=warping_fn)
         >>> mel_transform(spec).shape
         (3, 1, 100, 40)
         >>> mel_transform = MelTransform(16000, 512, 40, warping_fn=warping_fn, independent_axis=(0,1,2))
@@ -69,7 +76,10 @@ class MelTransform:
         self.log = log
         self.eps = eps
         self.warping_fn = warping_fn
-        self.independent_axis = [independent_axis] if np.isscalar(independent_axis) else independent_axis
+        self.independent_axis = tuple(
+            [independent_axis] if np.isscalar(independent_axis)
+            else independent_axis
+        )
 
     @cached_property
     def fbanks(self):
@@ -142,13 +152,15 @@ def get_fbanks(
         warping_fn: optional function to warp the filter center frequencies,
             e.g., VTLP (https://www.cs.utoronto.ca/~hinton/absps/perturb.pdf)
         size: size of independent dims in front of filter bank dims, E.g., for
-            size=(2,3) returned filterbanks have shape (*size, number_of_filters, fft_length//2+1).
+            size=(2,3) returned filterbanks have shape (*size, number_of_filters, stft_size//2+1).
             This is required when different warping is to be applied for
             different independent axis.
 
     Returns:
 
-    >>> fbanks = get_fbanks(8000, 32, 10)
+    >>> sample_rate = 8000
+    >>> highest_frequency = sample_rate / 2
+    >>> fbanks = get_fbanks(sample_rate, 32, 10)
     >>> fbanks[[0,-1]]
     array([[0.47080041, 0.52919959, 0.        , 0.        , 0.        ,
             0.        , 0.        , 0.        , 0.        , 0.        ,
@@ -158,14 +170,16 @@ def get_fbanks(
             0.        , 0.        , 0.        , 0.        , 0.        ,
             0.        , 0.1996357 , 0.59750853, 0.99538136, 0.66925631,
             0.33462816, 0.        ]])
-    >>> get_fbanks(8000, 32, 10, warping_fn=HzWarping(\
-            alpha_sampling_fn=lambda size: 0.9+0.2*np.random.rand(*size),\
-            fhi_ratio_sampling_fn=lambda n: 0.7,\
+    >>> get_fbanks(sample_rate, 32, 10, warping_fn=HzWarping(\
+            warp_factor_sampling_fn=lambda size: 0.9+0.2*np.random.rand(*size),\
+            boundary_frequency_ratio_sampling_fn=lambda n: 0.7,\
+            highest_frequency=highest_frequency,\
         )).shape
     (10, 17)
-    >>> get_fbanks(8000, 32, 10, size=(2,3), warping_fn=HzWarping(\
-            alpha_sampling_fn=lambda size: 0.9+0.2*np.random.rand(*size),\
-            fhi_ratio_sampling_fn=lambda n: 0.7,\
+    >>> get_fbanks(sample_rate/2, 32, 10, size=(2,3), warping_fn=HzWarping(\
+            warp_factor_sampling_fn=lambda size: 0.9+0.2*np.random.rand(*size),\
+            boundary_frequency_ratio_sampling_fn=lambda n: 0.7,\
+            highest_frequency=highest_frequency,\
         )).shape
     (2, 3, 10, 17)
 
@@ -177,7 +191,7 @@ def get_fbanks(
         hz2mel(lowest_frequency), hz2mel(highest_frequency), number_of_filters + 2
     ))
     if warping_fn is not None:
-        f = warping_fn(f, size=size, max_frequency=sample_rate/2)
+        f = warping_fn(f, size=size)
     k = hz2bin(f, sample_rate, stft_size)
     centers = k[..., 1:-1, None]
     onsets = np.minimum(k[..., :-2, None], centers - 1)
@@ -221,46 +235,48 @@ def mel2hz(frequency):
     return 700 * (10 ** (frequency / 2595.0) - 1)
 
 
-def bin2hz(fft_bin_index, sample_rate, fft_length):
+def bin2hz(fft_bin_index, sample_rate, stft_size):
     """Convert a fft bin to Hz
 
     Args:
         fft_bin_index: fft bin index. This can also be a numpy array,
             conversion proceeds element-wise.
         sample_rate:
-        fft_length:
+        stft_size:
 
     Returns:
 
     """
-    return sample_rate * fft_bin_index / fft_length
+    return sample_rate * fft_bin_index / stft_size
 
 
-def hz2bin(frequency, sample_rate, fft_length):
+def hz2bin(frequency, sample_rate, stft_size):
     """Convert Hz to fft bin idx (soft, i.e. return value is a float not an int)
 
     Args:
         frequency: a value in Hz. This can also be a numpy array, conversion
             proceeds element-wise.
         sample_rate:
-        fft_length:
+        stft_size:
 
     Returns:
 
     """
-    return frequency * fft_length / sample_rate
+    return frequency * stft_size / sample_rate
 
 
-def hz_warping(frequency, alpha, fhi_ratio, max_frequency=None):
+def hz_warping(
+        frequency, warp_factor, boundary_frequency_ratio, highest_frequency
+):
     """Performs piece wise linear warping of frequencies [Hz].
     http://www.cs.toronto.edu/~ndjaitly/jaitly-icml13.pdf
 
     Args:
         frequency: frequency vector in Hz
-        alpha: scalar or array of alphas
-        fhi_ratio: scalar or array of ratios \in [0,1] such that
-            fhi = fhi_ratio * sample_rate/2
-        max_frequency:
+        warp_factor: scalar or array of warp_factors
+        boundary_frequency_ratio: scalar or array of ratios \in [0,1] such that
+            boundary_frequency = boundary_frequency_ratio * sample_rate/2
+        highest_frequency:
 
     Returns:
 
@@ -268,18 +284,17 @@ def hz_warping(frequency, alpha, fhi_ratio, max_frequency=None):
     >>> lowest_frequency = 0
     >>> highest_frequency = sample_rate/2
     >>> number_of_filters = 10
-    >>> alpha_max = 1.2
     >>> frequency = mel2hz(np.linspace(hz2mel(lowest_frequency), hz2mel(highest_frequency), number_of_filters+2))
     >>> frequency
     array([   0.        ,  180.21928115,  406.83711843,  691.7991039 ,
            1050.12629534, 1500.70701371, 2067.29249375, 2779.74887082,
            3675.63149949, 4802.16459006, 6218.73051459, 8000.        ])
-    >>> f_warped = hz_warping(frequency, alpha=1.1, fhi_ratio=.6)
+    >>> f_warped = hz_warping(frequency, warp_factor=1.1, boundary_frequency_ratio=.6, highest_frequency=highest_frequency)
     >>> f_warped
     array([   0.        ,  198.24120926,  447.52083027,  760.97901429,
            1155.13892487, 1650.77771509, 2274.02174313, 3057.7237579 ,
            4043.19464944, 5185.90483925, 6432.48285284, 8000.        ])
-    >>> f_warped = hz_warping(frequency, alpha=[.9, 1.1], fhi_ratio=.6)
+    >>> f_warped = hz_warping(frequency, warp_factor=[.9, 1.1], boundary_frequency_ratio=.6, highest_frequency=highest_frequency)
     >>> f_warped
     array([[   0.        ,  162.19735303,  366.15340659,  622.61919351,
              945.11366581, 1350.63631234, 1860.56324438, 2501.77398374,
@@ -294,56 +309,62 @@ def hz_warping(frequency, alpha, fhi_ratio, max_frequency=None):
            [       nan, 1.1       , 1.1       , 1.1       , 1.1       ,
             1.1       , 1.1       , 1.1       , 1.1       , 1.07990985,
             1.03437234, 1.        ]])
-    >>> hz_warping(frequency, alpha=[[.9], [1.1]], fhi_ratio=.75).shape
+    >>> hz_warping(frequency, warp_factor=[[.9], [1.1]], boundary_frequency_ratio=.75, highest_frequency=highest_frequency).shape
     (2, 1, 12)
     """
-    if max_frequency is None:
-        max_frequency = frequency[-1]
-    assert (np.max(frequency) - max_frequency) < 1e-6, (np.max(frequency), max_frequency)
-    alpha = np.array(alpha)
-    fhi = np.array(fhi_ratio * max_frequency)
-    breakpoints = fhi * np.minimum(alpha, 1) / alpha
+    assert (np.max(frequency) - highest_frequency) < 1e-6, (
+        np.max(frequency), highest_frequency
+    )
+    warp_factor = np.array(warp_factor)
+    boundary_frequency = np.array(boundary_frequency_ratio) * highest_frequency
+    breakpoints = boundary_frequency * np.minimum(warp_factor, 1) / warp_factor
 
     if breakpoints.ndim == 0:
         breakpoints = np.array(breakpoints)
-    breakpoints[(breakpoints > max_frequency) + ((alpha * breakpoints) > max_frequency)] = max_frequency
-    bp_value = alpha * breakpoints
+    breakpoints[
+        (breakpoints > highest_frequency)
+        + ((warp_factor * breakpoints) > highest_frequency)
+    ] = highest_frequency
+    bp_value = warp_factor * breakpoints
 
     frequency, breakpoints, bp_value = np.broadcast_arrays(
         frequency, breakpoints[..., None], bp_value[..., None]
     )
-    f_warped = alpha[..., None] * frequency
+    f_warped = warp_factor[..., None] * frequency
     idx = frequency > breakpoints
     f_warped[idx] = (
-            max_frequency
+            highest_frequency
             + (
-                    (frequency[idx] - max_frequency)
-                    * (max_frequency - bp_value[idx]) / (max_frequency - breakpoints[idx])
+                    (frequency[idx] - highest_frequency)
+                    * (highest_frequency - bp_value[idx]) / (highest_frequency - breakpoints[idx])
         )
     )
     return f_warped
 
 
-def mel_warping(frequency, alpha, fhi_ratio, max_frequency=None):
+def mel_warping(
+        frequency, warp_factor, boundary_frequency_ratio, highest_frequency
+):
     """Transforms frequency to Mel domain and performs piecewise linear warping
     there. Finally transforms warped frequency back to Hz.
 
     Args:
         frequency:
-        alpha:
-        fhi_ratio:
-        max_frequency:
+        warp_factor:
+        boundary_frequency_ratio:
+        highest_frequency:
 
     Returns:
 
     """
     frequency = hz2mel(frequency)
-    if max_frequency is not None:
-        max_frequency = hz2mel(max_frequency)
-    frequency = hz_warping(frequency, alpha, fhi_ratio, max_frequency)
+    if highest_frequency is not None:
+        highest_frequency = hz2mel(highest_frequency)
+    frequency = hz_warping(frequency, warp_factor, boundary_frequency_ratio, highest_frequency)
     return mel2hz(frequency)
 
 
+@dataclasses.dataclass
 class HzWarping:
     """
     >>> sample_rate = 16000
@@ -352,7 +373,11 @@ class HzWarping:
     >>> number_of_filters = 10
     >>> f = mel2hz(np.linspace(hz2mel(lowest_frequency), hz2mel(highest_frequency), number_of_filters+2))
     >>> from paderbox.utils.random_utils import Uniform
-    >>> warping_fn = HzWarping(alpha_sampling_fn=Uniform(low=.9, high=1.1), fhi_ratio_sampling_fn=Uniform(low=.6,high=.7))
+    >>> warping_fn = HzWarping(\
+            warp_factor_sampling_fn=Uniform(low=.9, high=1.1),\
+            boundary_frequency_ratio_sampling_fn=Uniform(low=.6,high=.7),\
+            highest_frequency=highest_frequency,\
+        )
     >>> np.random.seed(0)
     >>> warping_fn(f)/f
     array([      nan, 1.0097627, 1.0097627, 1.0097627, 1.0097627, 1.0097627,
@@ -363,26 +388,26 @@ class HzWarping:
            0.9834044 , 0.9834044 , 0.9834044 , 0.9834044 , 0.9834044 ,
            0.99025952, 1.        ])
     """
-    def __init__(self, alpha_sampling_fn, fhi_ratio_sampling_fn):
-        self.alpha_sampling_fn = alpha_sampling_fn
-        self.fhi_ratio_sampling_fn = fhi_ratio_sampling_fn
+    warp_factor_sampling_fn: callable
+    boundary_frequency_ratio_sampling_fn: callable
+    highest_frequency: float
 
-    def __call__(self, frequency, size=(), max_frequency=None):
+    def __call__(self, frequency, size=()):
         return hz_warping(
             frequency,
-            alpha=self.alpha_sampling_fn(size),
-            fhi_ratio=self.fhi_ratio_sampling_fn(size),
-            max_frequency=max_frequency,
+            warp_factor=self.warp_factor_sampling_fn(size),
+            boundary_frequency_ratio=self.boundary_frequency_ratio_sampling_fn(size),
+            highest_frequency=self.highest_frequency,
         )
 
 
 class MelWarping(HzWarping):
-    def __call__(self, frequency, size=(), max_frequency=None):
+    def __call__(self, frequency, size=()):
         return mel_warping(
             frequency,
-            alpha=self.alpha_sampling_fn(size),
-            fhi_ratio=self.fhi_ratio_sampling_fn(size),
-            max_frequency=max_frequency,
+            warp_factor=self.warp_factor_sampling_fn(size),
+            boundary_frequency_ratio=self.boundary_frequency_ratio_sampling_fn(size),
+            highest_frequency=self.highest_frequency,
         )
 
 
