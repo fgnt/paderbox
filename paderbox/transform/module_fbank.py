@@ -273,8 +273,15 @@ def hz_warping(
     Args:
         frequency: frequency vector in Hz
         warp_factor: scalar or array of warp_factors
-        boundary_frequency_ratio: scalar or array of ratios \in [0,1] such that
-            boundary_frequency = boundary_frequency_ratio * sample_rate/2
+        boundary_frequency_ratio: scalar or array of ratios such that
+            boundary_frequency = boundary_frequency_ratio * sample_rate/2.
+            Ratios have to be > 0.0 . If it is >= 1. the whole spectrogram is
+            stretched or squeezed, i.e., a simple linear warping (not piecewise)
+            is performed with warping(highest_frequency) != highest_frequency.
+            Note that when used for VTLP with boundary_frequency_ratio > 1 and
+            warp_factor > 1 frequencies may be mapped to frequencies beyond
+            sample_rate / 2 (highest frequency in the stft) which would yield
+            zeros in the mel frequency bands concerned.
         highest_frequency:
 
     Returns:
@@ -310,12 +317,26 @@ def hz_warping(
             1.03437234, 1.        ]])
     >>> hz_warping(frequency, warp_factor=[[.9], [1.1]], boundary_frequency_ratio=.75, highest_frequency=highest_frequency).shape
     (2, 1, 12)
+    >>> f_warped = hz_warping(4000, warp_factor=[[.9], [1.1]], boundary_frequency_ratio=.75, highest_frequency=highest_frequency)
+    >>> f_warped, f_warped.shape
+    (array([[3600.],
+           [4400.]]), (2, 1))
+    >>> f_warped = hz_warping(4000, warp_factor=.9, boundary_frequency_ratio=.75, highest_frequency=highest_frequency)
+    >>> f_warped, f_warped.shape
+    (3600.0, ())
+    >>> f_warped = hz_warping(8000, warp_factor=.9, boundary_frequency_ratio=[.75, 1.], highest_frequency=highest_frequency)
+    >>> f_warped, f_warped.shape
+    (array([8000., 7200.]), (2,))
     """
-    assert (np.max(frequency) - highest_frequency) < 1e-6, (
-        np.max(frequency), highest_frequency
+    frequency = np.array(frequency)
+    assert (0 <= frequency).all() and (frequency <= (highest_frequency + 1e-6)).all(), (
+        np.min(frequency), np.max(frequency), highest_frequency
     )
     warp_factor = np.array(warp_factor)
-    boundary_frequency = np.array(boundary_frequency_ratio) * highest_frequency
+    assert (warp_factor > 0).all(), warp_factor
+    boundary_frequency_ratio = np.array(boundary_frequency_ratio)
+    assert (boundary_frequency_ratio > 0).all(), warp_factor
+    boundary_frequency = boundary_frequency_ratio * highest_frequency
     breakpoints = boundary_frequency * np.minimum(warp_factor, 1) / warp_factor
 
     if breakpoints.ndim == 0:
@@ -326,17 +347,25 @@ def hz_warping(
     ] = highest_frequency
     bp_value = warp_factor * breakpoints
 
+    for _ in range(frequency.ndim):
+        warp_factor = warp_factor[..., None]
+        breakpoints = breakpoints[..., None]
+        bp_value = bp_value[..., None]
     frequency, breakpoints, bp_value = np.broadcast_arrays(
-        frequency, breakpoints[..., None], bp_value[..., None]
+        frequency, breakpoints, bp_value
     )
-    f_warped = warp_factor[..., None] * frequency
-    idx = frequency > breakpoints
-    f_warped[idx] = (
-            highest_frequency
+    f_warped_first_piece = warp_factor * frequency
+    f_warped_second_piece = (
+            bp_value
             + (
-                    (frequency[idx] - highest_frequency)
-                    * (highest_frequency - bp_value[idx]) / (highest_frequency - breakpoints[idx])
-        )
+                    (frequency - breakpoints)  # <= 0
+                    * (highest_frequency - bp_value)
+                    / np.maximum(highest_frequency - breakpoints, 1e-18)  # breakpoints <= highest_frequency
+            )
+    )
+    f_warped = (
+        np.minimum(f_warped_first_piece, f_warped_second_piece) * (warp_factor >= 1.)
+        + np.maximum(f_warped_first_piece, f_warped_second_piece) * (warp_factor < 1.)
     )
     return f_warped
 
