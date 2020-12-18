@@ -2,7 +2,7 @@
 Provides fbank features and the fbank filterbank.
 """
 
-from typing import Optional, Union
+from typing import Optional, Union, Callable
 
 from cached_property import cached_property
 import numpy as np
@@ -27,8 +27,8 @@ class MelTransform:
             log: bool = True,
             eps: float = 1e-18,
             *,
-            warping_fn=None,
-            independent_axis=(0,),
+            warping_fn: Optional[Callable] = None,
+            independent_axis: tuple = (0,),
     ):
         """Transforms linear spectrogram to (log) mel spectrogram.
 
@@ -139,7 +139,7 @@ def get_fbanks(
         sample_rate: int, stft_size: int, number_of_filters: int,
         lowest_frequency: float = 0.,
         highest_frequency: Optional[float] = None,
-        warping_fn: Optional[callable] = None,
+        warping_fn: Optional[Callable] = None,
         size: tuple = ()
 ):
     """Computes mel filter banks
@@ -445,8 +445,8 @@ class HzWarping:
            0.9834044 , 0.9834044 , 0.9834044 , 0.9834044 , 0.9834044 ,
            0.99025952, 1.        ])
     """
-    warp_factor_sampling_fn: callable
-    boundary_frequency_ratio_sampling_fn: callable
+    warp_factor_sampling_fn: Callable
+    boundary_frequency_ratio_sampling_fn: Callable
     highest_frequency: float
 
     def __call__(self, frequency: Union[float, np.ndarray], size: tuple = ()):
@@ -478,7 +478,7 @@ def fbank(
         lowest_frequency: float = 0.,
         highest_frequency: Optional[float] = None,
         preemphasis_factor: float = 0.97,
-        window: callable = scipy.signal.windows.hamming,
+        window: Callable = scipy.signal.windows.hamming,
         denoise: bool = False
 ):
     """Compute Mel-filterbank energy features from an audio signal.
@@ -550,7 +550,7 @@ def logfbank(
         lowest_frequency: float = 0.,
         highest_frequency: Optional[float] = None,
         preemphasis_factor: float = 0.97,
-        window: callable = scipy.signal.windows.hamming,
+        window: Callable = scipy.signal.windows.hamming,
         denoise: bool = False,
         eps: float = 1e-18,
 ):
