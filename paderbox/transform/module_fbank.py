@@ -2,7 +2,7 @@
 Provides fbank features and the fbank filterbank.
 """
 
-from typing import Optional
+from typing import Optional, Union
 
 from cached_property import cached_property
 import numpy as np
@@ -22,8 +22,8 @@ class MelTransform:
             sample_rate: int,
             stft_size: int,
             number_of_filters: int,
-            lowest_frequency: Optional[int] = 50,
-            highest_frequency: Optional[int] = None,
+            lowest_frequency: Optional[float] = 50,
+            highest_frequency: Optional[float] = None,
             log: bool = True,
             eps: float = 1e-18,
             *,
@@ -98,7 +98,7 @@ class MelTransform:
         """Create (pseudo)-inverse of filterbank matrix."""
         return np.linalg.pinv(self.fbanks.T).T
 
-    def __call__(self, x):
+    def __call__(self, x: np.ndarray):
         if self.warping_fn is None:
             x = x @ self.fbanks
         else:
@@ -115,7 +115,7 @@ class MelTransform:
                 lowest_frequency=self.lowest_frequency,
                 highest_frequency=self.highest_frequency,
                 warping_fn=self.warping_fn,
-                size=size,
+                size=tuple(size),
             ).astype(np.float32)
             fbanks = fbanks / (fbanks.sum(axis=-1, keepdims=True) + self.eps)
             fbanks = fbanks.swapaxes(-2, -1)
@@ -128,7 +128,7 @@ class MelTransform:
             x = np.log(x + self.eps)
         return x
 
-    def inverse(self, x):
+    def inverse(self, x: np.ndarray):
         """Invert the mel-filterbank transform."""
         if self.log:
             x = np.exp(x)
@@ -136,9 +136,11 @@ class MelTransform:
 
 
 def get_fbanks(
-        sample_rate, stft_size, number_of_filters,
-        lowest_frequency=0., highest_frequency=None,
-        warping_fn=None, size=()
+        sample_rate: int, stft_size: int, number_of_filters: int,
+        lowest_frequency: float = 0.,
+        highest_frequency: Optional[float] = None,
+        warping_fn: Optional[callable] = None,
+        size: tuple = ()
 ):
     """Computes mel filter banks
 
@@ -175,7 +177,7 @@ def get_fbanks(
             highest_frequency=highest_frequency,\
         )).shape
     (10, 17)
-    >>> get_fbanks(sample_rate/2, 32, 10, size=(2,3), warping_fn=HzWarping(\
+    >>> get_fbanks(sample_rate, 32, 10, size=(2,3), warping_fn=HzWarping(\
             warp_factor_sampling_fn=lambda size: 0.9+0.2*np.random.rand(*size),\
             boundary_frequency_ratio_sampling_fn=lambda n: 0.7,\
             highest_frequency=highest_frequency,\
@@ -206,12 +208,12 @@ def get_fbanks(
     return np.broadcast_to(fbanks, (*size, *fbanks.shape[-2:]))
 
 
-def hz2mel(frequency):
-    """Convert a value in Hertz to Mel
+def hz2mel(frequency: Union[float, np.ndarray]):
+    """Convert frequencies in Hertz to Mel
 
     Args:
-        frequency: a value in Hz. This can also be a numpy array, conversion proceeds
-            element-wise.
+        frequency: a value in Hz. This can also be a numpy array, conversion
+            proceeds element-wise.
 
     Returns: a value in Mels. If an array was passed in, an identical sized
         array is returned.
@@ -220,8 +222,8 @@ def hz2mel(frequency):
     return 2595 * np.log10(1 + frequency / 700.0)
 
 
-def mel2hz(frequency):
-    """Convert a value in Mel to Hertz
+def mel2hz(frequency: Union[float, np.ndarray]):
+    """Convert frequencies in Mel to Hertz
 
     Args:
         frequency: a value in Mels. This can also be a numpy array, conversion
@@ -234,8 +236,11 @@ def mel2hz(frequency):
     return 700 * (10 ** (frequency / 2595.0) - 1)
 
 
-def bin2hz(fft_bin_index, sample_rate, stft_size):
-    """Convert a fft bin to Hz
+def bin2hz(
+        fft_bin_index: Union[int, np.ndarray],
+        sample_rate: int, stft_size: int
+):
+    """Convert fft bin indices to frequencies in Hz
 
     Args:
         fft_bin_index: fft bin index. This can also be a numpy array,
@@ -249,8 +254,12 @@ def bin2hz(fft_bin_index, sample_rate, stft_size):
     return sample_rate * fft_bin_index / stft_size
 
 
-def hz2bin(frequency, sample_rate, stft_size):
-    """Convert Hz to fft bin idx (soft, i.e. return value is a float not an int)
+def hz2bin(
+        frequency: Union[float, np.ndarray],
+        sample_rate: int,
+        stft_size: int
+):
+    """Convert frequencies in Hz to fft bin indices (soft, i.e. return value is a float not an int)
 
     Args:
         frequency: a value in Hz. This can also be a numpy array, conversion
@@ -265,13 +274,16 @@ def hz2bin(frequency, sample_rate, stft_size):
 
 
 def hz_warping(
-        frequency, warp_factor, boundary_frequency_ratio, highest_frequency
+        frequency: Union[float, np.ndarray],
+        warp_factor: Union[float, np.ndarray],
+        boundary_frequency_ratio: Union[float, np.ndarray],
+        highest_frequency: float
 ):
     """Performs piece wise linear warping of frequencies in Hz.
     http://www.cs.toronto.edu/~ndjaitly/jaitly-icml13.pdf
 
     Args:
-        frequency: frequency vector in Hz
+        frequency: frequency scalar or array in Hz
         warp_factor: scalar or array of warp_factors
         boundary_frequency_ratio: scalar or array of ratios such that
             boundary_frequency = boundary_frequency_ratio * sample_rate/2.
@@ -300,7 +312,8 @@ def hz_warping(
     array([   0.        ,  198.24120926,  447.52083027,  760.97901429,
            1155.13892487, 1650.77771509, 2274.02174313, 3057.7237579 ,
            4043.19464944, 5185.90483925, 6432.48285284, 8000.        ])
-    >>> f_warped = hz_warping(frequency, warp_factor=[.9, 1.1], boundary_frequency_ratio=.6, highest_frequency=highest_frequency)
+    >>> warp_factors = np.array([.9, 1.1])
+    >>> f_warped = hz_warping(frequency, warp_factor=warp_factors, boundary_frequency_ratio=.6, highest_frequency=highest_frequency)
     >>> f_warped
     array([[   0.        ,  162.19735303,  366.15340659,  622.61919351,
              945.11366581, 1350.63631234, 1860.56324438, 2501.77398374,
@@ -315,16 +328,29 @@ def hz_warping(
            [       nan, 1.1       , 1.1       , 1.1       , 1.1       ,
             1.1       , 1.1       , 1.1       , 1.1       , 1.07990985,
             1.03437234, 1.        ]])
-    >>> hz_warping(frequency, warp_factor=[[.9], [1.1]], boundary_frequency_ratio=.75, highest_frequency=highest_frequency).shape
+    >>> warp_factors = warp_factors[..., None]
+    >>> hz_warping(\
+        frequency, warp_factor=warp_factors, boundary_frequency_ratio=.75,\
+        highest_frequency=highest_frequency,\
+    ).shape
     (2, 1, 12)
-    >>> f_warped = hz_warping(4000, warp_factor=[[.9], [1.1]], boundary_frequency_ratio=.75, highest_frequency=highest_frequency)
+    >>> f_warped = hz_warping(\
+        4000, warp_factor=warp_factors, boundary_frequency_ratio=.75,\
+        highest_frequency=highest_frequency,\
+    )
     >>> f_warped, f_warped.shape
     (array([[3600.],
            [4400.]]), (2, 1))
-    >>> f_warped = hz_warping(4000, warp_factor=.9, boundary_frequency_ratio=.75, highest_frequency=highest_frequency)
+    >>> f_warped = hz_warping(\
+        4000, warp_factor=.9, boundary_frequency_ratio=.75,\
+        highest_frequency=highest_frequency,\
+    )
     >>> f_warped, f_warped.shape
     (3600.0, ())
-    >>> f_warped = hz_warping(8000, warp_factor=.9, boundary_frequency_ratio=[.75, 1.], highest_frequency=highest_frequency)
+    >>> f_warped = hz_warping(\
+        8000, warp_factor=.9, boundary_frequency_ratio=np.array([.75, 1.]),\
+        highest_frequency=highest_frequency,\
+    )
     >>> f_warped, f_warped.shape
     (array([8000., 7200.]), (2,))
     """
@@ -371,7 +397,10 @@ def hz_warping(
 
 
 def mel_warping(
-        frequency, warp_factor, boundary_frequency_ratio, highest_frequency
+        frequency: Union[float, np.ndarray],
+        warp_factor: Union[float, np.ndarray],
+        boundary_frequency_ratio: Union[float, np.ndarray],
+        highest_frequency: float
 ):
     """Transforms frequency to Mel domain and performs piecewise linear warping
     there. Finally transforms warped frequency back to Hz.
@@ -420,7 +449,7 @@ class HzWarping:
     boundary_frequency_ratio_sampling_fn: callable
     highest_frequency: float
 
-    def __call__(self, frequency, size=()):
+    def __call__(self, frequency: Union[float, np.ndarray], size: tuple = ()):
         return hz_warping(
             frequency,
             warp_factor=self.warp_factor_sampling_fn(size),
@@ -430,7 +459,7 @@ class HzWarping:
 
 
 class MelWarping(HzWarping):
-    def __call__(self, frequency, size=()):
+    def __call__(self, frequency: Union[float, np.ndarray], size: tuple = ()):
         return mel_warping(
             frequency,
             warp_factor=self.warp_factor_sampling_fn(size),
@@ -439,10 +468,19 @@ class MelWarping(HzWarping):
         )
 
 
-def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
-          number_of_filters=23, stft_size=512, lowest_frequency=0,
-          highest_frequency=None, preemphasis_factor=0.97,
-          window=scipy.signal.windows.hamming, denoise=False):
+def fbank(
+        time_signal: np.ndarray,
+        sample_rate: int = 16000,
+        window_length: int = 400,
+        stft_shift: int = 160,
+        number_of_filters: int = 23,
+        stft_size: int = 512,
+        lowest_frequency: float = 0.,
+        highest_frequency: Optional[float] = None,
+        preemphasis_factor: float = 0.97,
+        window: callable = scipy.signal.windows.hamming,
+        denoise: bool = False
+):
     """Compute Mel-filterbank energy features from an audio signal.
 
     Source: https://github.com/jameslyons/python_speech_features
@@ -502,10 +540,20 @@ def fbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
     return feature
 
 
-def logfbank(time_signal, sample_rate=16000, window_length=400, stft_shift=160,
-             number_of_filters=23, stft_size=512, lowest_frequency=0,
-             highest_frequency=None, preemphasis_factor=0.97,
-             window=scipy.signal.windows.hamming, denoise=False, eps=1e-18):
+def logfbank(
+        time_signal: np.ndarray,
+        sample_rate: int = 16000,
+        window_length: int = 400,
+        stft_shift: int = 160,
+        number_of_filters: int = 23,
+        stft_size: int = 512,
+        lowest_frequency: float = 0.,
+        highest_frequency: Optional[float] = None,
+        preemphasis_factor: float = 0.97,
+        window: callable = scipy.signal.windows.hamming,
+        denoise: bool = False,
+        eps: float = 1e-18,
+):
     """Generates log fbank features from time signal.
 
     Simply wraps fbank function. See parameters there.
