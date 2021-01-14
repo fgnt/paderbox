@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.stats import truncnorm, truncexpon
 import dataclasses
+from typing import Union
 
 __all__ = [
     'str_to_random_state',
@@ -46,9 +47,11 @@ def _force_correct_shape(shape):
 
 @dataclasses.dataclass
 class _Sampler:
-    dtype: type = np.float64
+    dtype: Union[type, str] = 'float64'
 
     def __post_init__(self):
+        if isinstance(self.dtype, str):
+            self.dtype = getattr(np, self.dtype)
         assert self.dtype in (np.float32, np.float64, np.complex64, np.complex128), self.dtype
 
     def _sample(self, shape):
@@ -125,7 +128,6 @@ class TruncatedExponential(_Sampler):
     loc: float = 0.
     scale: float = 1.
     truncation: float = 3.
-    dtype: type = np.float64
 
     def __post_init__(self):
         super().__post_init__()

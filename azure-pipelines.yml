@@ -68,6 +68,7 @@ steps:
 - script: |
     # Print cmd before executing
     trap 'echo -e "$ $BASH_COMMAND"' DEBUG
+    sudo apt-get update
     sudo apt-get install libsndfile1 sox
     python -m pip install --upgrade pip
     # pip install -r requirements.txt
