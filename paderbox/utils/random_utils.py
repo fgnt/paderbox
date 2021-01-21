@@ -23,19 +23,47 @@ __all__ = [
 ]
 
 
-def str_to_random_state(string):
+def str_to_seed(string: str, bits: int = 32) -> int:
     """
-    This functions outputs a consistent random state dependent on
-    an input string.
-    
-    >>> print(str_to_random_state(''))
-    RandomState(MT19937)
+    This functions outputs a consistent seed in the range (0, 2**bits - 1)
+    dependent on an input string.
+
+    >>> print(str_to_seed(''))
+    2018687061
     """
     import hashlib
     hash_value = hashlib.sha256(string.encode("utf-8"))
     hash_value = int(hash_value.hexdigest(), 16)
-    hash_value = hash_value % 2 ** 32
-    return np.random.RandomState(hash_value)
+    hash_value = hash_value % 2 ** bits
+    return hash_value
+
+
+def str_to_random_state(
+        string: str,
+        seed_bits: int = 32
+) -> np.random.RandomState:
+    """
+    This functions outputs a consistent random state (`np.random.RandomState`)
+    dependent on an input string.
+    
+    >>> print(str_to_random_state(''))
+    RandomState(MT19937)
+    """
+    return np.random.RandomState(str_to_seed(string, bits=seed_bits))
+
+
+def str_to_random_generator(
+        string: str,
+        seed_bits: int = 128
+) -> np.random.Generator:
+    """
+    This functions outputs a consistent random number generator
+    (`np.random.Generator`) dependent on an input string.
+
+    >>> print(str_to_random_generator(''))
+    Generator(PCG64)
+    """
+    return np.random.default_rng(str_to_seed(string, bits=seed_bits))
 
 
 def _force_correct_shape(shape):
