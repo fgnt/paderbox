@@ -26,7 +26,7 @@ __all__ = [
 def str_to_seed(string: str, bits: int = 32) -> int:
     """
     This functions outputs a consistent seed in the range (0, 2**bits - 1)
-    dependent on an input string.
+    dependent on an input string and the number of `bits`.
 
     >>> print(str_to_seed(''))
     2018687061
@@ -44,10 +44,16 @@ def str_to_random_state(
 ) -> 'np.random.RandomState':
     """
     This functions outputs a consistent random state (`np.random.RandomState`)
-    dependent on an input string.
+    dependent on an input string and the number of bits (`seed_bits`).
     
     >>> print(str_to_random_state(''))
     RandomState(MT19937)
+
+    Notes:
+        It is not recommended to use a seed with less than 32 bits
+        (https://numpy.org/doc/stable/reference/random/bit_generators/index.html#seeding-and-entropy).
+        `RandomState` doesn't support seeds larger than 2**32 - 1. So, the value
+        of `seed_bits` shouldn't be changed.
     """
     return np.random.RandomState(str_to_seed(string, bits=seed_bits))
 
@@ -58,15 +64,16 @@ def str_to_random_generator(
 ) -> 'np.random.Generator':
     """
     This functions outputs a consistent random number generator
-    (`np.random.Generator`) dependent on an input string.
+    (`np.random.Generator`) dependent on an input string and the number of bits
+    (`seed_bits`).
 
     >>> print(str_to_random_generator(''))
     Generator(PCG64)
 
     Notes:
         The `seed_bits` is set to 128 here, which is the default for the PCG64
-        generator. See
-        https://numpy.org/doc/stable/reference/random/bit_generators/index.html#seeding-and-entropy
+        generator. It is not recommended to use less than 32 bits for the seed.
+        See https://numpy.org/doc/stable/reference/random/bit_generators/index.html#seeding-and-entropy.
     """
     return np.random.default_rng(str_to_seed(string, bits=seed_bits))
 
