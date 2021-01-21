@@ -41,7 +41,7 @@ def str_to_seed(string: str, bits: int = 32) -> int:
 def str_to_random_state(
         string: str,
         seed_bits: int = 32
-) -> np.random.RandomState:
+) -> 'np.random.RandomState':
     """
     This functions outputs a consistent random state (`np.random.RandomState`)
     dependent on an input string.
@@ -55,13 +55,18 @@ def str_to_random_state(
 def str_to_random_generator(
         string: str,
         seed_bits: int = 128
-) -> np.random.Generator:
+) -> 'np.random.Generator':
     """
     This functions outputs a consistent random number generator
     (`np.random.Generator`) dependent on an input string.
 
     >>> print(str_to_random_generator(''))
     Generator(PCG64)
+
+    Notes:
+        The `seed_bits` is set to 128 here, which is the default for the PCG64
+        generator. See
+        https://numpy.org/doc/stable/reference/random/bit_generators/index.html#seeding-and-entropy
     """
     return np.random.default_rng(str_to_seed(string, bits=seed_bits))
 
