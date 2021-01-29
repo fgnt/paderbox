@@ -508,11 +508,21 @@ class ArrayInterval:
         >>> a = ArrayInterval([True, False, False, True])
         >>> np.sum(a)
         2
+        >>> np.sum(zeros(10))
+        0
+        >>> np.sum(ones(10))
+        10
         """
         assert out is None, (out, axis, self)
         assert axis is None, (axis, out, self)
-        a, b = np.sum(self.normalized_intervals, axis=0)
-        return b - a
+        if not self.normalized_intervals:
+            sum = 0
+        else:
+            a, b = np.sum(self.normalized_intervals, axis=0)
+            sum = b - a
+        if self.inverse_mode:
+            sum = self.shape[0] - sum
+        return sum
 
     def __or__(self, other):
         """
