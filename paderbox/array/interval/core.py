@@ -508,9 +508,10 @@ class ArrayInterval:
         >>> a = ArrayInterval([True, False, False, True])
         >>> np.sum(a)
         2
-        >>> a = zeros(10)
-        >>> np.sum(a)
+        >>> np.sum(zeros(10))
         0
+        >>> np.sum(ones(10))
+        10
         """
         assert out is None, (out, axis, self)
         assert axis is None, (axis, out, self)
