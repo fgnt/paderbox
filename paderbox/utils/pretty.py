@@ -118,3 +118,36 @@ def pprint(
     printer.flush()
     sys.stdout.write(newline)
     sys.stdout.flush()
+
+
+def pretty(
+        obj,
+        *objs,
+        verbose=False,
+        max_width=79,
+        newline='\n',
+        max_seq_length=IPython.lib.pretty.MAX_SEQ_LENGTH,
+        max_array_length=50,
+        np_suppress_small=True,
+):
+    """
+    Copy of IPython.lib.pretty.pretty.
+    Differences:
+     - Shortens the __repr__ of large np.ndarray and torch.Tensor
+     - Support multple objects (Causes bad readable error in original)
+
+    Pretty print the object's representation.
+    """
+    stream = io.StringIO()
+    printer = _MyRepresentationPrinter(
+        stream, verbose, max_width, newline,
+        max_seq_length=max_seq_length,
+        max_array_length=max_array_length,
+        np_suppress_small=np_suppress_small,
+    )
+    if len(objs):
+        printer.pretty((obj, *objs))
+    else:
+        printer.pretty(obj)
+    printer.flush()
+    return stream.getvalue()
