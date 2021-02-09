@@ -89,7 +89,7 @@ def zeros(shape: Optional[Union[int, tuple, list]] = None) -> 'ArrayInterval':
     """
     ai = ArrayInterval.__new__(ArrayInterval)
 
-    if isinstance(shape, int):
+    if isinstance(shape, (int, np.int)):
         shape = [shape]
 
     if shape is not None:
@@ -357,6 +357,14 @@ class ArrayInterval:
 
         i_str = ', '.join(i_str)
         return i_str
+
+    @property
+    def as_tuple(self):
+        return self._intervals_as_str, self.shape
+
+    @staticmethod
+    def from_tuple(array):
+        return ArrayInterval_from_str(array[0], shape=array[1])
 
     def __repr__(self):
         if self.inverse_mode:
