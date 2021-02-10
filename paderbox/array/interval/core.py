@@ -89,7 +89,7 @@ def zeros(shape: Optional[Union[int, tuple, list]] = None) -> 'ArrayInterval':
     """
     ai = ArrayInterval.__new__(ArrayInterval)
 
-    if isinstance(shape, (int, np.int)):
+    if isinstance(shape, int):
         shape = [shape]
 
     if shape is not None:
