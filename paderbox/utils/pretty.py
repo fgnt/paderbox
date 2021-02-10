@@ -68,7 +68,7 @@ def pprint(
     Copy of IPython.lib.pretty.pprint.
     Differences:
      - Shortens the __repr__ of large np.ndarray and torch.Tensor
-     - Support multple objects (Causes bad readable error in original)
+     - Support multiple objects (Causes bad readable error in original)
 
 
     >>> pprint([np.array([1]), np.array([1]*100)])
@@ -134,7 +134,7 @@ def pretty(
     Copy of IPython.lib.pretty.pretty.
     Differences:
      - Shortens the __repr__ of large np.ndarray and torch.Tensor
-     - Support multple objects (Causes bad readable error in original)
+     - Support multiple objects (Causes bad readable error in original)
 
     Pretty print the object's representation.
     """
