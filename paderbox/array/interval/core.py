@@ -376,7 +376,7 @@ class ArrayInterval:
         return self._intervals_as_str, self.shape
 
     @staticmethod
-    def from_serialized(array):
+    def from_serializable(array):
         """
         Reverts serialization from 'as_serializable.
         Args:
@@ -388,7 +388,7 @@ class ArrayInterval:
         >>> at = ('1:4, 5:20, 21:25', 50)
         >>> at
         ('1:4, 5:20, 21:25', 50)
-        >>> ArrayInterval.from_serialized(at)
+        >>> ArrayInterval.from_serializable(at)
         ArrayInterval("1:4, 5:20, 21:25", shape=(50,))
         """
         assert len(array) == 2, f'Expects object of length 2 with items (intervals, shape), got: {array}' 
