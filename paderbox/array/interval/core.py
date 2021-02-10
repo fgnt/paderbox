@@ -371,6 +371,7 @@ class ArrayInterval:
         >>> ai.as_tuple
         ('1:4, 5:20, 21:25', (50,))
         """
+        assert self.inverse_mode is False, 'Export of intervals as tuple is only valid for normal mode, not inverse mode!' 
         return self._intervals_as_str, self.shape
 
     @staticmethod
