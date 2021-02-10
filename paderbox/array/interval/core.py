@@ -360,10 +360,28 @@ class ArrayInterval:
 
     @property
     def as_tuple(self):
+        """
+        >>> from IPython.lib.pretty import pprint
+        >>> from paderbox.array.interval.core import ArrayInterval
+        >>> ai = ArrayInterval.from_str('1:4, 5:20, 21:25', shape=50)
+        >>> ai
+        ArrayInterval("1:4, 5:20, 21:25", shape=(50,))
+        >>> ai.as_tuple
+        ('1:4, 5:20, 21:25', (50,))
+        """
         return self._intervals_as_str, self.shape
 
     @staticmethod
     def from_tuple(array):
+        """
+        >>> from IPython.lib.pretty import pprint
+        >>> from paderbox.array.interval.core import ArrayInterval
+        >>> at = ('1:4, 5:20, 21:25', 50)
+        >>> at
+        ('1:4, 5:20, 21:25', 50)
+        >>> ArrayInterval.from_tuple(at)
+        ArrayInterval("1:4, 5:20, 21:25", shape=(50,))
+        """
         return ArrayInterval_from_str(array[0], shape=array[1])
 
     def __repr__(self):
