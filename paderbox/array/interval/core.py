@@ -361,6 +361,8 @@ class ArrayInterval:
     @property
     def as_tuple(self):
         """
+        Exports intervals and length of ArrayInterval to a tuple. 
+        Allows easy export of ArrayIntervals, e.g. into .json format. 
         >>> from IPython.lib.pretty import pprint
         >>> from paderbox.array.interval.core import ArrayInterval
         >>> ai = ArrayInterval.from_str('1:4, 5:20, 21:25', shape=50)
@@ -382,6 +384,7 @@ class ArrayInterval:
         >>> ArrayInterval.from_tuple(at)
         ArrayInterval("1:4, 5:20, 21:25", shape=(50,))
         """
+        assser len(array) == 2, f'Expects tuple with items (intervals, shape), got: {array}' 
         return ArrayInterval_from_str(array[0], shape=array[1])
 
     def __repr__(self):
