@@ -361,8 +361,8 @@ class ArrayInterval:
     @property
     def as_serializable(self):
         """
-        Exports intervals and length of ArrayInterval to a serializable object.
-        Reverting 
+        Exports intervals and length of `ArrayInterval` to a serializable object.
+        Intervals are exported as self._intervals_to_str to be human readable. 
         Allows easy export of ArrayIntervals, e.g. into .json format. 
         >>> from IPython.lib.pretty import pprint
         >>> from paderbox.array.interval.core import ArrayInterval
@@ -376,9 +376,9 @@ class ArrayInterval:
         return self._intervals_as_str, self.shape
 
     @staticmethod
-    def from_serializable(array):
+    def from_serializable(obj):
         """
-        Reverts serialization from 'as_serializable.
+        Reverts `as_serializable`.
         Args:
             array: Object of length 2 with items (str: intervals, shape)
         Returns:
@@ -391,7 +391,7 @@ class ArrayInterval:
         >>> ArrayInterval.from_serializable(at)
         ArrayInterval("1:4, 5:20, 21:25", shape=(50,))
         """
-        assert len(array) == 2, f'Expects object of length 2 with items (intervals, shape), got: {array}' 
+        assert len(obj) == 2, f'Expects object of length 2 with items (intervals, shape), got: {obj}' 
         return ArrayInterval_from_str(array[0], shape=array[1])
 
     def __repr__(self):
