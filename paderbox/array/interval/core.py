@@ -359,33 +359,39 @@ class ArrayInterval:
         return i_str
 
     @property
-    def as_tuple(self):
+    def as_serializable(self):
         """
-        Exports intervals and length of ArrayInterval to a tuple. 
+        Exports intervals and length of ArrayInterval to a serializable object.
+        Reverting 
         Allows easy export of ArrayIntervals, e.g. into .json format. 
         >>> from IPython.lib.pretty import pprint
         >>> from paderbox.array.interval.core import ArrayInterval
         >>> ai = ArrayInterval.from_str('1:4, 5:20, 21:25', shape=50)
         >>> ai
         ArrayInterval("1:4, 5:20, 21:25", shape=(50,))
-        >>> ai.as_tuple
+        >>> ai.as_serializable
         ('1:4, 5:20, 21:25', (50,))
         """
         assert self.inverse_mode is False, 'Export of intervals as tuple is only valid for normal mode, not inverse mode!' 
         return self._intervals_as_str, self.shape
 
     @staticmethod
-    def from_tuple(array):
+    def from_serialized(array):
         """
+        Reverts serialization from 'as_serializable.
+        Args:
+            array: Object of length 2 with items (str: intervals, shape)
+        Returns:
+            `ArrayInterval` with specified intervals and shape
         >>> from IPython.lib.pretty import pprint
         >>> from paderbox.array.interval.core import ArrayInterval
         >>> at = ('1:4, 5:20, 21:25', 50)
         >>> at
         ('1:4, 5:20, 21:25', 50)
-        >>> ArrayInterval.from_tuple(at)
+        >>> ArrayInterval.from_serialized(at)
         ArrayInterval("1:4, 5:20, 21:25", shape=(50,))
         """
-        assert len(array) == 2, f'Expects tuple with items (intervals, shape), got: {array}' 
+        assert len(array) == 2, f'Expects object of length 2 with items (intervals, shape), got: {array}' 
         return ArrayInterval_from_str(array[0], shape=array[1])
 
     def __repr__(self):
