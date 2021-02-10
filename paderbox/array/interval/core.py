@@ -392,7 +392,7 @@ class ArrayInterval:
         ArrayInterval("1:4, 5:20, 21:25", shape=(50,))
         """
         assert len(obj) == 2, f'Expects object of length 2 with items (intervals, shape), got: {obj}' 
-        return ArrayInterval_from_str(array[0], shape=array[1])
+        return ArrayInterval_from_str(obj[0], shape=obj[1])
 
     def __repr__(self):
         if self.inverse_mode:
