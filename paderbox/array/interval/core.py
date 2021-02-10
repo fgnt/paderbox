@@ -358,7 +358,6 @@ class ArrayInterval:
         i_str = ', '.join(i_str)
         return i_str
 
-    @property
     def to_serializable(self):
         """
         Exports intervals and length of `ArrayInterval` to a serializable object.
