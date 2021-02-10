@@ -369,7 +369,7 @@ class ArrayInterval:
         >>> ai = ArrayInterval.from_str('1:4, 5:20, 21:25', shape=50)
         >>> ai
         ArrayInterval("1:4, 5:20, 21:25", shape=(50,))
-        >>> ai.to_serializable
+        >>> ai.to_serializable()
         ('1:4, 5:20, 21:25', (50,))
         """
         assert self.inverse_mode is False, 'Export of intervals as tuple is only valid for normal mode, not inverse mode!' 
