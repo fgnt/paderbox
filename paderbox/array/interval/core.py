@@ -358,6 +358,45 @@ class ArrayInterval:
         i_str = ', '.join(i_str)
         return i_str
 
+    def to_serializable(self):
+        """
+        Exports intervals and length of `ArrayInterval` to a serializable object.
+        Intervals are exported as `self._intervals_to_str` to be human readable. 
+        Allows easy export of `ArrayIntervals`, e.g. into .json format. 
+        
+        >>> from IPython.lib.pretty import pprint
+        >>> from paderbox.array.interval.core import ArrayInterval
+        >>> ai = ArrayInterval.from_str('1:4, 5:20, 21:25', shape=50)
+        >>> ai
+        ArrayInterval("1:4, 5:20, 21:25", shape=(50,))
+        >>> ai.to_serializable()
+        ('1:4, 5:20, 21:25', (50,))
+        """
+        assert self.inverse_mode is False, 'Export of intervals as tuple is only valid for normal mode, not inverse mode!' 
+        return self._intervals_as_str, self.shape
+
+    @staticmethod
+    def from_serializable(obj):
+        """
+        Reverts `to_serializable`.
+        Args:
+            obj: Object of length 2 with items (str: intervals, shape)
+            
+        Returns:
+            `ArrayInterval` with specified intervals and shape
+            
+        Example:
+        >>> from IPython.lib.pretty import pprint
+        >>> from paderbox.array.interval.core import ArrayInterval
+        >>> at = ('1:4, 5:20, 21:25', 50)
+        >>> at
+        ('1:4, 5:20, 21:25', 50)
+        >>> ArrayInterval.from_serializable(at)
+        ArrayInterval("1:4, 5:20, 21:25", shape=(50,))
+        """
+        assert len(obj) == 2, f'Expects object of length 2 with items (intervals, shape), got: {obj}' 
+        return ArrayInterval_from_str(obj[0], shape=obj[1])
+
     def __repr__(self):
         if self.inverse_mode:
             return f'{self.__class__.__name__}("{self._intervals_as_str}", shape={self.shape}, inverse_mode={self.inverse_mode})'
