@@ -66,16 +66,29 @@ def cy_parse_item(item, shape):
         size = -1  # dummy assignment for c code
 
     if not isinstance(item, (slice)):
-        raise AssertionError(
-            f'Expect item ({item}) to has the type slice and not {type(item)}.'
+        raise ValueError(
+            f'Expect item ({item}) to have the type slice and not {type(item)}.'
         )
-    # assert isinstance(item, (slice)), (type(item), item)
-    assert item.step is None, (item, 'Step is not supported.')
+    if item.step is not None:
+        raise ValueError(f'Step is not supported {item}')
 
+    # Handle start value
     if item.start is None:
         start = 0
     else:
         start = item.start
+
+    if start < 0:
+        if shape is None:
+            raise ValueError('Shape has to be given if a negative index is used')
+        start = start + size
+
+    if start < 0 or size != -1 and start >= size:
+        raise IndexError(
+            f'Index {item.start} out of bounds for ArrayInterval with size {size}'
+        )
+
+    # Handle stop value
     if item.stop is None:
         if shape is None:
             raise RuntimeError(
@@ -91,18 +104,15 @@ def cy_parse_item(item, shape):
     else:
         stop = item.stop
 
-    assert start >= 0, (start, item)
-    assert stop >= 0, (stop, item)
-    if shape is not None:
-        assert start <= size, (start, item)
-        assert stop <= size, (stop, item)
-
-    if start < 0:
-        assert shape is not None
-        start = start % size
     if stop < 0:
-        assert shape is not None
-        stop = start % size
+        if shape is None:
+            raise ValueError('Shape has to be given if a negative index is used')
+        stop = stop + size
+
+    if stop < 0 or size != -1 and stop > size:
+        raise IndexError(
+            f'Index {item.stop} out of bounds for ArrayInterval with size {size}'
+        )
 
     return start, stop
 

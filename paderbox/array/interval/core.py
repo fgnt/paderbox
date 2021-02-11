@@ -175,7 +175,7 @@ class ArrayInterval:
                 Internal flag to indicate what the intervals represent:
                  - `False`: Intervals represent `True`
                  - `True`: Intervals represent `False`
-                This flag is nessesary when the shape is unknown.
+                This flag is necessary when the shape is unknown.
                 The user does not need to care about this flag. The default is
                 fine.
 
@@ -201,8 +201,16 @@ class ArrayInterval:
             self.intervals = array.intervals
         else:
             array = np.asarray(array)
-            assert array.ndim == 1, (array.ndim, array)
-            assert array.dtype == np.bool, (np.bool, array)
+            if array.ndim != 1:
+                raise ValueError(
+                    f'Only 1-dimensional arrays can be converted to '
+                    f'ArrayInterval, not {array}'
+                )
+            if array.dtype != np.bool:
+                raise ValueError(
+                    f'Only boolean array can be converted to ArrayInterval, not'
+                    f'{array}'
+                )
 
             if inverse_mode:
                 array = np.logical_not(array)
@@ -256,7 +264,7 @@ class ArrayInterval:
         assert dtype == np.bool, dtype
         if self.shape is None:
             raise RuntimeError(
-                f'You cannot cast an {self.__class__.__name__} to numpy,\n'
+                f'You cannot cast an {self.__class__.__name__} to numpy\n'
                 f'when the shape is unknown.')
         else:
             return self[:]
@@ -394,7 +402,7 @@ class ArrayInterval:
         >>> ArrayInterval.from_serializable(at)
         ArrayInterval("1:4, 5:20, 21:25", shape=(50,))
         """
-        assert len(obj) == 2, f'Expects object of length 2 with items (intervals, shape), got: {obj}' 
+        assert len(obj) == 2, f'Expects object of length 2 with items (intervals, shape), got: {obj}'
         return ArrayInterval_from_str(obj[0], shape=obj[1])
 
     def __repr__(self):
@@ -482,38 +490,50 @@ class ArrayInterval:
         >>> ai[40:60] = ai2
         Traceback (most recent call last):
             ...
-        AssertionError: (60, slice(40, 60, None))
+        IndexError: Index 60 out of bounds for ArrayInterval with size 50
         """
+        if not isinstance(item, slice):
+            raise NotImplementedError(
+                f'{self.__class__.__name__}.__setitem__ only supports slices '
+                f'for indexing, not {item}'
+            )
 
         start, stop = cy_parse_item(item, self.shape)
 
         if np.isscalar(value):
+            if value not in (0, 1):
+                # Numpy interprets values as boolean even if they are larger
+                # than 1, why doesn't the ArrayInterval do the same?
+                raise ValueError(value)
+            value = bool(value)
             if self.inverse_mode:
-                if value == 0:
-                    self.intervals = self.intervals + ((start, stop),)
-                elif value == 1:
-                    self.intervals = cy_non_intersection((start, stop), self.intervals)
-                else:
-                    raise ValueError(value)
+                value = not value
+            if value:
+                self.intervals = self.intervals + ((start, stop),)
             else:
-                if value == 1:
-                    self.intervals = self.intervals + ((start, stop),)
-                elif value == 0:
-                    self.intervals = cy_non_intersection((start, stop), self.intervals)
-                else:
-                    raise ValueError(value)
-        elif isinstance(value, (tuple, list, np.ndarray)):
-            assert len(value) == stop - start, (start, stop, stop - start, len(value), value)
-            ai = ArrayInterval(value, inverse_mode=self.inverse_mode)
-            intervals = cy_non_intersection((start, stop), self.intervals)
-            self.intervals = intervals + tuple([(s + start, e + start) for s, e in ai.intervals])
-        elif isinstance(value, ArrayInterval):
-            assert len(value) == stop - start, (start, stop, stop - start, len(value), value)
-            assert value.inverse_mode == self.inverse_mode, (value.inverse_mode, self.inverse_mode)
+                self.intervals = cy_non_intersection((start, stop), self.intervals)
+        elif isinstance(value, (tuple, list, np.ndarray, ArrayInterval)):
+            if not isinstance(value, ArrayInterval):
+                value = ArrayInterval(value, inverse_mode=self.inverse_mode)
+
+            if len(value) != stop - start:
+                raise ValueError(
+                    f'Could not broadcast input with length {len(value)} into '
+                    f'shape {stop - start}'
+                )
+            if value.inverse_mode != self.inverse_mode:
+                raise ValueError(
+                    f'Cannot assign an ArrayInterval with a different inverse '
+                    f'mode! self.inverse_mode={self.inverse_mode!r} '
+                    f'value.inverse_mode={value.inverse_mode!r}'
+                )
             intervals = cy_non_intersection((start, stop), self.intervals)
             self.intervals = intervals + tuple([(s + start, e + start) for s, e in value.intervals])
         else:
-            raise NotImplementedError(value)
+            raise NotImplementedError(
+                f'{self.__class__.__name__}.__setitem__ not implemented for '
+                f'type {type(value)} of {value}'
+            )
 
     def __getitem__(self, item):
         """
@@ -535,16 +555,33 @@ class ArrayInterval:
         False
         >>> ai[29]
         True
-     
+        >>> ai[-25:-20]
+        array([ True,  True,  True,  True,  True])
+        >>> ai[-1:]
+        array([])
+
         """
         if isinstance(item, (int, np.integer)):
+            index = item
+            if index < 0:
+                index = index + self.shape[0]
+            if index < 0 or self.shape is not None and index > self.shape[0]:
+                raise IndexError(
+                    f'Index {item} is out of bounds for ArrayInterval with '
+                    f'shape {self.shape}'
+                )
             # Could be optimized
             for s, e in self.normalized_intervals:
-                if e > item:
-                    return (item >= s) ^ self.inverse_mode
+                if e > index:
+                    return (index >= s) ^ self.inverse_mode
             return self.inverse_mode
 
         start, stop = cy_parse_item(item, self.shape)
+
+        # This is numpy behavior
+        if stop <= start:
+            return np.zeros(0, dtype=np.bool)
+
         intervals = cy_intersection((start, stop), self.normalized_intervals)
 
         if self.inverse_mode:
@@ -574,7 +611,7 @@ class ArrayInterval:
         10
         """
         assert out is None, (out, axis, self)
-        assert axis is None, (axis, out, self)
+        assert axis is None or axis in (0, -1), (axis, out, self)
         if not self.normalized_intervals:
             sum = 0
         else:
@@ -598,7 +635,11 @@ class ArrayInterval:
         if not isinstance(other, ArrayInterval):
             return NotImplemented
         elif self.inverse_mode is False and other.inverse_mode is False:
-            assert other.shape == self.shape, (self.shape, other.shape)
+            if other.shape != self.shape:
+                raise ValueError(
+                    f'Cannot broadcast together ArrayIntervals with shapes '
+                    f'{self.shape} {other.shape}'
+                )
             ai = zeros(shape=self.shape)
             ai.intervals = self.intervals + other.intervals
             return ai
@@ -654,7 +695,11 @@ class ArrayInterval:
             # short circuit
             return ~((~self) | (~other))
         elif self.inverse_mode is False and other.inverse_mode is False:
-            assert other.shape == self.shape, (self.shape, other.shape)
+            if other.shape != self.shape:
+                raise ValueError(
+                    f'Cannot broadcast together ArrayIntervals with shapes '
+                    f'{self.shape} {other.shape}'
+                )
             ai = zeros(shape=self.shape)
 
             normalized_intervals = self.normalized_intervals
