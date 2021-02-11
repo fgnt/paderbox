@@ -466,6 +466,23 @@ class ArrayInterval:
         >>> ai
         ArrayInterval("0:10, 40:50", shape=(50,))
 
+        >>> ai = zeros(50)
+        >>> ai2 = zeros(10)
+        >>> ai2[5:10] = 1
+        >>> ai[10:20] = ai2
+        >>> ai
+        ArrayInterval("15:20", shape=(50,))
+        >>> ai2 = zeros(20)
+        >>> ai2[0:10] = 1
+        >>> ai2[15:20] = 1
+        >>> ai[10:30] = ai2
+        >>> ai
+        ArrayInterval("10:20, 25:30", shape=(50,))
+
+        >>> ai[40:60] = ai2
+        Traceback (most recent call last):
+            ...
+        AssertionError: (60, slice(40, 60, None))
         """
 
         start, stop = cy_parse_item(item, self.shape)
@@ -488,9 +505,13 @@ class ArrayInterval:
         elif isinstance(value, (tuple, list, np.ndarray)):
             assert len(value) == stop - start, (start, stop, stop - start, len(value), value)
             ai = ArrayInterval(value, inverse_mode=self.inverse_mode)
-            intervals = self.intervals
-            intervals = cy_non_intersection((start, stop), intervals)
+            intervals = cy_non_intersection((start, stop), self.intervals)
             self.intervals = intervals + tuple([(s + start, e + start) for s, e in ai.intervals])
+        elif isinstance(value, ArrayInterval):
+            assert len(value) == stop - start, (start, stop, stop - start, len(value), value)
+            assert value.inverse_mode == self.inverse_mode, (value.inverse_mode, self.inverse_mode)
+            intervals = cy_non_intersection((start, stop), self.intervals)
+            self.intervals = intervals + tuple([(s + start, e + start) for s, e in value.intervals])
         else:
             raise NotImplementedError(value)
 
