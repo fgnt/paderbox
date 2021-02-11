@@ -204,12 +204,12 @@ class ArrayInterval:
             if array.ndim != 1:
                 raise ValueError(
                     f'Only 1-dimensional arrays can be converted to '
-                    f'ArrayInterval, not {array}'
+                    f'ArrayInterval, not {array} with ndim={array.ndim}'
                 )
             if array.dtype != np.bool:
                 raise ValueError(
                     f'Only boolean array can be converted to ArrayInterval, not'
-                    f'{array}'
+                    f'{array} with dtype={array.dtype}'
                 )
 
             if inverse_mode:
@@ -557,8 +557,8 @@ class ArrayInterval:
         True
         >>> ai[-25:-20]
         array([ True,  True,  True,  True,  True])
-        >>> ai[-1:]
-        array([])
+        >>> ai[-1:1]
+        array([], dtype=bool)
 
         """
         if isinstance(item, (int, np.integer)):
