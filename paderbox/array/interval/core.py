@@ -41,6 +41,10 @@ def ArrayInterval_from_str(string, shape):
     return ai
 
 
+def intervals_to_str(intervals):
+    return ', '.join(f'{start}:{end}' for start, end in intervals)
+
+
 def zeros(shape: Optional[Union[int, tuple, list]] = None) -> 'ArrayInterval':
     """
     Instantiate an `ArrayInterval` filled with zeros.
@@ -357,14 +361,7 @@ class ArrayInterval:
 
     @property
     def _intervals_as_str(self):
-        i_str = []
-        for i in self.normalized_intervals:
-            start, end = i
-            #             i_str += [f'[{start}, {end})']
-            i_str += [f'{start}:{end}']
-
-        i_str = ', '.join(i_str)
-        return i_str
+        return intervals_to_str(self.normalized_intervals)
 
     def to_serializable(self):
         """
@@ -380,8 +377,10 @@ class ArrayInterval:
         >>> ai.to_serializable()
         ('1:4, 5:20, 21:25', (50,))
         """
-        assert self.inverse_mode is False, 'Export of intervals as tuple is only valid for normal mode, not inverse mode!'
-        return self._intervals_as_str, self.shape
+        intervals = self.normalized_intervals
+        if self.inverse_mode:
+            intervals = _invert_intervals(intervals, self.shape[-1])
+        return intervals_to_str(intervals), self.shape
 
     @staticmethod
     def from_serializable(obj):
