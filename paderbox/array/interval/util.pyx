@@ -83,10 +83,11 @@ def cy_parse_item(item, shape):
             raise ValueError('Shape has to be given if a negative index is used')
         start = start + size
 
-    if start < 0 or size != -1 and start >= size:
-        raise IndexError(
-            f'Index {item.start} out of bounds for ArrayInterval with size {size}'
-        )
+    if start < 0:
+        # Clip the value to 0 to match numpy slice indexing. Numpy also clips
+        # the start value at 0 if start < -size. Then, the indexes size doesn't
+        # match the size of the slice.
+        start = 0
 
     # Handle stop value
     if item.stop is None:
@@ -109,10 +110,12 @@ def cy_parse_item(item, shape):
             raise ValueError('Shape has to be given if a negative index is used')
         stop = stop + size
 
-    if stop < 0 or size != -1 and stop > size:
-        raise IndexError(
-            f'Index {item.stop} out of bounds for ArrayInterval with size {size}'
-        )
+    if size > -1:
+        # Clip the value at size to match numpy slice indexing. Numpy also clips
+        # the stop value at size if stop > size. Then, the indexes size doesn't
+        # match the size of the slice.
+        if stop > size:
+            stop = size
 
     return start, stop
 

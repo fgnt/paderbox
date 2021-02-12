@@ -258,7 +258,7 @@ class ArrayInterval:
             >>> ai + a
             Traceback (most recent call last):
             ...
-            RuntimeError: You cannot cast an ArrayInterval to numpy,
+            RuntimeError: You cannot cast an ArrayInterval to numpy
             when the shape is unknown.
         """
         assert dtype == np.bool, dtype
@@ -380,7 +380,7 @@ class ArrayInterval:
         >>> ai.to_serializable()
         ('1:4, 5:20, 21:25', (50,))
         """
-        assert self.inverse_mode is False, 'Export of intervals as tuple is only valid for normal mode, not inverse mode!' 
+        assert self.inverse_mode is False, 'Export of intervals as tuple is only valid for normal mode, not inverse mode!'
         return self._intervals_as_str, self.shape
 
     @staticmethod
@@ -489,8 +489,21 @@ class ArrayInterval:
 
         >>> ai[40:60] = ai2
         Traceback (most recent call last):
-            ...
-        IndexError: Index 60 out of bounds for ArrayInterval with size 50
+          ...
+        ValueError: Could not broadcast input with length 20 into shape 10
+        >>> ai[-20:] = ai2
+        >>> ai
+        ArrayInterval("10:20, 25:40, 45:50", shape=(50,))
+
+        >>> ai = zeros(20)
+        >>> ai[:10] = ones(10)
+        >>> ai
+        ArrayInterval("0:10", shape=(20,))
+        >>> ai = ones(20)
+        >>> ai[:10] = zeros(10)
+        >>> ai
+        ArrayInterval("0:10", shape=(20,), inverse_mode=True)
+
         """
         if not isinstance(item, slice):
             raise NotImplementedError(
@@ -514,6 +527,9 @@ class ArrayInterval:
                 self.intervals = cy_non_intersection((start, stop), self.intervals)
         elif isinstance(value, (tuple, list, np.ndarray, ArrayInterval)):
             if not isinstance(value, ArrayInterval):
+                # Inverse mode has to be the same as self.inverse_mode to have
+                # matching intervals. The value is inverted in
+                # ArrayInterval.__init__ if inverse_mode=True
                 value = ArrayInterval(value, inverse_mode=self.inverse_mode)
 
             if len(value) != stop - start:
@@ -521,14 +537,15 @@ class ArrayInterval:
                     f'Could not broadcast input with length {len(value)} into '
                     f'shape {stop - start}'
                 )
+            value_intervals = value.intervals
             if value.inverse_mode != self.inverse_mode:
-                raise ValueError(
-                    f'Cannot assign an ArrayInterval with a different inverse '
-                    f'mode! self.inverse_mode={self.inverse_mode!r} '
-                    f'value.inverse_mode={value.inverse_mode!r}'
+                value_intervals = _invert_intervals(
+                    value_intervals, value.shape[-1]
                 )
             intervals = cy_non_intersection((start, stop), self.intervals)
-            self.intervals = intervals + tuple([(s + start, e + start) for s, e in value.intervals])
+            self.intervals = intervals + tuple([
+                (s + start, e + start) for s, e in value_intervals
+            ])
         else:
             raise NotImplementedError(
                 f'{self.__class__.__name__}.__setitem__ not implemented for '
@@ -557,15 +574,27 @@ class ArrayInterval:
         True
         >>> ai[-25:-20]
         array([ True,  True,  True,  True,  True])
+
+        Get a similar behavior to numpy when indexing outside of shape:
         >>> ai[-1:1]
         array([], dtype=bool)
+        >>> ai[-10:]
+        array([False, False, False, False, False, False, False, False, False,
+               False])
+        >>> ai[45:100]
+        array([False, False, False, False, False])
 
         """
         if isinstance(item, (int, np.integer)):
             index = item
             if index < 0:
-                index = index + self.shape[0]
-            if index < 0 or self.shape is not None and index > self.shape[0]:
+                if self.shape is None:
+                    raise ValueError(
+                        f'Negative indices can only be used on ArrayIntervals '
+                        f'with a shape! index={index}'
+                    )
+                index = index + self.shape[-1]
+            if index < 0 or self.shape is not None and index > self.shape[-1]:
                 raise IndexError(
                     f'Index {item} is out of bounds for ArrayInterval with '
                     f'shape {self.shape}'
@@ -889,3 +918,39 @@ def _combine(func, *array_intervals, out=None):
         # print(s, e, values, func(*values))
         out[s:e] = func(*[ai[s] for ai in array_intervals])
     return out
+
+
+def _invert_intervals(normalized_intervals, size):
+    """
+    >>> _invert_intervals(((1, 2), (3, 4)), 5)
+    [(0, 1), (2, 3), (4, 5)]
+    >>> _invert_intervals(((0, 3), (4, 5)), 5)
+    [(3, 4)]
+    >>> _invert_intervals(((0, 3), (4, 5)), 6)
+    [(3, 4), (5, 6)]
+    >>> _invert_intervals(((1, 3), (4, 5)), 5)
+    [(0, 1), (3, 4)]
+    """
+    edges = set()
+    for interval in normalized_intervals:
+        assert edges.intersection(set(interval)) == set()
+        edges.update(interval)
+
+    if 0 in edges:
+        edges.remove(0)
+    else:
+        edges.add(0)
+
+    if size in edges:
+        edges.remove(size)
+    else:
+        edges.add(size)
+
+    assert len(edges) % 2 == 0, len(edges)
+
+    inverted_intervals = []
+    edges = sorted(edges)
+    for i in range(0, len(edges), 2):
+        inverted_intervals.append((edges[i], edges[i + 1]))
+
+    return inverted_intervals
