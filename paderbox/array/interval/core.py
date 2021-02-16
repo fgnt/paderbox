@@ -209,12 +209,12 @@ class ArrayInterval:
             if array.ndim != 1:
                 raise ValueError(
                     f'Only 1-dimensional arrays can be converted to '
-                    f'ArrayInterval, not {array} with ndim={array.ndim}'
+                    f'ArrayInterval, not {array!r} with ndim={array.ndim}'
                 )
             if array.dtype != np.bool:
                 raise ValueError(
                     f'Only boolean array can be converted to ArrayInterval, not'
-                    f'{array} with dtype={array.dtype}'
+                    f'{array!r} with dtype={array.dtype}'
                 )
 
             if inverse_mode:
@@ -508,7 +508,7 @@ class ArrayInterval:
         if not isinstance(item, slice):
             raise NotImplementedError(
                 f'{self.__class__.__name__}.__setitem__ only supports slices '
-                f'for indexing, not {item}'
+                f'for indexing, not {item!r}'
             )
 
         start, stop = cy_parse_item(item, self.shape)
@@ -554,7 +554,7 @@ class ArrayInterval:
         else:
             raise NotImplementedError(
                 f'{self.__class__.__name__}.__setitem__ not implemented for '
-                f'type {type(value)} of {value}'
+                f'type {type(value)} of {value!r}'
             )
 
     def __getitem__(self, item):
