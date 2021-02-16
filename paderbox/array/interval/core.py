@@ -516,8 +516,13 @@ class ArrayInterval:
         if np.isscalar(value):
             if value not in (0, 1):
                 # Numpy interprets values as boolean even if they are larger
-                # than 1, why doesn't the ArrayInterval do the same?
-                raise ValueError(value)
+                # than 1. We don't do that here because using other values than
+                # boolean (or 0, 1) often indicates a bug or a wrong assumption
+                # by the user.
+                raise ValueError(
+                    f'{self.__class__.__name__} only supports assigning '
+                    f'boolean (or 0 or 1) scalar values, not {value!r}'
+                )
             value = bool(value)
             if self.inverse_mode:
                 value = not value
