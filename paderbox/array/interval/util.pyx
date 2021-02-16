@@ -6,7 +6,13 @@
 # ToDO: better place for testcode
 #       http://ntsvr1:1619/notebooks/chime5/2018_05_17_tf_blstm.ipynb
 
-def cy_non_intersection(interval, intervals):
+def cy_non_intersection(interval: tuple, intervals: tuple) -> tuple:
+    """
+    "Removes" one `interval` from `intervals` by removing or shortening any
+    intervals in `intervals` that overlap with `interval`.
+
+    Similar to `cy_intersection(inverted_interval, intervals)`.
+    """
     cdef:
         int start
         int end
@@ -33,6 +39,9 @@ def cy_non_intersection(interval, intervals):
 
 
 def cy_intersection(interval, intervals):
+    """
+    "Cuts" out intervals from `intervals` that lie within `interval`.
+    """
     cdef:
         int start
         int end
@@ -66,16 +75,30 @@ def cy_parse_item(item, shape):
         size = -1  # dummy assignment for c code
 
     if not isinstance(item, (slice)):
-        raise AssertionError(
-            f'Expect item ({item}) to has the type slice and not {type(item)}.'
+        raise ValueError(
+            f'Expect item ({item}) to have the type slice and not {type(item)}.'
         )
-    # assert isinstance(item, (slice)), (type(item), item)
-    assert item.step is None, (item, 'Step is not supported.')
+    if item.step is not None:
+        raise ValueError(f'Step is not supported {item}')
 
+    # Handle start value
     if item.start is None:
         start = 0
     else:
         start = item.start
+
+    if start < 0:
+        if shape is None:
+            raise ValueError('Shape has to be given if a negative index is used')
+        start = start + size
+
+    if start < 0:
+        # Clip the value to 0 to match numpy slice indexing. Numpy also clips
+        # the start value at 0 if start < -size. Then, the indexes size doesn't
+        # match the size of the slice.
+        start = 0
+
+    # Handle stop value
     if item.stop is None:
         if shape is None:
             raise RuntimeError(
@@ -91,18 +114,17 @@ def cy_parse_item(item, shape):
     else:
         stop = item.stop
 
-    assert start >= 0, (start, item)
-    assert stop >= 0, (stop, item)
-    if shape is not None:
-        assert start <= size, (start, item)
-        assert stop <= size, (stop, item)
-
-    if start < 0:
-        assert shape is not None
-        start = start % size
     if stop < 0:
-        assert shape is not None
-        stop = start % size
+        if shape is None:
+            raise ValueError('Shape has to be given if a negative index is used')
+        stop = stop + size
+
+    if size > -1:
+        # Clip the value at size to match numpy slice indexing. Numpy also clips
+        # the stop value at size if stop > size. Then, the indexes size doesn't
+        # match the size of the slice.
+        if stop > size:
+            stop = size
 
     return start, stop
 
@@ -138,3 +160,37 @@ def cy_str_to_intervals(string):
         intervals.append((start, end))
 
     return tuple(intervals)
+
+
+def cy_invert_intervals(normalized_intervals, size):
+    """
+    Inverts intervals.
+
+    Assumes that the intervals are normalized! This means that:
+        - No overlapping intervals in `normalized_intervals`
+        - Intervals are sorted by their start times
+    """
+    cdef:
+        list inverted_intervals
+        int edge
+        int i_start
+        int i_end
+
+    if len(normalized_intervals) == 0:
+        # Shortcut for emtpy intervals
+        return (0, size),
+
+    edge = -1
+    inverted_intervals = []
+    for i_start, i_end in normalized_intervals:
+        if edge == -1:
+            if i_start != 0:
+                inverted_intervals.append((0, i_start))
+        else:
+            inverted_intervals.append((edge, i_start))
+        edge = i_end
+
+    if edge != size:
+        inverted_intervals.append((edge, size))
+
+    return tuple(inverted_intervals)

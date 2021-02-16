@@ -12,6 +12,7 @@ from paderbox.array.interval.util import (
     cy_intersection,
     cy_parse_item,
     cy_str_to_intervals,
+    cy_invert_intervals,
 )
 
 
@@ -39,6 +40,10 @@ def ArrayInterval_from_str(string, shape):
         except Exception as e:
             raise Exception(string) from e
     return ai
+
+
+def intervals_to_str(intervals):
+    return ', '.join(f'{start}:{end}' for start, end in intervals)
 
 
 def zeros(shape: Optional[Union[int, tuple, list]] = None) -> 'ArrayInterval':
@@ -175,7 +180,7 @@ class ArrayInterval:
                 Internal flag to indicate what the intervals represent:
                  - `False`: Intervals represent `True`
                  - `True`: Intervals represent `False`
-                This flag is nessesary when the shape is unknown.
+                This flag is necessary when the shape is unknown.
                 The user does not need to care about this flag. The default is
                 fine.
 
@@ -201,8 +206,16 @@ class ArrayInterval:
             self.intervals = array.intervals
         else:
             array = np.asarray(array)
-            assert array.ndim == 1, (array.ndim, array)
-            assert array.dtype == np.bool, (np.bool, array)
+            if array.ndim != 1:
+                raise ValueError(
+                    f'Only 1-dimensional arrays can be converted to '
+                    f'ArrayInterval, not {array!r} with ndim={array.ndim}'
+                )
+            if array.dtype != np.bool:
+                raise ValueError(
+                    f'Only boolean array can be converted to ArrayInterval, not'
+                    f'{array!r} with dtype={array.dtype}'
+                )
 
             if inverse_mode:
                 array = np.logical_not(array)
@@ -250,13 +263,13 @@ class ArrayInterval:
             >>> ai + a
             Traceback (most recent call last):
             ...
-            RuntimeError: You cannot cast an ArrayInterval to numpy,
+            RuntimeError: You cannot cast an ArrayInterval to numpy
             when the shape is unknown.
         """
         assert dtype == np.bool, dtype
         if self.shape is None:
             raise RuntimeError(
-                f'You cannot cast an {self.__class__.__name__} to numpy,\n'
+                f'You cannot cast an {self.__class__.__name__} to numpy\n'
                 f'when the shape is unknown.')
         else:
             return self[:]
@@ -349,14 +362,7 @@ class ArrayInterval:
 
     @property
     def _intervals_as_str(self):
-        i_str = []
-        for i in self.normalized_intervals:
-            start, end = i
-            #             i_str += [f'[{start}, {end})']
-            i_str += [f'{start}:{end}']
-
-        i_str = ', '.join(i_str)
-        return i_str
+        return intervals_to_str(self.normalized_intervals)
 
     def to_serializable(self):
         """
@@ -372,8 +378,10 @@ class ArrayInterval:
         >>> ai.to_serializable()
         ('1:4, 5:20, 21:25', (50,))
         """
-        assert self.inverse_mode is False, 'Export of intervals as tuple is only valid for normal mode, not inverse mode!' 
-        return self._intervals_as_str, self.shape
+        intervals = self.normalized_intervals
+        if self.inverse_mode:
+            intervals = cy_invert_intervals(intervals, self.shape[-1])
+        return intervals_to_str(intervals), self.shape
 
     @staticmethod
     def from_serializable(obj):
@@ -394,7 +402,7 @@ class ArrayInterval:
         >>> ArrayInterval.from_serializable(at)
         ArrayInterval("1:4, 5:20, 21:25", shape=(50,))
         """
-        assert len(obj) == 2, f'Expects object of length 2 with items (intervals, shape), got: {obj}' 
+        assert len(obj) == 2, f'Expects object of length 2 with items (intervals, shape), got: {obj}'
         return ArrayInterval_from_str(obj[0], shape=obj[1])
 
     def __repr__(self):
@@ -466,33 +474,88 @@ class ArrayInterval:
         >>> ai
         ArrayInterval("0:10, 40:50", shape=(50,))
 
+        >>> ai = zeros(50)
+        >>> ai2 = zeros(10)
+        >>> ai2[5:10] = 1
+        >>> ai[10:20] = ai2
+        >>> ai
+        ArrayInterval("15:20", shape=(50,))
+        >>> ai2 = zeros(20)
+        >>> ai2[0:10] = 1
+        >>> ai2[15:20] = 1
+        >>> ai[10:30] = ai2
+        >>> ai
+        ArrayInterval("10:20, 25:30", shape=(50,))
+
+        >>> ai[40:60] = ai2
+        Traceback (most recent call last):
+          ...
+        ValueError: Could not broadcast input with length 20 into shape 10
+        >>> ai[-20:] = ai2
+        >>> ai
+        ArrayInterval("10:20, 25:40, 45:50", shape=(50,))
+
+        >>> ai = zeros(20)
+        >>> ai[:10] = ones(10)
+        >>> ai
+        ArrayInterval("0:10", shape=(20,))
+        >>> ai = ones(20)
+        >>> ai[:10] = zeros(10)
+        >>> ai
+        ArrayInterval("0:10", shape=(20,), inverse_mode=True)
+
         """
+        if not isinstance(item, slice):
+            raise NotImplementedError(
+                f'{self.__class__.__name__}.__setitem__ only supports slices '
+                f'for indexing, not {item!r}'
+            )
 
         start, stop = cy_parse_item(item, self.shape)
 
         if np.isscalar(value):
+            if value not in (0, 1):
+                # Numpy interprets values as boolean even if they are larger
+                # than 1. We don't do that here because using other values than
+                # boolean (or 0, 1) often indicates a bug or a wrong assumption
+                # by the user.
+                raise ValueError(
+                    f'{self.__class__.__name__} only supports assigning '
+                    f'boolean (or 0 or 1) scalar values, not {value!r}'
+                )
+            value = bool(value)
             if self.inverse_mode:
-                if value == 0:
-                    self.intervals = self.intervals + ((start, stop),)
-                elif value == 1:
-                    self.intervals = cy_non_intersection((start, stop), self.intervals)
-                else:
-                    raise ValueError(value)
+                value = not value
+            if value:
+                self.intervals = self.intervals + ((start, stop),)
             else:
-                if value == 1:
-                    self.intervals = self.intervals + ((start, stop),)
-                elif value == 0:
-                    self.intervals = cy_non_intersection((start, stop), self.intervals)
-                else:
-                    raise ValueError(value)
-        elif isinstance(value, (tuple, list, np.ndarray)):
-            assert len(value) == stop - start, (start, stop, stop - start, len(value), value)
-            ai = ArrayInterval(value, inverse_mode=self.inverse_mode)
-            intervals = self.intervals
-            intervals = cy_non_intersection((start, stop), intervals)
-            self.intervals = intervals + tuple([(s + start, e + start) for s, e in ai.intervals])
+                self.intervals = cy_non_intersection((start, stop), self.intervals)
+        elif isinstance(value, (tuple, list, np.ndarray, ArrayInterval)):
+            if not isinstance(value, ArrayInterval):
+                # Inverse mode has to be the same as self.inverse_mode to have
+                # matching intervals. The value is inverted in
+                # ArrayInterval.__init__ if inverse_mode=True
+                value = ArrayInterval(value, inverse_mode=self.inverse_mode)
+
+            if len(value) != stop - start:
+                raise ValueError(
+                    f'Could not broadcast input with length {len(value)} into '
+                    f'shape {stop - start}'
+                )
+            value_intervals = value.intervals
+            if value.inverse_mode != self.inverse_mode:
+                value_intervals = cy_invert_intervals(
+                    value_intervals, value.shape[-1]
+                )
+            intervals = cy_non_intersection((start, stop), self.intervals)
+            self.intervals = intervals + tuple([
+                (s + start, e + start) for s, e in value_intervals
+            ])
         else:
-            raise NotImplementedError(value)
+            raise NotImplementedError(
+                f'{self.__class__.__name__}.__setitem__ not implemented for '
+                f'type {type(value)} of {value!r}'
+            )
 
     def __getitem__(self, item):
         """
@@ -514,16 +577,45 @@ class ArrayInterval:
         False
         >>> ai[29]
         True
-     
+        >>> ai[-25:-20]
+        array([ True,  True,  True,  True,  True])
+
+        Get a similar behavior to numpy when indexing outside of shape:
+        >>> ai[-1:1]
+        array([], dtype=bool)
+        >>> ai[-10:]
+        array([False, False, False, False, False, False, False, False, False,
+               False])
+        >>> ai[45:100]
+        array([False, False, False, False, False])
+
         """
         if isinstance(item, (int, np.integer)):
+            index = item
+            if index < 0:
+                if self.shape is None:
+                    raise ValueError(
+                        f'Negative indices can only be used on ArrayIntervals '
+                        f'with a shape! index={index}'
+                    )
+                index = index + self.shape[-1]
+            if index < 0 or self.shape is not None and index > self.shape[-1]:
+                raise IndexError(
+                    f'Index {item} is out of bounds for ArrayInterval with '
+                    f'shape {self.shape}'
+                )
             # Could be optimized
             for s, e in self.normalized_intervals:
-                if e > item:
-                    return (item >= s) ^ self.inverse_mode
+                if e > index:
+                    return (index >= s) ^ self.inverse_mode
             return self.inverse_mode
 
         start, stop = cy_parse_item(item, self.shape)
+
+        # This is numpy behavior
+        if stop <= start:
+            return np.zeros(0, dtype=np.bool)
+
         intervals = cy_intersection((start, stop), self.normalized_intervals)
 
         if self.inverse_mode:
@@ -553,7 +645,7 @@ class ArrayInterval:
         10
         """
         assert out is None, (out, axis, self)
-        assert axis is None, (axis, out, self)
+        assert axis is None or axis in (0, -1), (axis, out, self)
         if not self.normalized_intervals:
             sum = 0
         else:
@@ -577,7 +669,11 @@ class ArrayInterval:
         if not isinstance(other, ArrayInterval):
             return NotImplemented
         elif self.inverse_mode is False and other.inverse_mode is False:
-            assert other.shape == self.shape, (self.shape, other.shape)
+            if other.shape != self.shape:
+                raise ValueError(
+                    f'Cannot broadcast together ArrayIntervals with shapes '
+                    f'{self.shape} {other.shape}'
+                )
             ai = zeros(shape=self.shape)
             ai.intervals = self.intervals + other.intervals
             return ai
@@ -633,7 +729,11 @@ class ArrayInterval:
             # short circuit
             return ~((~self) | (~other))
         elif self.inverse_mode is False and other.inverse_mode is False:
-            assert other.shape == self.shape, (self.shape, other.shape)
+            if other.shape != self.shape:
+                raise ValueError(
+                    f'Cannot broadcast together ArrayIntervals with shapes '
+                    f'{self.shape} {other.shape}'
+                )
             ai = zeros(shape=self.shape)
 
             normalized_intervals = self.normalized_intervals
