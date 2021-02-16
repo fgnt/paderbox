@@ -12,6 +12,7 @@ from paderbox.array.interval.util import (
     cy_intersection,
     cy_parse_item,
     cy_str_to_intervals,
+    cy_invert_intervals,
 )
 
 
@@ -379,7 +380,7 @@ class ArrayInterval:
         """
         intervals = self.normalized_intervals
         if self.inverse_mode:
-            intervals = _invert_intervals(intervals, self.shape[-1])
+            intervals = cy_invert_intervals(intervals, self.shape[-1])
         return intervals_to_str(intervals), self.shape
 
     @staticmethod
@@ -538,7 +539,7 @@ class ArrayInterval:
                 )
             value_intervals = value.intervals
             if value.inverse_mode != self.inverse_mode:
-                value_intervals = _invert_intervals(
+                value_intervals = cy_invert_intervals(
                     value_intervals, value.shape[-1]
                 )
             intervals = cy_non_intersection((start, stop), self.intervals)
@@ -917,39 +918,3 @@ def _combine(func, *array_intervals, out=None):
         # print(s, e, values, func(*values))
         out[s:e] = func(*[ai[s] for ai in array_intervals])
     return out
-
-
-def _invert_intervals(normalized_intervals, size):
-    """
-    >>> _invert_intervals(((1, 2), (3, 4)), 5)
-    [(0, 1), (2, 3), (4, 5)]
-    >>> _invert_intervals(((0, 3), (4, 5)), 5)
-    [(3, 4)]
-    >>> _invert_intervals(((0, 3), (4, 5)), 6)
-    [(3, 4), (5, 6)]
-    >>> _invert_intervals(((1, 3), (4, 5)), 5)
-    [(0, 1), (3, 4)]
-    """
-    edges = set()
-    for interval in normalized_intervals:
-        assert edges.intersection(set(interval)) == set()
-        edges.update(interval)
-
-    if 0 in edges:
-        edges.remove(0)
-    else:
-        edges.add(0)
-
-    if size in edges:
-        edges.remove(size)
-    else:
-        edges.add(size)
-
-    assert len(edges) % 2 == 0, len(edges)
-
-    inverted_intervals = []
-    edges = sorted(edges)
-    for i in range(0, len(edges), 2):
-        inverted_intervals.append((edges[i], edges[i + 1]))
-
-    return inverted_intervals

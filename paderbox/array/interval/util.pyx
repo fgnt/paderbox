@@ -6,7 +6,13 @@
 # ToDO: better place for testcode
 #       http://ntsvr1:1619/notebooks/chime5/2018_05_17_tf_blstm.ipynb
 
-def cy_non_intersection(interval, intervals):
+def cy_non_intersection(interval: tuple, intervals: tuple) -> tuple:
+    """
+    "Removes" one `interval` from `intervals` by removing or shortening any
+    intervals in `intervals` that overlap with `interval`.
+
+    Similar to `cy_intersection(inverted_interval, intervals)`.
+    """
     cdef:
         int start
         int end
@@ -33,6 +39,9 @@ def cy_non_intersection(interval, intervals):
 
 
 def cy_intersection(interval, intervals):
+    """
+    "Cuts" out intervals from `intervals` that lie within `interval`.
+    """
     cdef:
         int start
         int end
@@ -151,3 +160,37 @@ def cy_str_to_intervals(string):
         intervals.append((start, end))
 
     return tuple(intervals)
+
+
+def cy_invert_intervals(normalized_intervals, size):
+    """
+    Inverts intervals.
+
+    Assumes that the intervals are normalized! This means that:
+        - No overlapping intervals in `normalized_intervals`
+        - Intervals are sorted by their start times
+    """
+    cdef:
+        list inverted_intervals
+        int edge
+        int i_start
+        int i_end
+
+    if len(normalized_intervals) == 0:
+        # Shortcut for emtpy intervals
+        return (0, size),
+
+    edge = -1
+    inverted_intervals = []
+    for i_start, i_end in normalized_intervals:
+        if edge == -1:
+            if i_start != 0:
+                inverted_intervals.append((0, i_start))
+        else:
+            inverted_intervals.append((edge, i_start))
+        edge = i_end
+
+    if edge != size:
+        inverted_intervals.append((edge, size))
+
+    return tuple(inverted_intervals)
