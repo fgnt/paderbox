@@ -94,8 +94,8 @@ def get_new_subdir(
     >>> import numpy as np
     >>> np.random.seed(0)  # This is for doctest. Never use it in practise.
     >>> get_new_subdir('/', id_naming=NameGenerator(), dry_run=True)
-    dry_run: "os.mkdir(/helpful_tomato_finch)"
-    PosixPath('/helpful_tomato_finch')
+    dry_run: "os.mkdir(/smooth_tomato_finch)"
+    PosixPath('/smooth_tomato_finch')
     """
 
     if consider_mpi:
@@ -254,12 +254,12 @@ class NameGenerator:
     >>> np.random.seed(0)
     >>> ng = NameGenerator()
     >>> ng()
-    'helpful_tomato_finch'
+    'smooth_tomato_finch'
     >>> ng.possibilities()  # With 28 million a collision is unlikely
-    28406196
+    27876888
     >>> ng = NameGenerator(['adjectives', 'animals'])
     >>> ng()
-    'colourful_tern'
+    'gradual_tern'
 
     """
     def __init__(
