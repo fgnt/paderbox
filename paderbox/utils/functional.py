@@ -63,43 +63,45 @@ def partial_decorator(
             calling the function with all parameteres will not call `fn`.
 
     Examples:
-        >>> @partial_decorator(chain=True)
-        ... def foo(data, a='a', b=42):
-        ...    print(data, a, b)
+        >>> @partial_decorator
+        ... def foo(a, b, c=42):
+        ...     print(a, b, c)
 
-        A call with all arguments calls foo directly
-        >>> foo(123)
-        123 a 42
+        A call with all (required) arguments calls foo directly
+        >>> foo(1, 2)
+        1 2 42
 
         If other arguments are given, a partial call is performed
-        >>> foo(a='b')(123)
+        >>> foo(b='b')(123)
         123 b 42
 
-        Multiple partial calls can follow each other, if nested=True
-        >>> foo(a='b')(b=43)(123)
-        123 b 43
-
         The first argument can also be set by keyword
-        >>> foo(a='b')(b=43)(data=123)
+        >>> foo(c='b', b=43)(a=123)
+        123 43 b
+
+        If chain is false (default), only one partial call is allowed
+        >>> foo(b=1)(c=2)
+        Traceback (most recent call last):
+          ...
+        TypeError: foo() missing 1 required positional argument: 'a'
+
+        Chained partial calls can be activated by setting chain=True
+        >>> @partial_decorator(chain=True)
+        ... def bar(data, a='a', b=42):
+        ...    print(data, a, b)
+
+        Multiple partial calls can follow each other, if nested=True
+        >>> bar(a='b')(b=43)(123)
         123 b 43
 
         The same argument can be overwritten multiple times
-        >>> foo(a='b')(a='c')(123)
+        >>> bar(a='b')(a='c')(123)
         123 c 42
 
         The partial kwargs are not saved in the function, but reset for each
         new chain of calls
-        >>> foo(42)
+        >>> bar(42)
         42 a 42
-
-        Multiple partial calls can be disabled by setting nested=False
-        >>> @partial_decorator(chain=False)
-        ... def bar(a, b, c):
-        ...     print(a, b)
-        >>> bar(b=1)(c=2)
-        Traceback (most recent call last):
-          ...
-        TypeError: bar() missing 1 required positional argument: 'a'
 
         If there are multiple positional arguments, these can be specified in
         any order when partial calls are chained
@@ -132,7 +134,7 @@ def partial_decorator(
 
         With requires_nested_call, the function always has to be called at least
         twice
-        >>> @partial_decorator(requires_partial_call=True)
+        >>> @partial_decorator(requires_partial_call=True, chain=True)
         ... def baz(a, b):
         ...     print(a, b)
         >>> baz(a=1, b=2)()
@@ -144,6 +146,8 @@ def partial_decorator(
         Traceback (most recent call last):
           ...
         RuntimeError: Can't make a partial call with positional arguments (you set requires_nested_call=True).
+        >>> baz(a=1)(a=2)(b=3)
+        2 3
     """
     if fn is None:
         return functools.partial(
@@ -155,8 +159,17 @@ def partial_decorator(
     signature = inspect.signature(fn)
 
     @functools.wraps(fn)
-    def partial_wrapper(*args, **kwargs):
-        nonlocal requires_partial_call
+    def partial_wrapper(
+            *args,
+            __requires_partial_call=requires_partial_call,
+            **kwargs
+    ):
+        """
+        Args:
+            __requires_partial_call: Has to be passed to this function instead
+                of modifying `requires_partial_call` directly to not cause any
+                side effects.
+        """
 
         try:
             # Check if all arguments are present
@@ -178,13 +191,14 @@ def partial_decorator(
                 # The initial exception is not informative here
                 raise e from None
 
-            requires_partial_call = False
             if chain:
-                return functools.partial(partial_wrapper, **kwargs)
+                return functools.partial(
+                    partial_wrapper, **kwargs, __requires_partial_call=False
+                )
             else:
                 return functools.partial(fn, **kwargs)
         else:
-            if requires_partial_call:
+            if __requires_partial_call:
                 if args:
                     # If we find a way to detect if fn has an *args argument and
                     # if it is filled, we can also allow positional arguments
@@ -193,7 +207,10 @@ def partial_decorator(
                         f'Can\'t make a partial call with positional arguments '
                         f'(you set requires_nested_call=True).'
                     )
-                return functools.partial(fn, **bound_args.arguments)
+                return functools.partial(
+                    partial_wrapper, **bound_args.arguments,
+                    __requires_partial_call=False
+                )
             return fn(**bound_args.arguments)
 
     return partial_wrapper
