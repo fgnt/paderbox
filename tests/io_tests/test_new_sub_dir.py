@@ -42,22 +42,22 @@ def test_index():
 
         rng = np.random.RandomState(0)
         new = get_new_subdir(tmp_dir, id_naming=NameGenerator(rng=rng))
-        assert new.name == 'helpful_tomato_finch'
+        assert new.name == 'smooth_tomato_finch'
 
         rng = np.random.RandomState(0)
         new = get_new_subdir(tmp_dir, id_naming=NameGenerator(rng=rng))
-        assert new.name == 'colourful_apricot_piranha'
+        assert new.name == 'gradual_apricot_piranha'
 
         rng = np.random.RandomState(0)
         new = get_new_subdir(tmp_dir, id_naming=NameGenerator(('adjectives', 'animals', range(10)), rng=rng))
-        assert new.name == 'helpful_bonobo_5'
+        assert new.name == 'smooth_bonobo_5'
 
         rng = np.random.RandomState(0)
         new = get_new_subdir(tmp_dir, id_naming=NameGenerator(('adjectives', 'animals', range(10)), rng=rng))
-        assert new.name == 'colourful_tern_3'
+        assert new.name == 'gradual_tern_3'
 
-        assert NameGenerator(rng=rng).possibilities() == 28_406_196
-        assert NameGenerator(('adjectives', 'animals', range(10))).possibilities() == 5_462_730
+        assert NameGenerator(rng=rng).possibilities() == 27_876_888
+        assert NameGenerator(('adjectives', 'animals', range(10))).possibilities() == 5_360_940
 
         # Example, how you get time stamp and word combination
         # Note, you shouldn't use here the rng argument from NameGenerator.
