@@ -17,7 +17,7 @@ def partial_decorator(
     
     Positional arguments are not allowed for partial calls, i.e., calls that 
     don't actually call `fn`. This is for multiple reasons, even if 
-    `requires_nested_call=True`:
+    `requires_partial_call=True`:
      - It is not possible (or, very hard) to detect if a function has * or ** 
         arguments and then unclear how to merge them with keyword arguments
      - It is unclear how to merge positional arguments if calls with positional 
@@ -132,8 +132,8 @@ def partial_decorator(
           ...
         TypeError: got an unexpected keyword argument 'd'
 
-        With requires_nested_call, the function always has to be called at least
-        twice
+        With requires_partial_call, the function always has to be called at least
+        twicerequires_partial_call
         >>> @partial_decorator(requires_partial_call=True, chain=True)
         ... def baz(a, b):
         ...     print(a, b)
@@ -145,7 +145,7 @@ def partial_decorator(
         >>> baz(1, 2)()
         Traceback (most recent call last):
           ...
-        RuntimeError: Can't make a partial call with positional arguments (you set requires_nested_call=True).
+        RuntimeError: Can't make a partial call with positional arguments (you set requires_partial_call=True).
         >>> baz(a=1)(a=2)(b=3)
         2 3
     """
@@ -205,7 +205,7 @@ def partial_decorator(
                     # here as long as they don't end up in *args.
                     raise RuntimeError(
                         f'Can\'t make a partial call with positional arguments '
-                        f'(you set requires_nested_call=True).'
+                        f'(you set requires_partial_call=True).'
                     )
                 return functools.partial(
                     partial_wrapper, **bound_args.arguments,
