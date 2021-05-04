@@ -418,26 +418,21 @@ def squeeze_nested(orig):
 def _get_by_path(
         d: Union[Mapping, Sequence],
         path: Tuple[Any, ...],
-        broadcast: bool = False
+        allow_partial_path: bool = False
 ):
     """ Helper function for `get_by_path` and `set_by_path`. """
     for k in path:
         try:
             d = d[k]
-        except KeyError:
-            # Not sure if broadcasting makes sense for lists/tuples
-            if broadcast and not isinstance(d, dict):
+        except Exception:
+            # Indexing a custom type can raise any exception, in which case we
+            # try to broadcast
+            # Not sure if broadcasting makes sense for lists/tuples. It is hard
+            # to check for custom sequences because of str, so sequences are
+            # broadcasted here
+            if allow_partial_path and not isinstance(d, Mapping):
                 return d
             raise
-        except TypeError as e:
-            # Not sure if broadcasting makes sense for lists/tuples
-            if broadcast and not isinstance(d, dict):
-                return d
-            raise TypeError(
-                'Only indexable types are supported in `get_by_path` and '
-                '`set_by_path`!',
-                d, k
-            ) from e
     return d
 
 
@@ -445,8 +440,8 @@ def get_by_path(
         d: Union[Mapping, Sequence],
         path: Union[str, Tuple[Any, ...], None],
         *,
-        broadcast: bool = False,
-        delimiter: str = '.',
+        allow_partial_path: bool = False,
+        sep: str = '.',
         default: Any = ...,
 ) -> Any:
     """
@@ -457,12 +452,12 @@ def get_by_path(
         path: Dotted path or tuple of keys to index the nested container with.
             A `tuple` is useful if not all keys are strings. If it is a `str`,
             keys are delimited by `delimiter`
-        broadcast: If `True`, broadcast leaves if a sub-path of `path` points to
+        allow_partial_path: If `True`, broadcast leaves if a sub-path of `path` points to
             a leaf in `d`. Useful for nested structures where the exact
             structure can vary, e.g., in a database the number of samples for
             the "observation" can be located in "num_samples" or
             "num_samples.observation". Use with care!
-        delimiter: The delimiter for keys in path
+        sep: The delimiter for keys in path
         default: Default value that is returned when the path is not present in
             the nested container (and cannot be broadcasted if `broadcast=True`)
 
@@ -477,7 +472,7 @@ def get_by_path(
         'f'
         >>> get_by_path(d, ('c', 'g', 1, 0))
         2
-        >>> get_by_path(d, 'a.b.c', broadcast=True)
+        >>> get_by_path(d, 'a.b.c', allow_partial_path=True)
         'b'
         >>> get_by_path(d, 'c.b.c', default=42)
         42
@@ -485,9 +480,9 @@ def get_by_path(
     if path is None:
         return d
     if isinstance(path, str):
-        path = path.split(delimiter)
+        path = path.split(sep)
     try:
-        return _get_by_path(d, path, broadcast=broadcast)
+        return _get_by_path(d, path, allow_partial_path=allow_partial_path)
     except (KeyError, IndexError):
         if default is not ...:
             return default
@@ -499,7 +494,7 @@ def set_by_path(
         path: Union[str, Tuple[Any, ...], None],
         value: Any,
         *,
-        delimiter: str = '.',
+        sep: str = '.',
 ) -> None:
     """
     Sets a value in the nested dictionary `d` by the dotted path.
@@ -512,7 +507,7 @@ def set_by_path(
             A `tuple` is useful if not all keys are strings. If it is a `str`,
             keys are delimited by `delimiter`
         value: The value to set in `d` for `path`
-        delimiter: The delimiter for keys in path
+        sep: The delimiter for keys in path
 
     Examples:
         >>> d = {}
@@ -527,7 +522,7 @@ def set_by_path(
         {'a': {'b': {'c': [1, 2, 42], 'd': 'e'}}}
     """
     if isinstance(path, str):
-        path = path.split(delimiter)
+        path = path.split(sep)
     d = _get_by_path(d, path[:-1])
     d[path[-1]] = value
 

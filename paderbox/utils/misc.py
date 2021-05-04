@@ -7,6 +7,7 @@ find something useful if you alter it a little bit.
 
 import os
 import sys
+from collections import Mapping
 from typing import Iterable, Hashable
 
 
@@ -67,6 +68,8 @@ def all_equal(x: Iterable[Hashable]) -> bool:
         >>> all_equal((1, 1, 1, 2))
         False
     """
+    if isinstance(x, Mapping):
+        raise TypeError('all_equal does not support Mappings')
     return len(set(x)) == 1
 
 
@@ -82,6 +85,8 @@ def all_unique(x: Iterable[Hashable]) -> bool:
         >>> all_unique((1, 2, 3, 1))
         False
     """
+    if isinstance(x, Mapping):
+        raise TypeError('all_unique does not support Mappings')
     return len(set(x)) == len(list(x))
 
 
@@ -89,7 +94,7 @@ def all_in(x: Iterable[Hashable], y: Iterable[Hashable]) -> bool:
     """
     Check if all elements in `x` are in `y`. Returns `True` if `x` is empty.
 
-    Equivalent to `set(x).issubset(y)`, but faster.
+    Equivalent to `set(x).issubset(y)`.
 
     Defined to improve readability.
 
@@ -99,7 +104,7 @@ def all_in(x: Iterable[Hashable], y: Iterable[Hashable]) -> bool:
         >>> all_in([1, 2, 2, 4, 2], [1, 2, 3])
         False
     """
-    return all(x_ in y for x_ in x)
+    return set(x).issubset(y)
 
 
 def any_in(x: Iterable[Hashable], y: Iterable[Hashable]) -> bool:
@@ -116,4 +121,4 @@ def any_in(x: Iterable[Hashable], y: Iterable[Hashable]) -> bool:
         >>> any_in([1, 2, 2, 4, 2], [3, 5, 6])
         False
     """
-    return any(x_ in y for x_ in x)
+    return bool(set(x).intersection(y))
