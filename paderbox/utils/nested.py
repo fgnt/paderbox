@@ -2,14 +2,17 @@ import copy
 
 import collections
 import itertools
+from typing import Optional, Any, Union, Sequence, Mapping, Tuple, Callable
 
 
-def flatten(d, sep='.', flat_type=dict):
-    """Flatten a nested dict using a specific separator.
+def flatten(d, sep: Optional[str] = '.', *, flat_type=dict):
+    """
+    Flatten a nested `dict` using a specific separator.
 
-    :param sep: When None, return dict with tuple keys (guaranties inversion of
-                flatten) else join the keys with sep
-    :param flat_type: Allow other mappings instead of flat_type to be
+    Args:
+        sep: When `None`, return `dict` with `tuple` keys (guarantees inversion
+                of flatten) else join the keys with sep
+        flat_type:  Allow other mappings instead of `flat_type` to be
                 flattened, e.g. using an isinstance check.
 
     import collections
@@ -31,6 +34,7 @@ def flatten(d, sep='.', flat_type=dict):
     c_b_y 10
     d [1, 2, 3]
     """
+
     # https://stackoverflow.com/a/6027615/5766934
 
     # {k: v for k, v in d.items()}
@@ -54,8 +58,15 @@ def flatten(d, sep='.', flat_type=dict):
         }
 
 
-def deflatten(d, sep='.', maxdepth=-1):
-    """Build a nested dict from a flat dict respecting a separator.
+def deflatten(d: dict, sep: Optional[str] = '.', maxdepth: int = -1):
+    """
+    Build a nested `dict` from a flat dict respecting a separator.
+
+    Args:
+        d: Flattened `dict` to reconstruct a `nested` dict from
+        sep: The separator used in the keys of `d`. If `None`, `d.keys()` should
+            only contain `tuple`s.
+        maxdepth: Maximum depth until wich nested conversion is performed
 
     >>> d_in = {'a': 1, 'c': {'a': 2, 'b': {'x': 5, 'y' : 10}}, 'd': [1, 2, 3]}
     >>> d = flatten(d_in)
@@ -137,10 +148,12 @@ def nested_update(orig, update):
 def nested_merge(default_dict, *update_dicts, allow_update=True, inplace=False):
     """
     Nested updates the first dict with all other dicts.
-    The last dict has the highest priority when allow_update is True.
-    When allow_update is False, it is assumed, that no values gets overwritten.
 
-    When inplace is True, the default_dict is manipulated inplace. This is
+    The last dict has the highest priority when `allow_update` is `True`.
+    When `allow_update` is `False`, it is assumed that no values get
+    overwritten and an exception is raised when duplicate keys are found.
+
+    When `inplace` is `True`, the `default_dict` is manipulated inplace. This is
     useful for `collections.defaultdict`.
 
     # Example from: https://stackoverflow.com/q/3232943/5766934
@@ -239,13 +252,13 @@ def nested_op(
         keep_type=True,
         mapping_type=collections.abc.Mapping,
         sequence_type=(tuple, list),
-
 ):
-    """This function is `nested_map` with a fancy name.
-
-    Applies the function "func" to the leafs of the nested data structures.
+    """
+    Applies the function `func` to the leafs of the nested data structures in
+    `arg1` and `*args`.
     This is similar to the map function that applies the function the the
     elements of an iterable input (e.g. list).
+    This function is `nested_map` with a fancy name.
 
     CB: Should handle_dataclass be True or False?
         Other suggestions for the name "handle_dataclass"?
@@ -370,7 +383,7 @@ def nested_op(
                       if hasattr(arg, '__dataclass_fields__')
                       else arg
                       for arg in args
-                    ],
+                      ],
                     broadcast=broadcast,
                     mapping_type=mapping_type,
                     sequence_type=sequence_type,
@@ -400,3 +413,196 @@ def squeeze_nested(orig):
         if squeezed and all([orig[key] == orig[keys[0]] for key in keys]):
             return orig[keys[0]]
     return orig
+
+
+def _get_by_path(
+        d: Union[Mapping, Sequence],
+        path: Tuple[Any, ...],
+        broadcast: bool = False
+):
+    """ Helper function for `get_by_path` and `set_by_path`. """
+    for k in path:
+        try:
+            d = d[k]
+        except KeyError:
+            # Not sure if broadcasting makes sense for lists/tuples
+            if broadcast and not isinstance(d, dict):
+                return d
+            raise
+        except TypeError as e:
+            # Not sure if broadcasting makes sense for lists/tuples
+            if broadcast and not isinstance(d, dict):
+                return d
+            raise TypeError(
+                'Only indexable types are supported in `get_by_path` and '
+                '`set_by_path`!',
+                d, k
+            ) from e
+    return d
+
+
+def get_by_path(
+        d: Union[Mapping, Sequence],
+        path: Union[str, Tuple[Any, ...], None],
+        *,
+        broadcast: bool = False,
+        delimiter: str = '.',
+        default: Any = ...,
+) -> Any:
+    """
+    Gets a value from the nested dictionary `d` by the dotted path `path`.
+
+    Args:
+        d: The container to get the value from
+        path: Dotted path or tuple of keys to index the nested container with.
+            A `tuple` is useful if not all keys are strings. If it is a `str`,
+            keys are delimited by `delimiter`
+        broadcast: If `True`, broadcast leaves if a sub-path of `path` points to
+            a leaf in `d`. Useful for nested structures where the exact
+            structure can vary, e.g., in a database the number of samples for
+            the "observation" can be located in "num_samples" or
+            "num_samples.observation". Use with care!
+        delimiter: The delimiter for keys in path
+        default: Default value that is returned when the path is not present in
+            the nested container (and cannot be broadcasted if `broadcast=True`)
+
+    Returns:
+        Value located at `path` in `d`
+
+    Examples:
+        >>> d = {'a': 'b', 'c': {'d': {'e': 'f'}, 'g': [1, [2, 3], 4]}}
+        >>> get_by_path(d, 'a')
+        'b'
+        >>> get_by_path(d, 'c.d.e')
+        'f'
+        >>> get_by_path(d, ('c', 'g', 1, 0))
+        2
+        >>> get_by_path(d, 'a.b.c', broadcast=True)
+        'b'
+        >>> get_by_path(d, 'c.b.c', default=42)
+        42
+    """
+    if path is None:
+        return d
+    if isinstance(path, str):
+        path = path.split(delimiter)
+    try:
+        return _get_by_path(d, path, broadcast=broadcast)
+    except (KeyError, IndexError):
+        if default is not ...:
+            return default
+        raise
+
+
+def set_by_path(
+        d: Union[Mapping, Sequence],
+        path: Union[str, Tuple[Any, ...], None],
+        value: Any,
+        *,
+        delimiter: str = '.',
+) -> None:
+    """
+    Sets a value in the nested dictionary `d` by the dotted path.
+
+    Modifies `d` inplace.
+
+    Args:
+        d: The container to get the value from
+        path: Dotted path or tuple of keys to index the nested container with.
+            A `tuple` is useful if not all keys are strings. If it is a `str`,
+            keys are delimited by `delimiter`
+        value: The value to set in `d` for `path`
+        delimiter: The delimiter for keys in path
+
+    Examples:
+        >>> d = {}
+        >>> set_by_path(d, 'a', {})
+        >>> d
+        {'a': {}}
+        >>> set_by_path(d, 'a.b', {'c': [1, 2, 3], 'd': 'e'})
+        >>> d
+        {'a': {'b': {'c': [1, 2, 3], 'd': 'e'}}}
+        >>> set_by_path(d, ('a', 'b', 'c', 2), 42)
+        >>> d
+        {'a': {'b': {'c': [1, 2, 42], 'd': 'e'}}}
+    """
+    if isinstance(path, str):
+        path = path.split(delimiter)
+    d = _get_by_path(d, path[:-1])
+    d[path[-1]] = value
+
+
+def nested_any(x, fn: Callable = bool):
+    """
+    Checks if any value in the nested strucutre `x` evaluates to `True`
+
+    Args:
+        x: Nested structure to check
+        fn: Function that is applied to every leaf before checking for truth.
+
+    Returns:
+        `True` if any leaf value in `x` evaluates to `True`.
+
+    Examples:
+        >>> nested_any([False, False, False])
+        False
+        >>> nested_any([True, False, False])
+        True
+        >>> nested_any({'a': False})
+        False
+        >>> nested_any({'a': False, 'b': True})
+        True
+        >>> nested_any([True, {'a': True, 'b': {'c': True}}, 1, 'true!'])
+        True
+        >>> nested_any([1, 2, 3, 4], fn=lambda x: x%2)
+        True
+    """
+
+    class StopException(Exception):
+        """Exception raised for early stopping. We have to raise an exception
+        that is not used anywhere else to be sure it is not raised by accident.
+        """
+        pass
+
+    def _local(_x):
+        if fn(_x):
+            raise StopException()
+
+    try:
+        nested_op(_local, x)
+    except StopException:
+        return True
+    return False
+
+
+def nested_all(x, fn: Callable = bool):
+    """
+    Checks if all values in the nested strucutre `x` evaluate to `True`
+
+    Args:
+        x: Nested structure to check
+        fn: Function that is applied to every leaf before checking for truth.
+
+    Returns:
+        `True` if all leaf values in `x` evaluate to `True`.
+
+    Examples:
+        >>> nested_all([False, False, False])
+        False
+        >>> nested_all([True, True, True])
+        True
+        >>> nested_all([True, False, True])
+        False
+        >>> nested_all({'a': True})
+        True
+        >>> nested_all({'a': False, 'b': True})
+        False
+        >>> nested_all([True, {'a': True, 'b': {'c': True}}, 1, ''])
+        False
+        >>> nested_all([1, 2, 3, 4], fn=lambda x: x%2)
+        False
+        >>> nested_all([1, 3, 5, 7], fn=lambda x: x%2)
+        True
+    """
+    # `all(x)` is the same as `not any([not x_ for x_ in x])`
+    return not nested_any(x, fn=lambda x_: not fn(x_))

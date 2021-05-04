@@ -5,30 +5,9 @@ find something useful if you alter it a little bit.
 
 """
 
-import collections
 import os
 import sys
-
-
-def update_dict(d, u):
-    """ Recursively update dict d with values from dict u.
-
-    Args:
-        d: Dict to be updated
-        u: Dict with values to use for update
-
-    Returns: Updated dict
-
-    """
-    for k, v in u.items():
-        if isinstance(v, collections.Mapping):
-            default = v.copy()
-            default.clear()
-            r = update_dict(d._get(k, default), v)
-            d[k] = r
-        else:
-            d[k] = v
-    return d
+from typing import Iterable, Hashable
 
 
 def interleave(*lists):
@@ -74,3 +53,67 @@ class PrintSuppressor:
     def __exit__(self, exc_type, exc_val, exc_tb):
         sys.stdout.close()
         sys.stdout = self._original_stdout
+
+
+def all_equal(x: Iterable[Hashable]) -> bool:
+    """
+    Checks if all elements in `x` are equal. Returns `False` if `x` is empty.
+
+    Defined to improve readability.
+
+    Examples:
+        >>> all_equal((1, 1, 1, 1))
+        True
+        >>> all_equal((1, 1, 1, 2))
+        False
+    """
+    return len(set(x)) == 1
+
+
+def all_unique(x: Iterable[Hashable]) -> bool:
+    """
+    Checks if all elements in `x` are unique. Returns `True` if `x` is empty.
+
+    Defined to improve readability.
+
+    Examples:
+        >>> all_unique((1, 2, 3, 4))
+        True
+        >>> all_unique((1, 2, 3, 1))
+        False
+    """
+    return len(set(x)) == len(list(x))
+
+
+def all_in(x: Iterable[Hashable], y: Iterable[Hashable]) -> bool:
+    """
+    Check if all elements in `x` are in `y`. Returns `True` if `x` is empty.
+
+    Equivalent to `set(x).issubset(y)`, but faster.
+
+    Defined to improve readability.
+
+    Examples:
+        >>> all_in([1, 2, 2, 1, 2], [1, 2, 3])
+        True
+        >>> all_in([1, 2, 2, 4, 2], [1, 2, 3])
+        False
+    """
+    return all(x_ in y for x_ in x)
+
+
+def any_in(x: Iterable[Hashable], y: Iterable[Hashable]) -> bool:
+    """
+    Check if any elements in `x` is in `y`. Returns `True` if `x` is empty.
+
+    Defined to improve readability.
+
+    Examples:
+        >>> any_in([1, 2, 2, 1, 2], [1, 2, 3])
+        True
+        >>> any_in([1, 2, 2, 4, 2], [1, 2, 3])
+        True
+        >>> any_in([1, 2, 2, 4, 2], [3, 5, 6])
+        False
+    """
+    return any(x_ in y for x_ in x)
