@@ -148,6 +148,13 @@ def partial_decorator(
         RuntimeError: Can't make a partial call with positional arguments (you set requires_partial_call=True).
         >>> baz(a=1)(a=2)(b=3)
         2 3
+
+        Check keyword arguments and variable numbers of arguments
+        >>> @partial_decorator
+        ... def buzz(a, *args, **kwargs):
+        ...     print(a, args, kwargs)
+        >>> buzz(keyword1=42, keyword2=123)(1, 2, 3, 4, 5)
+        1 (2, 3, 4, 5) {'keyword1': 42, 'keyword2': 123}
     """
     if fn is None:
         return functools.partial(
@@ -208,9 +215,9 @@ def partial_decorator(
                         f'(you set requires_partial_call=True).'
                     )
                 return functools.partial(
-                    partial_wrapper, **bound_args.arguments,
+                    partial_wrapper, **kwargs,
                     __requires_partial_call=False
                 )
-            return fn(**bound_args.arguments)
+            return fn(*args, **kwargs)
 
     return partial_wrapper
