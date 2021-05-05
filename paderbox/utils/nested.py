@@ -415,54 +415,37 @@ def squeeze_nested(orig):
     return orig
 
 
-def _get_by_path(
-        d: Union[Mapping, Sequence],
-        path: Tuple[Any, ...],
-        allow_partial_path: bool = False
-):
-    """ Helper function for `get_by_path` and `set_by_path`. """
-    for k in path:
-        try:
-            d = d[k]
-        except Exception:
-            # Indexing a custom type can raise any exception, in which case we
-            # try to broadcast
-            # Not sure if broadcasting makes sense for lists/tuples. It is hard
-            # to check for custom sequences because of str, so sequences are
-            # broadcasted here
-            if allow_partial_path and not isinstance(d, Mapping):
-                return d
-            raise
-    return d
-
-
 def get_by_path(
-        d: Union[Mapping, Sequence],
+        container: Union[Mapping, Sequence],
         path: Union[str, Tuple[Any, ...], None],
         *,
-        allow_partial_path: bool = False,
+        allow_early_stopping: bool = False,
         sep: str = '.',
         default: Any = ...,
 ) -> Any:
     """
-    Gets a value from the nested dictionary `d` by the dotted path `path`.
+    Gets a value from a nested `container` by the dotted path `path`.
+
+    If `container` is a nested dictionary (and doesn't contain any lists), this
+    operation with default arguments is equivalent to `flatten(container)[path]`
+    for string paths, but faster.
 
     Args:
-        d: The container to get the value from
+        container: The container to get the value from
         path: Dotted path or tuple of keys to index the nested container with.
             A `tuple` is useful if not all keys are strings. If it is a `str`,
             keys are delimited by `delimiter`
-        allow_partial_path: If `True`, broadcast leaves if a sub-path of `path` points to
-            a leaf in `d`. Useful for nested structures where the exact
-            structure can vary, e.g., in a database the number of samples for
-            the "observation" can be located in "num_samples" or
+        allow_early_stopping: If `True`, "broadcast" leaves if a sub-path of
+            `path` points to a leaf in `container`. Useful for nested structures
+            where the exact structure can vary, e.g., in a database the number
+            of samples for the "observation" can be located in "num_samples" or
             "num_samples.observation". Use with care!
         sep: The delimiter for keys in path
         default: Default value that is returned when the path is not present in
             the nested container (and cannot be broadcasted if `broadcast=True`)
 
     Returns:
-        Value located at `path` in `d`
+        Value located at `path` in `container`
 
     Examples:
         >>> d = {'a': 'b', 'c': {'d': {'e': 'f'}, 'g': [1, [2, 3], 4]}}
@@ -472,25 +455,43 @@ def get_by_path(
         'f'
         >>> get_by_path(d, ('c', 'g', 1, 0))
         2
-        >>> get_by_path(d, 'a.b.c', allow_partial_path=True)
+        >>> get_by_path(d, 'a.b.c', allow_early_stopping=True)
         'b'
         >>> get_by_path(d, 'c.b.c', default=42)
         42
     """
     if path is None:
-        return d
+        return container
+
     if isinstance(path, str):
         path = path.split(sep)
-    try:
-        return _get_by_path(d, path, allow_partial_path=allow_partial_path)
-    except (KeyError, IndexError):
-        if default is not ...:
-            return default
-        raise
+
+    for k in path:
+        try:
+            container = container[k]
+        except Exception as e:
+            # Indexing a custom type can raise any exception, in which case
+            # we try to broadcast
+            # Not sure if broadcasting makes sense for lists/tuples. It is
+            # hard to check for custom sequences because of str, so
+            # sequences are broadcasted here
+            if allow_early_stopping and not isinstance(container, Mapping):
+                return container
+
+            # We can't add another more specific except block because we have to
+            # catch all exceptions for the broadcasting. Assuming here that
+            # custom containers raise KeyErrors and IndexErrors correctly when
+            # the indexed element is not found
+            if isinstance(e, (KeyError, IndexError)):
+                if default is not ...:
+                    return default
+
+            raise
+    return container
 
 
 def set_by_path(
-        d: Union[Mapping, Sequence],
+        container: Union[Mapping, Sequence],
         path: Union[str, Tuple[Any, ...], None],
         value: Any,
         *,
@@ -502,7 +503,7 @@ def set_by_path(
     Modifies `d` inplace.
 
     Args:
-        d: The container to get the value from
+        container: The container to get the value from
         path: Dotted path or tuple of keys to index the nested container with.
             A `tuple` is useful if not all keys are strings. If it is a `str`,
             keys are delimited by `delimiter`
@@ -511,20 +512,123 @@ def set_by_path(
 
     Examples:
         >>> d = {}
-        >>> set_by_path(d, 'a', {})
-        >>> d
+        >>> set_by_path(container, 'a', {})
+        >>> container
         {'a': {}}
-        >>> set_by_path(d, 'a.b', {'c': [1, 2, 3], 'd': 'e'})
-        >>> d
+        >>> set_by_path(container, 'a.b', {'c': [1, 2, 3], 'd': 'e'})
+        >>> container
         {'a': {'b': {'c': [1, 2, 3], 'd': 'e'}}}
-        >>> set_by_path(d, ('a', 'b', 'c', 2), 42)
-        >>> d
+        >>> set_by_path(container, ('a', 'b', 'c', 2), 42)
+        >>> container
         {'a': {'b': {'c': [1, 2, 42], 'd': 'e'}}}
     """
     if isinstance(path, str):
         path = path.split(sep)
-    d = _get_by_path(d, path[:-1])
-    d[path[-1]] = value
+    container = get_by_path(container, path[:-1])
+    container[path[-1]] = value
+
+
+def nested_iter_items(container, *, iter_types=(dict, tuple, list)):
+    """
+
+    Args:
+        container:
+        iter_types:
+
+    Returns:
+
+    Examples:
+        >>> list(nested_iter_items({'a': {'b': {'c': [1, 2, 42], 'd': 'e'}}}))
+        [(('a', 'b', 'c', 0), 1), (('a', 'b', 'c', 1), 2), (('a', 'b', 'c', 2), 42), (('a', 'b', 'd'), 'e')]
+
+        This can be useful for example if you have a list of nested elements:
+        >>> c = [{'a': 1}, {'b': 2}, {'c': 2}]
+        >>> for idx, element in enumerate(c):
+        ...     for key, nested_element in element.items():
+        ...         print(idx, key, nested_element)
+        0 a 1
+        1 b 2
+        2 c 2
+
+        >>> for (idx, key), nested_element in nested_iter_items(c):
+        ...     print(idx, key, nested_element)
+        0 a 1
+        1 b 2
+        2 c 2
+    """
+    try:
+        items = container.items()
+    except AttributeError:
+        items = enumerate(container)
+    for key, value in items:
+        if isinstance(value, iter_types):
+            for key_, value_ in nested_iter_items(value):
+                yield (key, ) + key_, value_
+        else:
+            yield (key, ), value
+
+
+class FlatView:
+    def __init__(
+            self,
+            nested_container: Any,
+            *,
+            allow_partial_path: bool = False,
+            sep: str = '.',
+    ):
+        """
+        A view on a nested container that allows for access with paths. Useful
+        if the nested container contains non-dict objects so that a `flatten`
+        wouln't be reversible.
+
+        Note:
+            This view doesn't support `len` and `keys`, and thus is not a proper
+            `Mapping`, because these are not easily accessible
+            without traversing the whole nested structure.
+
+        Examples:
+            >>> d = {'a': 'b', 'c': {'d': {'e': 'f'}, 'g': [1, [2, 3], 4]}}
+            >>> v = FlatView(d)
+            >>> v['c.d.e']
+            'f'
+            >>> v.get('asdf', 'default')
+            'default'
+            >>> v['a'] = {'b': 'c'}
+            >>> v['a.b']
+            'c'
+            >>> d['a']['b']
+            'c'
+            >>> v[('c', 'g', 1, 1)]
+            3
+            >>> v = FlatView(d, allow_partial_path=True)
+            >>> v['a.b.c.d.e.f']
+            'c'
+            >>> list(v.items())
+            [(('a', 'b'), 'c'), (('c', 'd', 'e'), 'f'), (('c', 'g', 0), 1), (('c', 'g', 1, 0), 2), (('c', 'g', 1, 1), 3), (('c', 'g', 2), 4)]
+        """
+        self._container = nested_container
+        self.allow_partial_path = allow_partial_path
+        self.sep = sep
+
+    def get(self, item, default=..., *, sep=None):
+        if sep is None:
+            sep = self.sep
+        return get_by_path(
+            self._container, item, allow_early_stopping=self.allow_partial_path,
+            default=default, sep=sep,
+        )
+
+    def items(self):
+        """
+        Yield the leaves and paths to the leaves, not all sub-containers.
+        """
+        yield from nested_iter_items(self._container)
+
+    def __getitem__(self, item):
+        return self.get(item)
+
+    def __setitem__(self, key, value):
+        set_by_path(self._container, key, value)
 
 
 def nested_any(x, fn: Callable = bool):
