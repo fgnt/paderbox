@@ -698,21 +698,9 @@ def nested_any(x, fn: Callable = bool):
         >>> nested_any([1, 2, 3, 4], fn=lambda x: x%2)
         True
     """
-
-    class StopException(Exception):
-        """Exception raised for early stopping. We have to raise an exception
-        that is not used anywhere else to be sure it is not raised by accident.
-        """
-        pass
-
-    def _local(_x):
-        if fn(_x):
-            raise StopException()
-
-    try:
-        nested_op(_local, x)
-    except StopException:
-        return True
+    for _, value in nested_iter_items(x):
+        if fn(value):
+            return True
     return False
 
 
