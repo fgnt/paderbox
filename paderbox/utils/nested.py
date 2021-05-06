@@ -2,7 +2,9 @@ import copy
 
 import collections
 import itertools
-from typing import Optional, Any, Union, Sequence, Mapping, Tuple, Callable
+import operator
+from typing import Optional, Any, Union, Sequence, Mapping, Tuple, Callable, Generator, Iterable, Iterator
+import collections.abc
 
 
 def flatten(d, sep: Optional[str] = '.', *, flat_type=dict):
@@ -415,13 +417,16 @@ def squeeze_nested(orig):
     return orig
 
 
+_NO_VALUE = object()
+
+
 def get_by_path(
         container: Union[Mapping, Sequence],
         path: Union[str, Tuple[Any, ...], None],
         *,
         allow_early_stopping: bool = False,
         sep: str = '.',
-        default: Any = ...,
+        default: Any = _NO_VALUE,
 ) -> Any:
     """
     Gets a value from a nested `container` by the dotted path `path`.
@@ -483,7 +488,7 @@ def get_by_path(
             # custom containers raise KeyErrors and IndexErrors correctly when
             # the indexed element is not found
             if isinstance(e, (KeyError, IndexError)):
-                if default is not ...:
+                if default is not _NO_VALUE:
                     return default
 
             raise
@@ -528,14 +533,23 @@ def set_by_path(
     container[path[-1]] = value
 
 
-def nested_iter_items(container, *, iter_types=(dict, tuple, list)):
+def nested_iter_items(
+        container: Iterable,
+        *,
+        iter_types: Tuple[type] = (dict, tuple, list)
+) -> Generator[Tuple[Tuple[Any, ...], Any], None, None]:
     """
+    Iterates over the leaves of `container`. Yield tuples of `(path, value)`,
+    where path is the path to the leaf as a `tuple` of keys.
 
     Args:
-        container:
-        iter_types:
+        container: The container to iterate over
+        iter_types: List of types that are treated as nested. If an objet of
+            any other type is encountered that is not part of `iter_types` it
+            is treated as a leaf.
 
-    Returns:
+    Yields:
+        (path, value) tuples
 
     Examples:
         >>> list(nested_iter_items({'a': {'b': {'c': [1, 2, 42], 'd': 'e'}}}))
@@ -563,12 +577,12 @@ def nested_iter_items(container, *, iter_types=(dict, tuple, list)):
     for key, value in items:
         if isinstance(value, iter_types):
             for key_, value_ in nested_iter_items(value):
-                yield (key, ) + key_, value_
+                yield (key,) + key_, value_
         else:
-            yield (key, ), value
+            yield (key,), value
 
 
-class FlatView:
+class FlatView(collections.abc.Mapping):
     def __init__(
             self,
             nested_container: Any,
@@ -606,29 +620,57 @@ class FlatView:
             >>> list(v.items())
             [(('a', 'b'), 'c'), (('c', 'd', 'e'), 'f'), (('c', 'g', 0), 1), (('c', 'g', 1, 0), 2), (('c', 'g', 1, 1), 3), (('c', 'g', 2), 4)]
         """
-        self._container = nested_container
+        self.data = nested_container
         self.allow_partial_path = allow_partial_path
         self.sep = sep
 
-    def get(self, item, default=..., *, sep=None):
+    def get(
+            self,
+            item: Union[str, Tuple[Any, ...], None],
+            default: Any = _NO_VALUE,
+            *,
+            sep: str = None
+    ) -> Any:
         if sep is None:
             sep = self.sep
         return get_by_path(
-            self._container, item, allow_early_stopping=self.allow_partial_path,
+            self.data, item, allow_early_stopping=self.allow_partial_path,
             default=default, sep=sep,
         )
 
-    def items(self):
+    def items(self) -> Iterator[Tuple[Tuple[Any, ...], Any]]:
         """
         Yield the leaves and paths to the leaves, not all sub-containers.
         """
-        yield from nested_iter_items(self._container)
+        yield from nested_iter_items(self.data)
+
+    def keys(self) -> Iterator[Tuple[Any, ...]]:
+        """
+        Returns a generator over the paths to the leaves of the nested
+        container. This is a sub-set of all possible keys that can be used with
+        the `FlatView`.
+        """
+        # Should be slightly faster than a generator expression in most cases
+        return map(operator.itemgetter(0), self.items())
+
+    def values(self) -> Iterator[Any]:
+        """
+        Returns a generator over the leaf values of the nested container.
+        """
+        # Should be slightly faster than a generator expression in most cases
+        return map(operator.itemgetter(1), self.items())
+
+    def __len__(self):
+        # This is faster than methods that don't store the contents like
+        # sum([1 for _ in self.items()]), but since the content is anyways
+        # already in the container, this should be fine
+        return len(list(self.items()))
 
     def __getitem__(self, item):
         return self.get(item)
 
     def __setitem__(self, key, value):
-        set_by_path(self._container, key, value)
+        set_by_path(self.data, key, value)
 
 
 def nested_any(x, fn: Callable = bool):
