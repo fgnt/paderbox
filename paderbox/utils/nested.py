@@ -4,7 +4,6 @@ import collections
 import itertools
 import operator
 from typing import Optional, Any, Union, Sequence, Mapping, Tuple, Callable, Generator, Iterable, Iterator
-import collections.abc
 
 
 def flatten(d, sep: Optional[str] = '.', *, flat_type=dict):
@@ -589,7 +588,7 @@ def nested_iter_items(
             yield (key,), value
 
 
-class FlatView(collections.abc.Mapping):
+class FlatView:
     def __init__(
             self,
             nested_container: Any,
