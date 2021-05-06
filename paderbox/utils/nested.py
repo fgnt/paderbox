@@ -542,6 +542,13 @@ def nested_iter_items(
     Iterates over the leaves of `container`. Yield tuples of `(path, value)`,
     where path is the path to the leaf as a `tuple` of keys.
 
+    We could consider a `nested_iter_values` that only iterates over the values
+    and does not yield the paths when someone needs it and this function is too
+    slow for some usecase.
+
+    If someone needs it, we could also add a `depth` argument that limits the
+    depth of traversal.
+
     Args:
         container: The container to iterate over
         iter_types: List of types that are treated as nested. If an objet of
