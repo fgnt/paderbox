@@ -512,14 +512,14 @@ def set_by_path(
 
     Examples:
         >>> d = {}
-        >>> set_by_path(container, 'a', {})
-        >>> container
+        >>> set_by_path(d, 'a', {})
+        >>> d
         {'a': {}}
-        >>> set_by_path(container, 'a.b', {'c': [1, 2, 3], 'd': 'e'})
-        >>> container
+        >>> set_by_path(d, 'a.b', {'c': [1, 2, 3], 'd': 'e'})
+        >>> d
         {'a': {'b': {'c': [1, 2, 3], 'd': 'e'}}}
-        >>> set_by_path(container, ('a', 'b', 'c', 2), 42)
-        >>> container
+        >>> set_by_path(d, ('a', 'b', 'c', 2), 42)
+        >>> d
         {'a': {'b': {'c': [1, 2, 42], 'd': 'e'}}}
     """
     if isinstance(path, str):
