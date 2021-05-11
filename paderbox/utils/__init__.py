@@ -2,18 +2,19 @@ __all__ = [
     'debug_utils',
     'deprecation',
     'dtw',
+    'functional',
     'mapping',
     'matlab',
     'misc',
     'nested',
     'numpy_utils',
     'pandas_utils',
+    'pretty',
     'process_caller',
     'profiling',
     'random_utils',
     'strip_solution',
     'timer',
-    'nested'
 ]
 
 from paderbox import _lazy_import_submodules
