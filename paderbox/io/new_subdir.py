@@ -94,8 +94,8 @@ def get_new_subdir(
     >>> import numpy as np
     >>> np.random.seed(0)  # This is for doctest. Never use it in practise.
     >>> get_new_subdir('/', id_naming=NameGenerator(), dry_run=True)
-    dry_run: "os.mkdir(/smooth_tomato_finch)"
-    PosixPath('/smooth_tomato_finch')
+    dry_run: "os.mkdir(/nice_tomato_fox)"
+    PosixPath('/nice_tomato_fox')
     """
 
     if consider_mpi:
@@ -192,17 +192,17 @@ def _get_list_from_unique_names_generator(name_type, overwrite_cache=False):
     and cache the result in `~/.cache/padertorch/unique_names_generator`.
 
     >>> _get_list_from_unique_names_generator('adjectives')[:3]
-    ['average', 'big', 'colossal']
+    ['able', 'above', 'absent']
     >>> _get_list_from_unique_names_generator('colors')[:3]
     ['amaranth', 'amber', 'amethyst']
     >>> _get_list_from_unique_names_generator('animals')[:3]
-    ['canidae', 'felidae', 'cat']
+    ['aardvark', 'aardwolf', 'albatross']
     >>> _get_list_from_unique_names_generator('names')[:3]
     ['Aaren', 'Aarika', 'Abagael']
     >>> _get_list_from_unique_names_generator('countries')[:3]
     ['Afghanistan', 'Åland Islands', 'Albania']
     >>> _get_list_from_unique_names_generator('star-wars')[:3]
-    ['Luke Skywalker', 'C-3PO', 'R2-D2']
+    ['Ackbar', 'Adi Gallia', 'Anakin Skywalker']
 
     """
     # adjectives.ts
@@ -254,12 +254,12 @@ class NameGenerator:
     >>> np.random.seed(0)
     >>> ng = NameGenerator()
     >>> ng()
-    'smooth_tomato_finch'
+    'nice_tomato_fox'
     >>> ng.possibilities()  # With 28 million a collision is unlikely
-    27876888
+    21376680
     >>> ng = NameGenerator(['adjectives', 'animals'])
     >>> ng()
-    'gradual_tern'
+    'related_prawn'
 
     """
     def __init__(
