@@ -57,7 +57,7 @@ def test_index():
         assert new.name == 'related_prawn_3'
 
         assert NameGenerator(rng=rng).possibilities() == 21_376_680
-        assert NameGenerator(('adjectives', 'animals', range(10))).possibilities() == 5_360_940
+        assert NameGenerator(('adjectives', 'animals', range(10))).possibilities() == 4_110_900
 
         # Example, how you get time stamp and word combination
         # Note, you shouldn't use here the rng argument from NameGenerator.
