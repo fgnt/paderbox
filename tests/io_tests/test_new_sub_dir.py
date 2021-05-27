@@ -46,7 +46,7 @@ def test_index():
 
         rng = np.random.RandomState(0)
         new = get_new_subdir(tmp_dir, id_naming=NameGenerator(rng=rng))
-        assert new.name == 'gradual_apricot_piranha'
+        assert new.name == 'related_apricot_ant'
 
         rng = np.random.RandomState(0)
         new = get_new_subdir(tmp_dir, id_naming=NameGenerator(('adjectives', 'animals', range(10)), rng=rng))
