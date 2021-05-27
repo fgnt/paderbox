@@ -56,7 +56,7 @@ def test_index():
         new = get_new_subdir(tmp_dir, id_naming=NameGenerator(('adjectives', 'animals', range(10)), rng=rng))
         assert new.name == 'related_prawn_3'
 
-        assert NameGenerator(rng=rng).possibilities() == 27_876_888
+        assert NameGenerator(rng=rng).possibilities() == 21_376_680
         assert NameGenerator(('adjectives', 'animals', range(10))).possibilities() == 5_360_940
 
         # Example, how you get time stamp and word combination
