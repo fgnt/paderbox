@@ -42,7 +42,7 @@ def test_index():
 
         rng = np.random.RandomState(0)
         new = get_new_subdir(tmp_dir, id_naming=NameGenerator(rng=rng))
-        assert new.name == 'helpful_tomato_finch'
+        assert new.name == 'nice_tomato_fox'
 
         rng = np.random.RandomState(0)
         new = get_new_subdir(tmp_dir, id_naming=NameGenerator(rng=rng))
