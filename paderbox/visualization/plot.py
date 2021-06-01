@@ -23,8 +23,6 @@ __all__ = [
     'image'
 ]
 
-from paderbox.utils.functional import partial_decorator
-
 
 def create_subplot(f):
     """ This decorator creates a subplot and passes the axes object if needed.
@@ -856,7 +854,7 @@ def seq2seq_alignment(alignment, targets=None, decode=None, ax=None,
 
 
 @create_subplot
-def barh(y, width, height=0.8, left=None, *, ax=None, scale=1, **kwargs):
+def barh(y, width, left=None, *, ax=None, **kwargs):
     """
     A wrapper around `plt.barh` that can also handle
     `pb.array.interval.ArrayInterval`s.
@@ -867,12 +865,9 @@ def barh(y, width, height=0.8, left=None, *, ax=None, scale=1, **kwargs):
             element of `width` has its own y coordinate)
         width: Scalar, array-like, `pb.array.interval.ArrayInterval` or list of
             `pb.array.interval.ArrayInterval`.
-        height:
-        left:
-        ax:
-        scale:
+        left: Starting points of the bars. If `width` is an `ArrayInterval`,
+            `left` has to be `None`.
         **kwargs:
-
     """
     import paderbox as pb
     from paderbox.array.interval import ArrayInterval
@@ -881,11 +876,11 @@ def barh(y, width, height=0.8, left=None, *, ax=None, scale=1, **kwargs):
         """Converts an ArrayInterval into values for `left` and `width` that
         can be passed to plt.hbar"""
         left = [
-            interval[0] * scale
+            interval[0]
             for interval in array_interval.normalized_intervals
         ]
         width = [
-            (interval[1] - interval[0]) * scale
+            (interval[1] - interval[0])
             for interval in array_interval.normalized_intervals
         ]
         return left, width
@@ -896,7 +891,9 @@ def barh(y, width, height=0.8, left=None, *, ax=None, scale=1, **kwargs):
     elif isinstance(width, list) and isinstance(
             width[0], ArrayInterval
     ):
-        if not pb.utils.nested.nested_all(width, lambda x: isinstance(x, ArrayInterval)):
+        if not pb.utils.nested.nested_all(
+                width, lambda x: isinstance(x, ArrayInterval)
+        ):
             raise ValueError()
         assert left is None, left
         if not isinstance(y, Iterable):
@@ -914,7 +911,7 @@ def barh(y, width, height=0.8, left=None, *, ax=None, scale=1, **kwargs):
         y = new_y
     elif not isinstance(width, Iterable):
         width = [width]
-    ax.barh(y, width, height, left, **kwargs)
+    ax.barh(y, width, left, **kwargs)
     return ax
 
 
@@ -930,8 +927,7 @@ def axvspan(start, stop=None, ax=None, **kwargs):
     Args:
         start: Scalar start value or an `ArrayInterval`
         stop: Scalar stop value or `None` if `start` is an `ArrayInterval`.
-        ax:
-        **kwargs:
+        **kwargs: arguments forwarded to matplotlib's `asvspan`.
 
     """
     from paderbox.array.interval import ArrayInterval
@@ -947,45 +943,62 @@ def axvspan(start, stop=None, ax=None, **kwargs):
 @create_subplot
 def activity(
         activity_intervals,
-        y_labels=None,
+        speaker_labels=None,
         segment_boundary_intervals=None,
-        ax=None,
-        activity_kwargs=None,
-        overlap_kwargs=None,
-        total_activity_kwargs=None,
         plot_total_activity=True,
         plot_overlaps=True,
+        ax=None,
+        activity_kwargs=None,
+        segment_boundary_kwargs=None,
+        overlap_kwargs=None,
+        total_activity_kwargs=None,
 ):
     """
     Plots an "activity plot" from a dictionary of
     `pb.array.interval.ArrayInterval`s.
 
     Args:
-        activity_intervals:
-        segment_boundary_intervals:
-        ax:
-        activity_kwargs:
-        overlap_kwargs:
-        total_activity_kwargs:
-        scale:
-        bar_edgecolor:
-        plot_total_activity:
-
-    Returns:
-
+        activity_intervals: Activity intervals to plot. Can be a list or a dict 
+            of activity information for different speakers.
+            Each entry in the outer container is treated as a different speaker.
+            If `activity_intervals` is a `dict`, its keys are treated as
+            `speaker_labels`. The activity of a single speaker can be an
+            `pb.array.interval.ArrayInterval` or a list of tuples of start and
+            stop times (`[(start1, stop1), (start2, stop2), ...]`).
+        speaker_labels: Speaker labels. Has to be `None` when
+            `activity_intervals` is a `dict`.
+        segment_boundary_intervals: Intervals that indicate boundaries of
+            segments. These are drawn with alpha channel. The format has to be
+            the same as `activity_intervals`.
+        plot_total_activity: If `True`, one row is used to plot the overall
+            activity (i.e., any speaker is active)
+        plot_overlaps: If `True`, overlapping intervals of different speakers
+            are highlighted with `axvspan`s.
+        activity_kwargs: kwargs forwarded to `barh` for the activity bars
+        segment_boundary_kwargs: kwargs forwarded to `barh` for the segment
+            boundaries
+        overlap_kwargs: kwargs forwarded to `axvspan` to indicate overlaps
+        total_activity_kwargs: kwargs forwarded to `barh` for the total activity
     """
-    import numpy as np
     import paderbox as pb
     assert len(activity_intervals) > 0, activity_intervals
 
     if isinstance(activity_intervals, dict):
-        if y_labels is not None:
+        if speaker_labels is not None:
             activity_intervals = [
-                activity_intervals[label] for label in y_labels
+                activity_intervals[label] for label in speaker_labels
             ]
         else:
-            y_labels = list(activity_intervals.keys())
+            speaker_labels = list(activity_intervals.keys())
             activity_intervals = list(activity_intervals.values())
+
+    def _convert_intervals(intervals):
+        if isinstance(intervals, pb.array.interval.ArrayInterval):
+            return intervals
+        interval = pb.array.interval.zeros()
+        interval.intervals = intervals
+        return interval
+    activity_intervals = list(map(_convert_intervals, activity_intervals))
 
     # Get number of concurrently active speakers per sample for total activity
     # and overlap plots
@@ -1010,13 +1023,17 @@ def activity(
             # If segment_boundary_intervals is a dict, we need to have y_labels
             # to guarantee the same order for activity_intervals and
             # segment_boundary_intervals
-            assert y_labels is not None, y_labels
+            assert speaker_labels is not None, speaker_labels
             segment_boundary_intervals = [
-                segment_boundary_intervals[label] for label in y_labels
+                segment_boundary_intervals[label] for label in speaker_labels
             ]
+        segment_boundary_intervals = list(map(
+            _convert_intervals, segment_boundary_intervals))
         kwargs = {
             'color': 'red', 'edgecolor': 'gray', 'linewidth': 0.5, 'alpha': 0.4,
         }
+        if segment_boundary_kwargs is not None:
+            kwargs.update(segment_boundary_kwargs)
         barh(
             list(range(len(segment_boundary_intervals))),
             segment_boundary_intervals, ax=ax, **kwargs
@@ -1043,7 +1060,7 @@ def activity(
         )
 
     # Set y labels to speaker IDs
-    if y_labels:
+    if speaker_labels:
         ax.set_ylabel("speaker ID")
         ax.set_yticks(np.arange(0, len(activity_intervals) + 1, 1.0))
-        ax.set_yticklabels(y_labels + ['total_activity'])
+        ax.set_yticklabels(speaker_labels + ['total_activity'])
