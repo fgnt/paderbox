@@ -965,8 +965,11 @@ def activity(
             `speaker_labels`. The activity of a single speaker can be an
             `pb.array.interval.ArrayInterval` or a list of tuples of start and
             stop times (`[(start1, stop1), (start2, stop2), ...]`).
-        speaker_labels: Speaker labels. Has to be `None` when
-            `activity_intervals` is a `dict`.
+        speaker_labels: Speaker labels. If it is `None` and `activity_intervals`
+            is a `dict`, `speaker_labels` is set to `activity_intervals.keys()`.
+            If `activity_intervals` is a `dict` and `speaker_labels` is given,
+            `speaker_labels` are used to select speakers from
+            `activity_intervals`.
         segment_boundary_intervals: Intervals that indicate boundaries of
             segments. These are drawn with alpha channel. The format has to be
             the same as `activity_intervals`.
