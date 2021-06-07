@@ -1,4 +1,4 @@
-from collections import OrderedDict
+from collections import OrderedDict, Iterable
 from functools import wraps
 import itertools
 from warnings import warn
@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import paderbox.transform
-
 
 __all__ = [
     'seq2seq_alignment',
@@ -34,6 +33,7 @@ def create_subplot(f):
     :param f: Function to be wrapped
     :return: Axes object
     """
+
     @wraps(f)
     def wrapper(*args, **kwargs):
         ax = kwargs.pop('ax', None)
@@ -43,12 +43,14 @@ def create_subplot(f):
         if title is not None:
             ax.set_title(title)
         return f(*args, ax=ax, **kwargs)
+
     return wrapper
 
 
 def allow_dict_input_and_colorize(f):
     """ Allow dict input and use keys as labels
     """
+
     @wraps(f)
     def wrapper(signal, *args, **kwargs):
         ax = kwargs.pop('ax', None)
@@ -60,12 +62,14 @@ def allow_dict_input_and_colorize(f):
         else:
             ax = f(signal, *args, ax=ax, **kwargs)
         return ax
+
     return wrapper
 
 
 def allow_dict_for_title(f):
     """ Allow dict input and use keys as labels
     """
+
     @wraps(f)
     def wrapper(signal, *args, **kwargs):
         ax = kwargs.pop('ax', None)
@@ -76,6 +80,7 @@ def allow_dict_for_title(f):
         else:
             ax = f(signal, *args, ax=ax, **kwargs)
         return ax
+
     return wrapper
 
 
@@ -127,7 +132,7 @@ def _xy_plot(
 
 @allow_dict_input_and_colorize
 @create_subplot
-def stem( # pylint: disable=unused-argument
+def stem(  # pylint: disable=unused-argument
         *signal,
         ax=None,
         xlim=None, ylim=None,
@@ -195,7 +200,7 @@ def line(*signal, ax: plt.Axes = None, xlim=None, ylim=None, label=None,
         plt_fcn(*signal, label=label, **kwargs)
 
     if label is not None:
-        #pylint: disable=protected-access
+        # pylint: disable=protected-access
         if ax.get_legend() and ax.get_legend()._legend_title_box.get_visible():
             title = ax.get_legend().get_title().get_text()
         else:
@@ -396,7 +401,7 @@ def _time_frequency_plot(
     elif z_scale == 'log':
         norm = matplotlib.colors.LogNorm(
             vmin=limits[0],
-            vmax=limits[1],)
+            vmax=limits[1], )
     elif z_scale == 'symlog':
         if len(limits) == 2:
             # assume median is a good log2lin border
@@ -500,7 +505,7 @@ def _time_frequency_plot(
 
 
 @create_subplot
-def spectrogram( # pylint: disable=unused-argument
+def spectrogram(  # pylint: disable=unused-argument
         signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
         sample_rate=None, stft_size=None, stft_shift=None,
         x_label=None, y_label=None, z_label=None, z_scale=None, cmap=None,
@@ -532,7 +537,7 @@ def spectrogram( # pylint: disable=unused-argument
 
 
 @create_subplot
-def image( # pylint: disable=unused-argument
+def image(  # pylint: disable=unused-argument
         signal, ax=None, x_label='', y_label='', z_label='', cmap=None,
         colorbar=False
 ):
@@ -551,7 +556,7 @@ def image( # pylint: disable=unused-argument
 
 
 @create_subplot
-def stft( # pylint: disable=unused-argument
+def stft(  # pylint: disable=unused-argument
         signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
         sample_rate=None, stft_size=None, stft_shift=None,
         x_label=None, y_label=None, z_label=None, z_scale=None,
@@ -583,7 +588,7 @@ def stft( # pylint: disable=unused-argument
 
 @allow_dict_for_title
 @create_subplot
-def mask( # pylint: disable=unused-argument
+def mask(  # pylint: disable=unused-argument
         signal, ax=None, limits=(0, 1), log=False,
         colorbar=True, batch=0, sample_rate=None, stft_size=None,
         stft_shift=None, x_label=None, y_label=None, z_label='Mask',
@@ -610,7 +615,7 @@ def _switch_indices(alignment):
 
 @allow_dict_for_title
 @create_subplot
-def phone_alignment( # pylint: disable=unused-argument
+def phone_alignment(  # pylint: disable=unused-argument
         signal, phone_alignment, ax=None, limits=None, log=True,
         colorbar=True, batch=0, sample_rate=None, stft_size=None,
         stft_shift=None, x_label=None, y_label=None, z_label=None, z_scale=None
@@ -638,8 +643,8 @@ def phone_alignment( # pylint: disable=unused-argument
     :return: axes
     """
     xticks = (_switch_indices(phone_alignment)[1:] -
-              _switch_indices(phone_alignment)[:-1]) // 2 +\
-        _switch_indices(phone_alignment)[:-1]
+              _switch_indices(phone_alignment)[:-1]) // 2 + \
+             _switch_indices(phone_alignment)[:-1]
     xtickslabels = phone_alignment[xticks]
     ax.vlines(_switch_indices(phone_alignment), 0, signal.shape[1],
               linestyle='dotted', color='r', alpha=.75)
@@ -670,7 +675,7 @@ def _get_limits_for_tf_symlog(signal, limits):
 
 @allow_dict_for_title
 @create_subplot
-def tf_symlog( # pylint: disable=unused-argument
+def tf_symlog(  # pylint: disable=unused-argument
         signal, ax=None, limits=None, log=False, colorbar=True, batch=0,
         sample_rate=None, stft_size=None, stft_shift=None,
         x_label=None, y_label=None, z_label='tf_symlog', z_scale='symlog'
@@ -846,3 +851,219 @@ def seq2seq_alignment(alignment, targets=None, decode=None, ax=None,
     ax.set_xlabel('frame index')
     ax.set_ylabel('decode')
     return ax
+
+
+@create_subplot
+def barh(y, width, left=None, *, ax=None, **kwargs):
+    """
+    A wrapper around `plt.barh` that can also handle
+    `pb.array.interval.ArrayInterval`s.
+
+    Args:
+        y: The `y` coordinate(s). Can be a scalar (all bars are drawn at the
+            same y coordinate) or array-like of length `len(width)` (each
+            element of `width` has its own y coordinate)
+        width: Scalar, array-like, `pb.array.interval.ArrayInterval` or list of
+            `pb.array.interval.ArrayInterval`.
+        left: Starting points of the bars. If `width` is an `ArrayInterval`,
+            `left` has to be `None`.
+        **kwargs:
+    """
+    import paderbox as pb
+    from paderbox.array.interval import ArrayInterval
+
+    def _convert_array_interval(array_interval):
+        """Converts an ArrayInterval into values for `left` and `width` that
+        can be passed to plt.hbar"""
+        left = [
+            interval[0]
+            for interval in array_interval.normalized_intervals
+        ]
+        width = [
+            (interval[1] - interval[0])
+            for interval in array_interval.normalized_intervals
+        ]
+        return left, width
+
+    if isinstance(width, ArrayInterval):
+        assert left is None, left
+        left, width = _convert_array_interval(width)
+    elif isinstance(width, list) and isinstance(
+            width[0], ArrayInterval
+    ):
+        if not pb.utils.nested.nested_all(
+                width, lambda x: isinstance(x, ArrayInterval)
+        ):
+            raise ValueError()
+        assert left is None, left
+        if not isinstance(y, Iterable):
+            y = [y] * len(width)
+        assert len(y) == len(width), (y, len(width))
+        left = []
+        new_width = []
+        new_y = []
+        for w, y_ in zip(width, y):
+            left_, width_ = _convert_array_interval(w)
+            left.extend(left_)
+            new_width.extend(width_)
+            new_y.extend([y_] * len(width_))
+        width = new_width
+        y = new_y
+    elif not isinstance(width, Iterable):
+        width = [width]
+    ax.barh(y, width, left, **kwargs)
+    return ax
+
+
+@create_subplot
+def axvspan(start, stop=None, ax=None, **kwargs):
+    """
+    Wrapper around `plt.axvspan` that supports
+    `pb.array.interval.ArrayInterval`s.
+
+    `plt.axvspan` doesn't support arrays as inputs, so we need to do a for-loop
+    over the intervals.
+
+    Args:
+        start: Scalar start value or an `ArrayInterval`
+        stop: Scalar stop value or `None` if `start` is an `ArrayInterval`.
+        **kwargs: arguments forwarded to matplotlib's `asvspan`.
+
+    """
+    from paderbox.array.interval import ArrayInterval
+    if isinstance(start, ArrayInterval):
+        assert stop is None
+        for start, stop in start.intervals:
+            ax.axvspan(start, stop, **kwargs)
+    else:
+        ax.axvspan(start, stop, **kwargs)
+    return ax
+
+
+@create_subplot
+def activity(
+        activity_intervals,
+        speaker_labels=None,
+        segment_boundary_intervals=None,
+        plot_total_activity=True,
+        plot_overlaps=True,
+        ax=None,
+        activity_kwargs=None,
+        segment_boundary_kwargs=None,
+        overlap_kwargs=None,
+        total_activity_kwargs=None,
+):
+    """
+    Plots an "activity plot" from a dictionary of
+    `pb.array.interval.ArrayInterval`s.
+
+    Args:
+        activity_intervals: Activity intervals to plot. Can be a list or a dict 
+            of activity information for different speakers.
+            Each entry in the outer container is treated as a different speaker.
+            If `activity_intervals` is a `dict`, its keys are treated as
+            `speaker_labels`. The activity of a single speaker can be an
+            `pb.array.interval.ArrayInterval` or a list of tuples of start and
+            stop times (`[(start1, stop1), (start2, stop2), ...]`).
+        speaker_labels: Speaker labels. If it is `None` and `activity_intervals`
+            is a `dict`, `speaker_labels` is set to `activity_intervals.keys()`.
+            If `activity_intervals` is a `dict` and `speaker_labels` is given,
+            `speaker_labels` are used to select speakers from
+            `activity_intervals`.
+        segment_boundary_intervals: Intervals that indicate boundaries of
+            segments. These are drawn with alpha channel. The format has to be
+            the same as `activity_intervals`.
+        plot_total_activity: If `True`, one row is used to plot the overall
+            activity (i.e., any speaker is active)
+        plot_overlaps: If `True`, overlapping intervals of different speakers
+            are highlighted with `axvspan`s.
+        activity_kwargs: kwargs forwarded to `barh` for the activity bars
+        segment_boundary_kwargs: kwargs forwarded to `barh` for the segment
+            boundaries
+        overlap_kwargs: kwargs forwarded to `axvspan` to indicate overlaps
+        total_activity_kwargs: kwargs forwarded to `barh` for the total activity
+    """
+    import paderbox as pb
+    assert len(activity_intervals) > 0, activity_intervals
+
+    if isinstance(activity_intervals, dict):
+        if speaker_labels is not None:
+            activity_intervals = [
+                activity_intervals[label] for label in speaker_labels
+            ]
+        else:
+            speaker_labels = list(activity_intervals.keys())
+            activity_intervals = list(activity_intervals.values())
+
+    def _convert_intervals(intervals):
+        if isinstance(intervals, pb.array.interval.ArrayInterval):
+            return intervals
+        interval = pb.array.interval.zeros()
+        interval.intervals = intervals
+        return interval
+    activity_intervals = list(map(_convert_intervals, activity_intervals))
+
+    # Get number of concurrently active speakers per sample for total activity
+    # and overlap plots
+    length = int(max(
+        max(i[1] for i in d_.normalized_intervals)
+        for d_ in activity_intervals
+    ))
+    num_active = np.zeros((length,), dtype=np.int)
+    for a in activity_intervals:
+        num_active += a[:length]
+
+    # Plot overlaps
+    if plot_overlaps:
+        kwargs = {'color': 'orange', 'alpha': 0.4}
+        if overlap_kwargs is not None:
+            kwargs.update(overlap_kwargs)
+        axvspan(pb.array.interval.ArrayInterval(num_active > 1), ax=ax, **kwargs)
+
+    # Plot segment boundaries if given
+    if segment_boundary_intervals is not None:
+        if isinstance(segment_boundary_intervals, dict):
+            # If segment_boundary_intervals is a dict, we need to have y_labels
+            # to guarantee the same order for activity_intervals and
+            # segment_boundary_intervals
+            assert speaker_labels is not None, speaker_labels
+            segment_boundary_intervals = [
+                segment_boundary_intervals[label] for label in speaker_labels
+            ]
+        segment_boundary_intervals = list(map(
+            _convert_intervals, segment_boundary_intervals))
+        kwargs = {
+            'color': 'red', 'edgecolor': 'gray', 'linewidth': 0.5, 'alpha': 0.4,
+        }
+        if segment_boundary_kwargs is not None:
+            kwargs.update(segment_boundary_kwargs)
+        barh(
+            list(range(len(segment_boundary_intervals))),
+            segment_boundary_intervals, ax=ax, **kwargs
+        )
+
+    # Plot speaker activity bars
+    kwargs = {
+        'color': 'red', 'edgecolor': 'gray', 'linewidth': 0.5, 'alpha': 1
+    }
+    if activity_kwargs is not None:
+        kwargs.update(activity_kwargs)
+    barh(list(range(len(activity_intervals))), activity_intervals, ax=ax,
+         **kwargs)
+
+    # Plot total activity
+    if plot_total_activity:
+        kwargs = {'color': 'green', 'edgecolor': 'gray', 'linewidth': 0.5}
+        if total_activity_kwargs is not None:
+            kwargs.update(total_activity_kwargs)
+        barh(
+            len(activity_intervals),
+            width=pb.array.interval.ArrayInterval(num_active > 0),
+            ax=ax, **kwargs
+        )
+
+    # Set y labels to speaker IDs
+    if speaker_labels:
+        ax.set_ylabel("speaker ID")
+        ax.set_yticks(np.arange(0, len(activity_intervals) + 1, 1.0))
+        ax.set_yticklabels(speaker_labels + ['total_activity'])
