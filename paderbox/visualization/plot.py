@@ -911,7 +911,7 @@ def barh(y, width, left=None, *, ax=None, **kwargs):
         y = new_y
     elif not isinstance(width, Iterable):
         width = [width]
-    ax.barh(y, width, left, **kwargs)
+    ax.barh(y, width=width, left=left, **kwargs)
     return ax
 
 
@@ -958,7 +958,7 @@ def activity(
     `pb.array.interval.ArrayInterval`s.
 
     Args:
-        activity_intervals: Activity intervals to plot. Can be a list or a dict 
+        activity_intervals: Activity intervals to plot. Can be a list or a dict
             of activity information for different speakers.
             Each entry in the outer container is treated as a different speaker.
             If `activity_intervals` is a `dict`, its keys are treated as
@@ -1034,6 +1034,7 @@ def activity(
             _convert_intervals, segment_boundary_intervals))
         kwargs = {
             'color': 'red', 'edgecolor': 'gray', 'linewidth': 0.5, 'alpha': 0.4,
+            'height': 0.8,
         }
         if segment_boundary_kwargs is not None:
             kwargs.update(segment_boundary_kwargs)
@@ -1044,7 +1045,8 @@ def activity(
 
     # Plot speaker activity bars
     kwargs = {
-        'color': 'red', 'edgecolor': 'gray', 'linewidth': 0.5, 'alpha': 1
+        'color': 'red', 'edgecolor': 'gray', 'linewidth': 0.5, 'alpha': 1,
+        'height': 0.8
     }
     if activity_kwargs is not None:
         kwargs.update(activity_kwargs)
@@ -1053,7 +1055,8 @@ def activity(
 
     # Plot total activity
     if plot_total_activity:
-        kwargs = {'color': 'green', 'edgecolor': 'gray', 'linewidth': 0.5}
+        kwargs = {'color': 'green', 'edgecolor': 'gray', 'linewidth': 0.5,
+                  'height': 0.8}
         if total_activity_kwargs is not None:
             kwargs.update(total_activity_kwargs)
         barh(
