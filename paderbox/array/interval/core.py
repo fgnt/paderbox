@@ -16,7 +16,7 @@ from paderbox.array.interval.util import (
 )
 
 
-def ArrayInterval_from_str(string, shape):
+def ArrayInterval_from_str(string, shape, inverse_mode=False):
     """
     >>> ArrayInterval_from_str('1:4, 5:20, 21:25', shape=50)
     ArrayInterval("1:4, 5:20, 21:25", shape=(50,))
@@ -30,7 +30,6 @@ def ArrayInterval_from_str(string, shape):
     """
     ai = zeros(shape)
     if string == '':
-        print('empty interval found')
         pass
     else:
         if not ',' in string:
@@ -39,6 +38,7 @@ def ArrayInterval_from_str(string, shape):
             ai.add_intervals_from_str(string)
         except Exception as e:
             raise Exception(string) from e
+    ai.inverse_mode = inverse_mode
     return ai
 
 
@@ -289,9 +289,22 @@ class ArrayInterval:
         ArrayInterval("1:4, 5:20, 21:25", shape=(50,))
         >>> pprint(json.loads(jsonpickle.dumps(ai)))
         {'py/reduce': [{'py/function': 'paderbox.array.interval.core.ArrayInterval_from_str'},
-          {'py/tuple': ['1:4, 5:20, 21:25', 50]}]}
+          {'py/tuple': ['1:4, 5:20, 21:25', 50, False]}]}
+        >>> ai = ArrayInterval.from_str('1:4, 5:20, 21:25', shape=50)
+        >>> ai.inverse_mode = True
+        >>> ai
+        ArrayInterval("1:4, 5:20, 21:25", shape=(50,), inverse_mode=True)
+        >>> pickle.loads(pickle.dumps(ai))
+        ArrayInterval("1:4, 5:20, 21:25", shape=(50,), inverse_mode=True)
+        >>> jsonpickle.loads(jsonpickle.dumps(ai))
+        ArrayInterval("1:4, 5:20, 21:25", shape=(50,), inverse_mode=True)
+        >>> pprint(json.loads(jsonpickle.dumps(ai)))
+        {'py/reduce': [{'py/function': 'paderbox.array.interval.core.ArrayInterval_from_str'},
+          {'py/tuple': ['1:4, 5:20, 21:25', 50, True]}]}
         """
-        return self.from_str, (self._intervals_as_str, self.shape[-1])
+        return self.from_str, (
+            self._intervals_as_str, self.shape[-1], self.inverse_mode
+        )
 
     _intervals_normalized = True
     # _normalized_intervals = ()
