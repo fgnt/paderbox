@@ -55,9 +55,14 @@ def _normalize_shape(shape):
 
     if not isinstance(shape, (tuple, list)):
         raise TypeError(f'Invalid shape {shape} of type {type(shape)}')
+
+    # As of now, we only support 1D. We haven't decided yet how to handle
+    # higher numbers of dimensions as it is unclear what they mean. Probably
+    # the last dimension will remain as it is and the earlier dimensions will
+    # be independent dimensions.
     if not len(shape) == 1:
         raise ValueError(f'Invalid shape {shape} has to have length 1')
-    if not isinstance(shape[0], int):
+    if not isinstance(shape[-1], int):
         raise TypeError(
             f'Invalid shape {shape} with elements of type {type(shape[0])}'
         )
