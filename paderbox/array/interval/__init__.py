@@ -13,6 +13,7 @@ of a long audio file (> 2h) in memory.
 """
 from .core import zeros, ones
 from .core import ArrayInterval
+from .core import ArrayInterval_from_str as from_str
 
 from .rttm import from_rttm
 from .rttm import from_rttm_str

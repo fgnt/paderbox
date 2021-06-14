@@ -46,6 +46,30 @@ def intervals_to_str(intervals):
     return ', '.join(f'{start}:{end}' for start, end in intervals)
 
 
+def _normalize_shape(shape):
+    if shape is None:
+        return None
+
+    if isinstance(shape, int):
+        return shape,
+
+    if not isinstance(shape, (tuple, list)):
+        raise TypeError(f'Invalid shape {shape} of type {type(shape)}')
+
+    # As of now, we only support 1D. We haven't decided yet how to handle
+    # higher numbers of dimensions as it is unclear what they mean. Probably
+    # the last dimension will remain as it is and the earlier dimensions will
+    # be independent dimensions.
+    if not len(shape) == 1:
+        raise ValueError(f'Invalid shape {shape} has to have length 1')
+    if not isinstance(shape[-1], int):
+        raise TypeError(
+            f'Invalid shape {shape} with elements of type {type(shape[0])}'
+        )
+
+    return tuple(shape)
+
+
 def zeros(shape: Optional[Union[int, tuple, list]] = None) -> 'ArrayInterval':
     """
     Instantiate an `ArrayInterval` filled with zeros.
@@ -93,14 +117,6 @@ def zeros(shape: Optional[Union[int, tuple, list]] = None) -> 'ArrayInterval':
 
     """
     ai = ArrayInterval.__new__(ArrayInterval)
-
-    if isinstance(shape, int):
-        shape = [shape]
-
-    if shape is not None:
-        assert len(shape) == 1, shape
-        shape = tuple(shape)
-
     ai.shape = shape
     return ai
 
@@ -152,14 +168,6 @@ def ones(shape: Optional[Union[int, tuple, list]] = None) -> 'ArrayInterval':
     """
     ai = ArrayInterval.__new__(ArrayInterval)
     ai.inverse_mode = True
-
-    if isinstance(shape, int):
-        shape = [shape]
-
-    if shape is not None:
-        assert len(shape) == 1, shape
-        shape = tuple(shape)
-
     ai.shape = shape
     return ai
 
@@ -201,7 +209,7 @@ class ArrayInterval:
 
         """
         if isinstance(array, ArrayInterval):
-            self.shape = array.shape
+            self._shape = array.shape
             self.inverse_mode = array.inverse_mode
             self.intervals = array.intervals
         else:
@@ -232,7 +240,7 @@ class ArrayInterval:
 
             # ai = ArrayInterval(shape=array.shape)
             self.inverse_mode = inverse_mode
-            self.shape = array.shape
+            self._shape = array.shape
 
             if inverse_mode:
                 for start, stop in zip(rising, falling):
@@ -240,6 +248,14 @@ class ArrayInterval:
             else:
                 for start, stop in zip(rising, falling):
                     self[start:stop] = 1
+
+    @property
+    def shape(self):
+        return self._shape
+
+    @shape.setter
+    def shape(self, shape):
+        self._shape = _normalize_shape(shape)
 
     def __copy__(self):
         if self.inverse_mode:

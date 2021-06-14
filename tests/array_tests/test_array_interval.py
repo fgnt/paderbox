@@ -1,4 +1,5 @@
 import pytest
+from paderbox.array import interval
 
 from paderbox.array.interval.util import (
     cy_non_intersection,
@@ -28,3 +29,23 @@ def test_cy_intersection():
     assert cy_intersection((1, 4), ((0, 2), (3, 5))) == ((1, 2), (3, 4))
     assert cy_intersection((1, 2), ((0, 3),)) == ((1, 2),)
     assert cy_intersection((4, 5), ((0, 3),)) == ()
+
+
+def test_shape():
+    ai = interval.zeros(1)
+    assert isinstance(ai.shape, tuple)
+    assert isinstance(ai.shape[0], int)
+    interval.zeros((1,))
+    assert isinstance(ai.shape, tuple)
+    assert isinstance(ai.shape[0], int)
+    interval.zeros([1, ])
+    assert isinstance(ai.shape, tuple)
+    assert isinstance(ai.shape[0], int)
+    with pytest.raises(TypeError):
+        interval.zeros('a')
+    with pytest.raises(TypeError):
+        interval.zeros({'num_samples': 42})
+    with pytest.raises(TypeError):
+        interval.zeros(('asdf', ))
+    with pytest.raises(ValueError):
+        interval.zeros((1, 2))
