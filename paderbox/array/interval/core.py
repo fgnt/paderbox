@@ -46,9 +46,13 @@ def intervals_to_str(intervals):
     return ', '.join(f'{start}:{end}' for start, end in intervals)
 
 
-def _validate_shape(shape):
-    if shape is None or isinstance(shape, int):
-        return
+def _normalize_shape(shape):
+    if shape is None:
+        return None
+
+    if isinstance(shape, int):
+        return shape,
+
     if not isinstance(shape, (tuple, list)):
         raise TypeError(f'Invalid shape {shape} of type {type(shape)}')
     if not len(shape) == 1:
@@ -58,12 +62,6 @@ def _validate_shape(shape):
             f'Invalid shape {shape} with elements of type {type(shape[0])}'
         )
 
-
-def _normalize_shape(shape):
-    if shape is None:
-        return None
-    if isinstance(shape, int):
-        return shape,
     return tuple(shape)
 
 
@@ -252,7 +250,6 @@ class ArrayInterval:
 
     @shape.setter
     def shape(self, shape):
-        _validate_shape(shape)
         self._shape = _normalize_shape(shape)
 
     def __copy__(self):
