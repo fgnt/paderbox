@@ -38,17 +38,7 @@ test = [
     'tqdm',
     'fire',
     'pycallgraph',  # Used in profiling module
-    (
-        # line_profiler does not work in python 3.7
-        # https://github.com/rkern/line_profiler/issues/132
-        # 'line_profiler; python_version<"3.7"'
-        'line_profiler'
-        if sys.version_info < (3, 7) else
-        # Install from repo works also in py37:
-        # 'line_profiler @ git+https://github.com/rkern/line_profiler; python_version>="3.7"'
-        'line_profiler @ git+https://github.com/rkern/line_profiler'
-        # `; python_version<"3.7"` does not work with `git+...`
-    ),
+    'line_profiler',
     'memory_profiler',
 ]
 
