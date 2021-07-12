@@ -1,8 +1,12 @@
-import numpy
-import numpy.testing as nptest
+import sys
+import pytest
 import unittest
 import os
 import time
+
+import numpy
+import numpy.testing as nptest
+
 from paderbox.io.audioread import audioread
 from paderbox.io.audiowrite import audiowrite
 
@@ -12,6 +16,11 @@ path = 'audiowrite_test.wav'
 int16_max = numpy.iinfo(numpy.int16).max
 
 
+@pytest.mark.skip(
+    sys.platform.startswith("win"),
+    reason="`pb.io.audioread.audioread` is deprecated and does not work on"
+           "windows, because wavefile needs `libsndfile-1.dll`."
+           "Use `pb.io.load_audio` on windows.")
 class AudioWriteTest(unittest.TestCase):
 
     def test_write_read_float(self):

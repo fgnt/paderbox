@@ -321,6 +321,14 @@ def audioread(path, offset=0.0, duration=None, expected_sample_rate=None):
     .. admonition:: Example:
         Only path provided:
 
+        >>> import sys, pytest
+        >>> if sys.platform.startswith("win"):
+        ...     pytest.skip(
+        ...         sys.platform.startswith("win"),
+        ...         reason="`pb.io.audioread.audioread` is deprecated and "
+        ...                "does not work on windows, because wavefile needs "
+        ...                "`libsndfile-1.dll`."
+        ...                "Use `pb.io.load_audio` on windows.")
         >>> from paderbox.testing.testfile_fetcher import get_file_path
         >>> path = get_file_path('speech.wav')
         >>> # path = '/net/db/timit/pcm/train/dr1/fcjf0/sa1.wav'
