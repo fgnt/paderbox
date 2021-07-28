@@ -60,7 +60,7 @@
  - [`nara_wpe`](https://github.com/fgnt/nara_wpe): Weighted Prediction Error
    - Dereverberation code: `nara_wpe.???`
  - [`sms_wsj`](https://github.com/fgnt/sms_wsj): SMS-WSJ: Spatialized Multi-Speaker Wall Street Journal database for multi-channel source separation and recognition
- - [`paderwasn`](https://github.com/fgnt/paderwasn):
+ - [`paderwasn`](https://github.com/fgnt/paderwasn): Collection of methods for acoustic signal processing in wireless acoustic sensor networks
 
 # Example code
 
