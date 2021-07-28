@@ -23,7 +23,7 @@
    - `pb.array.interval`: Helper to have a memory efficient 1D boolian array that represents intervals as replacement for numpy.
    - `pb.array.pad_axis`: Add an `axis` argument to `np.pad`.
    - `pb.array.morph`: Deprecated in favour of `einops` (https://github.com/arogozhnikov/einops)
-   - `pb.array.segment_axis`: Segment a signal. Use an implementation detail of numpy to do ist without memory replications.
+   - `pb.array.segment_axis`: Segment a signal. Use an implementation detail of numpy to do it without memory replications.
  - `pb.utils`:
    - `pb.utils.process_caller.run_process`:
      - Wrapper around `subprocess.run` for better exception messages and other defaults.
