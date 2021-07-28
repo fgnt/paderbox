@@ -11,7 +11,7 @@
    - `paderbox.io.atomic`: Atomic file operations. See docstrings for more information.
  - `pb.transform`:
    - `pb.transform.{stft,istft,STFT}`: Functions and class (`STFT`) to calculate the stft and its inverse.
-   - Other transformations we either don't use, or rarely use.
+   - Other transformations we use less frequently (mel filterbanks/MFCCs, ...).
    - `pb.transform.resample_sox`: Resample with `sox` binary
  - `from paderbox.visualization import plot, axes_context`:
    - `plot.{line,scatter}`: Make a line or scatter plot
@@ -20,7 +20,7 @@
      - Context manager to change visualization parameters (e.g. grid, colors, ...)
      - Helper to create a plotting grid. Use `ax=axes.new` or `ax=axes.last`.
  - `pb.array`:
-   - `pb.array.interval`: Helper to have a memory efficient 1D boolian array that represents intervals as replacement for numpy.
+   - `pb.array.interval`: Helper to have a memory efficient 1D boolian array that is represented by its intervals as replacement for numpy.
    - `pb.array.pad_axis`: Add an `axis` argument to `np.pad`.
    - `pb.array.morph`: Deprecated in favour of `einops` (https://github.com/arogozhnikov/einops)
    - `pb.array.segment_axis`: Segment a signal. Use an implementation detail of numpy to do it without memory replications.
@@ -38,13 +38,13 @@
    - `pb.utils.pandas_utils.display_df`: Combine `IPython.display.display` with `squeeze_df`.
    - `pb.utils.pretty.{pretty,pprint}`: Uses `IPython.lib.pretty.*`, but displays a summay of large numpy arrays instead of the actual values.
    - `pb.utils.profiling.lprun`: Lineprofiler decorator. ToDo: Make internal doku public.
-   - `python -m paderbox.utils.strip_solutions`: CLI Helper to create a template notebook from solution notebook.
+   - `python -m paderbox.utils.strip_solutions`: CLI Helper to create a template notebook from a solution notebook for teaching purposes.
    - `pb.utils.timer.TimerDict`: Helper to get runtime of a codeblock.
 
 # Standalone
 
  - [`lazy_dataset`](https://github.com/fgnt/lazy_dataset): Process large datasets as if it was an iterable.
-   - Inpur pipeline with lazy loading, transformations and parallel loading.
+   - Input pipeline with lazy loading, transformations and parallel loading.
    - Not limited to any NN framework.
  - [`dlp_mpi`](https://github.com/fgnt/dlp_mpi):
    - Parallisation with MPI based on `mpi4py`
