@@ -20,7 +20,7 @@
      - Context manager to change visualization parameters (e.g. grid, colors, ...)
      - Helper to create a plotting grid. Use `ax=axes.new` or `ax=axes.last`.
  - `pb.array`:
-   - `pb.array.interval`: Helper to have a memory efficient 1D boolian array that is represented by its intervals as replacement for numpy.
+   - `pb.array.interval`: Helper to have a memory efficient 1D boolean array that is represented by its intervals as replacement for numpy.
    - `pb.array.pad_axis`: Add an `axis` argument to `np.pad`.
    - `pb.array.morph`: Deprecated in favour of `einops` (https://github.com/arogozhnikov/einops)
    - `pb.array.segment_axis`: Segment a signal. Use an implementation detail of numpy to do it without memory replications.
@@ -47,7 +47,7 @@
    - Input pipeline with lazy loading, transformations and parallel loading.
    - Not limited to any NN framework.
  - [`dlp_mpi`](https://github.com/fgnt/dlp_mpi):
-   - Parallisation with MPI based on `mpi4py`
+   - Parallelization with MPI based on `mpi4py`
 
 # Special purpose packages
 
