@@ -1,10 +1,10 @@
 # Paderbox: A collection of utilities for audio / speech processing
 
  - `pb.io`
-   - `pb.io.load`, `pb.io.dump`: Loads/saves an arbitary file. See docsting for supported formats.
+   - `pb.io.load`, `pb.io.dump`: Loads/saves an arbitrary file. See docstring for supported formats.
      - `unsafe` argument can enable unsafe backends like `pickle`
    - `pb.io.load_{json,yaml,csv,hdf5}`, `pb.io.dump_{json,yaml,csv,hdf5}`, `pb.io.loads_{json,yaml,csv,hdf5}`, `pb.io.dumps_{json,yaml,csv,hdf5}`:
-     - Load or dump/save some data in a particular format. The `s` in `dumps` and `loads` follow python convention to obtain/yield string or bytes representation of an object.
+     - Load or dump/save some data in a particular format. The `s` as in `dumps` and `loads` follows python convention to obtain/yield string or bytes representation of an object.
    - `pb.io.recursive_load_audio`: Recursive load of audio files.
    - `pb.io.{symlink,update_hdf5,mkdir_p}`
    - `pb.io.data_dir`: Collection of paths, loaded from enviroment and with defaults for our department file system.
@@ -43,7 +43,7 @@
 
 # Standalone
 
- - [`lazy_dataset`](https://github.com/fgnt/lazy_dataset): Process large datasets as if it was an iterable.
+ - [`lazy_dataset`](https://github.com/fgnt/lazy_dataset): Process a large dataset as if it was an iterable.
    - Input pipeline with lazy loading, transformations and parallel loading.
    - Not limited to any NN framework.
  - [`dlp_mpi`](https://github.com/fgnt/dlp_mpi):
@@ -52,7 +52,7 @@
 # Special purpose packages
 
  - [`padertorch`](https://github.com/fgnt/padertorch)
-   - A collection of common functionality to simplify the design, training and evaluation of machine learning models based on pytorch with an emphasis on speech processing.
+   - A collection of common functionalities to simplify the design, training and evaluation of machine learning models based on pytorch with an emphasis on speech processing.
  - [`pb_bss`](https://github.com/fgnt/pb_bss): Code related to blind source separation.
    - Metrics: `pb_bss.evaluation.{???}`
    - Beamforming: `pb_bss.extraction.{???}`
