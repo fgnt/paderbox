@@ -6,8 +6,6 @@ import datetime
 import urllib.request
 from pathlib import Path
 
-from scipy._lib.decorator import getfullargspec
-
 
 def _removeprefix(self: str, prefix: str) -> str:
     # Backport from Python 3.9: https://www.python.org/dev/peps/pep-0616/
@@ -217,24 +215,24 @@ def _get_list_from_unique_names_generator(name_type, overwrite_cache=False):
     import paderbox as pb
 
     file = (
-            Path(user_cache_dir('padertorch'))
+            Path(user_cache_dir('paderbox'))
             / 'unique_names_generator' / f'{name_type}.json'
     )
     if overwrite_cache or (not file.exists()):
         url = (
             f'https://raw.githubusercontent.com/andreasonny83/'
-            f'unique-names-generator/master/src/dictionaries/{name_type}.ts'
+            f'unique-names-generator/v4.6.0/src/dictionaries/{name_type}.ts'
         )
 
         try:
             resource = urllib.request.urlopen(url)
         except Exception as e:
             # ToDo: use the following api to list the names
-            # https://api.github.com/repos/andreasonny83/unique-names-generator/git/trees/master?recursive=1
+            # https://api.github.com/repos/andreasonny83/unique-names-generator/git/trees/main?recursive=1
             raise ValueError(
                 f'Tried to download {name_type!r}.\nCould not open\n{url}\n'
                 'See in\n'
-                'https://github.com/andreasonny83/unique-names-generator/tree/master/src/dictionaries\n'
+                'https://github.com/andreasonny83/unique-names-generator/tree/v4.6.0/src/dictionaries\n'
                 'for valid names.'
             )
         # https://stackoverflow.com/a/19156107/5766934

@@ -20,7 +20,6 @@ __all__ = [
     'io',
     'math',
     'notebook',
-    'speech_enhancement',
     'testing',
     'transform',
     'utils',
