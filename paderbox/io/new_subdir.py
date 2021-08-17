@@ -253,11 +253,11 @@ class NameGenerator:
     >>> ng = NameGenerator()
     >>> ng()
     'nice_tomato_fox'
-    >>> ng.possibilities()  # With 28 million a collision is unlikely
-    21376680
+    >>> ng.possibilities()  # With 22 million a collision is unlikely
+    22188920
     >>> ng = NameGenerator(['adjectives', 'animals'])
     >>> ng()
-    'related_prawn'
+    'regional_prawn'
 
     """
     def __init__(
