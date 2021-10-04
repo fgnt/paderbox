@@ -16,6 +16,7 @@ from paderbox.io.atomic import (
     write_text_atomic,
     write_bytes_atomic,
 )
+from paderbox.io.new_subdir import get_new_subdir
 from paderbox.io import audioread
 from paderbox.io import hdf5
 from paderbox.io import play
@@ -75,6 +76,7 @@ __all__ = [
     "symlink",
     "SummaryEncoder",
     "data_dir",
+    "get_new_subdir",
 ]
 
 

@@ -55,7 +55,7 @@ def get_new_subdir(
         mkdir:
             Creates the dir and makes the program process/thread safe.
             Note this option ensures that you don't get a
-            conflict between two concurrent calls of get_new_folder.
+            conflict between two concurrent calls of get_new_subdir.
             Example:
                 You launch several times your programs and each should get
                 another folder (e.g. hyperparameter search). When inspecting
