@@ -240,11 +240,11 @@ def load(
 
 
     To load an unsecure, you have to change `unsafe` to `True`
-    >>> load('unsecure_file.pkl', unsafe=False)
+    >>> load('/path/to/unsecure_file.pkl', unsafe=False)
     Traceback (most recent call last):
     ...
     AssertionError: You called Loader.__call__ with unsafe=False
-    for the file /home/cbj/python/paderbox/paderbox/io/unsecure_file.pkl.
+    for the file /path/to/unsecure_file.pkl.
     The file type is identified as '.pkl'.
     Loading this file type is not secure.
     If you trust the file, change the value of unsafe to True.
