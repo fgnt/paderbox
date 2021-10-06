@@ -36,6 +36,13 @@ class Loader:
             if isinstance(file, (str, Path)):
                 file = Path(file)
                 ext = file.suffix
+            elif hasattr(file, 'name'):
+                # A file descriptor can have a name attribute, with the path
+                # that it represents. Use this information to get the suffix.
+                # Note: For BytesIO and StringIO, you can manually add the name
+                #       attribute, see:
+                #       https://stackoverflow.com/a/42811024/5766934
+                ext = Path(file.name).suffix
             else:
                 raise ValueError(
                     f'{type(file)} is not supported without the argument "ext.\n"'
