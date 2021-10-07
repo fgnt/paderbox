@@ -36,6 +36,13 @@ class Loader:
             if isinstance(file, (str, Path)):
                 file = Path(file)
                 ext = file.suffix
+            elif hasattr(file, 'name'):
+                # A file descriptor can have a name attribute, with the path
+                # that it represents. Use this information to get the suffix.
+                # Note: For BytesIO and StringIO, you can manually add the name
+                #       attribute, see:
+                #       https://stackoverflow.com/a/42811024/5766934
+                ext = Path(file.name).suffix
             else:
                 raise ValueError(
                     f'{type(file)} is not supported without the argument "ext.\n"'
@@ -48,7 +55,7 @@ class Loader:
             with file.open('r') as fp:
                 return json.load(fp, **self.kwargs)
         elif ext in ['.pkl', '.dill']:
-            assert self.unsafe, (self.unsafe, file)
+            assert self.unsafe, self._unsafe_msg(self.unsafe, file, ext)
             with file.open('rb') as fp:
                 return pickle.load(fp, **self.kwargs)
         elif ext in ['.h5']:
@@ -66,7 +73,7 @@ class Loader:
         #     with file.open('r') as fp:
         #         import yaml
         #         return yaml.load_all(fp, **kwargs)
-        elif ext in ['.wav']:
+        elif ext in ['.wav', '.flac']:
             from paderbox.io import load_audio
             return load_audio(file, **self.kwargs)
         elif ext in ['.npz']:
@@ -76,7 +83,7 @@ class Loader:
             data.close()
             return ret_data
         elif ext in ['.npy']:
-            assert self.unsafe, (self.unsafe, file)
+            assert self.unsafe, self._unsafe_msg(self.unsafe, file, ext)
             import numpy as np
             return np.load(file, **self.kwargs, allow_pickle=self.unsafe)
         elif ext in ['.gz', '.json.gz', '.pkl.gz', '.npy.gz']:
@@ -84,7 +91,7 @@ class Loader:
                 if str(file).endswith('.json.gz'):
                     return json.loads(f.read().decode())
                 elif str(file).endswith('.pkl.gz'):
-                    assert self.unsafe, (self.unsafe, file)
+                    assert self.unsafe, self._unsafe_msg(self.unsafe, file, ext)
                     return pickle.load(f)
                 elif str(file).endswith('.npy.gz'):
                     assert self.unsafe, (self.unsafe, file)
@@ -96,7 +103,7 @@ class Loader:
             date, sampling_rate = read_nist_wsj(file)
             return date
         elif ext in ['.pth']:
-            assert self.unsafe, (self.unsafe, file)
+            assert self.unsafe, self._unsafe_msg(self.unsafe, file, ext)
             import torch
             return torch.load(str(file), map_location='cpu')
         elif str(file).endswith('.mat'):
@@ -109,6 +116,20 @@ class Loader:
             else:
                 raise ValueError(file)
 
+    def _unsafe_msg(self, unsafe, file, ext):
+        return (
+            f'You called {self.__call__.__qualname__} with unsafe={unsafe}\n'
+            f'for the file {file}.\n'
+            f'The file type is identified as {ext!r}.\n'
+            f'Loading this file type is not secure.\n'
+            f'If you trust the file, change the value of unsafe to True.\n'
+            f'\n'
+            f'From https://docs.python.org/3/library/pickle.html:\n'
+            f'  It is possible to construct malicious pickle data which will\n'
+            f'  execute arbitrary code during unpickling. Never unpickle\n'
+            f'  data that could have come from an untrusted source, or that\n'
+            f'  could have been tampered with.'
+        )
 
 def recursive_load(
         obj,
@@ -210,10 +231,29 @@ def load(
             - callable that takes a path as input
         ignore_type_error:
         unsafe:
+            Flag, to indicate, if you want to allow the loading from
+            unsecure files, e.g. pickle.
         **kwargs:
             kwargs for the specific loader.
 
     Returns:
+
+
+    To load an unsecure, you have to change `unsafe` to `True`
+    >>> load('/path/to/unsecure_file.pkl', unsafe=False)
+    Traceback (most recent call last):
+    ...
+    AssertionError: You called Loader.__call__ with unsafe=False
+    for the file /path/to/unsecure_file.pkl.
+    The file type is identified as '.pkl'.
+    Loading this file type is not secure.
+    If you trust the file, change the value of unsafe to True.
+    <BLANKLINE>
+    From https://docs.python.org/3/library/pickle.html:
+      It is possible to construct malicious pickle data which will
+      execute arbitrary code during unpickling. Never unpickle
+      data that could have come from an untrusted source, or that
+      could have been tampered with.
 
     """
     loader = Loader(
