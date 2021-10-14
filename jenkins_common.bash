@@ -24,6 +24,9 @@ TOOLBOX="$(dirname $(readlink -f ${BASH_SOURCE[0]}))"
 # Refresh files...
 ls $PYTHON_PATH/lib/python3.6/lib-dynload/../../ > /dev/null
 
+# Some debug information
+env
+
 # adds a KALDI_ROOT
 source "${TOOLBOX}/bash/kaldi.bash"
 
