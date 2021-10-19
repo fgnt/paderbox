@@ -5,8 +5,13 @@ https://packaging.python.org/en/latest/distributing.html
 https://github.com/pypa/sampleproject
 """
 
-# To use a consistent encoding
+# Allow editable install into user site directory.
+# See https://github.com/pypa/pip/issues/7953.
+import site
 import sys
+site.ENABLE_USER_SITE = '--user' in sys.argv[1:]
+
+# To use a consistent encoding
 from codecs import open
 # Always prefer setuptools over distutils
 from distutils.core import setup
