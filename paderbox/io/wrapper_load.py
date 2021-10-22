@@ -58,7 +58,7 @@ class Loader:
             assert self.unsafe, self._unsafe_msg(self.unsafe, file, ext)
             with file.open('rb') as fp:
                 return pickle.load(fp, **self.kwargs)
-        elif ext in ['.h5']:
+        elif ext in ['.h5', '.hdf5']:
             # ToDo: Is hdf5 safe or unsafe?
             from paderbox.io.hdf5 import load_hdf5
             return load_hdf5(file)
