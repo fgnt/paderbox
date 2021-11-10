@@ -258,7 +258,6 @@ async def run_process_async(
         else:
             process = await asyncio.create_subprocess_shell(cmd, **kwargs)
     else:
-        raise ValueError(*cmd)
         process = await asyncio.create_subprocess_exec(*cmd, **kwargs)
     stdout, stderr = await process.communicate(input=input)
 

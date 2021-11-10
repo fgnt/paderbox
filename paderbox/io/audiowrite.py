@@ -41,10 +41,6 @@ def dump_audio(
         format:
             Special option. See soundfile.SoundFile.__init__ for details.
 
-    >>> import magic
-    >>> def get_filetype(path):
-    ...     # recreate the stdout of the 'file' tool
-    ...     return Path(path).as_posix() + ": " + magic.from_file(str(path)) + "\\n"
     >>> from paderbox.utils.process_caller import run_process
     >>> from paderbox.io import load_audio
     >>> from paderbox.io.cache_dir import get_cache_dir
