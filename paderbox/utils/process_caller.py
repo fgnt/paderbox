@@ -201,7 +201,7 @@ async def run_process_async(
     # Effect of universal_newlines
     >>> run_process('echo Hello')
     CompletedProcess(args='echo Hello', returncode=0, stdout='Hello\\n', stderr='')
-    >>> convert_newlines(run_process('echo Hello', universal_newlines=False))
+    >>> run_process('echo Hello', universal_newlines=False)
     CompletedProcess(args='echo Hello', returncode=0, stdout=b'Hello\\n', stderr=b'')
 
     >>> # This would print 'Hello' to stdout. Doctests cannot handle this case.

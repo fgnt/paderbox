@@ -202,19 +202,19 @@ def load_audio(
             signal, sample_rate = data, f.samplerate
     except RuntimeError as e:
         if isinstance(path, (Path, str)):
-            import magic
-            # recreate the stdout of the 'file' tool
-            stdout = Path(path).as_posix() + ": " + magic.from_file(str(path)) + "\n"
+            from paderbox.utils.process_caller import run_process
+            cp = run_process(['file', f'{path}'])
+            stdout = cp.stdout
             if Path(path).suffix == '.wav':
                 # Improve exception msg for NIST SPHERE files.
                 raise RuntimeError(
-                    f'Could not read {Path(path).as_posix()}.\n' #FIXME: Adapt code to test case (posix style paths) or print platform-specific path style?
+                    f'Could not read {path}.\n'
                     f'File format:\n{stdout}'
                 ) from e
             else:
                 path = Path(path)
                 raise RuntimeError(
-                    f'Wrong suffix {path.suffix} in {Path(path).as_posix()}.\n'
+                    f'Wrong suffix {path.suffix} in {path}.\n'
                     f'File format:\n{stdout}'
                 ) from e
         raise
@@ -381,9 +381,9 @@ def audioread(path, offset=0.0, duration=None, expected_sample_rate=None):
             wav_reader.read(data)
             return np.squeeze(data), sample_rate
     except OSError as e:
-        import magic
-        # recreate the stdout of the 'file' tool
-        stdout = Path(path).as_posix() + ": " + magic.from_file(str(path)) + "\n"
+        from paderbox.utils.process_caller import run_process
+        cp = run_process(f'file {path}')
+        stdout = cp.stdout
         raise OSError(f'{stdout}') from e
 
 

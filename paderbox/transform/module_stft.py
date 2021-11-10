@@ -250,8 +250,8 @@ def _samples_to_stft_frames(
     9
 
     >>> result_arr = _samples_to_stft_frames(np.array([19, 20, 21]), 16, 4, fading='full')
-    >>> print(str(result_arr), result_arr.dtype) #  avoid numpy repr inconsistencies on Windows
-    [8 8 9] int32
+    >>> print(str(result_arr)) #  avoid numpy repr inconsistencies on Windows
+    [8 8 9]
 
     >>> stft(np.zeros(19), 16, 4).shape
     (8, 9)
