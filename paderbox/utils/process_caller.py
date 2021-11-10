@@ -96,16 +96,16 @@ def run_process(
     >>> run_process('echo Hello')
     CompletedProcess(args='echo Hello', returncode=0, stdout='Hello\\n', stderr='')
     >>> run_process('echo Hello', universal_newlines=False)
-    CompletedProcess(args='echo Hello', returncode=0, stdout=b'Hello\\n', stderr=b'') ##additional \r in stdout bytes
+    CompletedProcess(args='echo Hello', returncode=0, stdout=b'Hello\\n', stderr=b'')
 
     # Example, where shell=False is usefull
-    >>> run_process(['echo', 'Hello World']) ## file not found error
+    >>> run_process(['echo', 'Hello World'])
     CompletedProcess(args=['echo', 'Hello World'], returncode=0, stdout='Hello World\\n', stderr='')
-    >>> run_process(['echo', 'Hello World'], shell=True)  # fails ## "Hello World" is printed to stdout
+    >>> run_process(['echo', 'Hello World'], shell=True)  # fails
     CompletedProcess(args=['echo', 'Hello World'], returncode=0, stdout='\\n', stderr='')
-    >>> run_process('echo', shell=True) ## a single echo prints "ECHO is on." to stdout
+    >>> run_process('echo', shell=True)
     CompletedProcess(args='echo', returncode=0, stdout='\\n', stderr='')
-    >>> run_process(['echo', 'Hello World'], shell=False) ## file not found (hello world command?)
+    >>> run_process(['echo', 'Hello World'], shell=False)
     CompletedProcess(args=['echo', 'Hello World'], returncode=0, stdout='Hello World\\n', stderr='')
 
 
@@ -200,7 +200,7 @@ async def run_process_async(
 
     # Effect of universal_newlines
     >>> run_process('echo Hello')
-    CompletedProcess(args='echo Hello', returncode=0, stdout='Hello\\n', stderr='') ## additional \r char
+    CompletedProcess(args='echo Hello', returncode=0, stdout='Hello\\n', stderr='')
     >>> convert_newlines(run_process('echo Hello', universal_newlines=False))
     CompletedProcess(args='echo Hello', returncode=0, stdout=b'Hello\\n', stderr=b'')
 
@@ -208,14 +208,14 @@ async def run_process_async(
     >>> # run_process('echo Hello', stdout=None)
 
     # Example, where shell=False is usefull
-    >>> run_process(['echo', 'Hello World']) ## file not found, hello world command? echo not on PATH
+    >>> run_process(['echo', 'Hello World'])
     CompletedProcess(args=['echo', 'Hello World'], returncode=0, stdout='Hello World\\n', stderr='')
     >>> run_process(['echo', 'Hello World'], shell=True)
     Traceback (most recent call last):
     ...
     ValueError: ('Expected str and not list when shell is True, got:', ['echo', 'Hello World'])
     >>> run_process(['echo', 'Hello World'], shell=False)
-    CompletedProcess(args=['echo', 'Hello World'], returncode=0, stdout='Hello World\\n', stderr='') ## file not found error, hello world command
+    CompletedProcess(args=['echo', 'Hello World'], returncode=0, stdout='Hello World\\n', stderr='')
 
     >>> run_process('exit 0')
     CompletedProcess(args='exit 0', returncode=0, stdout='', stderr='')
