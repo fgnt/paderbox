@@ -202,19 +202,19 @@ def load_audio(
             signal, sample_rate = data, f.samplerate
     except RuntimeError as e:
         if isinstance(path, (Path, str)):
-            from paderbox.utils.process_caller import run_process
-            cp = run_process(['file', f'{path}'])
-            stdout = cp.stdout
+            import magic
+            # recreate the stdout of the 'file' tool
+            stdout = Path(path).as_posix() + ": " + magic.from_file(str(path)) + "\n"
             if Path(path).suffix == '.wav':
                 # Improve exception msg for NIST SPHERE files.
                 raise RuntimeError(
-                    f'Could not read {path}.\n'
+                    f'Could not read {Path(path).as_posix()}.\n' #FIXME: Adapt code to test case (posix style paths) or print platform-specific path style?
                     f'File format:\n{stdout}'
                 ) from e
             else:
                 path = Path(path)
                 raise RuntimeError(
-                    f'Wrong suffix {path.suffix} in {path}.\n'
+                    f'Wrong suffix {path.suffix} in {Path(path).as_posix()}.\n'
                     f'File format:\n{stdout}'
                 ) from e
         raise
@@ -321,6 +321,12 @@ def audioread(path, offset=0.0, duration=None, expected_sample_rate=None):
     .. admonition:: Example:
         Only path provided:
 
+        >>> import sys, pytest
+        >>> if sys.platform.startswith("win"):
+        ...     pytest.skip("`pb.io.audioread.audioread` is deprecated and "
+        ...                "does not work on windows, because wavefile needs "
+        ...                "`libsndfile-1.dll`."
+        ...                "Use `pb.io.load_audio` on windows.")
         >>> from paderbox.testing.testfile_fetcher import get_file_path
         >>> path = get_file_path('speech.wav')
         >>> # path = '/net/db/timit/pcm/train/dr1/fcjf0/sa1.wav'
@@ -375,9 +381,9 @@ def audioread(path, offset=0.0, duration=None, expected_sample_rate=None):
             wav_reader.read(data)
             return np.squeeze(data), sample_rate
     except OSError as e:
-        from paderbox.utils.process_caller import run_process
-        cp = run_process(f'file {path}')
-        stdout = cp.stdout
+        import magic
+        # recreate the stdout of the 'file' tool
+        stdout = Path(path).as_posix() + ": " + magic.from_file(str(path)) + "\n"
         raise OSError(f'{stdout}') from e
 
 

@@ -5,7 +5,7 @@ from scipy import signal
 
 import paderbox.testing as tc
 from paderbox.testing.testfile_fetcher import get_file_path
-from paderbox.io.audioread import audioread
+from paderbox.io import load_audio
 from paderbox.transform.module_stft import _biorthogonal_window
 from paderbox.transform.module_stft import _biorthogonal_window_loopy
 from paderbox.transform.module_stft import _biorthogonal_window_brute_force
@@ -74,7 +74,7 @@ class TestSTFTMethods(unittest.TestCase):
 
     def setUp(self):
         path = get_file_path("sample.wav")
-        self.x = audioread(path)[0]
+        self.x = load_audio(path)
 
     def test_samples_to_stft_frames(self):
         size = 1024

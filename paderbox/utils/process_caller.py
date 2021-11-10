@@ -84,20 +84,28 @@ def run_process(
         False: Directly called, recommended, when cmd is a list, because when
             for example strings contains whitespaces they are not interpreted.
 
+
+    >>> import sys, pytest
+    >>> if sys.platform.startswith("win"):
+    ...     pytest.skip("the subprocess commands produce different outputs on Windows. "
+    ...                 "Note: the newline is defined as '\\r\\n' and commands like 'echo' "
+    ...                 "are not available with shell=False")
+
+
     # Effect of universal_newlines
     >>> run_process('echo Hello')
     CompletedProcess(args='echo Hello', returncode=0, stdout='Hello\\n', stderr='')
     >>> run_process('echo Hello', universal_newlines=False)
-    CompletedProcess(args='echo Hello', returncode=0, stdout=b'Hello\\n', stderr=b'')
+    CompletedProcess(args='echo Hello', returncode=0, stdout=b'Hello\\n', stderr=b'') ##additional \r in stdout bytes
 
     # Example, where shell=False is usefull
-    >>> run_process(['echo', 'Hello World'])
+    >>> run_process(['echo', 'Hello World']) ## file not found error
     CompletedProcess(args=['echo', 'Hello World'], returncode=0, stdout='Hello World\\n', stderr='')
-    >>> run_process(['echo', 'Hello World'], shell=True)  # fails
+    >>> run_process(['echo', 'Hello World'], shell=True)  # fails ## "Hello World" is printed to stdout
     CompletedProcess(args=['echo', 'Hello World'], returncode=0, stdout='\\n', stderr='')
-    >>> run_process('echo', shell=True)
+    >>> run_process('echo', shell=True) ## a single echo prints "ECHO is on." to stdout
     CompletedProcess(args='echo', returncode=0, stdout='\\n', stderr='')
-    >>> run_process(['echo', 'Hello World'], shell=False)
+    >>> run_process(['echo', 'Hello World'], shell=False) ## file not found (hello world command?)
     CompletedProcess(args=['echo', 'Hello World'], returncode=0, stdout='Hello World\\n', stderr='')
 
 
@@ -177,6 +185,13 @@ async def run_process_async(
         False: Directly called, recommended, when cmd is a list, because when
             for example strings contains whitespaces they are not interpreted.
 
+
+    >>> import sys, pytest
+    >>> if sys.platform.startswith("win"):
+    ...     pytest.skip("the subprocess commands produce different outputs on Windows. "
+    ...                 "Note: the newline is defined as '\\r\\n' and commands like 'echo' "
+    ...                 "are not available with shell=False")
+
     >>> from paderbox.utils.process_caller import run_process_async
     >>> def run_process(*args, **kwargs):
     ...     import asyncio
@@ -185,22 +200,22 @@ async def run_process_async(
 
     # Effect of universal_newlines
     >>> run_process('echo Hello')
-    CompletedProcess(args='echo Hello', returncode=0, stdout='Hello\\n', stderr='')
-    >>> run_process('echo Hello', universal_newlines=False)
+    CompletedProcess(args='echo Hello', returncode=0, stdout='Hello\\n', stderr='') ## additional \r char
+    >>> convert_newlines(run_process('echo Hello', universal_newlines=False))
     CompletedProcess(args='echo Hello', returncode=0, stdout=b'Hello\\n', stderr=b'')
 
     >>> # This would print 'Hello' to stdout. Doctests cannot handle this case.
     >>> # run_process('echo Hello', stdout=None)
 
     # Example, where shell=False is usefull
-    >>> run_process(['echo', 'Hello World'])
+    >>> run_process(['echo', 'Hello World']) ## file not found, hello world command? echo not on PATH
     CompletedProcess(args=['echo', 'Hello World'], returncode=0, stdout='Hello World\\n', stderr='')
     >>> run_process(['echo', 'Hello World'], shell=True)
     Traceback (most recent call last):
     ...
     ValueError: ('Expected str and not list when shell is True, got:', ['echo', 'Hello World'])
     >>> run_process(['echo', 'Hello World'], shell=False)
-    CompletedProcess(args=['echo', 'Hello World'], returncode=0, stdout='Hello World\\n', stderr='')
+    CompletedProcess(args=['echo', 'Hello World'], returncode=0, stdout='Hello World\\n', stderr='') ## file not found error, hello world command
 
     >>> run_process('exit 0')
     CompletedProcess(args='exit 0', returncode=0, stdout='', stderr='')
@@ -243,6 +258,7 @@ async def run_process_async(
         else:
             process = await asyncio.create_subprocess_shell(cmd, **kwargs)
     else:
+        raise ValueError(*cmd)
         process = await asyncio.create_subprocess_exec(*cmd, **kwargs)
     stdout, stderr = await process.communicate(input=input)
 

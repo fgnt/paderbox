@@ -1,6 +1,6 @@
 import unittest
 
-from paderbox.io.audioread import audioread
+from paderbox.io import load_audio
 # from scipy import signal
 
 import paderbox.testing as tc
@@ -15,7 +15,7 @@ class TestSTFTMethods(unittest.TestCase):
     def setUpClass(self):
         path = get_file_path("sample.wav")
 
-        self.x = audioread(path)[0]
+        self.x = load_audio(path)
 
     def test_offcomp(self):
         y = self.x

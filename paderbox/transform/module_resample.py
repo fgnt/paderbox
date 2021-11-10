@@ -24,6 +24,11 @@ def resample_sox(signal: np.ndarray, *, in_rate, out_rate):
     SoX automatically does a delay compensation and uses linear filters. This
     is already a sane choice.
 
+    >>> import sys, pytest
+    >>> if sys.platform.startswith("win"):
+    ...     pytest.skip("`pb.transform.module_resample.resample_sox` only works "
+    ...                "on windows if `SoX` is installed, tests are skipped.")
+
     >>> signal = np.array([1, -1, 1, -1], dtype=np.float32)
     >>> resample_sox(signal, in_rate=2, out_rate=1)
     array([ 0.28615332, -0.13513082], dtype=float32)

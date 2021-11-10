@@ -84,16 +84,16 @@ def get_new_subdir(
     Returns:
         pathlib.Path of the new subdir
 
-
-    >>> get_new_subdir('/', dry_run=True)  # root folder usually contain no digits
-    dry_run: "os.mkdir(/1)"
-    PosixPath('/1')
+    >>> # root folder usually contain no digits
+    >>> get_new_subdir('/', dry_run=True)    # doctest: +ELLIPSIS
+    dry_run: "os.mkdir(...1)"
+    ...Path('...1')
 
     >>> import numpy as np
     >>> np.random.seed(0)  # This is for doctest. Never use it in practise.
-    >>> get_new_subdir('/', id_naming=NameGenerator(), dry_run=True)
-    dry_run: "os.mkdir(/nice_tomato_fox)"
-    PosixPath('/nice_tomato_fox')
+    >>> get_new_subdir('/', id_naming=NameGenerator(), dry_run=True)  # doctest: +ELLIPSIS
+    dry_run: "os.mkdir(...nice_tomato_fox)"
+    ...Path('...nice_tomato_fox')
     """
 
     if consider_mpi:

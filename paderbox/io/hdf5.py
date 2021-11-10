@@ -8,6 +8,51 @@ from distutils.version import LooseVersion
 
 __all__ = ['dump_hdf5', 'update_hdf5', 'load_hdf5']
 
+def join_paths(path, name):
+    """Join paths using '/', removing one or adding one forward slash if necessary.
+    
+    This is different from os.path.join, which adds '\\' on Windows systems.
+    The function will not check for duplicate slashes in the input paths (e.g. "/a//").
+
+    Args:
+        path:
+            existing, slash-separated path as string, may end with '/'
+        name:
+            name or existing path as string, may start with '/'
+
+    Returns:
+        path concatenated with name using a single '/'
+    
+
+    >>> join_paths("/a", "b")
+    '/a/b'
+    >>> join_paths("/", "/a")
+    '/a'
+    >>> join_paths("", "/a")
+    '/a'
+    >>> join_paths("/a", "")
+    '/a'
+    >>> join_paths("/a", "/") # case not considered
+    '/a/'
+    """
+    if len(path) == 0:
+        return name
+    if len(name) == 0:
+        return path
+    suffix = False
+    if path[-1] == '/':
+        suffix = True
+    prefix = False
+    if name[0] == '/':
+        prefix = True
+    if suffix and prefix:
+        path += name[1:] 
+    elif suffix or prefix:
+        path += name
+    else:
+        path += '/' + name
+    return path
+
 
 def dump_hdf5(obj, filename, force=True, _print_warnings=False):
     """
@@ -106,10 +151,10 @@ def update_hdf5(
     {'name': 1}
     """
     if not isinstance(obj, dict):
-        path_split = os.path.split(path)
+        path_split = path.rsplit('/', 1)
         if len(path_split) > 1:
-            obj = {path_split[-1]: obj}
-            path = os.path.join(*path_split[:-1])
+            obj = {path_split[1]: obj}
+            path = path_split[0] if len(path_split[0]) > 0 else '/'
     _ReportInterface.__update_hdf5_from_dict__(
         dic=obj,
         filename=filename,
@@ -242,7 +287,7 @@ def tree_hdf5(
 
     def tree(h5file, path):
         for k, v in h5file.items():
-            key = os.path.join(path, k)
+            key = join_paths(path, k)
             if isinstance(v, h5py._hl.group.Group):
                 tree(v, key)
             else:
@@ -334,7 +379,7 @@ class _ReportInterface(object):
             raise ValueError("must be an open h5py file")
         # save items to the hdf5 file
         for key, item in dic.items():
-            cur_path = os.path.join(path, key)
+            cur_path = join_paths(path, key)
             if not isinstance(key, str):
                 cls._dump_warning(
                     f"dict keys must be strings (and not {key}) "

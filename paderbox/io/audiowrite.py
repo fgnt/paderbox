@@ -41,6 +41,10 @@ def dump_audio(
         format:
             Special option. See soundfile.SoundFile.__init__ for details.
 
+    >>> import magic
+    >>> def get_filetype(path):
+    ...     # recreate the stdout of the 'file' tool
+    ...     return Path(path).as_posix() + ": " + magic.from_file(str(path)) + "\\n"
     >>> from paderbox.utils.process_caller import run_process
     >>> from paderbox.io import load_audio
     >>> from paderbox.io.cache_dir import get_cache_dir
@@ -51,13 +55,13 @@ def dump_audio(
     >>> dump_audio(a, file, normalize=False)
     >>> load_audio(file) * 2**15
     array([ 1.,  2., -4.,  4.])
-    >>> print('stdout:', run_process(f'file {file}').stdout)  # doctest: +ELLIPSIS
+    >>> print('stdout:', get_filetype(file))  # doctest: +ELLIPSIS
     stdout: .../tmp_audio_data.wav: RIFF (little-endian) data, WAVE audio, Microsoft PCM, 16 bit, mono 16000 Hz
     <BLANKLINE>
     >>> dump_audio(a, file, normalize=True)
     >>> load_audio(file)
     array([ 0.24996948,  0.49996948, -0.99996948,  0.99996948])
-    >>> print('stdout:', run_process(f'file {file}').stdout)  # doctest: +ELLIPSIS
+    >>> print('stdout:', get_filetype(file))  # doctest: +ELLIPSIS
     stdout: .../tmp_audio_data.wav: RIFF (little-endian) data, WAVE audio, Microsoft PCM, 16 bit, mono 16000 Hz
     <BLANKLINE>
 
@@ -69,14 +73,14 @@ def dump_audio(
     >>> load_audio(file)
     array([0.     , 0.03125, 0.0625 , 0.09375, 0.125  , 0.15625, 0.1875 ,
            0.21875, 0.25   , 0.28125])
-    >>> print('stdout:', run_process(f'file {file}').stdout)  # doctest: +ELLIPSIS
+    >>> print('stdout:', get_filetype(file))  # doctest: +ELLIPSIS
     stdout: .../tmp_audio_data.wav: RIFF (little-endian) data, WAVE audio, Microsoft PCM, 16 bit, mono 16000 Hz
     <BLANKLINE>
     >>> dump_audio(np.array([16, 24]) / 32, file, normalize=False, start=1)
     >>> load_audio(file)
     array([0.     , 0.5    , 0.75   , 0.09375, 0.125  , 0.15625, 0.1875 ,
            0.21875, 0.25   , 0.28125])
-    >>> print('stdout:', run_process(f'file {file}').stdout)  # doctest: +ELLIPSIS
+    >>> print('stdout:', get_filetype(file))  # doctest: +ELLIPSIS
     stdout: ...tmp_audio_data.wav: RIFF (little-endian) data, WAVE audio, Microsoft PCM, 16 bit, mono 16000 Hz
     <BLANKLINE>
     >>> dump_audio(np.array([16, 24, 24, 24]) / 32, file, normalize=False, start=9)
@@ -93,7 +97,7 @@ def dump_audio(
            0.75   , 0.75   , 0.75   ])
     >>> load_audio(file).shape
     (24,)
-    >>> print('stdout:', run_process(f'file {file}').stdout)  # doctest: +ELLIPSIS
+    >>> print('stdout:', get_filetype(file))  # doctest: +ELLIPSIS
     stdout: .../tmp_audio_data.wav: RIFF (little-endian) data, WAVE audio, Microsoft PCM, 16 bit, mono 16000 Hz
     <BLANKLINE>
     >>> os.remove(file)
@@ -104,10 +108,14 @@ def dump_audio(
            0.75, 0.75])
     >>> load_audio(file).shape
     (24,)
-    >>> print('stdout:', run_process(f'file {file}').stdout)  # doctest: +ELLIPSIS
+    >>> print('stdout:', get_filetype(file))  # doctest: +ELLIPSIS
     stdout: .../tmp_audio_data.wav: RIFF (little-endian) data, WAVE audio, Microsoft PCM, 16 bit, mono 16000 Hz
     <BLANKLINE>
 
+    >>> import sys, pytest
+    >>> if sys.platform.startswith("win"):
+    ...     pytest.skip("soxi is not available on Windows."
+    ...                "Use `pb.io.load_audio` on windows.")
     >>> data = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]) / 32
     >>> data
     array([0.     , 0.03125, 0.0625 , 0.09375, 0.125  , 0.15625, 0.1875 ,
