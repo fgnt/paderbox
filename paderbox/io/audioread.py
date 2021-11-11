@@ -140,9 +140,9 @@ def load_audio(
     >>> load_audio(path)  # doctest: +ELLIPSIS
     Traceback (most recent call last):
     ...
-    RuntimeError: Wrong suffix .sph in .../123_1pcbe_shn.sph.
+    RuntimeError: Wrong suffix .sph in ...123_1pcbe_shn.sph.
     File format:
-    .../123_1pcbe_shn.sph: NIST SPHERE file
+    ...123_1pcbe_shn.sph: NIST SPHERE file
     <BLANKLINE>
     """
 
@@ -202,9 +202,9 @@ def load_audio(
             signal, sample_rate = data, f.samplerate
     except RuntimeError as e:
         if isinstance(path, (Path, str)):
-            from paderbox.utils.process_caller import run_process
-            cp = run_process(['file', f'{path}'])
-            stdout = cp.stdout
+            import magic
+            # recreate the stdout of the 'file' tool
+            stdout = Path(path).as_posix() + ": " + magic.from_file(str(path)) + "\n"
             if Path(path).suffix == '.wav':
                 # Improve exception msg for NIST SPHERE files.
                 raise RuntimeError(
