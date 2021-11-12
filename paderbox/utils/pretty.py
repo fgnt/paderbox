@@ -72,7 +72,7 @@ def pprint(
 
 
     >>> pprint([np.array([1.]), np.array([1.]*100)])
-    [array([1]), array(shape=(100,), dtype=float64)]
+    [array([1.]), array(shape=(100,), dtype=float64)]
     >>> print([np.array([1])])
     [array([1])]
 

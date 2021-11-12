@@ -143,7 +143,6 @@ def load_audio(
     RuntimeError: Wrong suffix .sph in ...123_1pcbe_shn.sph.
     File format:
     ...123_1pcbe_shn.sph: NIST SPHERE file
-    <BLANKLINE>
     """
 
     # soundfile does not support pathlib.Path.
