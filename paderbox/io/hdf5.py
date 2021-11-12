@@ -1,4 +1,5 @@
 import os
+import re
 import warnings
 
 import numpy as np
@@ -9,10 +10,9 @@ from distutils.version import LooseVersion
 __all__ = ['dump_hdf5', 'update_hdf5', 'load_hdf5']
 
 def join_paths(path, name):
-    """Join paths using '/', removing one or adding one forward slash if necessary.
+    """Join paths using '/', removing duplicate forward slashes if necessary.
     
-    This is different from os.path.join, which adds '\\' on Windows systems.
-    The function will not check for duplicate slashes in the input paths (e.g. "/a//").
+    This is different from os.path.join, which adds '\\' on Windows.
 
     Args:
         path:
@@ -23,34 +23,8 @@ def join_paths(path, name):
     Returns:
         path concatenated with name using a single '/'
     
-
-    >>> join_paths("/a", "b")
-    '/a/b'
-    >>> join_paths("/", "/a")
-    '/a'
-    >>> join_paths("", "/a")
-    '/a'
-    >>> join_paths("/a", "")
-    '/a'
-    >>> join_paths("/a", "/") # case not considered
-    '/a/'
     """
-    if len(path) == 0:
-        return name
-    if len(name) == 0:
-        return path
-    suffix = False
-    if path[-1] == '/':
-        suffix = True
-    prefix = False
-    if name[0] == '/':
-        prefix = True
-    if suffix and prefix:
-        path += name[1:] 
-    elif suffix or prefix:
-        path += name
-    else:
-        path += '/' + name
+    path = re.sub('/+', '/', name if name.startswith('/') else f'{path}/{name}')
     return path
 
 

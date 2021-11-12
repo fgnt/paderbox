@@ -244,7 +244,7 @@ def load(
     Traceback (most recent call last):
     ...
     AssertionError: You called Loader.__call__ with unsafe=False
-    ...
+    for the file ...unsecure_file.pkl.
     The file type is identified as '.pkl'.
     Loading this file type is not secure.
     If you trust the file, change the value of unsafe to True.

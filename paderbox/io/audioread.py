@@ -204,18 +204,18 @@ def load_audio(
         if isinstance(path, (Path, str)):
             import magic
             # recreate the stdout of the 'file' tool
-            stdout = Path(path).as_posix() + ": " + magic.from_file(str(path)) + "\n"
+            msg = Path(path).as_posix() + ": " + magic.from_file(str(path))
             if Path(path).suffix == '.wav':
                 # Improve exception msg for NIST SPHERE files.
                 raise RuntimeError(
                     f'Could not read {path}.\n'
-                    f'File format:\n{stdout}'
+                    f'File format:\n{msg}'
                 ) from e
             else:
                 path = Path(path)
                 raise RuntimeError(
                     f'Wrong suffix {path.suffix} in {path}.\n'
-                    f'File format:\n{stdout}'
+                    f'File format:\n{msg}'
                 ) from e
         raise
 

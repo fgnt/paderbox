@@ -71,8 +71,8 @@ def pprint(
      - Support multiple objects (Causes bad readable error in original)
 
 
-    >>> pprint([np.array([1]), np.array([1]*100).astype(np.int64)])
-    [array([1]), array(shape=(100,), dtype=int64)]
+    >>> pprint([np.array([1.]), np.array([1.]*100)])
+    [array([1]), array(shape=(100,), dtype=float64)]
     >>> print([np.array([1])])
     [array([1])]
 
