@@ -124,7 +124,7 @@ setup(
         "dataclasses; python_version<'3.7'",  # dataclasses is in py37 buildin
         'soundfile',
         'cached_property',
-        'magic'
+        'python-magic'
     ],
 
     # Installation problems in a clean, new environment:
