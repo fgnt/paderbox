@@ -56,7 +56,7 @@ def _clip(target, array, onset):
 
 
 # Use dataclass for recursive to_numpy
-@dataclass  # (repr=False, eq=False)
+@dataclass
 class _SparseSegment:
     onset: int
     array: [np.ndarray, torch.Tensor]
@@ -73,12 +73,6 @@ class _SparseSegment:
     def is_torch(self):
         return isinstance(self.array, torch.Tensor)
 
-    def __repr__(self):
-        return (
-            f'{self.__class__.__name__}(onset={self.onset}, '
-            f'length={self.segment_length}: {self.array})'
-        )
-
 
 @dataclass
 class SparseArray:
@@ -90,17 +84,12 @@ class SparseArray:
     SparseArray(shape=(20,))
     >>> a[5:10] = np.ones(5, dtype=int)
     >>> a
-    SparseArray(
-      _SparseSegment(onset=5, length=5: [1 1 1 1 1]),
-      shape=(20,))
+    SparseArray(_SparseSegment(onset=5, array=array([1, 1, 1, 1, 1])),  shape=(20,))
     >>> np.asarray(a)
     array([0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
     >>> a[15:20] = 2
     >>> a
-    SparseArray(
-      _SparseSegment(onset=5, length=5: [1 1 1 1 1])
-      _SparseSegment(onset=15, length=5: [2 2 2 2 2]),
-      shape=(20,))
+    SparseArray(_SparseSegment(onset=5, array=array([1, 1, 1, 1, 1])), _SparseSegment(onset=15, array=array([2, 2, 2, 2, 2])),  shape=(20,))
     >>> np.asarray(a)
     array([0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2])
 
@@ -109,9 +98,9 @@ class SparseArray:
     Traceback (most recent call last):
       ...
     ValueError: Overlap detected between
-      _SparseSegment(onset=5, length=5: [1 1 1 1 1])
+      _SparseSegment(onset=5, array=array([1, 1, 1, 1, 1]))
     and newly added
-      _SparseSegment(onset=5, length=15: [3 3 3 3 3 3 3 3 3 3 3 3 3 3 3])
+      _SparseSegment(onset=5, array=array([3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]))
 
 
     dtype is inferred from segments:
@@ -120,7 +109,7 @@ class SparseArray:
     >>> a.pad_value, type(a.pad_value)
     (0, <class 'numpy.int64'>)
 
-    Can't add segments with differing dtypes (yet)
+    Can't add segments with differing dtypes
     >>> a[:3] = np.ones(3, dtype=np.float32)
     Traceback (most recent call last):
       ...
@@ -130,11 +119,7 @@ class SparseArray:
     >>> b = SparseArray(a.shape)
     >>> b[10:15] = 8
     >>> a + b
-    SparseArray(
-      _SparseSegment(onset=5, length=5: [1 1 1 1 1])
-      _SparseSegment(onset=10, length=5: [8 8 8 8 8])
-      _SparseSegment(onset=15, length=5: [2 2 2 2 2]),
-      shape=(20,))
+    SparseArray(_SparseSegment(onset=5, array=array([1, 1, 1, 1, 1])), _SparseSegment(onset=10, array=array([8, 8, 8, 8, 8])), _SparseSegment(onset=15, array=array([2, 2, 2, 2, 2])),  shape=(20,))
     >>> np.asarray(a + b)
     array([0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 8, 8, 8, 8, 8, 2, 2, 2, 2, 2])
 
@@ -299,11 +284,9 @@ class SparseArray:
         return self.as_contiguous(dtype)
 
     def __repr__(self):
-        import textwrap
         if self._segments:
-            content = '\n'.join(map(str, self._segments))
-            content = textwrap.indent(content, '  ')
-            content = '\n' + content + ',\n  '
+            content = ', '.join(map(str, self._segments))
+            content = content + ',  '
         else:
             content = ''
         if self.pad_value != 0:
@@ -311,6 +294,37 @@ class SparseArray:
         else:
             p = ''
         return f'{self.__class__.__name__}({content}{p}shape={self.shape})'
+
+    def _repr_pretty_(self, p, cycle):
+        """
+        >>> pb.utils.pretty.pprint(SparseArray(10))
+        SparseArray(shape=(10,))
+        >>> a = SparseArray(10)
+        >>> a[:5] = 1
+        >>> a[7:] = 2
+        >>> pb.utils.pretty.pprint(a)
+        SparseArray(_SparseSegment(onset=0, array=array([1, 1, 1, 1, 1])),
+                    _SparseSegment(onset=7, array=array([2, 2, 2])),
+                    shape=(10,))
+        >>> a.pad_value=-1
+        >>> pb.utils.pretty.pprint(a)
+        SparseArray(_SparseSegment(onset=0, array=array([1, 1, 1, 1, 1])),
+                    _SparseSegment(onset=7, array=array([2, 2, 2])),
+                    shape=(10,), pad_value=-1)
+        """
+        if cycle:
+            p.text(f'{self.__class__.__name__}(...)')
+        else:
+            name = self.__class__.__name__
+            pre, post = f'{name}(', ')'
+            with p.group(len(pre), pre, post):
+                for idx, m in enumerate(self._segments):
+                    p.pretty(m)
+                    p.text(',')
+                    p.breakable()
+                p.text(f'shape={self.shape}')
+                if self.pad_value != 0:
+                    p.text(f', pad_value={self.pad_value}')
 
     def __setitem__(self, item, value):
         """
@@ -324,9 +338,7 @@ class SparseArray:
         >>> a = SparseArray(10)
         >>> a[:100] = 1
         >>> a
-        SparseArray(
-          _SparseSegment(onset=0, length=10: [1 1 1 1 1 1 1 1 1 1]),
-          shape=(10,))
+        SparseArray(_SparseSegment(onset=0, array=array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1])),  shape=(10,))
 
         # Multi-dimensional
         >>> a = SparseArray((2, 10))
@@ -406,9 +418,7 @@ class SparseArray:
         >>> np.asarray(a[10:15])
         array([0., 0., 0., 0., 0.])
         >>> a[-10:]
-        SparseArray(
-          _SparseSegment(onset=5, length=5: [1 2 3 4 5]),
-          shape=(10,))
+        SparseArray(_SparseSegment(onset=5, array=array([1, 2, 3, 4, 5])),  shape=(10,))
         >>> np.asarray(a[-10:])
         array([0, 0, 0, 0, 0, 1, 2, 3, 4, 5])
         >>> np.asarray(a[:-10])
@@ -422,20 +432,12 @@ class SparseArray:
         array([[0, 1, 2, 3, 4, 0, 0, 1, 1, 1],
                [5, 6, 7, 8, 9, 0, 0, 1, 1, 1]])
         >>> a[..., :5]
-        SparseArray(
-          _SparseSegment(onset=0, length=5: [[0 1 2 3 4]
-           [5 6 7 8 9]]),
-          shape=(2, 5))
+        SparseArray(_SparseSegment(onset=0, array=array([[0, 1, 2, 3, 4],
+               [5, 6, 7, 8, 9]])),  shape=(2, 5))
         >>> a[0]
-        SparseArray(
-          _SparseSegment(onset=0, length=5: [0 1 2 3 4])
-          _SparseSegment(onset=7, length=3: [1 1 1]),
-          shape=(10,))
+        SparseArray(_SparseSegment(onset=0, array=array([0, 1, 2, 3, 4])), _SparseSegment(onset=7, array=array([1, 1, 1])),  shape=(10,))
         >>> a[-1]
-        SparseArray(
-          _SparseSegment(onset=0, length=5: [5 6 7 8 9])
-          _SparseSegment(onset=7, length=3: [1 1 1]),
-          shape=(10,))
+        SparseArray(_SparseSegment(onset=0, array=array([5, 6, 7, 8, 9])), _SparseSegment(onset=7, array=array([1, 1, 1])),  shape=(10,))
         >>> a[5]
         Traceback (most recent call last):
          ...
@@ -532,10 +534,7 @@ class SparseArray:
         >>> c = np.arange(10)
         >>> a += b
         >>> a
-        SparseArray(
-          _SparseSegment(onset=0, length=5: [1 1 1 1 1])
-          _SparseSegment(onset=7, length=3: [2 2 2]),
-          shape=(10,))
+        SparseArray(_SparseSegment(onset=0, array=array([1, 1, 1, 1, 1])), _SparseSegment(onset=7, array=array([2, 2, 2])),  shape=(10,))
         >>> c += b
         >>> c
         array([ 0,  1,  2,  3,  4,  5,  6,  9, 10, 11])
