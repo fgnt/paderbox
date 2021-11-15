@@ -260,7 +260,7 @@ class SparseArray:
         ):
             import textwrap
             raise ValueError(
-                f'Overlap detected between \n'
+                f'Overlap detected between\n'
                 f'{textwrap.indent(repr(self._segments[position - 1]), "  ")}\n'
                 f'and newly added\n'
                 f'{textwrap.indent(repr(segment), "  ")}'
@@ -271,7 +271,7 @@ class SparseArray:
         ):
             import textwrap
             raise ValueError(
-                f'Overlap detected between \n'
+                f'Overlap detected between\n'
                 f'{textwrap.indent(repr(self._segments[position]), "  ")}\n'
                 f'and newly added'
                 f'{textwrap.indent(repr(segment), "  ")}'
