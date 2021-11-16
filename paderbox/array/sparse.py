@@ -734,18 +734,17 @@ class SparseArray:
         >>> a = SparseArray(10)
         >>> a[:8] = torch.arange(8)
         >>> c = -torch.arange(10)
-        >>> a * c
-        tensor([  0,  -1,  -4,  -9, -16, -25, -36, -49,   0,   0])
-        >>> c * a
-        tensor([  0,  -1,  -4,  -9, -16, -25, -36, -49,   0,   0])
         >>> c -= a
         >>> c
         tensor([  0,  -2,  -4,  -6,  -8, -10, -12, -14,  -8,  -9])
-        >>> a / c
-        tensor([    nan, -0.5000, -0.5000, -0.5000, -0.5000, -0.5000, -0.5000, -0.5000,
-                -0.0000, -0.0000])
         >>> c + a
         tensor([ 0, -1, -2, -3, -4, -5, -6, -7, -8, -9])
+
+        Some functions don't work in some torch versions
+        # >>> c * a
+        # >>> a / c
+        # >>> a * c
+        tensor([  0,  -1,  -4,  -9, -16, -25, -36, -49,   0,   0])
         """
         if kwargs is not None:
             return NotImplemented
@@ -761,10 +760,10 @@ class SparseArray:
         # Only support a small subset of elementwise operations for now.
         # Other operators can be tricky to implement and may result in
         # unexpected behavior
-        for name in ('add', 'mul', 'div', 'sub'):
-            if name in func.__name__:
-                break
-        else:
+        if func not in (
+            torch.Tensor.add, torch.Tensor.add_,
+            torch.Tensor.sub, torch.Tensor.sub_,
+        ):
             return NotImplemented
 
         # If func is not inplace: Copy. All inplace function names end with '_'
