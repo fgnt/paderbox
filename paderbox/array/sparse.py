@@ -761,13 +761,11 @@ class SparseArray:
         # Only support a small subset of elementwise operations for now.
         # Other operators can be tricky to implement and may result in
         # unexpected behavior
-        if func not in [
-            torch.Tensor.add, torch.Tensor.add_,
-            torch.Tensor.mul, torch.Tensor.mul_,
-            torch.Tensor.div, torch.Tensor.div_,
-            torch.Tensor.sub, torch.Tensor.sub_,
-        ]:
-            raise NotImplemented
+        for name in ('add', 'mul', 'div', 'sub'):
+            if name in func.__name__:
+                break
+        else:
+            return NotImplemented
 
         # If func is not inplace: Copy. All inplace function names end with '_'
         if not func.__name__.endswith('_'):
@@ -783,13 +781,9 @@ class SparseArray:
             # as first arg
             func_(out, b)
 
-        try:
-            return _combine_inplace_array_with_sparse(
-                func, args[0], args[1], out=out
-            )
-        except Exception as e:
-            print(e)
-            raise Exception
+        return _combine_inplace_array_with_sparse(
+            func, args[0], args[1], out=out
+        )
 
 
 def _combine_sparse_arrays(func, input1, input2):
