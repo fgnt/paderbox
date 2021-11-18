@@ -14,6 +14,7 @@ import torch
 
 
 def _normalize_shape(shape):
+    """Performs a few checks on the shape and normalizes it to a tuple"""
     if shape is None:
         # As of now, we only support fixed shapes. This can be changed
         raise TypeError(f'None shape is not supported')
@@ -32,14 +33,117 @@ def _normalize_shape(shape):
     return tuple(shape)
 
 
-def _shape_for_index(shape, index):
+def _shape_for_item(shape, item):
+    """Gets the shape that would result when indexing an array with shape
+    `shape` with `item`."""
     if shape == ():
         return ()
-    return np.broadcast_to(np.ones(1), shape)[index].shape
+    return np.broadcast_to(np.ones(1), shape)[item].shape
 
 
-def zeros(shape):
-    return SparseArray(shape=shape)
+def _normalize_item(item, shape):
+    """
+    >>> def print_item(item):
+    ...     print('[' + ', '.join([(f'{i.start if i.start is not None else ""}:{i.stop if i.stop is not None else ""}' if isinstance(i, slice) else str(i)) for i in item]) + ']')
+    >>> print_item((0, slice(None), slice(1), slice(5, 10)))
+    [0, :, :1, 5:10]
+    >>> print_item(_normalize_item((), (1, 2, 3)))
+    [:, :, :]
+    >>> print_item(_normalize_item((0,), (1, 2, 3)))
+    [0, :, :]
+    >>> print_item(_normalize_item(0, (1, 2, 3)))
+    [0, :, :]
+    >>> print_item(_normalize_item(slice(None), (1, 2, 3)))
+    [:, :, :]
+    >>> print_item(_normalize_item(slice(10), (1, 2, 3)))
+    [:10, :, :]
+    >>> print_item(_normalize_item(..., (1, 2, 3)))
+    [:, :, :]
+    >>> print_item(_normalize_item((0, ...), (1, 2, 3)))
+    [0, :, :]
+    >>> print_item(_normalize_item((..., 0), (1, 2, 3)))
+    [:, :, 0]
+    >>> print_item(_normalize_item((1, 2, 3, ...), (1, 2, 3)))
+    [1, 2, 3]
+    >>> print_item(_normalize_item((..., 1, 2, 3, ...), (1, 2, 3)))
+    Traceback (most recent call last):
+     ...
+    IndexError: an index can only have a single ellipsis ('...')
+    >>> print_item(_normalize_item((0, 1, 2, 3, ...), (1, 2, 3)))
+    Traceback (most recent call last):
+      ...
+    IndexError: too many indices for array: array is 3-dimensional, but 4 were indexed
+    """
+    if not isinstance(item, tuple):
+        item = (item,)
+    if ... in item:
+        item = list(item)
+        idx = item.index(...)
+        item[idx:idx + 1] = [slice(None)] * (len(shape) - len(item) + 1)
+    else:
+        item = list(item) + [slice(None)] * (len(shape) - len(item))
+    if ... in item:
+        raise IndexError('an index can only have a single ellipsis (\'...\')')
+    if len(item) > len(shape):
+        raise IndexError(
+            f'too many indices for array: array is {len(shape)}-dimensional, '
+            f'but {len(item)} were indexed'
+        )
+    return item
+
+
+def _dtype_from_value(value):
+    try:
+        return value.dtype
+    except AttributeError:
+        # This is a fallback for builtin types
+        return np.dtype(type(value))
+
+
+def _get_pad_value(dtype, pad_value, device=None):
+    if isinstance(dtype, torch.dtype):
+        return torch.full(
+            size=(1,), fill_value=pad_value, dtype=dtype, device=device
+        )
+    else:
+        return np.full(shape=(1,), fill_value=pad_value, dtype=dtype)
+
+
+def _pad_value_like(array, pad_value):
+    """Consructs a pad value with the same dtype and device as `array`."""
+    if isinstance(array, torch.Tensor):
+        device = array.device
+    else:
+        device = None
+    return _get_pad_value(_dtype_from_value(array), pad_value, device=device)
+
+
+def full(shape, pad_value, dtype=np.float32):
+    """
+    >>> full(10, 5)
+    SparseArray(pad_value=5.0, shape=(10,))
+    >>> full(10, 5).as_contiguous()
+    array([5., 5., 5., 5., 5., 5., 5., 5., 5., 5.], dtype=float32)
+    >>> full(10, 5, dtype=torch.int32).as_contiguous()
+    tensor([5, 5, 5, 5, 5, 5, 5, 5, 5, 5], dtype=torch.int32)
+    """
+    return SparseArray(shape=shape, _pad_value=_get_pad_value(dtype, pad_value))
+
+
+def zeros(shape, dtype=np.float32):
+    """
+    >>> zeros(10)
+    SparseArray(shape=(10,))
+    >>> zeros(10).as_contiguous()
+    array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0.], dtype=float32)
+    >>> zeros(10, dtype=np.int32).as_contiguous()
+    array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=int32)
+    >>> zeros(10, dtype=torch.float32).as_contiguous()
+    tensor([0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
+    >>> zeros(10, dtype=torch.float32).device
+    device(type='cpu')
+    """
+    return full(shape, dtype=dtype, pad_value=0)
 
 
 def _check_shape(shape1, shape2):
@@ -120,6 +224,8 @@ class SparseArray:
     Adding multiple SparseArray returns a SparseArray
     >>> b = SparseArray(a.shape)
     >>> b[10:15] = 8
+    >>> b.dtype
+    dtype('int64')
     >>> a + b
     SparseArray(_SparseSegment(onset=5, array=array([1, 1, 1, 1, 1])), _SparseSegment(onset=10, array=array([8, 8, 8, 8, 8])), _SparseSegment(onset=15, array=array([2, 2, 2, 2, 2])), shape=(20,))
     >>> np.asarray(a + b)
@@ -137,53 +243,142 @@ class SparseArray:
     >>> c
     array([1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 3, 3, 3, 3, 3])
 
+    Test if pt.data.batch.example_to_device converts correctly. Commented out
+    because these tests don't work without padertorch
+    # >>> import padertorch as pt
+    # >>> a = pt.data.batch.example_to_device(a)
+    # >>> a
+    # SparseArray(_SparseSegment(onset=5, array=tensor([1, 1, 1, 1, 1])), _SparseSegment(onset=15, array=tensor([2, 2, 2, 2, 2])), shape=(20,))
+    # >>> a.dtype, a.device, a.is_torch
+    # (torch.int64, device(type='cpu'), True)
+    # >>> a = pt.data.batch.example_to_numpy(a)
+    # >>> a
+    # SparseArray(_SparseSegment(onset=5, array=array([1, 1, 1, 1, 1])), _SparseSegment(onset=15, array=array([2, 2, 2, 2, 2])), shape=(20,))
+    # >>> a.dtype, a.device, a.is_torch
+    # (dtype('int64'), 'numpy', False)
+    # >>> a = pt.data.batch.example_to_device(zeros(10))
+    # >>> a
+    # SparseArray(shape=(10,))
+    # >>> a.dtype, a.device, a.is_torch
+    # (torch.float32, device(type='cpu'), True)
     """
     # Public constructor interface
     shape: tuple
 
-    # Private constructor arguments: Don't use _segments directly.
+    # Private constructor arguments: Don't use _segments or _pad_value directly.
     # This is required for pt.data.batch.example_to_device to work
     _segments: list = field(default_factory=list)
-
-    # Other instance attributes
-    pad_value = 0.
-    _is_torch = False
-    dtype = None
+    # This is the float pad value, it is converted to the correct dtype in the
+    # property pad_value
+    _pad_value: Any = None
 
     def __post_init__(self):
         self.shape = _normalize_shape(self.shape)
-        self._update_dtype(self.dtype)
+
+    @property
+    def dtype(self):
+        """
+        >>> SparseArray(10).dtype
+        >>> zeros(10).dtype
+        dtype('float32')
+        >>> a = SparseArray(10)
+        >>> a[:5] = np.arange(5)
+        >>> a.dtype
+        dtype('int64')
+        >>> a = SparseArray(10)
+        >>> a[:5] = torch.arange(5)
+        >>> a.dtype
+        torch.int64
+        """
+        if self._pad_value is None:
+            return None
+        return self._pad_value.dtype
+
+    @property
+    def device(self):
+        """
+        The device of the `SparseArray`.
+
+        Returns `'numpy'` as the device if the contents are numpy arrays.
+
+        >>> a = SparseArray(10)
+        >>> a.device  # is None
+        >>> a[:5] = 1
+        >>> a.device
+        'numpy'
+        >>> zeros(10).device
+        'numpy'
+        >>> zeros(10, dtype=torch.float32).device
+        device(type='cpu')
+        """
+        if self._pad_value is None:
+            return None
+        if isinstance(self._pad_value.dtype, np.dtype):
+            return 'numpy'
+        return self._pad_value.device
+
+    @property
+    def is_torch(self):
+        if self._pad_value is None:
+            return None
+        return isinstance(self._pad_value.dtype, torch.dtype)
+
+    @property
+    def pad_value(self):
+        """
+        >>> a = SparseArray(10)
+        >>> a.pad_value   # is None
+        >>> a[:5] = np.arange(5)
+        >>> a.pad_value
+        0
+        >>> zeros(10).pad_value
+        0.0
+        >>> full(10, 42).pad_value
+        42.0
+        """
+        # _pad_value must be an array, otherwise pt.data.batch.example_to_device
+        # can't convert between numpy and torch correctly. The actual pad_value
+        # should be a scalar
+        if self._pad_value is None:
+            return None
+        return self._pad_value[0]
 
     @classmethod
     def from_array_and_onset(cls, array, onset, shape):
+        """
+        Creates a `SparseArray` from a numpy array or torch tensor with a given
+        `onset` and `shape`. The given `array` is cut so that it lies within
+        the boundaries defined by `shape`, e.g., a negative onset will become
+        0 and the part of `array` that would lie outside the `SparseArray` would
+        be cut.
+
+        # >>> SparseArray.from_array_and_onset(np.ones(5), 2, 10).as_contiguous()
+        array([0., 0., 1., 1., 1., 1., 1., 0., 0., 0.])
+        # >>> SparseArray.from_array_and_onset(np.ones(5), -3, 10)
+        SparseArray(_SparseSegment(onset=0, array=array([1., 1.])), shape=(10,))
+        # >>> SparseArray.from_array_and_onset(np.ones(5), -3, 10).as_contiguous()
+        array([1., 1., 0., 0., 0., 0., 0., 0., 0., 0.])
+        >>> SparseArray.from_array_and_onset(np.ones(5), 7, 10)
+        SparseArray(_SparseSegment(onset=7, array=array([1., 1., 1.])), shape=(10,))
+        """
         out = SparseArray(shape=shape)
         if onset < 0:
-            onset = 0
             array = array[..., -onset:]
-        if array.shape[-1] > out.shape[-1]:
-            array = array[..., out.shape[-1] - onset]
+            onset = 0
+        if array.shape[-1] + onset > out.shape[-1]:
+            array = array[..., :out.shape[-1] - onset]
         out._add_segment(_SparseSegment(onset, array))
         return out
 
     def as_contiguous(self, dtype=None):
+        """
+        Converts the `SparseArray` to a numpy array or torch tensor, depending
+        on the data in the `SparseArray`.
+        """
         arr = self._new_full(dtype=dtype)
         for segment in self._segments:
             arr[..., segment.onset:segment.offset] = segment.array
         return arr
-
-    def _update_dtype(self, dtype, pad_value=0.):
-        self.dtype = dtype
-        if dtype is None and self._segments:
-            self.dtype = self._segments[0].array.dtype
-        if self.dtype is not None:
-            self._is_torch = isinstance(self.dtype, torch.dtype)
-            if self._is_torch:
-                self.pad_value = torch.tensor(pad_value, dtype=self.dtype)
-            else:
-                self.pad_value = self.dtype.type(pad_value)
-        if self._segments:
-            assert all([s.array.dtype == self.dtype for s in self._segments]), (
-                [s.array.dtype for s in self._segments], self.dtype)
 
     @property
     def interval(self) -> ArrayInterval:
@@ -196,42 +391,51 @@ class SparseArray:
     def _new_full(self, *, shape=None, dtype=None, fill_value=None):
         if shape is None:
             shape = self.shape
-        if dtype is None:
-            dtype = self.dtype
         if fill_value is None:
             fill_value = self.pad_value
-        if self._is_torch:
-            return torch.full(
-                size=shape, fill_value=fill_value, dtype=dtype
+        if shape == ():
+            return fill_value
+        if self.is_torch:
+            return self.pad_value.new_full(
+                size=shape, fill_value=float(fill_value), dtype=dtype,
             )
         else:
-            return np.full(
-                shape=shape, fill_value=fill_value, dtype=dtype
-            )
+            return np.full_like(self.pad_value, fill_value=fill_value,
+                                shape=shape, dtype=dtype)
 
     def _add_segment(self, segment: _SparseSegment):
-        if self._segments and (
-                self._is_torch and not isinstance(segment.array, torch.Tensor)
-                or not isinstance(segment.array, np.ndarray)
-        ):
-            raise TypeError(type(segment.array))
+        if self._pad_value is not None:
+            # We can't mix numpy with torch
+            if self.is_torch != isinstance(segment.array, torch.Tensor):
+                raise TypeError(
+                    f'{type(segment.array)} is incompatible to {type(self._pad_value)}'
+                )
 
-        # Check input dtype and shape
-        if self.dtype is None:
-            # This is the first segment we add. It defines dtype and pad value
-            self._update_dtype(segment.array.dtype)
-        elif self.dtype != segment.array.dtype:
-            raise TypeError(
-                f'Type mismatch: SparseArray has dtype {self.dtype}, but '
-                f'assigned array has dtype {segment.array.dtype}'
-            )
+            # dtype has to match for now. Supporting a mix of compatible dtypes is
+            # difficult to implement
+            if self.dtype != segment.array.dtype:
+                raise TypeError(
+                    f'Type mismatch: SparseArray has dtype {self.dtype}, but '
+                    f'assigned array has dtype {segment.array.dtype}'
+                )
 
-        # The leading dimensions must be equal
-        if segment.array.shape[:-1] != self.shape[:-1]:
-            raise ValueError(
-                f'Shape mismatch: SparseArray has shape {self.shape}, but '
-                f'assigned array has shape {segment.array.shape}.'
-            )
+            # The leading dimensions must be equal
+            if self.shape[:-1] != segment.array.shape[:-1]:
+                raise ValueError(
+                    f'Shape mismatch: SparseArray has shape '
+                    f'{self.shape}, but assigned array has leading '
+                    f'shape {segment.array.shape}.'
+                )
+
+            # If we have a torch tensor, also check the device. Having parts of the
+            # data distributed across devices is not desired
+            if self.is_torch:
+                if self.device != segment.array.device:
+                    raise ValueError(
+                        f'Mixed devices are not supported. Sparse Arrray on '
+                        f'device {self.device}, but assigned array is on '
+                        f'device {segment.array.device}'
+                    )
 
         if segment.offset < 0 or segment.onset >= self.shape[-1]:
             # Ignore setting anything that is outside of the boundaries (numpy
@@ -269,6 +473,8 @@ class SparseArray:
                 f'{textwrap.indent(repr(segment), "  ")}'
             )
 
+        if not self._segments and not self.pad_value:
+            self._pad_value = _pad_value_like(segment.array, 0)
         self._segments.insert(position, segment)
 
     def __copy__(self):
@@ -276,11 +482,11 @@ class SparseArray:
             shape=self.shape, _segments=[
                 _SparseSegment(segment.onset, segment.array)
                 for segment in self._segments
-            ]
+            ], _pad_value=self._pad_value
         )
 
     def __array__(self, dtype=None):
-        if self._is_torch:
+        if self.is_torch:
             raise NotImplementedError(
                 '__array__ is not implemented for torch SparseArrays'
             )
@@ -292,7 +498,7 @@ class SparseArray:
             content = content + ', '
         else:
             content = ''
-        if self.pad_value != 0:
+        if self.pad_value is not None and self.pad_value != 0:
             p = f'pad_value={self.pad_value}, '
         else:
             p = ''
@@ -300,20 +506,20 @@ class SparseArray:
 
     def _repr_pretty_(self, p, cycle):
         """
-        >>> pb.utils.pretty.pprint(SparseArray(10))
+        >>> pb.utils.pretty.pprint(zeros(10))
         SparseArray(shape=(10,))
-        >>> a = SparseArray(10)
+        >>> a = zeros(10)
         >>> a[:5] = 1
         >>> a[7:] = 2
         >>> pb.utils.pretty.pprint(a)
-        SparseArray(_SparseSegment(onset=0, array=array([1, 1, 1, 1, 1])),
-                    _SparseSegment(onset=7, array=array([2, 2, 2])),
+        SparseArray(_SparseSegment(onset=0, array=array([1., 1., 1., 1., 1.], dtype=float32)),
+                    _SparseSegment(onset=7, array=array([2., 2., 2.], dtype=float32)),
                     shape=(10,))
-        >>> a.pad_value=-1
+        >>> a._pad_value = _get_pad_value(a.dtype, -1)
         >>> pb.utils.pretty.pprint(a)
-        SparseArray(_SparseSegment(onset=0, array=array([1, 1, 1, 1, 1])),
-                    _SparseSegment(onset=7, array=array([2, 2, 2])),
-                    shape=(10,), pad_value=-1)
+        SparseArray(_SparseSegment(onset=0, array=array([1., 1., 1., 1., 1.], dtype=float32)),
+                    _SparseSegment(onset=7, array=array([2., 2., 2.], dtype=float32)),
+                    shape=(10,), pad_value=-1.0)
         """
         if cycle:
             p.text(f'{self.__class__.__name__}(...)')
@@ -353,7 +559,7 @@ class SparseArray:
         >>> a[0, 5:] = 2
         Traceback (most recent call last):
           ...
-        NotImplementedError: Only ellipsis is allowed for first dimensions in setitem
+        IndexError: SparseArray.__setitem__ only supports slices for indexing, not [0, slice(5, None, None)]
 
 
         # Test some exceptions
@@ -370,32 +576,70 @@ class SparseArray:
         Traceback (most recent call last):
          ...
         ValueError: Could not assign array with shape (100,) to SparseArray slice with size 10
+        >>> a = SparseArray((5, 10))
+        >>> a[:4, :] = 1
+        Traceback (most recent call last):
+          ...
+        IndexError: Cannot partially set values in the leading dimensions ([slice(None, 4, None)] at dimension 0)
+        >>> a[0, :] = 1
+        Traceback (most recent call last):
+          ...
+        IndexError: SparseArray.__setitem__ only supports slices for indexing, not [0, slice(None, None, None)]
+        >>> a[:, 0] = 1
+        Traceback (most recent call last):
+          ...
+        IndexError: SparseArray.__setitem__ only supports slices for indexing, not [slice(None, None, None), 0]
         """
-        if isinstance(item, tuple):
-            selector = item[:len(self.shape) - 1]
-            # Complex indexing is not supported in __setitem__
-            if len(selector) != 1 or selector[0] is not ...:
-                raise NotImplementedError(
-                    'Only ellipsis is allowed for first dimensions in setitem'
+        item = _normalize_item(item, self.shape)
+
+        length = len(item)
+        for idx, i in enumerate(item):
+            # All items must be slices, because we can't set scalar values
+            if not isinstance(i, slice):
+                raise IndexError(
+                    f'{self.__class__.__name__}.__setitem__ only supports '
+                    f'slices for indexing, not {item!r}'
                 )
 
-            item = item[-1]
-        if not isinstance(item, slice):
-            raise NotImplementedError(
-                f'{self.__class__.__name__}.__setitem__ only supports slices '
-                f'for indexing, not {item!r}'
-            )
+            # We don't support steps
+            if i.step is not None:
+                raise IndexError(f'Step is not supported.')
+
+            # All slices except for the last one must not have a start and stop
+            # value set.
+            if idx < length - 1 and (i.start is not None or i.stop is not None):
+                raise IndexError(
+                    f'Cannot partially set values in the leading dimensions '
+                    f'({item[:-1]!r} at dimension {idx})'
+                )
+
+        # We only need to handle the last element in item, all others are
+        # slice(None)
+        item = item[-1]
         start, stop = cy_parse_item(item, self.shape)
         length = stop - start
 
         if np.isscalar(value):
-            value = self._new_full(shape=self.shape[:-1] + (length,), fill_value=value)
+            # Infer the dtype from value if the SparseArray doesn't have a
+            # dtype yet
+            value = self._new_full(
+                shape=self.shape[:-1] + (length,), fill_value=value,
+                dtype=self.dtype if self.dtype else _dtype_from_value(value)
+            )
 
         if isinstance(value, np.ndarray) or isinstance(value, torch.Tensor):
+            # The last dimension has to match the length defined by the indexing
             if value.shape[-1] != length:
                 raise ValueError(
                     f'Could not assign array with shape {value.shape} to '
                     f'SparseArray slice with size {length}'
+                )
+
+            # All other dimensions have to match the current shape
+            if value.shape[:-1] != self.shape[:-1]:
+                raise ValueError(
+                    f'Shape mismatch: SparseArray has shape {self.shape}, but '
+                    f'assigned array has shape {value.shape}.'
                 )
 
             self._add_segment(_SparseSegment(start, value))
@@ -404,7 +648,7 @@ class SparseArray:
 
     def __getitem__(self, item):
         """
-        >>> a = SparseArray(20)
+        >>> a = zeros(20, dtype=np.int64)
         >>> a[:10] = 1
         >>> a[15:] = np.arange(5) + 1
 
@@ -452,27 +696,26 @@ class SparseArray:
         array([0, 5])
         >>> a[..., 6]
         array([0, 0])
+        >>> zeros((10, 20))[0, :]
+        SparseArray(shape=(20,))
+        >>> zeros((10, 20))[1, 2, 3]
+        Traceback (most recent call last):
+          ...
+        IndexError: too many indices for array: array is 2-dimensional, but 3 were indexed
         """
-        if not isinstance(item, tuple):
-            item = (item,)
+        item = _normalize_item(item, self.shape)
 
         assert len(item) <= len(self.shape), (item, self.shape)
 
         # Check if the last dimension (the sparse dimension) is indexed.
         # If not, use a shortcut
-        if (
-                # Ellipsis is present and the last element
-                (... in item and item[-1] is ...)
-                or
-                # Ellipsis is not present and no index is present for the last
-                # dimension or the index is slice(None) (select everything)
-                (... not in item and (len(item) < len(self.shape) or item[-1] == slice(None)))
-        ):
+        if item[-1] == slice(None):
             # The sparse dimension is not indexed, so we can simply forward to
             # numpy/torch
             arr = self.__class__(
-                shape=self._segments[0].array[item].shape[:-1] + (self.shape[-1],),
-                _segments=[_SparseSegment(s.onset, s.array[item]) for s in self._segments]
+                shape=_shape_for_item(self.shape, item),
+                _segments=[_SparseSegment(s.onset, s.array[item]) for s in self._segments],
+                _pad_value=self._pad_value,
             )
             return arr
 
@@ -482,6 +725,7 @@ class SparseArray:
         selector = tuple(selector)
 
         # If the last dimension is indexed with an integer, find the correct
+        # segment and return a numpy array
         if isinstance(item, (int, np.integer)):
             index = item
             if index < 0:
@@ -494,29 +738,14 @@ class SparseArray:
             # Could be optimized
             position = bisect.bisect_right([s.onset for s in self._segments], index)
 
-            # position == 0 is before the first segment, so padded
-            if position == 0:
-                if len(self.shape) == 1:
-                    # Return scalar
-                    return self.pad_value
-                else:
-                    # Return array
-                    return self._new_full(
-                        shape=_shape_for_index(self.shape[:-1], selector)
-                    )
-            s = self._segments[position - 1]
-            # onset <= index is always true here
-            if index < s.offset:
-                return s.array[selector + (index - s.onset,)]
-            else:
-                if len(self.shape) == 1:
-                    # Return scalar
-                    return self.pad_value
-                else:
-                    # Return array
-                    return self._new_full(
-                        shape=_shape_for_index(self.shape[:-1], selector)
-                    )
+            if position > 0:
+                s = self._segments[position - 1]
+                if index < s.offset:
+                    return s.array[selector + (index - s.onset,)]
+
+            return self._new_full(
+                shape=_shape_for_item(self.shape[:-1], selector)
+            )
 
         # Get clipped start/stop values from the function used in ArrayInterval
         start, stop = cy_parse_item(item, self.shape)
@@ -533,15 +762,16 @@ class SparseArray:
         shifted_segments = []
         for s in active:
             # Slicing of the last dimension is done in _cut
-            onset, array = _cut(s.array[selector + (slice(None),)], s.onset - start, time_length)
+            onset, array = _cut(s.array[selector + (slice(None),)],
+                                s.onset - start, time_length)
             shifted_segments.append(
                 _SparseSegment(onset, array)
             )
         arr = self.__class__(
-            shape=(_shape_for_index(self.shape[:-1], selector) + (time_length,)),
-            _segments=shifted_segments
+            shape=(_shape_for_item(self.shape[:-1], selector) + (time_length,)),
+            _segments=shifted_segments,
+            _pad_value=self._pad_value,
         )
-        arr._update_dtype(self.dtype, self.pad_value)
         return arr
 
     def __len__(self):
@@ -612,7 +842,7 @@ class SparseArray:
         >>> a[:5] = 1
         >>> a * 2
         SparseArray(_SparseSegment(onset=0, array=array([2, 2, 2, 2, 2])), shape=(10,))
-        >>> a.pad_value = 2
+        >>> a._pad_value = np.full((1,), 2, dtype=a.dtype)
         >>> np.asarray(a*2)
         array([2, 2, 2, 2, 2, 4, 4, 4, 4, 4])
         >>> 2 * a
@@ -622,14 +852,14 @@ class SparseArray:
         """
         if isinstance(other, (np.float, np.int, np.complex)):
             # Scalar value, multiply everything by it
-            arr = SparseArray(
+            arr = self.__class__(
                 shape=self.shape,
                 _segments=[
                     _SparseSegment(s.onset, s.array * other)
-                           for s in self._segments
-                ]
+                    for s in self._segments
+                ],
+                _pad_value=self._pad_value * other
             )
-            arr._update_dtype(self.dtype, self.pad_value * other)
             return arr
         else:
             # Let numpy find a way to handle this
@@ -675,7 +905,7 @@ class SparseArray:
         array([[ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0., -8., -9.]])
         """
         # Only supported if all segments are numpy arrays
-        if self._is_torch:
+        if self.is_torch:
             return NotImplemented
 
         # Only support elementwise operations
@@ -754,15 +984,15 @@ class SparseArray:
             return NotImplemented
 
         # Only supported if all segments are torch tensors
-        if not args[1]._is_torch:
+        if not args[1].is_torch:
             return NotImplemented
 
         # Only support a small subset of elementwise operations for now.
         # Other operators can be tricky to implement and may result in
         # unexpected behavior
         if func not in (
-            torch.Tensor.add, torch.Tensor.add_,
-            torch.Tensor.sub, torch.Tensor.sub_,
+                torch.Tensor.add, torch.Tensor.add_,
+                torch.Tensor.sub, torch.Tensor.sub_,
         ):
             return NotImplemented
 
@@ -771,7 +1001,7 @@ class SparseArray:
             out = None  # Clones _combine_inplace_array_with_sparse
             func_ = getattr(torch.Tensor, func.__name__ + '_')
         else:
-            out = args[0]   # No clone
+            out = args[0]  # No clone
             func_ = func
 
         def func(a, b, out):
@@ -808,13 +1038,15 @@ def _combine_sparse_arrays(func, input1, input2):
     if c:
         connected_components.append(c)
 
-    out = input1.__class__(shape=input1.shape)
+    out = input1.__class__(
+        shape=input1.shape,
+        _pad_value=func(input1._pad_value, input2._pad_value)
+    )
     for start, stop in connected_components:
         lhs = np.asarray(input1[..., start:stop])
         rhs = input2[..., start:stop]
         result = func(lhs, rhs)
         out.add_segment(start, result)
-    out._update_dtype(func(input1.pad_value, input2.pad_value))
     return out
 
 
@@ -831,7 +1063,7 @@ def _combine_inplace_array_with_sparse(func, array, sparse_array, out=None):
     # Shortcut functions where 0 is the neutral element
     if sparse_array.pad_value == 0 and \
             func in [np.add, np.subtract, torch.Tensor.add_, torch.Tensor.add,
-                torch.Tensor.sub_, torch.Tensor.sub]:
+                     torch.Tensor.sub_, torch.Tensor.sub]:
         return out
 
     # Handle everything outside segments
