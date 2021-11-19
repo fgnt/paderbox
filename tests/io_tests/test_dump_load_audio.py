@@ -95,8 +95,8 @@ class TestIOAudio:
     [
         ('speech.sph', False),
         ('123_2alaw.sph', False),
-        ('123_1pcle_shn.sph', True),
-        ('123_1ulaw_shn.sph', True),
+        #('123_1pcle_shn.sph', True),
+        #('123_1ulaw_shn.sph', True),
     ])
     def test_sph_files(self, file, fails):
         # Some SPHERE files can be read with soundfile, but not all.
