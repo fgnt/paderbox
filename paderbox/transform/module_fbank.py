@@ -151,8 +151,8 @@ def get_fbanks(
         number_of_filters: number of mel filter banks
         lowest_frequency: onset frequency of the first filter
         highest_frequency: offset frequency of the last filter
-        htk_mel: whether to use the htk hz to mel conversion or not
-            (False is Slaney).
+        htk_mel: If True use HTK's hz to mel conversion definition else use
+            Slaney's definition (cf. librosa.mel_frequencies doc).
         warping_fn: optional function to warp the filter center frequencies,
             e.g., VTLP (https://www.cs.utoronto.ca/~hinton/absps/perturb.pdf)
         size: size of independent dims in front of filter bank dims, E.g., for
@@ -160,7 +160,7 @@ def get_fbanks(
             This is required when different warping is to be applied for
             different independent axis.
 
-    Returns:
+    Returns: array of filters
 
     >>> sample_rate = 8000
     >>> highest_frequency = sample_rate / 2
@@ -217,13 +217,15 @@ def get_fbanks(
 
 
 def hz2mel(frequency: Union[float, np.ndarray], htk_mel=True):
-    """Convert frequencies in Hertz to Mel
+    """Convert frequencies in Hertz to Mel.
+
+    !!! Copy of librosa.hz_to_mel !!!
 
     Args:
         frequency: a value in Hz. This can also be a numpy array, conversion
             proceeds element-wise.
-        htk_mel: whether to use the htk hz to mel conversion or not
-            (False is Slaney).
+        htk_mel: If True use HTK's hz to mel conversion definition else use
+            Slaney's definition (cf. librosa.mel_frequencies doc).
 
     Returns: a value in Mels. If an array was passed in, an identical sized
         array is returned.
@@ -257,11 +259,13 @@ def hz2mel(frequency: Union[float, np.ndarray], htk_mel=True):
 def mel2hz(frequency: Union[float, np.ndarray], htk_mel=True):
     """Convert frequencies in Mel to Hertz
 
+    !!! Copy of librosa.mel_to_hz !!!
+
     Args:
         frequency: a value in Mels. This can also be a numpy array, conversion
             proceeds element-wise.
-        htk_mel: whether to use the htk mel to hz conversion or not
-            (False is Slaney).
+        htk_mel: If True use HTK's hz to mel conversion definition else use
+            Slaney's definition (cf. librosa.mel_frequencies doc).
 
     Returns: a value in Hz. If an array was passed in, an identical sized
         array is returned.
