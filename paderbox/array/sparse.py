@@ -2,9 +2,9 @@ import bisect
 import copy
 from dataclasses import dataclass, field
 
-from typing import Tuple, Any
+from typing import Any
 
-from cached_property import cached_property
+import textwrap
 
 from paderbox.array.interval.core import ArrayInterval
 import numpy as np
@@ -15,17 +15,19 @@ import torch
 
 def _normalize_shape(shape):
     """Performs a few checks on the shape and normalizes it to a tuple"""
+    allowed_types = (int, np.integer)
+
     if shape is None:
         # As of now, we only support fixed shapes. This can be changed
         raise TypeError(f'None shape is not supported')
 
-    if isinstance(shape, int):
+    if isinstance(shape, allowed_types):
         return shape,
 
     if not isinstance(shape, (tuple, list)):
         raise TypeError(f'Invalid shape {shape} of type {type(shape)}')
 
-    if not all(isinstance(s, int) for s in shape):
+    if not all(isinstance(s, allowed_types) for s in shape):
         raise TypeError(
             f'Invalid shape {shape} with elements of type {type(shape[0])}'
         )
@@ -74,6 +76,9 @@ def _normalize_item(item, shape):
       ...
     IndexError: too many indices for array: array is 3-dimensional, but 4 were indexed
     """
+    if isinstance(item, list):
+        raise NotImplementedError()
+
     if not isinstance(item, tuple):
         item = (item,)
     if ... in item:
@@ -175,10 +180,6 @@ class _SparseSegment:
     def segment_length(self):
         return self.array.shape[-1]
 
-    @cached_property
-    def is_torch(self):
-        return isinstance(self.array, torch.Tensor)
-
 
 @dataclass
 class SparseArray:
@@ -268,8 +269,12 @@ class SparseArray:
     # Private constructor arguments: Don't use _segments or _pad_value directly.
     # This is required for pt.data.batch.example_to_device to work
     _segments: list = field(default_factory=list)
-    # This is the float pad value, it is converted to the correct dtype in the
-    # property pad_value
+    # The _pad_value property tracks the pad value and the type, dtype and
+    # possibly device of the data. It is a one-dimensional numpy array or a
+    # torch tensor with a single element so that example_to_device transfers
+    # it correctly between torch and numpy.
+    # If _pad_value is None, the SparseArray doesn't have a dtype and it will be
+    # defined by the first added segment.
     _pad_value: Any = None
 
     def __post_init__(self):
@@ -352,11 +357,11 @@ class SparseArray:
         0 and the part of `array` that would lie outside the `SparseArray` would
         be cut.
 
-        # >>> SparseArray.from_array_and_onset(np.ones(5), 2, 10).as_contiguous()
+        >>> SparseArray.from_array_and_onset(np.ones(5), 2, 10).as_contiguous()
         array([0., 0., 1., 1., 1., 1., 1., 0., 0., 0.])
-        # >>> SparseArray.from_array_and_onset(np.ones(5), -3, 10)
+        >>> SparseArray.from_array_and_onset(np.ones(5), -3, 10)
         SparseArray(_SparseSegment(onset=0, array=array([1., 1.])), shape=(10,))
-        # >>> SparseArray.from_array_and_onset(np.ones(5), -3, 10).as_contiguous()
+        >>> SparseArray.from_array_and_onset(np.ones(5), -3, 10).as_contiguous()
         array([1., 1., 0., 0., 0., 0., 0., 0., 0., 0.])
         >>> SparseArray.from_array_and_onset(np.ones(5), 7, 10)
         SparseArray(_SparseSegment(onset=7, array=array([1., 1., 1.])), shape=(10,))
@@ -442,7 +447,8 @@ class SparseArray:
             # behavior)
             return
 
-        # Get insert position
+        # Get insert position. Keep the arrays sorted to speed up checks for
+        # overlaps and getitem
         position = bisect.bisect_right(
             [s.onset for s in self._segments],
             segment.onset
@@ -450,11 +456,9 @@ class SparseArray:
 
         # Check for overlaps with neighboring segments
         if (
-                len(self._segments) > 0
-                and position > 0
+                position > 0
                 and self._segments[position - 1].offset > segment.onset
         ):
-            import textwrap
             raise ValueError(
                 f'Overlap detected between\n'
                 f'{textwrap.indent(repr(self._segments[position - 1]), "  ")}\n'
@@ -465,7 +469,6 @@ class SparseArray:
                 position < len(self._segments)
                 and self._segments[position].onset < segment.offset
         ):
-            import textwrap
             raise ValueError(
                 f'Overlap detected between\n'
                 f'{textwrap.indent(repr(self._segments[position]), "  ")}\n'
@@ -473,7 +476,9 @@ class SparseArray:
                 f'{textwrap.indent(repr(segment), "  ")}'
             )
 
-        if not self._segments and not self.pad_value:
+        # Update the pad value from the array if the SparseArray doesn't have
+        # a pad value yet
+        if not self._segments and self.pad_value is None:
             self._pad_value = _pad_value_like(segment.array, 0)
         self._segments.insert(position, segment)
 
@@ -594,7 +599,7 @@ class SparseArray:
 
         length = len(item)
         for idx, i in enumerate(item):
-            # All items must be slices, because we can't set scalar values
+            # All items must be slices because we can't set scalar values
             if not isinstance(i, slice):
                 raise IndexError(
                     f'{self.__class__.__name__}.__setitem__ only supports '
@@ -606,7 +611,7 @@ class SparseArray:
                 raise IndexError(f'Step is not supported.')
 
             # All slices except for the last one must not have a start and stop
-            # value set.
+            # value set. The leading dimensions of all arrays must be equal.
             if idx < length - 1 and (i.start is not None or i.stop is not None):
                 raise IndexError(
                     f'Cannot partially set values in the leading dimensions '
@@ -735,7 +740,9 @@ class SparseArray:
                     f'Index {item} is out of bounds for ArrayInterval with '
                     f'shape {self.shape}'
                 )
-            # Could be optimized
+
+            # Get the segment that could overlap with the new segment. The
+            # segments are sorted, so bisect finds the only candidate.
             position = bisect.bisect_right([s.onset for s in self._segments], index)
 
             if position > 0:
@@ -743,6 +750,7 @@ class SparseArray:
                 if index < s.offset:
                     return s.array[selector + (index - s.onset,)]
 
+            # Return the fill value if not segment overlaps with the index, r
             return self._new_full(
                 shape=_shape_for_item(self.shape[:-1], selector)
             )
