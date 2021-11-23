@@ -24,6 +24,7 @@ class MelTransform:
             number_of_filters: int,
             lowest_frequency: Optional[float] = 50,
             highest_frequency: Optional[float] = None,
+            htk_mel=True,
             log: bool = True,
             eps: float = 1e-18,
             *,
@@ -38,6 +39,8 @@ class MelTransform:
             stft_size: fft_length used in stft
             lowest_frequency: onset of first filter
             highest_frequency: offset of last filter
+            htk_mel: If True use HTK's hz to mel conversion definition else use
+                Slaney's definition (cf. librosa.mel_frequencies doc).
             log: apply log to mel spectrogram
             eps:
             warping_fn: function to (randomly) remap fbank center frequencies
@@ -72,6 +75,7 @@ class MelTransform:
         self.number_of_filters = number_of_filters
         self.lowest_frequency = lowest_frequency
         self.highest_frequency = highest_frequency
+        self.htk_mel = htk_mel
         self.log = log
         self.eps = eps
         self.warping_fn = warping_fn
@@ -89,6 +93,7 @@ class MelTransform:
             number_of_filters=self.number_of_filters,
             lowest_frequency=self.lowest_frequency,
             highest_frequency=self.highest_frequency,
+            htk_mel=self.htk_mel,
         )
         fbanks = fbanks / (fbanks.sum(axis=-1, keepdims=True) + self.eps)
         return fbanks.T
@@ -114,6 +119,7 @@ class MelTransform:
                 number_of_filters=self.number_of_filters,
                 lowest_frequency=self.lowest_frequency,
                 highest_frequency=self.highest_frequency,
+                htk_mel=self.htk_mel,
                 warping_fn=self.warping_fn,
                 size=tuple(size),
             ).astype(np.float32)

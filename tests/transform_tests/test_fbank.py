@@ -42,7 +42,7 @@ class TestSTFTMethods(unittest.TestCase):
 
     def test_mel2hz2mel_htk(self):
         mels = np.random.rand(5, 5) * 4000
-        hz = transform.module_fbank.mel2hz(mels, htk_mel=True,)
+        hz = transform.module_fbank.mel2hz(mels, htk_mel=True)
         tc.assert_almost_equal(
             mels, transform.module_fbank.hz2mel(hz, htk_mel=True),
         )
@@ -56,7 +56,7 @@ class TestSTFTMethods(unittest.TestCase):
 
     def test_mel2hz2mel_slaney(self):
         mels = np.random.rand(5, 5) * 4000
-        hz = transform.module_fbank.mel2hz(mels, htk_mel=False,)
+        hz = transform.module_fbank.mel2hz(mels, htk_mel=False)
         tc.assert_almost_equal(
             mels, transform.module_fbank.hz2mel(hz, htk_mel=False),
         )
