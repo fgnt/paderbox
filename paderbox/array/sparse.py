@@ -710,7 +710,7 @@ class SparseArray:
         """
         item = _normalize_item(item, self.shape)
 
-        assert len(item) <= len(self.shape), (item, self.shape)
+        assert len(item) == len(self.shape), (item, self.shape)
 
         # Check if the last dimension (the sparse dimension) is indexed.
         # If not, use a shortcut
