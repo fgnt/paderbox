@@ -24,6 +24,7 @@ class MelTransform:
             number_of_filters: int,
             lowest_frequency: Optional[float] = 50,
             highest_frequency: Optional[float] = None,
+            htk_mel=True,
             log: bool = True,
             eps: float = 1e-18,
             *,
@@ -38,6 +39,8 @@ class MelTransform:
             stft_size: fft_length used in stft
             lowest_frequency: onset of first filter
             highest_frequency: offset of last filter
+            htk_mel: If True use HTK's hz to mel conversion definition else use
+                Slaney's definition (cf. librosa.mel_frequencies doc).
             log: apply log to mel spectrogram
             eps:
             warping_fn: function to (randomly) remap fbank center frequencies
@@ -72,6 +75,7 @@ class MelTransform:
         self.number_of_filters = number_of_filters
         self.lowest_frequency = lowest_frequency
         self.highest_frequency = highest_frequency
+        self.htk_mel = htk_mel
         self.log = log
         self.eps = eps
         self.warping_fn = warping_fn
@@ -89,6 +93,7 @@ class MelTransform:
             number_of_filters=self.number_of_filters,
             lowest_frequency=self.lowest_frequency,
             highest_frequency=self.highest_frequency,
+            htk_mel=self.htk_mel,
         )
         fbanks = fbanks / (fbanks.sum(axis=-1, keepdims=True) + self.eps)
         return fbanks.T
@@ -114,6 +119,7 @@ class MelTransform:
                 number_of_filters=self.number_of_filters,
                 lowest_frequency=self.lowest_frequency,
                 highest_frequency=self.highest_frequency,
+                htk_mel=self.htk_mel,
                 warping_fn=self.warping_fn,
                 size=tuple(size),
             ).astype(np.float32)
@@ -139,6 +145,7 @@ def get_fbanks(
         sample_rate: int, stft_size: int, number_of_filters: int,
         lowest_frequency: float = 0.,
         highest_frequency: Optional[float] = None,
+        htk_mel=True,
         warping_fn: Optional[Callable] = None,
         size: tuple = ()
 ):
@@ -150,6 +157,8 @@ def get_fbanks(
         number_of_filters: number of mel filter banks
         lowest_frequency: onset frequency of the first filter
         highest_frequency: offset frequency of the last filter
+        htk_mel: If True use HTK's hz to mel conversion definition else use
+            Slaney's definition (cf. librosa.mel_frequencies doc).
         warping_fn: optional function to warp the filter center frequencies,
             e.g., VTLP (https://www.cs.utoronto.ca/~hinton/absps/perturb.pdf)
         size: size of independent dims in front of filter bank dims, E.g., for
@@ -157,7 +166,7 @@ def get_fbanks(
             This is required when different warping is to be applied for
             different independent axis.
 
-    Returns:
+    Returns: array of filters
 
     >>> sample_rate = 8000
     >>> highest_frequency = sample_rate / 2
@@ -188,9 +197,14 @@ def get_fbanks(
     highest_frequency = sample_rate / 2 if highest_frequency is None else highest_frequency
     if highest_frequency < 0:
         highest_frequency = highest_frequency % sample_rate / 2
-    f = mel2hz(np.linspace(
-        hz2mel(lowest_frequency), hz2mel(highest_frequency), number_of_filters + 2
-    ))
+    f = mel2hz(
+        np.linspace(
+            hz2mel(lowest_frequency, htk_mel=htk_mel),
+            hz2mel(highest_frequency, htk_mel=htk_mel),
+            number_of_filters + 2
+        ),
+        htk_mel=htk_mel,
+    )
     if warping_fn is not None:
         f = warping_fn(f, size=size)
     k = hz2bin(f, sample_rate, stft_size)
@@ -208,32 +222,82 @@ def get_fbanks(
     return np.broadcast_to(fbanks, (*size, *fbanks.shape[-2:]))
 
 
-def hz2mel(frequency: Union[float, np.ndarray]):
-    """Convert frequencies in Hertz to Mel
+def hz2mel(frequency: Union[float, np.ndarray], htk_mel=True):
+    """Convert frequencies in Hertz to Mel.
+
+    !!! Copy of librosa.hz_to_mel !!!
 
     Args:
         frequency: a value in Hz. This can also be a numpy array, conversion
             proceeds element-wise.
+        htk_mel: If True use HTK's hz to mel conversion definition else use
+            Slaney's definition (cf. librosa.mel_frequencies doc).
 
     Returns: a value in Mels. If an array was passed in, an identical sized
         array is returned.
 
     """
-    return 2595 * np.log10(1 + frequency / 700.0)
+    if htk_mel:
+        return 2595 * np.log10(1 + frequency / 700.0)
+
+    # Fill in the linear part
+    f_min = 0.0
+    f_sp = 200.0 / 3
+
+    mels = (frequency - f_min) / f_sp
+
+    # Fill in the log-scale part
+
+    min_log_hz = 1000.0  # beginning of log region (Hz)
+    min_log_mel = (min_log_hz - f_min) / f_sp  # same (Mels)
+    logstep = np.log(6.4) / 27.0  # step size for log region
+
+    if not np.isscalar(frequency) and frequency.ndim:
+        # If we have array data, vectorize
+        log_t = frequency >= min_log_hz
+        mels[log_t] = min_log_mel + np.log(frequency[log_t] / min_log_hz) / logstep
+    elif frequency >= min_log_hz:
+        # If we have scalar data, heck directly
+        mels = min_log_mel + np.log(frequency / min_log_hz) / logstep
+    return mels
 
 
-def mel2hz(frequency: Union[float, np.ndarray]):
+def mel2hz(frequency: Union[float, np.ndarray], htk_mel=True):
     """Convert frequencies in Mel to Hertz
+
+    !!! Copy of librosa.mel_to_hz !!!
 
     Args:
         frequency: a value in Mels. This can also be a numpy array, conversion
             proceeds element-wise.
+        htk_mel: If True use HTK's hz to mel conversion definition else use
+            Slaney's definition (cf. librosa.mel_frequencies doc).
 
     Returns: a value in Hz. If an array was passed in, an identical sized
         array is returned.
 
     """
-    return 700 * (10 ** (frequency / 2595.0) - 1)
+    if htk_mel:
+        return 700 * (10 ** (frequency / 2595.0) - 1)
+
+    # Fill in the linear scale
+    f_min = 0.0
+    f_sp = 200.0 / 3
+    freqs = f_min + f_sp * frequency
+
+    # And now the nonlinear scale
+    min_log_hz = 1000.0  # beginning of log region (Hz)
+    min_log_mel = (min_log_hz - f_min) / f_sp  # same (Mels)
+    logstep = np.log(6.4) / 27.0  # step size for log region
+
+    if not np.isscalar(frequency) and frequency.ndim:
+        # If we have vector data, vectorize
+        log_t = frequency >= min_log_mel
+        freqs[log_t] = min_log_hz * np.exp(logstep * (frequency[log_t] - min_log_mel))
+    elif frequency >= min_log_mel:
+        # If we have scalar data, check directly
+        freqs = min_log_hz * np.exp(logstep * (frequency - min_log_mel))
+    return freqs
 
 
 def bin2hz(
@@ -400,7 +464,8 @@ def mel_warping(
         frequency: Union[float, np.ndarray],
         warp_factor: Union[float, np.ndarray],
         boundary_frequency_ratio: Union[float, np.ndarray],
-        highest_frequency: float
+        highest_frequency: float,
+        htk_mel=True,
 ):
     """Transforms frequency to Mel domain and performs piecewise linear warping
     there. Finally transforms warped frequency back to Hz.
@@ -414,11 +479,11 @@ def mel_warping(
     Returns:
 
     """
-    frequency = hz2mel(frequency)
+    frequency = hz2mel(frequency, htk_mel=htk_mel)
     if highest_frequency is not None:
-        highest_frequency = hz2mel(highest_frequency)
+        highest_frequency = hz2mel(highest_frequency, htk_mel=htk_mel)
     frequency = hz_warping(frequency, warp_factor, boundary_frequency_ratio, highest_frequency)
-    return mel2hz(frequency)
+    return mel2hz(frequency, htk_mel=htk_mel)
 
 
 @dataclasses.dataclass
