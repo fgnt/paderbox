@@ -115,7 +115,7 @@ def _get_pad_value(dtype, pad_value, device=None):
 
 
 def _pad_value_like(array, pad_value):
-    """Consructs a pad value with the same dtype and device as `array`."""
+    """Constructs a pad value with the same dtype and device as `array`."""
     if isinstance(array, torch.Tensor):
         device = array.device
     else:
@@ -141,8 +141,11 @@ def zeros(shape, dtype=np.float32):
     SparseArray(shape=(10,))
     >>> zeros(10).as_contiguous()
     array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0.], dtype=float32)
-    >>> zeros(10, dtype=np.int32).as_contiguous()
-    array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=int32)
+    >>> import os
+    >>> arr = zeros(10, dtype=np.int32).as_contiguous()  # int32 is the default integer type on Windows and will not be displayed automatically
+    >>> str(arr)
+    '[0 0 0 0 0 0 0 0 0 0]'
+    >>> assert arr.dtype == np.dtype('int64') or os.name == "nt" and arr.dtype == np.dtype('int32')
     >>> zeros(10, dtype=torch.float32).as_contiguous()
     tensor([0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
     >>> zeros(10, dtype=torch.float32).device
@@ -211,22 +214,22 @@ class SparseArray:
 
 
     dtype is inferred from segments:
-    >>> a.dtype
-    dtype('int64')
-    >>> a.pad_value, type(a.pad_value)
-    (0, <class 'numpy.int64'>)
+    >>> import os
+    >>> assert a.dtype == np.dtype('int64') or os.name == "nt" and a.dtype == np.dtype('int32')
+    >>> a.pad_value
+    0
+    >>> assert str(type(a.pad_value)) == "<class 'numpy.int64'>" or os.name == "nt" and str(type(a.pad_value)) == "<class 'numpy.int32'>"
 
     Can't add segments with differing dtypes
     >>> a[:3] = np.ones(3, dtype=np.float32)
     Traceback (most recent call last):
       ...
-    TypeError: Type mismatch: SparseArray has dtype int64, but assigned array has dtype float32
+    TypeError: Type mismatch: SparseArray has dtype ..., but assigned array has dtype float32
 
     Adding multiple SparseArray returns a SparseArray
     >>> b = SparseArray(a.shape)
     >>> b[10:15] = 8
-    >>> b.dtype
-    dtype('int64')
+    >>> assert b.dtype == np.dtype('int64') or os.name == "nt" and b.dtype == np.dtype('int32')
     >>> a + b
     SparseArray(_SparseSegment(onset=5, array=array([1, 1, 1, 1, 1])), _SparseSegment(onset=10, array=array([8, 8, 8, 8, 8])), _SparseSegment(onset=15, array=array([2, 2, 2, 2, 2])), shape=(20,))
     >>> np.asarray(a + b)
@@ -288,8 +291,8 @@ class SparseArray:
         dtype('float32')
         >>> a = SparseArray(10)
         >>> a[:5] = np.arange(5)
-        >>> a.dtype
-        dtype('int64')
+        >>> import os
+        >>> assert a.dtype == np.dtype('int64') or os.name == "nt" and a.dtype == np.dtype('int32')
         >>> a = SparseArray(10)
         >>> a[:5] = torch.arange(5)
         >>> a.dtype
@@ -653,7 +656,11 @@ class SparseArray:
 
     def __getitem__(self, item):
         """
-        >>> a = zeros(20, dtype=np.int64)
+        >>> import os
+        >>> dtype = np.int64
+        >>> if os.name == "nt":
+        ...     dtype = np.int32
+        >>> a = zeros(20, dtype=dtype)
         >>> a[:10] = 1
         >>> a[15:] = np.arange(5) + 1
 
