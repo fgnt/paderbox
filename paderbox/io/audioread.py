@@ -112,6 +112,9 @@ def load_audio(
 
     Examples
     --------
+    >>> import sys, pytest
+    >>> if sys.platform.startswith("win"):
+    ...     pytest.skip("Removed from windows tests")
     >>> from paderbox.io import load_audio
     >>> from paderbox.testing.testfile_fetcher import get_file_path
     >>> path = get_file_path('speech.wav')
@@ -146,7 +149,7 @@ def load_audio(
     """
 
     # soundfile does not support pathlib.Path.
-    # ToDo: Is this sill True?
+    # ToDo: Is this sill True? # No
     path = normalize_path(path, as_str=True)
 
     if unit == 'samples':
