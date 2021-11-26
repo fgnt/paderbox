@@ -793,6 +793,23 @@ class ArrayInterval:
             import operator
             return _combine(operator.__xor__, self, other)
 
+    def __eq__(self, other):
+        """
+        >>> a1 = ArrayInterval([True, True, False, False])
+        >>> a2 = ArrayInterval([True, False, True, False])
+        >>> print(a1 == a2, (a1 == a2)[:])
+        ArrayInterval("0:1, 3:4", shape=(4,)) [ True False False  True]
+        >>> a1 = ArrayInterval([True, True, False, False], inverse_mode=True)
+        >>> a2 = ArrayInterval([True, False, True, False], inverse_mode=True)
+        >>> print(a1 == a2, (a1 == a2)[:])
+        ArrayInterval("0:1, 3:4", shape=(4,)) [ True False False  True]
+        """
+        if not isinstance(other, ArrayInterval):
+            return NotImplemented
+        else:
+            import operator
+            return _combine(operator.__eq__, self, other)
+
 
 def _yield_sections(a_intervals, b_intervals):
     """

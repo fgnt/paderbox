@@ -84,7 +84,7 @@ def dump(
         with path.open("wb") as fp:
             import dill
             dill.dump(obj, fp, **kwargs)
-    elif str(path).endswith(".h5"):
+    elif str(path).endswith(".h5") or str(path).endswith(".hdf5"):
         from paderbox.io.hdf5 import dump_hdf5
         dump_hdf5(obj, path, **kwargs)
     elif str(path).endswith(".yaml"):
