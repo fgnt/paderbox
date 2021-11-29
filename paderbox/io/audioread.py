@@ -429,8 +429,7 @@ def audio_channels(path):
     >>> if sys.platform.startswith("win"):
     ...     pytest.skip("`pb.io.audioread.audioread` is deprecated and "
     ...                "does not work on windows, because wavefile needs "
-    ...                "`libsndfile-1.dll`."
-    ...                "Use `pb.io.load_audio` on windows.")
+    ...                "`libsndfile-1.dll`.")
     >>> from paderbox.testing.testfile_fetcher import get_file_path
     >>> path = get_file_path('speech_source_0.wav')
     >>> audio_channels(path)
@@ -445,7 +444,11 @@ def audio_channels(path):
 
 def audio_shape(path):
     """
-
+    >>> import sys, pytest
+    >>> if sys.platform.startswith("win"):
+    ...     pytest.skip("`pb.io.audioread.audioread` is deprecated and "
+    ...                "does not work on windows, because wavefile needs "
+    ...                "`libsndfile-1.dll`.")
     >>> from paderbox.testing.testfile_fetcher import get_file_path
     >>> path = get_file_path('speech_source_0.wav')
     >>> audio_shape(path)
