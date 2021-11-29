@@ -85,7 +85,7 @@ class TimerDict:
     """
     >>> t = TimerDict()
     >>> with t['test']:
-    ...     time.sleep(1)
+    ...     time.sleep(1.01)  # make sure the time is correct
     >>> with t['test']:
     ...     time.sleep(1)
     >>> with t['test_2']:
