@@ -425,7 +425,12 @@ def audio_length(path, unit='samples'):
 
 def audio_channels(path):
     """
-
+    >>> import sys, pytest
+    >>> if sys.platform.startswith("win"):
+    ...     pytest.skip("`pb.io.audioread.audioread` is deprecated and "
+    ...                "does not work on windows, because wavefile needs "
+    ...                "`libsndfile-1.dll`."
+    ...                "Use `pb.io.load_audio` on windows.")
     >>> from paderbox.testing.testfile_fetcher import get_file_path
     >>> path = get_file_path('speech_source_0.wav')
     >>> audio_channels(path)
