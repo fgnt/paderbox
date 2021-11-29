@@ -83,25 +83,26 @@ class TimerDictEntry:
 
 class TimerDict:
     """
+    >>> eps = 0.01  # make sure the time is correct
     >>> t = TimerDict()
     >>> with t['test']:
-    ...     time.sleep(1.01)  # make sure the time is correct
+    ...     time.sleep(1 + eps)
     >>> with t['test']:
-    ...     time.sleep(1)
+    ...     time.sleep(1 + eps)
     >>> with t['test_2']:
-    ...     time.sleep(1)
+    ...     time.sleep(1 + eps)
 
     # Wrap iterator
     >>> def slow_range(N):
     ...     for i in range(N):
-    ...         time.sleep(0.1)
+    ...         time.sleep(0.1 + eps)
     ...         yield i
     >>> for i in t['test_3'](slow_range(3)):
     ...    pass
 
     # Nesting
     >>> with t['test_4']:
-    ...     time.sleep(1)
+    ...     time.sleep(1 + eps)
     ...     with t['test_4']:
     ...         pass
 
