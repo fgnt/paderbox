@@ -141,11 +141,8 @@ def zeros(shape, dtype=np.float32):
     SparseArray(shape=(10,))
     >>> zeros(10).as_contiguous()
     array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0.], dtype=float32)
-    >>> import os
-    >>> arr = zeros(10, dtype=np.int32).as_contiguous()  # int32 is the default integer type on Windows and will not be displayed automatically
-    >>> str(arr)
-    '[0 0 0 0 0 0 0 0 0 0]'
-    >>> assert arr.dtype == np.dtype('int64') or os.name == "nt" and arr.dtype == np.dtype('int32')
+    >>> zeros(10, dtype=np.float64).as_contiguous()
+    array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
     >>> zeros(10, dtype=torch.float32).as_contiguous()
     tensor([0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
     >>> zeros(10, dtype=torch.float32).device
@@ -192,60 +189,67 @@ class SparseArray:
     >>> a = SparseArray(shape=(20, ))
     >>> a
     SparseArray(shape=(20,))
-    >>> a[5:10] = np.ones(5, dtype=int)
+    >>> a[5:10] = np.ones(5, dtype=np.float64)
     >>> a
-    SparseArray(_SparseSegment(onset=5, array=array([1, 1, 1, 1, 1])), shape=(20,))
+    SparseArray(_SparseSegment(onset=5, array=array([1., 1., 1., 1., 1.])), shape=(20,))
     >>> np.asarray(a)
-    array([0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    array([0., 0., 0., 0., 0., 1., 1., 1., 1., 1., 0., 0., 0., 0., 0., 0., 0.,
+    ...    0., 0., 0.])
     >>> a[15:20] = 2
     >>> a
-    SparseArray(_SparseSegment(onset=5, array=array([1, 1, 1, 1, 1])), _SparseSegment(onset=15, array=array([2, 2, 2, 2, 2])), shape=(20,))
+    SparseArray(_SparseSegment(onset=5, array=array([1., 1., 1., 1., 1.])), _SparseSegment(onset=15, array=array([2., 2., 2., 2., 2.])), shape=(20,))
     >>> np.asarray(a)
-    array([0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2])
+    array([0., 0., 0., 0., 0., 1., 1., 1., 1., 1., 0., 0., 0., 0., 0., 2., 2.,
+    ...    2., 2., 2.])
 
     Overlapping intervals are not allowed
     >>> a[14:16] = 3
     Traceback (most recent call last):
       ...
     ValueError: Overlap detected between
-      _SparseSegment(onset=15, array=array([2, 2, 2, 2, 2]))
+      _SparseSegment(onset=15, array=array([2., 2., 2., 2., 2.]))
     and newly added
-      _SparseSegment(onset=14, array=array([3, 3]))
+      _SparseSegment(onset=14, array=array([3., 3.]))
 
 
     dtype is inferred from segments:
-    >>> import os
-    >>> assert a.dtype == np.dtype('int64') or os.name == "nt" and a.dtype == np.dtype('int32')
-    >>> a.pad_value
-    0
-    >>> assert str(type(a.pad_value)) == "<class 'numpy.int64'>" or os.name == "nt" and str(type(a.pad_value)) == "<class 'numpy.int32'>"
+    >>> a.dtype
+    dtype('float64')
+    >>> a.pad_value, type(a.pad_value)
+    (0.0, <class 'numpy.float64'>)
 
     Can't add segments with differing dtypes
     >>> a[:3] = np.ones(3, dtype=np.float32)
     Traceback (most recent call last):
       ...
-    TypeError: Type mismatch: SparseArray has dtype ..., but assigned array has dtype float32
+    TypeError: Type mismatch: SparseArray has dtype float64, but assigned array has dtype float32
 
     Adding multiple SparseArray returns a SparseArray
     >>> b = SparseArray(a.shape)
-    >>> b[10:15] = 8
-    >>> assert b.dtype == np.dtype('int64') or os.name == "nt" and b.dtype == np.dtype('int32')
+    >>> b[10:15] = 8.0
+    >>> b.dtype
+    dtype('float64')
     >>> a + b
-    SparseArray(_SparseSegment(onset=5, array=array([1, 1, 1, 1, 1])), _SparseSegment(onset=10, array=array([8, 8, 8, 8, 8])), _SparseSegment(onset=15, array=array([2, 2, 2, 2, 2])), shape=(20,))
+    SparseArray(_SparseSegment(onset=5, array=array([1., 1., 1., 1., 1.])), _SparseSegment(onset=10, array=array([8., 8., 8., 8., 8.])), _SparseSegment(onset=15, array=array([2., 2., 2., 2., 2.])), shape=(20,))
     >>> np.asarray(a + b)
-    array([0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 8, 8, 8, 8, 8, 2, 2, 2, 2, 2])
+    array([0., 0., 0., 0., 0., 1., 1., 1., 1., 1., 8., 8., 8., 8., 8., 2., 2.,
+    ...    2., 2., 2.])
 
     Arithmetic works with numpy arrays
-    >>> np.ones(20, dtype=int) * a
-    array([0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2])
-    >>> np.ones(20, dtype=int) + a
-    array([1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 3, 3, 3, 3, 3])
-    >>> a + np.ones(20, dtype=int)
-    array([1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 3, 3, 3, 3, 3])
-    >>> c = np.ones(20, dtype=int)
+    >>> np.ones(20, dtype=np.float64) * a
+    array([0., 0., 0., 0., 0., 1., 1., 1., 1., 1., 0., 0., 0., 0., 0., 2., 2.,
+    ...    2., 2., 2.])
+    >>> np.ones(20, dtype=np.float64) + a
+    array([1., 1., 1., 1., 1., 2., 2., 2., 2., 2., 1., 1., 1., 1., 1., 3., 3.,
+    ...    3., 3., 3.])
+    >>> a + np.ones(20, dtype=np.float64)
+    array([1., 1., 1., 1., 1., 2., 2., 2., 2., 2., 1., 1., 1., 1., 1., 3., 3.,
+    ...    3., 3., 3.])
+    >>> c = np.ones(20, dtype=np.float64)
     >>> c += a
     >>> c
-    array([1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 3, 3, 3, 3, 3])
+    array([1., 1., 1., 1., 1., 2., 2., 2., 2., 2., 1., 1., 1., 1., 1., 3., 3.,
+    ...    3., 3., 3.])
 
     Test if pt.data.batch.example_to_device converts correctly. Commented out
     because these tests don't work without padertorch
@@ -290,9 +294,9 @@ class SparseArray:
         >>> zeros(10).dtype
         dtype('float32')
         >>> a = SparseArray(10)
-        >>> a[:5] = np.arange(5)
-        >>> import os
-        >>> assert a.dtype == np.dtype('int64') or os.name == "nt" and a.dtype == np.dtype('int32')
+        >>> a[:5] = np.arange(5, dtype=np.float64)
+        >>> a.dtype
+        dtype('float64')
         >>> a = SparseArray(10)
         >>> a[:5] = torch.arange(5)
         >>> a.dtype
@@ -656,17 +660,13 @@ class SparseArray:
 
     def __getitem__(self, item):
         """
-        >>> import os
-        >>> dtype = np.int64
-        >>> if os.name == "nt":
-        ...     dtype = np.int32
-        >>> a = zeros(20, dtype=dtype)
+        >>> a = zeros(20, dtype=np.float64)
         >>> a[:10] = 1
-        >>> a[15:] = np.arange(5) + 1
+        >>> a[15:] = np.arange(5, dtype=np.float64) + 1
 
         # Integer getitem
         >>> a[0], a[9], a[10], a[14], a[15], a[18], a[-1]
-        (1, 1, 0, 0, 1, 4, 5)
+        (1.0, 1.0, 0.0, 0.0, 1.0, 4.0, 5.0)
         >>> a[21]
         Traceback (most recent call last):
           ...
@@ -674,15 +674,15 @@ class SparseArray:
 
         # Slicing
         >>> np.asarray(a[:5])
-        array([1, 1, 1, 1, 1])
+        array([1., 1., 1., 1., 1.])
         >>> np.asarray(a[10:15])
-        array([0, 0, 0, 0, 0])
+        array([0., 0., 0., 0., 0.])
         >>> a[-10:]
-        SparseArray(_SparseSegment(onset=5, array=array([1, 2, 3, 4, 5])), shape=(10,))
+        SparseArray(_SparseSegment(onset=5, array=array([1., 2., 3., 4., 5.])), shape=(10,))
         >>> np.asarray(a[-10:])
-        array([0, 0, 0, 0, 0, 1, 2, 3, 4, 5])
+        array([0., 0., 0., 0., 0., 1., 2., 3., 4., 5.])
         >>> np.asarray(a[:-10])
-        array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
+        array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1.])
 
         # Multi-dimensional
         >>> a = SparseArray((2, 10))
