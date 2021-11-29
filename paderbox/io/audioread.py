@@ -149,7 +149,7 @@ def load_audio(
     """
 
     # soundfile does not support pathlib.Path.
-    # ToDo: Is this sill True? # No
+    # ToDo: Is this sill True?
     path = normalize_path(path, as_str=True)
 
     if unit == 'samples':
@@ -283,7 +283,7 @@ def recursive_load_audio(
         data = [recursive_load_audio(a, **kwargs) for a in path]
 
         np_data = np.array(data)
-        if np_data.dtype != np.object:
+        if np_data.dtype != object:
             return np_data
         else:
             return data
