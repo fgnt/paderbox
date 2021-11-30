@@ -68,7 +68,7 @@ def stft(
     # Pad with zeros to have enough samples for the window function to fade.
     assert fading in [None, True, False, 'full', 'half'], fading
     if fading not in [False, None]:
-        pad_width = np.zeros((time_signal.ndim, 2), dtype=np.int)
+        pad_width = np.zeros((time_signal.ndim, 2), dtype=int)
         if fading == 'half':
             pad_width[axis, 0] = (window_length - shift) // 2
             pad_width[axis, 1] = ceil((window_length - shift) / 2)
@@ -249,8 +249,9 @@ def _samples_to_stft_frames(
     >>> _samples_to_stft_frames(21, 16, 4, fading='full')
     9
 
-    >>> _samples_to_stft_frames(np.array([19, 20, 21]), 16, 4, fading='full')
-    array([8, 8, 9])
+    >>> result_arr = _samples_to_stft_frames(np.array([19, 20, 21]), 16, 4, fading='full')
+    >>> print(str(result_arr)) #  avoid numpy repr inconsistencies on Windows
+    [8 8 9]
 
     >>> stft(np.zeros(19), 16, 4).shape
     (8, 9)
@@ -393,7 +394,7 @@ def stft_frame_index_to_sample_index(
         shift: stft hop size
         pad: True if stft uses padding else False
         fading: fading used in stft
-        mode: states the sample to return \in {'first','center','last'}.
+        mode: states the sample to return in {'first','center','last'}.
             With 'center' the higher sample index is returned when center lies
             between two samples. Default is 'center'.
         num_samples: total number of samples in the source signal.
@@ -420,8 +421,9 @@ def stft_frame_index_to_sample_index(
     799
     >>> stft_frame_index_to_sample_index(-1, 400, 160, mode='last', fading=None, num_samples=800)
     799
-    >>> stft_frame_index_to_sample_index(3, 400, 160, mode='last', pad=False, fading=None, num_samples=800)
+    >>> stft_frame_index_to_sample_index(3, 400, 160, mode='last', pad=False, fading=None, num_samples=800)  # doctest: +ELLIPSIS
     Traceback (most recent call last):
+    ...
     AssertionError: (3, 3)
     >>> stft_frame_index_to_sample_index(np.array([1]), 400, 160, mode='center', fading='full')
     array([120])

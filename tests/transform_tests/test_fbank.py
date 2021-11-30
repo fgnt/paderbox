@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from paderbox.io.audioread import audioread
+from paderbox.io import load_audio
 # from scipy import signal
 
 import paderbox.testing as tc
@@ -16,7 +16,7 @@ class TestSTFTMethods(unittest.TestCase):
     def test_fbank(self):
         path = get_file_path("sample.wav")
 
-        y = audioread(path)[0]
+        y = load_audio(path)
         feature = transform.fbank(y)
 
         tc.assert_equal(feature.shape, (240, 23))

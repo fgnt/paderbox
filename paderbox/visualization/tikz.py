@@ -57,7 +57,7 @@ def resize_svg_code(
         return str(code_bs.svg)
 
     elif method == 'regex':
-        m = re.fullmatch('(.*svg width=")(\d*)(pt" height=")(\d*)(pt".*)',
+        m = re.fullmatch(r'(.*svg width=")(\d*)(pt" height=")(\d*)(pt".*)',
                          code,
                          re.DOTALL)
         g = list(m.groups())
@@ -210,7 +210,7 @@ def plot_to_tikz_embedded_png(
         name, png_path=pathlib.Path('.'), tikz_path=pathlib.Path('.'),
         tex_image_prefix='images', width='\\plotwidth', xlabel='', ylabel='',
         colors='', additional_tikz_content='', dpi=300):
-    """
+    r"""
     Creates a tikz file that has a png image as background that is created using
     the current matplotlib figure.
 

@@ -112,6 +112,9 @@ def load_audio(
 
     Examples
     --------
+    >>> import sys, pytest
+    >>> if sys.platform.startswith("win"):
+    ...     pytest.skip("Removed from windows tests")
     >>> from paderbox.io import load_audio
     >>> from paderbox.testing.testfile_fetcher import get_file_path
     >>> path = get_file_path('speech.wav')
@@ -140,10 +143,9 @@ def load_audio(
     >>> load_audio(path)  # doctest: +ELLIPSIS
     Traceback (most recent call last):
     ...
-    RuntimeError: Wrong suffix .sph in .../123_1pcbe_shn.sph.
+    RuntimeError: Wrong suffix .sph in ...123_1pcbe_shn.sph.
     File format:
-    .../123_1pcbe_shn.sph: NIST SPHERE file
-    <BLANKLINE>
+    ...123_1pcbe_shn.sph: NIST SPHERE file
     """
 
     # soundfile does not support pathlib.Path.
@@ -202,20 +204,20 @@ def load_audio(
             signal, sample_rate = data, f.samplerate
     except RuntimeError as e:
         if isinstance(path, (Path, str)):
-            from paderbox.utils.process_caller import run_process
-            cp = run_process(['file', f'{path}'])
-            stdout = cp.stdout
+            import magic
+            # recreate the stdout of the 'file' tool
+            msg = Path(path).as_posix() + ": " + magic.from_file(str(path))
             if Path(path).suffix == '.wav':
                 # Improve exception msg for NIST SPHERE files.
                 raise RuntimeError(
                     f'Could not read {path}.\n'
-                    f'File format:\n{stdout}'
+                    f'File format:\n{msg}'
                 ) from e
             else:
                 path = Path(path)
                 raise RuntimeError(
                     f'Wrong suffix {path.suffix} in {path}.\n'
-                    f'File format:\n{stdout}'
+                    f'File format:\n{msg}'
                 ) from e
         raise
 
@@ -281,7 +283,7 @@ def recursive_load_audio(
         data = [recursive_load_audio(a, **kwargs) for a in path]
 
         np_data = np.array(data)
-        if np_data.dtype != np.object:
+        if np_data.dtype != object:
             return np_data
         else:
             return data
@@ -321,6 +323,12 @@ def audioread(path, offset=0.0, duration=None, expected_sample_rate=None):
     .. admonition:: Example:
         Only path provided:
 
+        >>> import sys, pytest
+        >>> if sys.platform.startswith("win"):
+        ...     pytest.skip("`pb.io.audioread.audioread` is deprecated and "
+        ...                "does not work on windows, because wavefile needs "
+        ...                "`libsndfile-1.dll`."
+        ...                "Use `pb.io.load_audio` on windows.")
         >>> from paderbox.testing.testfile_fetcher import get_file_path
         >>> path = get_file_path('speech.wav')
         >>> # path = '/net/db/timit/pcm/train/dr1/fcjf0/sa1.wav'
@@ -417,7 +425,11 @@ def audio_length(path, unit='samples'):
 
 def audio_channels(path):
     """
-
+    >>> import sys, pytest
+    >>> if sys.platform.startswith("win"):
+    ...     pytest.skip("`pb.io.audioread.audioread` is deprecated and "
+    ...                "does not work on windows, because wavefile needs "
+    ...                "`libsndfile-1.dll`.")
     >>> from paderbox.testing.testfile_fetcher import get_file_path
     >>> path = get_file_path('speech_source_0.wav')
     >>> audio_channels(path)
@@ -432,7 +444,11 @@ def audio_channels(path):
 
 def audio_shape(path):
     """
-
+    >>> import sys, pytest
+    >>> if sys.platform.startswith("win"):
+    ...     pytest.skip("`pb.io.audioread.audioread` is deprecated and "
+    ...                "does not work on windows, because wavefile needs "
+    ...                "`libsndfile-1.dll`.")
     >>> from paderbox.testing.testfile_fetcher import get_file_path
     >>> path = get_file_path('speech_source_0.wav')
     >>> audio_shape(path)

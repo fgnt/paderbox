@@ -1,6 +1,6 @@
 import unittest
 
-from paderbox.io.audioread import audioread
+from paderbox.io import load_audio
 # from scipy import signal
 
 import paderbox.testing as tc
@@ -14,7 +14,7 @@ class TestSTFTMethods(unittest.TestCase):
     def test_mfcc(self):
         path = get_file_path("sample.wav")
 
-        y = audioread(path)[0]
+        y = load_audio(path)
         y_filtered = transform.mfcc(y)
 
         tc.assert_equal(y_filtered.shape, (291, 13))

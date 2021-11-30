@@ -8,12 +8,12 @@ from paderbox.io import dump_hdf5, load_hdf5
 
 class TestHdf5:
     @pytest.mark.parametrize("name,data,expect", [
-        ('int', {'key': 1}, np.int64(1)),
+        ('int', {'key': 1}, np.int32(1) if os.name == 'nt' else np.int64(1)), #  numpy default integer type on Windows is always int32.
         ('float', {'key': 1.1}, np.float64(1.1)),
         ('complex', {'key': 1.1j}, np.complex128(1.1j)),
         ('str', {'key': 'bla'}, 'bla'),
         ('none', {'key': None}, None),
-        ('np int', {'key': np.int(1)}, np.int64(1)),
+        ('np int', {'key': int(1)}, np.int32(1) if os.name == 'nt' else np.int64(1)),
         ('np float32', {'key': np.float32(1.1)}, np.float32(1.1)),
         ('np float64', {'key': np.float64(1.1)}, np.float64(1.1)),
         ('np complex64', {'key': np.complex64(1.1j)}, np.complex64(1.1j)),

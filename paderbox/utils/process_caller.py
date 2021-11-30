@@ -84,6 +84,14 @@ def run_process(
         False: Directly called, recommended, when cmd is a list, because when
             for example strings contains whitespaces they are not interpreted.
 
+
+    >>> import sys, pytest
+    >>> if sys.platform.startswith("win"):
+    ...     pytest.skip("the subprocess commands produce different outputs on Windows. "
+    ...                 "Note: the newline is defined as '\\r\\n' and commands like 'echo' "
+    ...                 "are not available with shell=False")
+
+
     # Effect of universal_newlines
     >>> run_process('echo Hello')
     CompletedProcess(args='echo Hello', returncode=0, stdout='Hello\\n', stderr='')
@@ -176,6 +184,13 @@ async def run_process_async(
             i.e. wildcards, environment variables, etc.
         False: Directly called, recommended, when cmd is a list, because when
             for example strings contains whitespaces they are not interpreted.
+
+
+    >>> import sys, pytest
+    >>> if sys.platform.startswith("win"):
+    ...     pytest.skip("the subprocess commands produce different outputs on Windows. "
+    ...                 "Note: the newline is defined as '\\r\\n' and commands like 'echo' "
+    ...                 "are not available with shell=False")
 
     >>> from paderbox.utils.process_caller import run_process_async
     >>> def run_process(*args, **kwargs):

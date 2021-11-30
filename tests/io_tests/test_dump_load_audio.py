@@ -1,4 +1,5 @@
 import io
+from os import system
 
 import numpy as np
 import soundfile
@@ -91,13 +92,15 @@ class TestIOAudio:
         content = io.BytesIO(dumps_audio(a, dtype=dump_type, normalize=False))
         c = load_audio(content, dtype=load_type)
 
-    @pytest.mark.parametrize("file,fails",
-    [
+    sph_examples = [
         ('speech.sph', False),
         ('123_2alaw.sph', False),
-        ('123_1pcle_shn.sph', True),
-        ('123_1ulaw_shn.sph', True),
-    ])
+    ]
+    import sys
+    if not sys.platform.startswith("win"):
+        sph_examples.extend([('123_1pcle_shn.sph', True),
+                             ('123_1ulaw_shn.sph', True)])
+    @pytest.mark.parametrize("file,fails", sph_examples)
     def test_sph_files(self, file, fails):
         # Some SPHERE files can be read with soundfile, but not all.
         path = get_file_path(file)

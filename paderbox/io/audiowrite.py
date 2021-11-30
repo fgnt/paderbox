@@ -108,6 +108,10 @@ def dump_audio(
     stdout: .../tmp_audio_data.wav: RIFF (little-endian) data, WAVE audio, Microsoft PCM, 16 bit, mono 16000 Hz
     <BLANKLINE>
 
+    >>> import sys, pytest
+    >>> if sys.platform.startswith("win"):
+    ...     pytest.skip("soxi is not available on Windows."
+    ...                "Use `pb.io.load_audio` on windows.")
     >>> data = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]) / 32
     >>> data
     array([0.     , 0.03125, 0.0625 , 0.09375, 0.125  , 0.15625, 0.1875 ,

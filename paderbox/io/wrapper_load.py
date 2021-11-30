@@ -240,11 +240,11 @@ def load(
 
 
     To load an unsecure, you have to change `unsafe` to `True`
-    >>> load('/path/to/unsecure_file.pkl', unsafe=False)
+    >>> load('/path/to/unsecure_file.pkl', unsafe=False)  # doctest: +ELLIPSIS
     Traceback (most recent call last):
     ...
     AssertionError: You called Loader.__call__ with unsafe=False
-    for the file /path/to/unsecure_file.pkl.
+    for the file ...unsecure_file.pkl.
     The file type is identified as '.pkl'.
     Loading this file type is not secure.
     If you trust the file, change the value of unsafe to True.
@@ -254,7 +254,7 @@ def load(
       execute arbitrary code during unpickling. Never unpickle
       data that could have come from an untrusted source, or that
       could have been tampered with.
-
+    
     """
     loader = Loader(
         ignore_type_error=ignore_type_error,

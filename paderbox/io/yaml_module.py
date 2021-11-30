@@ -93,14 +93,15 @@ def dump_yaml_unsafe(
         **kwargs:
 
     >>> d = {'a': [1, 2], 'b': (3, 4), 'p': Path('abc')}
-    >>> print(dumps_yaml_unsafe(d))
+    >>> # allow both PosixPath and WindowsPath in this test
+    >>> print(dumps_yaml_unsafe(d))  # doctest: +ELLIPSIS
     a:
     - 1
     - 2
     b: !!python/tuple
     - 3
     - 4
-    p: !!python/object/apply:pathlib.PosixPath
+    p: !!python/object/apply:pathlib...Path
     - abc
     <BLANKLINE>
 
