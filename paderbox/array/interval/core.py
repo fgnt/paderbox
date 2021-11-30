@@ -193,18 +193,18 @@ class ArrayInterval:
                 fine.
 
         Examples:
-            >>> ai = ArrayInterval(np.array([1, 1, 0, 1, 0, 0, 1, 1, 0], dtype=np.bool))
+            >>> ai = ArrayInterval(np.array([1, 1, 0, 1, 0, 0, 1, 1, 0], dtype=bool))
             >>> ai
             ArrayInterval("0:2, 3:4, 6:8", shape=(9,))
             >>> ai[:]
             array([ True,  True, False,  True, False, False,  True,  True, False])
-            >>> a = np.array([1, 1, 1, 1], dtype=np.bool)
+            >>> a = np.array([1, 1, 1, 1], dtype=bool)
             >>> assert all(a == ArrayInterval(a)[:])
-            >>> a = np.array([0, 0, 0, 0], dtype=np.bool)
+            >>> a = np.array([0, 0, 0, 0], dtype=bool)
             >>> assert all(a == ArrayInterval(a)[:])
-            >>> a = np.array([0, 1, 1, 0], dtype=np.bool)
+            >>> a = np.array([0, 1, 1, 0], dtype=bool)
             >>> assert all(a == ArrayInterval(a)[:])
-            >>> a = np.array([1, 0, 0, 1], dtype=np.bool)
+            >>> a = np.array([1, 0, 0, 1], dtype=bool)
             >>> assert all(a == ArrayInterval(a)[:])
 
         """
@@ -219,7 +219,7 @@ class ArrayInterval:
                     f'Only 1-dimensional arrays can be converted to '
                     f'ArrayInterval, not {array!r} with ndim={array.ndim}'
                 )
-            if array.dtype != np.bool:
+            if array.dtype != bool:
                 raise ValueError(
                     f'Only boolean array can be converted to ArrayInterval, not'
                     f'{array!r} with dtype={array.dtype}'
@@ -265,7 +265,7 @@ class ArrayInterval:
         ai.intervals = self.intervals
         return ai
 
-    def __array__(self, dtype=np.bool):
+    def __array__(self, dtype=bool):
         """
         Special numpy method. This method is used by numpy to cast foreign
         types to numpy.
@@ -282,7 +282,7 @@ class ArrayInterval:
             RuntimeError: You cannot cast an ArrayInterval to numpy
             when the shape is unknown.
         """
-        assert dtype == np.bool, dtype
+        assert dtype == bool, dtype
         if self.shape is None:
             raise RuntimeError(
                 f'You cannot cast an {self.__class__.__name__} to numpy\n'
@@ -643,17 +643,17 @@ class ArrayInterval:
 
         # This is numpy behavior
         if stop <= start:
-            return np.zeros(0, dtype=np.bool)
+            return np.zeros(0, dtype=bool)
 
         intervals = cy_intersection((start, stop), self.normalized_intervals)
 
         if self.inverse_mode:
-            arr = np.ones(stop - start, dtype=np.bool)
+            arr = np.ones(stop - start, dtype=bool)
 
             for i_start, i_end in intervals:
                 arr[i_start - start:i_end - start] = False
         else:
-            arr = np.zeros(stop - start, dtype=np.bool)
+            arr = np.zeros(stop - start, dtype=bool)
 
             for i_start, i_end in intervals:
                 arr[i_start - start:i_end - start] = True

@@ -23,7 +23,7 @@ def to_ndarray(data, copy=True):
 
 def labels_to_one_hot(
         labels: np.ndarray, categories: int, axis: int = 0,
-        keepdims=False, dtype=np.bool
+        keepdims=False, dtype=bool
 ):
     """ Translates an arbitrary ndarray with labels to one hot coded array.
 

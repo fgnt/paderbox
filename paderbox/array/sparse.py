@@ -865,7 +865,7 @@ class SparseArray:
         >>> np.arange(10) * a
         array([ 0,  1,  2,  3,  4, 10, 12, 14, 16, 18])
         """
-        if isinstance(other, (np.float, np.int, np.complex)):
+        if isinstance(other, (float, int, complex)):
             # Scalar value, multiply everything by it
             arr = self.__class__(
                 shape=self.shape,
@@ -881,7 +881,7 @@ class SparseArray:
             return NotImplemented
 
     def __rmul__(self, other):
-        if isinstance(other, (np.float, np.int, np.complex)):
+        if isinstance(other, (float, int, complex)):
             # We can safely change the order for scalar multiplication
             return self * other
         else:

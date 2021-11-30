@@ -81,7 +81,7 @@ def pad_axis(array, pad_width, *, axis, mode='constant', **pad_kwargs):
     """
     array = np.asarray(array)
 
-    npad = np.zeros([array.ndim, 2], dtype=np.int)
+    npad = np.zeros([array.ndim, 2], dtype=int)
     npad[axis, :] = pad_width
     return np.pad(array, pad_width=npad, mode=mode, **pad_kwargs)
 

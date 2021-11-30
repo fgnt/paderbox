@@ -68,7 +68,7 @@ def stft(
     # Pad with zeros to have enough samples for the window function to fade.
     assert fading in [None, True, False, 'full', 'half'], fading
     if fading not in [False, None]:
-        pad_width = np.zeros((time_signal.ndim, 2), dtype=np.int)
+        pad_width = np.zeros((time_signal.ndim, 2), dtype=int)
         if fading == 'half':
             pad_width[axis, 0] = (window_length - shift) // 2
             pad_width[axis, 1] = ceil((window_length - shift) / 2)
@@ -394,7 +394,7 @@ def stft_frame_index_to_sample_index(
         shift: stft hop size
         pad: True if stft uses padding else False
         fading: fading used in stft
-        mode: states the sample to return \in {'first','center','last'}.
+        mode: states the sample to return in {'first','center','last'}.
             With 'center' the higher sample index is returned when center lies
             between two samples. Default is 'center'.
         num_samples: total number of samples in the source signal.

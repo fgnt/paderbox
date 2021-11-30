@@ -138,7 +138,7 @@ def to_rttm_str(data, sample_rate=16000):
     >>> ar1 = zeros(None)
     >>> ar1[0:16000] = 1
     >>> ar1[32000:48000] = 1
-    >>> ar2 = np.zeros(shape=50000, dtype=np.bool)
+    >>> ar2 = np.zeros(shape=50000, dtype=bool)
     >>> ar2[0:32000] = 1
     >>> data = {'S02': {'1': ar1, '2': ar2}}
     >>> data
