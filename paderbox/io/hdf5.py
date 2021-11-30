@@ -510,7 +510,7 @@ class _ReportInterface(object):
                     # handling after version 3.0.0 to dumping strings as bytes
                     if LooseVersion(h5py.__version__) >= '3.0.0':
                         ans[key] = ans[key].decode()
-                if ans[key] == 'None':
+                if isinstance(ans[key], str) and ans[key] == 'None':
                     ans[key] = None
 
             elif isinstance(item, h5py._hl.group.Group):

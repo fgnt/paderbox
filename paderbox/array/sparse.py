@@ -715,7 +715,7 @@ class SparseArray:
           ...
         IndexError: too many indices for array: array is 2-dimensional, but 3 were indexed
         """
-        item = _normalize_item(item, self.shape)
+        item = tuple(_normalize_item(item, self.shape))
 
         assert len(item) == len(self.shape), (item, self.shape)
 
