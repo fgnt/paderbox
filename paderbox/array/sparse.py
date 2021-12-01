@@ -10,7 +10,21 @@ from paderbox.array.interval.core import ArrayInterval
 import numpy as np
 import paderbox as pb
 from paderbox.array.interval.util import cy_parse_item, cy_invert_intervals
-import torch
+
+try:
+    import torch
+
+    array_types = (np.ndarray, torch.Tensor)
+
+    # Operations whose neutral element is 0
+    shortcut_operations = (
+        np.add, np.subtract, torch.Tensor.add_,
+        torch.Tensor.add,
+        torch.Tensor.sub_, torch.Tensor.sub
+    )
+except ImportError:
+    array_types = (np.ndarray,)
+    shortcut_operations = (np.add, np.subtract)
 
 
 def _normalize_shape(shape):
@@ -106,7 +120,8 @@ def _dtype_from_value(value):
 
 
 def _get_pad_value(dtype, pad_value, device=None):
-    if isinstance(dtype, torch.dtype):
+    if 'torch' in str(dtype):
+        import torch
         return torch.full(
             size=(1,), fill_value=pad_value, dtype=dtype, device=device
         )
@@ -116,10 +131,7 @@ def _get_pad_value(dtype, pad_value, device=None):
 
 def _pad_value_like(array, pad_value):
     """Constructs a pad value with the same dtype and device as `array`."""
-    if isinstance(array, torch.Tensor):
-        device = array.device
-    else:
-        device = None
+    device = getattr(array, 'device', None)  # Works for numpy and torch
     return _get_pad_value(_dtype_from_value(array), pad_value, device=device)
 
 
@@ -170,7 +182,7 @@ def _cut(array, onset, target_length):
 @dataclass
 class _SparseSegment:
     onset: int
-    array: [np.ndarray, torch.Tensor]
+    array: array_types
 
     @property
     def offset(self):
@@ -333,7 +345,7 @@ class SparseArray:
     def is_torch(self):
         if self._pad_value is None:
             return None
-        return isinstance(self._pad_value.dtype, torch.dtype)
+        return 'torch' in str(self._pad_value.dtype)
 
     @property
     def pad_value(self):
@@ -418,7 +430,7 @@ class SparseArray:
     def _add_segment(self, segment: _SparseSegment):
         if self._pad_value is not None:
             # We can't mix numpy with torch
-            if self.is_torch != isinstance(segment.array, torch.Tensor):
+            if self.is_torch == isinstance(segment.array, np.ndarray):
                 raise TypeError(
                     f'{type(segment.array)} is incompatible to {type(self._pad_value)}'
                 )
@@ -639,7 +651,7 @@ class SparseArray:
                 dtype=self.dtype if self.dtype else _dtype_from_value(value)
             )
 
-        if isinstance(value, np.ndarray) or isinstance(value, torch.Tensor):
+        if isinstance(value, array_types):
             # The last dimension has to match the length defined by the indexing
             if value.shape[-1] != length:
                 raise ValueError(
@@ -991,6 +1003,7 @@ class SparseArray:
         # >>> a * c
         tensor([  0,  -1,  -4,  -9, -16, -25, -36, -49,   0,   0])
         """
+        import torch
         if kwargs is not None:
             return NotImplemented
 
@@ -1077,8 +1090,7 @@ def _combine_inplace_array_with_sparse(func, array, sparse_array, out=None):
 
     # Shortcut functions where 0 is the neutral element
     if sparse_array.pad_value == 0 and \
-            func in [np.add, np.subtract, torch.Tensor.add_, torch.Tensor.add,
-                     torch.Tensor.sub_, torch.Tensor.sub]:
+            func in shortcut_operations:
         return out
 
     # Handle everything outside segments
