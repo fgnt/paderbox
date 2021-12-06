@@ -21,6 +21,7 @@ def play(
         name=None,
         stereo=False,
         normalize=True,
+        display=True,
 ):
     """
     Tries to guess, what the input data is. Plays time series and stft.
@@ -128,12 +129,11 @@ def play(
         # https://github.com/ipython/ipython/pull/11650
         kwargs = {'normalize': normalize}
 
-    from IPython.display import display
-    from IPython.display import Audio
+    import IPython.display
     if name is None:
-        display(Audio(data, rate=sample_rate, **kwargs))
+        audio = IPython.display.Audio(data, rate=sample_rate, **kwargs)
     else:
-        class NamedAudio(Audio):
+        class NamedAudio(IPython.display.Audio):
             name = None
             
             def _repr_html_(self):
@@ -153,9 +153,13 @@ def play(
                     </tr>
                 </table>
                 """.format(self.name, audio_html)
-        na = NamedAudio(data, rate=sample_rate, **kwargs)
-        na.name = name
-        display(na)
+        audio = NamedAudio(data, rate=sample_rate, **kwargs)
+        audio.name = name
+
+    if display:
+        IPython.display.display(audio)
+    else:
+        return audio
 
 
 class Play:
