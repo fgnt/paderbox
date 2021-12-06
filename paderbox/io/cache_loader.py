@@ -108,6 +108,14 @@ class DiskCacheLoader:
                 new_path.parent.mkdir(parents=True, exist_ok=True)
                 with new_path.open(mode='wb') as f:
                     f.write(raw)
+            except OSError as e:
+                if os.name == 'nt' and e.errno == 22:
+                    new_path.parent.mkdir(parents=True, exist_ok=True)
+                    with new_path.open(mode='wb') as f:
+                        f.write(raw)
+                else:
+                    raise
+
             return raw
 
     def buffer(self, path, keep_bytes=True):
