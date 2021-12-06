@@ -79,7 +79,7 @@ def play(
 
     if isinstance(data, str):
         assert os.path.exists(data), ('File does not exist.', data)
-        data = load_audio(data, expected_sample_rate=sample_rate)
+        data, sample_rate = load_audio(data, return_sample_rate=True)
         if len(data.shape) == 2:
             data = data[channel, :]
     elif np.iscomplexobj(data):
