@@ -21,28 +21,33 @@ def play(
         stereo=False,
         normalize=True,
 ):
-    """ Tries to guess, what the input data is. Plays time series and stft.
+    """
+    Tries to guess, what the input data is. Plays time series and stft.
 
     Provides an easy to use interface to play back sound in an IPython Notebook.
 
-    :param data: Time series with shape (frames,)
-        or stft with shape (frames, channels, bins) or (frames, bins)
-        or string containing path to audio file.
-    :param channel: Channel, if you have a multichannel stft signal or a
-        multichannel audio file.
-    :param sample_rate: Sampling rate in Hz.
-    :param size: STFT window size
-    :param shift: STFT shift
-    :param window: STFT analysis window
-    :param scale: Scale the Volume, currently only amplification with clip
-        is supported.
-    :param name: If name is set, then in ipynb table with name and audio is
-                 displayed
-    :param stereo: If set to true, you can listen to channel as defined by
-        `channel` parameter and the next channel at the same time.
-    :param normalize: It true, normalize the data to have values in the range
-        from 0 to 1. Can only be disabled with newer IPython versions.
-    :return:
+    Args:
+        data: Time series with shape (frames,)
+            or stft with shape (frames, channels, bins) or (frames, bins)
+            or string containing path to audio file.
+        channel: Channel, if you have a multichannel stft signal or a
+            multichannel audio file.
+        sample_rate: Sampling rate in Hz.
+        size: STFT window size
+        shift: STFT shift
+        window: STFT analysis window
+        window_length: STFT window_length
+        scale: Scale the Volume, currently only amplification with clip
+            is supported.
+        name: If name is set, then in ipynb table with name and audio is
+            displayed
+        stereo: If set to true, you can listen to channel as defined by
+            `channel` parameter and the next channel at the same time.
+        normalize: It true, normalize the data to have values in the range
+            from 0 to 1. Can only be disabled with newer IPython versions.
+        display: When True, display the audio, otherwise return the widget.
+    Returns:
+
     """
     if isinstance(data, dict):
         assert name is None, name
