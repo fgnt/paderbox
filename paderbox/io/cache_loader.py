@@ -157,7 +157,11 @@ class DiskCacheLoader:
     def __del__(self):
         if self.clear:
             import shutil
-            shutil.rmtree(self.cache_dir)
+            if os.name == 'nt':
+                if self.cache_dir.exists():
+                    shutil.rmtree(self.cache_dir)
+            else:
+                shutil.rmtree(self.cache_dir)
 
 
 @dataclasses.dataclass
