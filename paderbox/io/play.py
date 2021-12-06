@@ -1,5 +1,6 @@
 import sys
 import os
+import functools
 from pathlib import Path
 
 import numpy as np
@@ -155,6 +156,71 @@ def play(
         na = NamedAudio(data, rate=sample_rate, **kwargs)
         na.name = name
         display(na)
+
+
+class Play:
+    def __init__(self, sample_rate=None, **kwargs):
+        """
+        See `pb.io.play`. This is a wrapper around `pb.io.play`, where you can
+        change the defaults.
+
+        Args:
+            channel: Channel, if you have a multichannel stft signal or a
+                multichannel audio file.
+            sample_rate: Sampling rate in Hz.
+            size: STFT window size
+            shift: STFT shift
+            window: STFT analysis window
+            window_length: STFT window_length
+            scale: Scale the Volume, currently only amplification with clip
+                is supported.
+            name: If name is set, then in ipynb table with name and audio is
+                displayed
+            stereo: If set to true, you can listen to channel as defined by
+                `channel` parameter and the next channel at the same time.
+            normalize: It true, normalize the data to have values in the range
+                from 0 to 1. Can only be disabled with newer IPython versions.
+
+        Returns:
+
+        """
+        self.kwargs = {
+            **kwargs,
+        }
+        if sample_rate is not None:
+            self.kwargs['sample_rate'] = sample_rate
+
+    @functools.wraps(play)
+    def __call__(self, *args, **kwargs):
+        """
+        Tries to guess, what the input data is. Plays time series and stft.
+
+        Provides an easy to use interface to play back sound in an IPython Notebook.
+
+        Args:
+            data: Time series with shape (frames,)
+                or stft with shape (frames, channels, bins) or (frames, bins)
+                or string containing path to audio file.
+            channel: Channel, if you have a multichannel stft signal or a
+                multichannel audio file.
+            sample_rate: Sampling rate in Hz.
+            size: STFT window size
+            shift: STFT shift
+            window: STFT analysis window
+            window_length: STFT window_length
+            scale: Scale the Volume, currently only amplification with clip
+                is supported.
+            name: If name is set, then in ipynb table with name and audio is
+                displayed
+            stereo: If set to true, you can listen to channel as defined by
+                `channel` parameter and the next channel at the same time.
+            normalize: It true, normalize the data to have values in the range
+                from 0 to 1. Can only be disabled with newer IPython versions.
+
+        Returns:
+
+        """
+        return play(*args, **{**self.kwargs, **kwargs})
 
 
 # Allows to use `paderbox.io.play` instead of `paderbox.io.play.play`
