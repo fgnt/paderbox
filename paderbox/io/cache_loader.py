@@ -1,4 +1,5 @@
 import dataclasses
+import pathlib
 from pathlib import Path
 import collections
 import io
@@ -118,13 +119,34 @@ class DiskCacheLoader:
 
             return raw
 
+    @staticmethod
+    def _get_new_path(cache_dir, path):
+        """
+
+        Args:
+            cache_dir:
+            path: pathlib.Path(...).absolute()
+
+        >>> from pathlib import PureWindowsPath, PurePosixPath
+        >>> l = DiskCacheLoader
+        >>> l._get_new_path(PurePosixPath('/a/b/c'), PurePosixPath('/d/s'))
+        PurePosixPath('/a/b/c/d/s')
+        >>> l._get_new_path(PureWindowsPath(r'C:\\\\a\\\\b\\\\e\\\\'), PureWindowsPath(r'D:\\\\f\\\\g'))
+        PureWindowsPath('C:/a/b/e/D/f/g')
+        """
+        # new_path = Path(f'{cache_dir}/{path}')  # if PurePosixPath
+        new_path = cache_dir.joinpath(
+            path.drive.replace(':', ''),
+            path.relative_to(list(path.parents)[-1]))
+        return new_path
+
     def buffer(self, path, keep_bytes=True):
         path = Path(path).absolute()
         if path in self.mapping:
             return self.mapping[path], None
         else:
             self.check(self.cache_dir)
-            new_path = Path(f'{self.cache_dir}/{path}')
+            new_path = self._get_new_path(self.cache_dir, path)
             raw = self.copy(path, new_path, keep_bytes)
             self.mapping[path] = new_path
             return self.mapping[path], raw
