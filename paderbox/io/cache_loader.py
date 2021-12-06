@@ -2,7 +2,7 @@ import dataclasses
 from pathlib import Path
 import collections
 import io
-import os.path
+import os
 import contextlib
 
 import paderbox as pb
@@ -46,10 +46,10 @@ class DiskCacheLoader:
         The cache dir is on a fast filesystem (e.g. local disk).
 
     Note:
-        Be carefull, that it is not guaranteed, that the files are afterwards
+        Be careful, that it is not guaranteed, that the files are afterwards
         deleted, because some errors don't trigger the shutdown of the python
         process and simply exit the program. e.g. pressing Ctrl-C multiple
-        times may leafe some artefacts on the filesystem.
+        times may leave some artefacts on the filesystem.
 
 
     >>> import tempfile
@@ -80,15 +80,15 @@ class DiskCacheLoader:
     Counter({'buffer calls': 3, 'check enough disk space': 2, 'copy calls': 2, 'coppied .wav': 2})
     Counter({'buffer calls': 4, 'check enough disk space': 2, 'copy calls': 2, 'coppied .wav': 2})
     Counter({'buffer calls': 5, 'check enough disk space': 2, 'copy calls': 2, 'coppied .wav': 2, 'open calls': 1, 'opened .wav': 1})
-
-
     """
     cache_dir: [str, Path]
     mapping: dict = dataclasses.field(default_factory=dict, init=False)
     clear: bool = True
 
     def __post_init__(self):
-        if len(os.listdir(self.cache_dir)) != 0:
+        self.cache_dir = Path(self.cache_dir)
+        # os.scandir is fast
+        if len(list(os.scandir(self.cache_dir))) != 0:
             raise RuntimeError(f'Dir {self.cache_dir} is not empty.')
 
     def check(self, cache_dir):
@@ -150,7 +150,8 @@ class DiskCacheLoader:
             elif ext in ['.json']:
                 file_descriptor = io.StringIO(raw)
             else:
-                raise ValueError(ext, file)
+                # Add more "ext", when necessary
+                raise NotImplementedError(ext, file)
             return pb.io.load(file_descriptor, ext=ext, unsafe=unsafe)
 
     def __del__(self):
@@ -162,10 +163,11 @@ class DiskCacheLoader:
 @dataclasses.dataclass
 class _StatisticsDiskCacheLoader(DiskCacheLoader):
     """
-
+    Helper class for Doctest to track the function calls.
     """
 
-    statistics: collections.Counter = dataclasses.field(default_factory=collections.Counter, init=False, repr=False)
+    statistics: collections.Counter = dataclasses.field(
+        default_factory=collections.Counter, init=False, repr=False)
 
     def check(self, cache_dir):
         self.statistics['check enough disk space'] += 1
