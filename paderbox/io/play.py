@@ -1,5 +1,6 @@
 import sys
 import os
+import functools
 from pathlib import Path
 
 import numpy as np
@@ -20,47 +21,57 @@ def play(
         name=None,
         stereo=False,
         normalize=True,
+        display=True,
 ):
-    """ Tries to guess, what the input data is. Plays time series and stft.
+    """
+    Tries to guess, what the input data is. Plays time series and stft.
 
     Provides an easy to use interface to play back sound in an IPython Notebook.
 
-    :param data: Time series with shape (frames,)
-        or stft with shape (frames, channels, bins) or (frames, bins)
-        or string containing path to audio file.
-    :param channel: Channel, if you have a multichannel stft signal or a
-        multichannel audio file.
-    :param sample_rate: Sampling rate in Hz.
-    :param size: STFT window size
-    :param shift: STFT shift
-    :param window: STFT analysis window
-    :param scale: Scale the Volume, currently only amplification with clip
-        is supported.
-    :param name: If name is set, then in ipynb table with name and audio is
-                 displayed
-    :param stereo: If set to true, you can listen to channel as defined by
-        `channel` parameter and the next channel at the same time.
-    :param normalize: It true, normalize the data to have values in the range
-        from 0 to 1. Can only be disabled with newer IPython versions.
-    :return:
+    Args:
+        data: Time series with shape (frames,)
+            or stft with shape (frames, channels, bins) or (frames, bins)
+            or string containing path to audio file.
+        channel: Channel, if you have a multichannel stft signal or a
+            multichannel audio file.
+        sample_rate: Sampling rate in Hz.
+        size: STFT window size
+        shift: STFT shift
+        window: STFT analysis window
+        window_length: STFT window_length
+        scale: Scale the Volume, currently only amplification with clip
+            is supported.
+        name: If name is set, then in ipynb table with name and audio is
+            displayed
+        stereo: If set to true, you can listen to channel as defined by
+            `channel` parameter and the next channel at the same time.
+        normalize: It true, normalize the data to have values in the range
+            from 0 to 1. Can only be disabled with newer IPython versions.
+        display: When True, display the audio, otherwise return the widget.
+    Returns:
+
+    >>> import paderbox as pb
+    >>> pb.io.play(np.array([1, 2, 3]), display=False)
+    <IPython.lib.display.Audio object>
+    >>> pb.io.play({'a': np.array([1, 2, 3]), 'b': np.array([1, 2, 3])}, display=False)
+    {'a': <paderbox.io.play.NamedAudio object>, 'b': <paderbox.io.play.NamedAudio object>}
+
     """
     if isinstance(data, dict):
         assert name is None, name
-        for k, v in data.items():
-            play(
-                data=v,
-                name=k,
-
-                channel=channel,
-                sample_rate=sample_rate,
-                size=size,
-                shift=shift,
-                window=window,
-                window_length=window_length,
-                scale=scale,
-                stereo=stereo,
-            )
-        return
+        kwargs = {
+            k: v
+            for k, v in locals().items()
+            if k not in ['data', 'name']
+        }
+        audio = {
+            k: play(data=v, name='.'.join(k), **kwargs )
+            for k, v in data.items()
+        }
+        if display:
+            return
+        else:
+            return audio
 
     if stereo:
         if isinstance(channel, int):
@@ -73,7 +84,7 @@ def play(
 
     if isinstance(data, str):
         assert os.path.exists(data), ('File does not exist.', data)
-        data = load_audio(data, expected_sample_rate=sample_rate)
+        data, sample_rate = load_audio(data, return_sample_rate=True)
         if len(data.shape) == 2:
             data = data[channel, :]
     elif np.iscomplexobj(data):
@@ -122,12 +133,11 @@ def play(
         # https://github.com/ipython/ipython/pull/11650
         kwargs = {'normalize': normalize}
 
-    from IPython.display import display
-    from IPython.display import Audio
+    import IPython.display
     if name is None:
-        display(Audio(data, rate=sample_rate, **kwargs))
+        audio = IPython.display.Audio(data, rate=sample_rate, **kwargs)
     else:
-        class NamedAudio(Audio):
+        class NamedAudio(IPython.display.Audio):
             name = None
             
             def _repr_html_(self):
@@ -147,9 +157,110 @@ def play(
                     </tr>
                 </table>
                 """.format(self.name, audio_html)
-        na = NamedAudio(data, rate=sample_rate, **kwargs)
-        na.name = name
-        display(na)
+        audio = NamedAudio(data, rate=sample_rate, **kwargs)
+        audio.name = name
+
+    if display:
+        IPython.display.display(audio)
+    else:
+        return audio
+
+
+class Play:
+    def __init__(
+            self,
+            channel=0,
+            sample_rate=16000,
+            size=1024,
+            shift=256,
+            window='blackman',
+            window_length: int=None,
+            *,
+            scale=1,
+            name=None,
+            stereo=False,
+            normalize=True,
+            display=True,
+    ):
+        """
+        See `pb.io.play`. This is a wrapper around `pb.io.play`, where you can
+        change the defaults.
+
+        Args:
+            channel: Channel, if you have a multichannel stft signal or a
+                multichannel audio file.
+            sample_rate: Sampling rate in Hz.
+            size: STFT window size
+            shift: STFT shift
+            window: STFT analysis window
+            window_length: STFT window_length
+            scale: Scale the Volume, currently only amplification with clip
+                is supported.
+            name: If name is set, then in ipynb table with name and audio is
+                displayed
+            stereo: If set to true, you can listen to channel as defined by
+                `channel` parameter and the next channel at the same time.
+            normalize: It true, normalize the data to have values in the range
+                from 0 to 1. Can only be disabled with newer IPython versions.
+            display: When True, display the audio, otherwise return the widget.
+
+        Returns:
+
+        >>> play = Play()
+        >>> play
+        Play(sample_rate=16000)
+        >>> play = Play(sample_rate=8000)
+        >>> play
+        Play(sample_rate=8000)
+        >>> play = Play(sample_rate=8000, display=False)
+        >>> play
+        Play(sample_rate=8000, display=False)
+        """
+        self.kwargs = locals()
+        del self.kwargs['self']
+
+    def __repr__(self):
+        import inspect
+        sig = inspect.signature(self.__class__)
+        parameters = ', '.join([
+            f'{k}={self.kwargs[k]!r}'
+            for k, v in sig.parameters.items()
+            if self.kwargs[k] != v.default or k == 'sample_rate'
+        ])
+        return f'{self.__class__.__name__}({parameters})'
+
+    @functools.wraps(play)
+    def __call__(self, data, *args, **kwargs):
+        """
+        Tries to guess, what the input data is. Plays time series and stft.
+
+        Provides an easy to use interface to play back sound in an IPython Notebook.
+
+        Args:
+            data: Time series with shape (frames,)
+                or stft with shape (frames, channels, bins) or (frames, bins)
+                or string containing path to audio file.
+            channel: Channel, if you have a multichannel stft signal or a
+                multichannel audio file.
+            sample_rate: Sampling rate in Hz.
+            size: STFT window size
+            shift: STFT shift
+            window: STFT analysis window
+            window_length: STFT window_length
+            scale: Scale the Volume, currently only amplification with clip
+                is supported.
+            name: If name is set, then in ipynb table with name and audio is
+                displayed
+            stereo: If set to true, you can listen to channel as defined by
+                `channel` parameter and the next channel at the same time.
+            normalize: It true, normalize the data to have values in the range
+                from 0 to 1. Can only be disabled with newer IPython versions.
+            display: When True, display the audio, otherwise return the widget.
+
+        Returns:
+
+        """
+        return play(data, *args, **{**self.kwargs, **kwargs})
 
 
 # Allows to use `paderbox.io.play` instead of `paderbox.io.play.play`
