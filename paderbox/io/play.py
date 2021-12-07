@@ -163,7 +163,21 @@ def play(
 
 
 class Play:
-    def __init__(self, sample_rate=None, **kwargs):
+    def __init__(
+            self,
+            channel=0,
+            sample_rate=16000,
+            size=1024,
+            shift=256,
+            window='blackman',
+            window_length: int=None,
+            *,
+            scale=1,
+            name=None,
+            stereo=False,
+            normalize=True,
+            display=True,
+    ):
         """
         See `pb.io.play`. This is a wrapper around `pb.io.play`, where you can
         change the defaults.
@@ -184,18 +198,35 @@ class Play:
                 `channel` parameter and the next channel at the same time.
             normalize: It true, normalize the data to have values in the range
                 from 0 to 1. Can only be disabled with newer IPython versions.
+            display: When True, display the audio, otherwise return the widget.
 
         Returns:
 
+        >>> play = Play()
+        >>> play
+        Play(sample_rate=16000)
+        >>> play = Play(sample_rate=8000)
+        >>> play
+        Play(sample_rate=8000)
+        >>> play = Play(sample_rate=8000, display=False)
+        >>> play
+        Play(sample_rate=8000, display=False)
         """
-        self.kwargs = {
-            **kwargs,
-        }
-        if sample_rate is not None:
-            self.kwargs['sample_rate'] = sample_rate
+        self.kwargs = locals()
+        del self.kwargs['self']
+
+    def __repr__(self):
+        import inspect
+        sig = inspect.signature(self.__class__)
+        parameters = ', '.join([
+            f'{k}={self.kwargs[k]!r}'
+            for k, v in sig.parameters.items()
+            if self.kwargs[k] != v.default or k == 'sample_rate'
+        ])
+        return f'{self.__class__.__name__}({parameters})'
 
     @functools.wraps(play)
-    def __call__(self, *args, **kwargs):
+    def __call__(self, data, *args, **kwargs):
         """
         Tries to guess, what the input data is. Plays time series and stft.
 
@@ -220,11 +251,12 @@ class Play:
                 `channel` parameter and the next channel at the same time.
             normalize: It true, normalize the data to have values in the range
                 from 0 to 1. Can only be disabled with newer IPython versions.
+            display: When True, display the audio, otherwise return the widget.
 
         Returns:
 
         """
-        return play(*args, **{**self.kwargs, **kwargs})
+        return play(data, *args, **{**self.kwargs, **kwargs})
 
 
 # Allows to use `paderbox.io.play` instead of `paderbox.io.play.play`
