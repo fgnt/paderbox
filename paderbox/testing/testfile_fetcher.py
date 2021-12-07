@@ -1,32 +1,7 @@
-import urllib.request as url
-from paderbox.io.cache_dir import get_cache_dir
+from paderbox.io.cache import url_to_local_path
+from paderbox.utils.deprecation import deprecated
 
-
-def fetch_file_from_url(fpath, file=None):
-    """
-    Checks if local cache directory possesses an example named <file>.
-    If not found, loads data from urlpath and stores it under <fpath>
-
-    Args:
-        fpath: url to the example repository
-        file: name of the testfile
-
-    Returns: Path to file
-
-    """
-    path = get_cache_dir()
-
-    if file is None:
-        # remove difficult letters
-        file = fpath.replace(':', '_').replace('/', '_')
-
-    if not (path / file).exists():
-        datapath = url.urlopen(fpath)
-        data = datapath.read()
-
-        with open(path / file, "wb") as f:
-            f.write(data)
-    return path / file
+fetch_file_from_url = deprecated('function has been moved to io.cache as url_to_local_path')(url_to_local_path)
 
 
 def get_file_path(file_name):
@@ -34,7 +9,7 @@ def get_file_path(file_name):
     Looks up path to a test audio file and returns to the local file.
 
     Args:
-        file: audio file needed for the test
+        file_name: audio file needed for the test
 
     Returns: Path to audio test file
 
@@ -65,4 +40,4 @@ def get_file_path(file_name):
         '123_2alaw.sph': 'https://github.com/robd003/sph2pipe/raw/master/test/123_2alaw.sph',
     }[file_name]
 
-    return fetch_file_from_url(url_, file_name)
+    return url_to_local_path(url_, file_name)
