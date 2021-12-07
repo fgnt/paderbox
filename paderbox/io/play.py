@@ -50,10 +50,11 @@ def play(
         display: When True, display the audio, otherwise return the widget.
     Returns:
 
-    >>> play(np.array([1, 2, 3]), display=False)
+    >>> import paderbox as pb
+    >>> pb.io.play(np.array([1, 2, 3]), display=False)
     <IPython.lib.display.Audio object>
-    >>> play({'a': np.array([1, 2, 3]), 'b': np.array([1, 2, 3])}, display=False)
-    {'a': <play.NamedAudio object>, 'b': <play.NamedAudio object>}
+    >>> pb.io.play({'a': np.array([1, 2, 3]), 'b': np.array([1, 2, 3])}, display=False)
+    {'a': <paderbox.io.play.NamedAudio object>, 'b': <paderbox.io.play.NamedAudio object>}
 
     """
     if isinstance(data, dict):
