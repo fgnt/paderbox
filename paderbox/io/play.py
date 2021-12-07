@@ -50,24 +50,27 @@ def play(
         display: When True, display the audio, otherwise return the widget.
     Returns:
 
+    >>> play(np.array([1, 2, 3]), display=False)
+    <IPython.lib.display.Audio object>
+    >>> play({'a': np.array([1, 2, 3]), 'b': np.array([1, 2, 3])}, display=False)
+    {'a': <play.NamedAudio object>, 'b': <play.NamedAudio object>}
+
     """
     if isinstance(data, dict):
         assert name is None, name
-        for k, v in data.items():
-            play(
-                data=v,
-                name=k,
-
-                channel=channel,
-                sample_rate=sample_rate,
-                size=size,
-                shift=shift,
-                window=window,
-                window_length=window_length,
-                scale=scale,
-                stereo=stereo,
-            )
-        return
+        kwargs = {
+            k: v
+            for k, v in locals().items()
+            if k not in ['data', 'name']
+        }
+        audio = {
+            k: play(data=v, name='.'.join(k), **kwargs )
+            for k, v in data.items()
+        }
+        if display:
+            return
+        else:
+            return audio
 
     if stereo:
         if isinstance(channel, int):
