@@ -50,15 +50,15 @@ def resample_sox(signal: np.ndarray, *, in_rate, out_rate, normalize=True):
         signal: Signal as one-dimensional np.ndarray: Shape (T,)
         in_rate: Probably as an integer
         out_rate: Probably as an integer
-        normalize: If True, normalize input to be between -1 and 1, befor
-            calling sox. After resampling, the normalization is reverted.
-            Sox has the issue, to clip some values, if they are above 1.
+        normalize: If True, the input is normalized to the range between
+            -1 and 1 before calling sox. The normalization is reverted after
+            resampling. Sox clips some values if they exceed 1.
 
     Returns: Resampled version with same dtype as input.
 
     """
     assert signal.dtype in [np.float32, np.float64], (
-        f"The call to SOX just has float32, but signal.dtype={signal.dtype}."
+        f"The call to SOX just supports float32 and float64, but signal.dtype={signal.dtype}."
     )
     # assert signal.ndim == 1, f"signal.ndim={signal.ndim} but only supports 1."
 
@@ -93,7 +93,7 @@ def resample_sox(signal: np.ndarray, *, in_rate, out_rate, normalize=True):
     )
 
     if normalize:
-        # This rescaling is necessary since SOX introduces clipping, when the
+        # This rescaling is necessary since SOX introduces clipping when the
         # input signal is much too large.
         # We normalize each channel independently to avoid rounding errors leading
         # to the channel doc test above to fail randomly.
