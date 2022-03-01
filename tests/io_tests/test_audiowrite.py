@@ -14,7 +14,7 @@ path = 'audiowrite_test.wav'
 
 int16_max = numpy.iinfo(numpy.int16).max
 
-@pytest.mark.skip(
+@pytest.mark.skipif(
     sys.platform.startswith("win"),
     reason="`pb.io.audioread.audioread` is deprecated and does not work on"
            "windows, because wavefile needs `libsndfile-1.dll`."
