@@ -5,7 +5,7 @@ import subprocess
 import numpy as np
 
 
-def resample_sox(signal: np.ndarray, *, in_rate, out_rate):
+def resample_sox(signal: np.ndarray, *, in_rate, out_rate, normalize=True):
     """Resample using the Swiss Army knife of sound processing programs (SoX).
 
     This function exists to mimic as closely as possible how resampling would
@@ -50,12 +50,15 @@ def resample_sox(signal: np.ndarray, *, in_rate, out_rate):
         signal: Signal as one-dimensional np.ndarray: Shape (T,)
         in_rate: Probably as an integer
         out_rate: Probably as an integer
+        normalize: If True, the input is normalized to the range between
+            -1 and 1 before calling sox. The normalization is reverted after
+            resampling. Sox clips some values if they exceed 1.
 
     Returns: Resampled version with same dtype as input.
 
     """
-    assert signal.dtype == np.float32, (
-        f"The call to SOX just has float32, but signal.dtype={signal.dtype}."
+    assert signal.dtype in [np.float32, np.float64], (
+        f"The call to SOX just supports float32 and float64, but signal.dtype={signal.dtype}."
     )
     # assert signal.ndim == 1, f"signal.ndim={signal.ndim} but only supports 1."
 
@@ -89,12 +92,18 @@ def resample_sox(signal: np.ndarray, *, in_rate, out_rate):
         'unclear if sox automatically does multi-stage resampling.'
     )
 
-    # This rescaling is necessary since SOX introduces clipping, when the
-    # input signal is much too large.
-    # We normalize each channel independently to avoid rounding errors leading
-    # to the channel doc test above to fail randomly.
-    normalizer = 0.95 / np.max(np.abs(signal), keepdims=True, axis=-1)
-    signal = normalizer * signal
+    if normalize:
+        # This rescaling is necessary since SOX introduces clipping when the
+        # input signal is much too large.
+        # We normalize each channel independently to avoid rounding errors leading
+        # to the channel doc test above to fail randomly.
+        normalizer = 0.95 / np.max(np.abs(signal), keepdims=True, axis=-1)
+        signal = normalizer * signal
+
+    sox_type = {
+        'float32': 'f32',
+        'float64': 'f64',
+    }[signal.dtype.name]
 
     # See this page for a parameter explanation:
     # https://explainshell.com/explain?cmd=sox+-N+-V1+--type+f32+--rate+16000+--channels+2+-+--type+f32+--rate+8000+--channels+2+-
@@ -102,11 +111,11 @@ def resample_sox(signal: np.ndarray, *, in_rate, out_rate):
         'sox',
         '-N',
         '-V1',
-        '--type', 'f32',
+        '--type', sox_type,
         '--rate', f'{in_rate}',
         '--channels', str(channels),
         '-',
-        '--type', 'f32',
+        '--type', sox_type,
         '--rate', f'{out_rate}',
         '--channels', str(channels),
         '-'
@@ -133,6 +142,9 @@ def resample_sox(signal: np.ndarray, *, in_rate, out_rate):
     if has_channel:
         signal_resampled = signal_resampled.reshape(channels, -1, order='F')
 
-    return signal_resampled / normalizer
+    if normalize:
+        signal_resampled = signal_resampled / normalizer
+
+    return signal_resampled
 
 resample = resample_sox
