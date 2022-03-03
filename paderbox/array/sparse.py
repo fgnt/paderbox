@@ -192,6 +192,19 @@ class _SparseSegment:
     def segment_length(self):
         return self.array.shape[-1]
 
+    def __array__(self):
+        """
+        >>> seg = _SparseSegment(10, np.zeros(10))
+        >>> np.array(seg)
+        array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
+        """
+        if not isinstance(self.array, np.ndarray):
+            raise NotImplementedError(
+                f'__array__ is not implemented for torch '
+                f'{self.__class__.__name__}'
+            )
+        return self.array
+
 
 @dataclass
 class SparseArray:
@@ -413,10 +426,32 @@ class SparseArray:
         return ai
 
     def _new_full(self, *, shape=None, dtype=None, fill_value=None):
+        """
+        >>> np.array(zeros(10))
+        array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0.], dtype=float32)
+        >>> np.array(SparseArray(10))
+        Traceback (most recent call last):
+        ...
+        RuntimeError: You cannot convert SparseArray to numpy,
+        when self.pad_value is None`.
+        Did you use `pb.array.sparse.SparseArray(shape)` with
+        lazy dtype init instead of `pb.array.sparse.zeros(shape, dtype)`
+        to create this `SparseArray`?
+        """
         if shape is None:
             shape = self.shape
         if fill_value is None:
             fill_value = self.pad_value
+            if fill_value is None:
+                lib = ['numpy', 'torch'][bool(self.is_torch)]
+                raise RuntimeError(
+                    f'You cannot convert {self.__class__.__name__} to {lib},\n'
+                    f'when self.pad_value is None`.\n'
+                    f'Did you use `pb.array.sparse.SparseArray(shape)` with\n'
+                    f'lazy dtype init instead of '
+                    f'`pb.array.sparse.zeros(shape, dtype)`\n'
+                    f'to create this `{self.__class__.__name__}`?'
+                )
         if shape == ():
             return fill_value
         if self.is_torch:
