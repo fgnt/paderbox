@@ -319,7 +319,9 @@ class ArrayInterval:
           {'py/tuple': ['1:4, 5:20, 21:25', 50, True]}]}
         """
         return self.from_str, (
-            self._intervals_as_str, self.shape[-1], self.inverse_mode
+            self._intervals_as_str,
+            self.shape[-1] if self.shape is not None else self.shape,
+            self.inverse_mode,
         )
 
     _intervals_normalized = True
