@@ -317,6 +317,17 @@ class ArrayInterval:
         >>> pprint(json.loads(jsonpickle.dumps(ai)))
         {'py/reduce': [{'py/function': 'paderbox.array.interval.core.ArrayInterval_from_str'},
           {'py/tuple': ['1:4, 5:20, 21:25', 50, True]}]}
+
+        >>> ai = ArrayInterval.from_str('1:4, 5:20, 21:25', shape=None)
+        >>> ai
+        ArrayInterval("1:4, 5:20, 21:25", shape=None)
+        >>> pickle.loads(pickle.dumps(ai))
+        ArrayInterval("1:4, 5:20, 21:25", shape=None)
+        >>> jsonpickle.loads(jsonpickle.dumps(ai))
+        ArrayInterval("1:4, 5:20, 21:25", shape=None)
+        >>> pprint(json.loads(jsonpickle.dumps(ai)))
+        {'py/reduce': [{'py/function': 'paderbox.array.interval.core.ArrayInterval_from_str'},
+          {'py/tuple': ['1:4, 5:20, 21:25', None, False]}]}
         """
         return self.from_str, (
             self._intervals_as_str,
