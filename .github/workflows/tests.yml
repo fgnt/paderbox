@@ -34,6 +34,7 @@ jobs:
         pip install numpy scipy Cython
         pip install flake8 pytest pytest-cov codecov
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        pip install setuptools==57.5.0  # downgrade setuptools so pycallgraph can be installed (necessary for python >= 3.9)
         pip install --editable .[all]
         pip install git+https://github.com/fgnt/pb_bss.git#egg=pb_bss[all]
 
