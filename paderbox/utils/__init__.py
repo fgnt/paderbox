@@ -3,6 +3,7 @@ __all__ = [
     'deprecation',
     'dtw',
     'functional',
+    'iterable',
     'mapping',
     'matlab',
     'misc',
