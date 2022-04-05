@@ -7,7 +7,7 @@ find something useful if you alter it a little bit.
 
 import os
 import sys
-from collections import Mapping
+from collections.abc import Mapping
 from typing import Iterable, Hashable
 
 
