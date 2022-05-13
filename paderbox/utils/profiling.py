@@ -3,8 +3,6 @@ import line_profiler
 import memory_profiler
 import cProfile
 import time as time
-from pycallgraph import PyCallGraph
-from pycallgraph.output import GraphvizOutput
 from inspect import isclass, isfunction
 from functools import wraps
 
@@ -63,6 +61,8 @@ def gprun(func):
     :param func:
     :return:
     """
+    from pycallgraph import PyCallGraph
+    from pycallgraph.output import GraphvizOutput
     def profiled_func(*args, **kwargs):
         with PyCallGraph(output=GraphvizOutput()):
             return func(*args, **kwargs)
