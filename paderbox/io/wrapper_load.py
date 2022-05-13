@@ -97,13 +97,13 @@ class Loader:
 
             with gzip.GzipFile(**gzip_file, mode='rb') as f:
                 if ext == '.json.gz':
-                    return json.loads(f.read().decode())
+                    return json.loads(f.read().decode(), **self.kwargs)
                 elif ext == '.pkl.gz':
                     assert self.unsafe, self._unsafe_msg(self.unsafe, file, ext)
-                    return pickle.load(f)
+                    return pickle.load(f, **self.kwargs)
                 elif ext == '.npy.gz':
                     assert self.unsafe, (self.unsafe, file)
-                    return np.load(f, allow_pickle=self.unsafe)
+                    return np.load(f, allow_pickle=self.unsafe, **self.kwargs)
                 elif ext == '.wav.gz':
                     from paderbox.io import load_audio
                     return load_audio(f, **self.kwargs)
