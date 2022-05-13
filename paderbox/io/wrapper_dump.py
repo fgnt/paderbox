@@ -95,7 +95,7 @@ def dump(
             from paderbox.io.yaml_module import dump_yaml
             dump_yaml(obj, path, **kwargs)
     elif str(path).endswith(".gz"):
-        assert len(kwargs) == 0, kwargs
+        # assert len(kwargs) == 0, kwargs
         with gzip.GzipFile(path, 'wb', compresslevel=1) as f:
             if str(path).endswith(".json.gz"):
                 f.write(json.dumps(obj).encode())
@@ -104,9 +104,20 @@ def dump(
                 pickle.dump(obj, f, protocol=pickle.HIGHEST_PROTOCOL)
             elif str(path).endswith(".npy.gz"):
                 np.save(f, obj, allow_pickle=unsafe)
+            elif str(path).endswith(".wav.gz") or str(path).endswith(".flac.gz"):
+                from paderbox.io import dump_audio
+                if np.ndim(obj) == 1:
+                    pass
+                elif np.ndim(obj) == 2:
+                    assert np.shape(obj)[0] < 20, (np.shape(obj), obj)
+                else:
+                    raise AssertionError(('Expect ndim in [1, 2]', np.shape(obj), obj))
+                with path.open("wb") as fp:  # Throws better exception msg
+                    fp.name = path.with_suffix('')  # Remove .gz from the name.
+                    dump_audio(obj, fp, **kwargs)
             else:
                 raise ValueError(path)
-    elif str(path).endswith(".wav"):
+    elif str(path).endswith(".wav") or str(path).endswith(".flac"):
         from paderbox.io import dump_audio
         if np.ndim(obj) == 1:
             pass
