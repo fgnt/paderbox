@@ -86,18 +86,29 @@ class Loader:
             assert self.unsafe, self._unsafe_msg(self.unsafe, file, ext)
             import numpy as np
             return np.load(file, **self.kwargs, allow_pickle=self.unsafe)
-        elif ext in ['.gz', '.json.gz', '.pkl.gz', '.npy.gz']:
-            with gzip.GzipFile(file, 'rb') as f:
-                if str(file).endswith('.json.gz'):
-                    return json.loads(f.read().decode())
-                elif str(file).endswith('.pkl.gz'):
+        elif ext in ['.gz', '.json.gz', '.pkl.gz', '.npy.gz', '.wav.gz']:
+            if ext == '.gz':
+                ext = ''.join(file.suffixes[-2:])
+
+            if isinstance(file, io.IOBase):
+                gzip_file = dict(fileobj=file)
+            else:
+                gzip_file = dict(filename=file)
+
+            with gzip.GzipFile(**gzip_file, mode='rb') as f:
+                if ext == '.json.gz':
+                    return json.loads(f.read().decode(), **self.kwargs)
+                elif ext == '.pkl.gz':
                     assert self.unsafe, self._unsafe_msg(self.unsafe, file, ext)
-                    return pickle.load(f)
-                elif str(file).endswith('.npy.gz'):
+                    return pickle.load(f, **self.kwargs)
+                elif ext == '.npy.gz':
                     assert self.unsafe, (self.unsafe, file)
-                    return np.load(f, allow_pickle=self.unsafe)
+                    return np.load(f, allow_pickle=self.unsafe, **self.kwargs)
+                elif ext == '.wav.gz':
+                    from paderbox.io import load_audio
+                    return load_audio(f, **self.kwargs)
                 else:
-                    raise ValueError(file)
+                    raise ValueError(ext, file)
         elif ext in ['.wv1', '.wv2']:
             from paderbox.io.audioread import read_nist_wsj
             date, sampling_rate = read_nist_wsj(file)
@@ -106,7 +117,7 @@ class Loader:
             assert self.unsafe, self._unsafe_msg(self.unsafe, file, ext)
             import torch
             return torch.load(str(file), map_location='cpu')
-        elif str(file).endswith('.mat'):
+        elif ext in ['.mat']:
             # ToDo: Is hdf5 safe or unsafe?  (loadmat uses hdf5)
             import scipy.io as sio
             return sio.loadmat(file)
@@ -114,7 +125,7 @@ class Loader:
             if self.ignore_type_error and '.' not in str(file):
                 return str(file)
             else:
-                raise ValueError(file)
+                raise ValueError(file, ext)
 
     def _unsafe_msg(self, unsafe, file, ext):
         return (
@@ -254,7 +265,7 @@ def load(
       execute arbitrary code during unpickling. Never unpickle
       data that could have come from an untrusted source, or that
       could have been tampered with.
-    
+
     """
     loader = Loader(
         ignore_type_error=ignore_type_error,

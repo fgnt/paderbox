@@ -168,7 +168,7 @@ def to_rttm_str(data, sample_rate=16000):
             content = data[file_id][name]
             if isinstance(content, np.ndarray):
                 content = ArrayInterval(content)
-            for begin, end in content.intervals:
+            for begin, end in content.normalized_intervals:
                 duration = decimal.Decimal(int(end - begin)) / sample_rate
                 begin = decimal.Decimal(int(begin)) / sample_rate
                 lines.append(

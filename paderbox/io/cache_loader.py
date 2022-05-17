@@ -9,11 +9,11 @@ import contextlib
 import paderbox as pb
 
 
-def check(cache_dir):
+def check(cache_dir, keepfree_gigabytes=5):
     # copied from lazy_dataset.core.DiskCacheDataset
     import shutil
     diskusage = shutil.disk_usage(cache_dir)
-    if diskusage.free < 5 * 1024 ** 3:
+    if diskusage.free < keepfree_gigabytes * 1024 ** 3:
         import warnings
         import humanfriendly
         warnings.warn(
