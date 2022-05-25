@@ -61,7 +61,7 @@ class DollarFormatter(ScalarFormatter):
                 if self.formatting is not None and x % 1:
                     s = self.formatting.format(x)
                 else:
-                    s = self.pprint_val(x)
+                    s = self.format_data_short(x)
                 return rf'\${self.fix_minus(s)}\$'
             else:
                 return x
