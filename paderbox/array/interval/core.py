@@ -631,6 +631,10 @@ class ArrayInterval:
         >>> ai[45:100]
         array([False, False, False, False, False])
 
+
+        >>> ai = zeros(3)
+        >>> list(ai)
+        [False, False, False]
         """
         if isinstance(item, (int, np.integer)):
             index = item
@@ -641,7 +645,7 @@ class ArrayInterval:
                         f'with a shape! index={index}'
                     )
                 index = index + self.shape[-1]
-            if index < 0 or self.shape is not None and index > self.shape[-1]:
+            if index < 0 or self.shape is not None and index >= self.shape[-1]:
                 raise IndexError(
                     f'Index {item} is out of bounds for ArrayInterval with '
                     f'shape {self.shape}'
