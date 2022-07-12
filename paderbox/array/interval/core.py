@@ -958,12 +958,13 @@ def _combine(func, *array_intervals, out=None):
 
     edges = sorted(edges)
 
-    values = [ai[edges[-1]] for ai in array_intervals]
+    values = [ai.inverse_mode for ai in array_intervals]
     last = func(*values)
 
     if out is None:
         shapes = [ai.shape for ai in array_intervals]
-        assert len(set(shapes)) == 1, shapes
+        assert len(set(shapes) - {None}) in [0, 1], shapes
+        # assert len(set(shapes)) == 1, shapes
         shape = shapes[0]
 
         if shape is None:
