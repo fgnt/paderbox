@@ -631,6 +631,10 @@ class ArrayInterval:
         >>> ai[45:100]
         array([False, False, False, False, False])
 
+
+        >>> ai = zeros(3)
+        >>> list(ai)
+        [False, False, False]
         """
         if isinstance(item, (int, np.integer)):
             index = item
@@ -641,7 +645,7 @@ class ArrayInterval:
                         f'with a shape! index={index}'
                     )
                 index = index + self.shape[-1]
-            if index < 0 or self.shape is not None and index > self.shape[-1]:
+            if index < 0 or self.shape is not None and index >= self.shape[-1]:
                 raise IndexError(
                     f'Index {item} is out of bounds for ArrayInterval with '
                     f'shape {self.shape}'
@@ -954,12 +958,13 @@ def _combine(func, *array_intervals, out=None):
 
     edges = sorted(edges)
 
-    values = [ai[edges[-1]] for ai in array_intervals]
+    values = [ai.inverse_mode for ai in array_intervals]
     last = func(*values)
 
     if out is None:
         shapes = [ai.shape for ai in array_intervals]
-        assert len(set(shapes)) == 1, shapes
+        assert len(set(shapes) - {None}) in [0, 1], shapes
+        # assert len(set(shapes)) == 1, shapes
         shape = shapes[0]
 
         if shape is None:

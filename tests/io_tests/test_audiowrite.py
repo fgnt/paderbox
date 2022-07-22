@@ -3,6 +3,7 @@ import pytest
 import unittest
 import os
 import time
+import paderbox as pb
 from paderbox.io.audioread import audioread
 from paderbox.io.audiowrite import audiowrite
 
@@ -22,9 +23,17 @@ int16_max = numpy.iinfo(numpy.int16).max
 class AudioWriteTest(unittest.TestCase):
 
     def test_write_read_float(self):
+        pb.io.dump_audio(signal, path, normalize=False)
+        read_data = pb.io.load_audio(path)
+        # Quantization: By default audio is saved with 16 Bit, hence an error
+        # of 2**-15 is ok.
+        nptest.assert_allclose(signal, read_data, atol=2**-15, rtol=0)
+
         audiowrite(signal, path, threaded=False)
         read_data = audioread(path)[0]
-        nptest.assert_almost_equal(signal, read_data, decimal=3)
+        # 0.01 is bad, but audiowrite is deprecated, load and dum audio doesn't have this issue
+        nptest.assert_almost_equal(signal, read_data, decimal=2)
+
 
     def test_write_read_int(self):
         audiowrite((signal*int16_max).astype(numpy.int), path, threaded=False)
