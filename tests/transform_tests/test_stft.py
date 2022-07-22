@@ -220,7 +220,7 @@ class TestSTFTMethods(unittest.TestCase):
         vec_result = _biorthogonal_window(window, shift)
         brute_force_result = _biorthogonal_window_brute_force(window, shift)
 
-        tc.assert_equal(for_result, vec_result)
+        tc.assert_allclose(for_result, vec_result, rtol=1e-15, atol=1e-15)
         tc.assert_allclose(for_result, brute_force_result)
         tc.assert_equal(for_result.shape, (1024,))
 

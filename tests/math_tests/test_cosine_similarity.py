@@ -15,8 +15,8 @@ class TestCosineSimilarity(unittest.TestCase):
         W5 = np.array([1, -1j, 0])
         W6 = np.array([np.cos(phi), np.sin(phi), 0])
 
-        tc.assert_equal(cos_similarity(W1, W1), 1.0)
-        tc.assert_equal(cos_similarity(W1, W2), 1.0)
-        tc.assert_equal(cos_similarity(W1, W3), 0.0)
-        tc.assert_equal(cos_similarity(W4, W5), 0.0)
-        tc.assert_equal(cos_similarity(W1, W6), np.cos(phi))
+        tc.assert_allclose(cos_similarity(W1, W1), 1.0, rtol=1e-15, atol=1e-15)
+        tc.assert_allclose(cos_similarity(W1, W2), 1.0, rtol=1e-15, atol=1e-15)
+        tc.assert_allclose(cos_similarity(W1, W3), 0.0, rtol=1e-15, atol=1e-15)
+        tc.assert_allclose(cos_similarity(W4, W5), 0.0, rtol=1e-15, atol=1e-15)
+        tc.assert_allclose(cos_similarity(W1, W6), np.cos(phi), rtol=1e-15, atol=1e-15)
