@@ -22,7 +22,7 @@ export PYTHONUSERBASE=$(readlink -m venv)
 TOOLBOX="$(dirname $(readlink -f ${BASH_SOURCE[0]}))"
 
 # Refresh files...
-ls $PYTHON_PATH/lib/python3.6/lib-dynload/../../ > /dev/null
+ls $PYTHON_PATH/lib/python3.9/lib-dynload/../../ > /dev/null
 
 # Some debug information
 env
