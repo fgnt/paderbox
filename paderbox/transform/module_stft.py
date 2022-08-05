@@ -375,10 +375,9 @@ def sample_index_to_stft_frame_index(sample, window_length, shift, fading='full'
             pad_width //= 2
         sample += pad_width
 
-    if ((window_length - shift) // 2) > sample:
-        frame = 0
-    else:
-        frame = (sample - (window_length - shift) // 2) // shift
+    frame = (sample - (window_length - shift) // 2) // shift
+
+    frame = (frame > 0) * frame
 
     return frame
 
