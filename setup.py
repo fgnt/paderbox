@@ -38,6 +38,7 @@ test = [
     'wavefile',  # for reading .flac audio
     'dill',
     'pathos',
+    'nbformat',  # Used in paderbox/utils/strip_solution.py
     # 'pyzmq',
     # 'pymatbridge',  # need pyzmq to be installed manually
     'tqdm',
