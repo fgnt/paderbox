@@ -5,8 +5,10 @@ import collections
 import io
 import os
 import contextlib
+import functools
 
 import paderbox as pb
+from paderbox.io.atomic import write_bytes_atomic
 
 
 def check(cache_dir, keepfree_gigabytes=5):
@@ -83,41 +85,54 @@ class DiskCacheLoader:
     Counter({'buffer calls': 5, 'check enough disk space': 2, 'copy calls': 2, 'coppied .wav': 2, 'open calls': 1, 'opened .wav': 1})
     """
     cache_dir: [str, Path]
-    mapping: dict = dataclasses.field(default_factory=dict, init=False)
+
+    mapping: dict = dataclasses.field(default_factory=dict, init=False, repr=False)
+
+    # True: Cleanup the cache_dir and assume it is empty on start.
     clear: bool = True
+
+    keepfree_gigabytes: int = 5
+
+    # Set to False to disable the cache.
+    use_cache: bool = True
+
+    # Once the cache is "full" (according to 'keepfree_gigabytes'), write no
+    # more files to the cache.
+    cache_full: dict = dataclasses.field(default=False, init=False, repr=False)
 
     def __post_init__(self):
         self.cache_dir = Path(self.cache_dir)
         # os.scandir is fast
-        if len(list(os.scandir(self.cache_dir))) != 0:
+        if self.clear and len(list(os.scandir(self.cache_dir))) != 0:
             raise RuntimeError(f'Dir {self.cache_dir} is not empty.')
 
-    def check(self, cache_dir):
-        return check(cache_dir)
-
-    def copy(self, old_path, new_path, keep_bytes=True):
-        if not keep_bytes:
-            import shutil
-            shutil.copy(old_path, new_path)
-        else:
-            with old_path.open(mode='rb') as f:
-                raw = f.read()
+        if self.use_cache:
             try:
-                with new_path.open(mode='wb') as f:
-                    f.write(raw)
-            except FileNotFoundError:
-                new_path.parent.mkdir(parents=True, exist_ok=True)
-                with new_path.open(mode='wb') as f:
-                    f.write(raw)
-            except OSError as e:
-                if os.name == 'nt' and e.errno == 22:
-                    new_path.parent.mkdir(parents=True, exist_ok=True)
-                    with new_path.open(mode='wb') as f:
-                        f.write(raw)
-                else:
-                    raise
+                self.cache_dir.mkdir(parents=True, exist_ok=True)
+            except PermissionError as e:
+                print(f'WARNING: Tried to use {self.cache_dir} as cache, but got a permission error: {e}')
+                print('Disable the cache.')
+                self.use_cache = False
 
-            return raw
+    def check(self, cache_dir):
+        return check(cache_dir, keepfree_gigabytes=self.keepfree_gigabytes)
+
+    def copy(self, old_path, new_path):
+        with old_path.open(mode='rb') as f:
+            raw = f.read()
+        try:
+            write_bytes_atomic(raw, new_path)
+        except FileNotFoundError:
+            new_path.parent.mkdir(parents=True, exist_ok=True)
+            write_bytes_atomic(raw, new_path)
+        except OSError as e:
+            if os.name == 'nt' and e.errno == 22:
+                new_path.parent.mkdir(parents=True, exist_ok=True)
+                write_bytes_atomic(raw, new_path)
+            else:
+                raise
+
+        return raw
 
     @staticmethod
     def _get_new_path(cache_dir, path):
@@ -140,14 +155,33 @@ class DiskCacheLoader:
             path.relative_to(list(path.parents)[-1]))
         return new_path
 
-    def buffer(self, path, keep_bytes=True):
+    def buffer(self, path):
+        if not self.use_cache:
+            return path, None
         path = Path(path).absolute()
         if path in self.mapping:
             return self.mapping[path], None
+        elif self.cache_full:
+            return path, None
         else:
-            self.check(self.cache_dir)
             new_path = self._get_new_path(self.cache_dir, path)
-            raw = self.copy(path, new_path, keep_bytes)
+            if new_path.exists():
+                raw = None
+            else:
+                try:
+                    self.check(self.cache_dir)
+                    raw = self.copy(path, new_path)
+                except RuntimeError as e:
+                    print(e)
+                    print('\n'.join([
+                        "#" * 79,
+                        f"WARNING: Not enough space left on {self.cache_dir}. Disable caching."
+                        "#" * 79,
+                    ]))
+                    raw = None
+                    self.cache_full = True
+                    new_path = path
+
             self.mapping[path] = new_path
             return self.mapping[path], raw
 
@@ -169,10 +203,10 @@ class DiskCacheLoader:
             file_descriptor.name = str(file)
             yield file_descriptor
 
-    def __call__(self, file, unsafe=False):
-        file, raw = self.buffer(file, keep_bytes=True)
+    def __call__(self, file: Path, unsafe=False, **kwargs):
+        file, raw = self.buffer(file)
         if raw is None:
-            return pb.io.load(file, unsafe=unsafe)
+            return pb.io.load(file, unsafe=unsafe, **kwargs)
         else:
             ext = file.suffix
             if ext in ['.wav']:
@@ -182,7 +216,60 @@ class DiskCacheLoader:
             else:
                 # Add more "ext", when necessary
                 raise NotImplementedError(ext, file)
-            return pb.io.load(file_descriptor, ext=ext, unsafe=unsafe)
+            return pb.io.load(file_descriptor, ext=ext, unsafe=unsafe, **kwargs)
+
+    def recursive(
+            self,
+            obj,
+            *,
+            list_to: str = 'array',
+            ignore_type_error=False,
+            **kwargs,
+    ):
+        """
+        Args:
+            obj:
+                A nested object of dict, list and tuple.
+                The leafs can have the datatypes: `str', Path and/or file
+                descriptor.
+                Other types are only supported, when ignore_type_error is True.
+                These types will be ignored (i.e. not loaded).
+            loader:
+                Callable object that takes a str, Path or file descriptor as input
+                and returns the content of the obj.
+            list_to:
+            ignore_type_error:
+            Whether to ignore
+
+        Returns:
+
+        """
+        import numpy as np
+
+        self_call = functools.partial(
+            self.recursive,
+            ignore_type_error=ignore_type_error,
+            **kwargs,
+        )
+
+        if isinstance(obj, (io.IOBase, str, Path)):
+            return self(obj, **kwargs)
+        elif isinstance(obj, (list, tuple)):
+            if list_to == 'dict':
+                return {f: self_call(f) for f in obj}
+            elif list_to == 'array':
+                return np.array([self_call(f) for f in obj])
+            elif list_to == 'list':
+                return [self_call(f) for f in obj]
+            else:
+                raise ValueError(list_to)
+        elif isinstance(obj, (dict,)):
+            return obj.__class__({k: self_call(v) for k, v in obj.items()})
+        else:
+            if ignore_type_error:
+                return obj
+            else:
+                raise TypeError(obj)
 
     def __del__(self):
         if self.clear:
@@ -207,17 +294,16 @@ class _StatisticsDiskCacheLoader(DiskCacheLoader):
         self.statistics['check enough disk space'] += 1
         super().check(cache_dir)
 
-    def copy(self, old_path, new_path, keep_bytes=True):
+    def copy(self, old_path, new_path):
         self.statistics['copy calls'] += 1
         self.statistics[f'coppied {old_path.suffix}'] += 1
-        return super().copy(old_path, new_path, keep_bytes)
+        return super().copy(old_path, new_path)
 
     def open(self, file, mode='r'):
         self.statistics['open calls'] += 1
         self.statistics[f'opened {file.suffix}'] += 1
         return super().open(file, mode=mode)
 
-    def buffer(self, path, keep_bytes=True):
+    def buffer(self, path):
         self.statistics['buffer calls'] += 1
-        assert keep_bytes is True, keep_bytes
-        return super(_StatisticsDiskCacheLoader, self).buffer(path, keep_bytes)
+        return super(_StatisticsDiskCacheLoader, self).buffer(path)

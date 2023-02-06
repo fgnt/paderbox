@@ -126,7 +126,7 @@ def open_atomic(file, mode, *args, force=False, **kwargs):
 
     assert 'w' in mode, mode
 
-    if os.name == 'nt':
+    if os.name == 'nt':  # Windows
         tmp_f = tempfile.NamedTemporaryFile(
                     mode, *args, **kwargs, delete=False, prefix=file, dir=os.getcwd()
             )
@@ -163,7 +163,7 @@ def open_atomic(file, mode, *args, force=False, **kwargs):
             # close file
             if not skip_close:
                 close_and_remove()
-    else:
+    else:  # Linux, ...
         with tempfile.NamedTemporaryFile(
             mode, *args, **kwargs, prefix=file, dir=os.getcwd()
         ) as tmp_f:
