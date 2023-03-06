@@ -327,6 +327,7 @@ def nested_op(
                 mapping_type=mapping_type,
                 sequence_type=sequence_type,
                 keep_type=keep_type,
+                handle_dataclass=handle_dataclass,
             )
             for key in keys
         }
@@ -356,6 +357,7 @@ def nested_op(
                 mapping_type=mapping_type,
                 sequence_type=sequence_type,
                 keep_type=keep_type,
+                handle_dataclass=handle_dataclass,
             )
             for j in range(len(arg1))
         ]
@@ -389,6 +391,7 @@ def nested_op(
                     mapping_type=mapping_type,
                     sequence_type=sequence_type,
                     keep_type=keep_type,
+                    handle_dataclass=handle_dataclass,
                 )
                 for f_key in arg1.__dataclass_fields__
             }
