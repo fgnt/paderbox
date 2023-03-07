@@ -307,6 +307,15 @@ def nested_op(
     Returns:
 
     """
+    # These kwargs are forwarded to subsequent calls of nested_op
+    kwargs = dict(
+        broadcast=broadcast,
+        mapping_type=mapping_type,
+        sequence_type=sequence_type,
+        keep_type=keep_type,
+        handle_dataclass=handle_dataclass,
+    )
+
     if isinstance(arg1, mapping_type):
         if not broadcast:
             assert all(
@@ -323,11 +332,7 @@ def nested_op(
                 arg1[key],
                 *[arg[key] if isinstance(arg, mapping_type) else arg
                   for arg in args],
-                broadcast=broadcast,
-                mapping_type=mapping_type,
-                sequence_type=sequence_type,
-                keep_type=keep_type,
-                handle_dataclass=handle_dataclass,
+                **kwargs
             )
             for key in keys
         }
@@ -353,11 +358,7 @@ def nested_op(
                     arg[j] if isinstance(arg, sequence_type) else arg
                     for arg in args
                 ],
-                broadcast=broadcast,
-                mapping_type=mapping_type,
-                sequence_type=sequence_type,
-                keep_type=keep_type,
-                handle_dataclass=handle_dataclass,
+                **kwargs
             )
             for j in range(len(arg1))
         ]
@@ -387,11 +388,7 @@ def nested_op(
                       else arg
                       for arg in args
                       ],
-                    broadcast=broadcast,
-                    mapping_type=mapping_type,
-                    sequence_type=sequence_type,
-                    keep_type=keep_type,
-                    handle_dataclass=handle_dataclass,
+                    **kwargs
                 )
                 for f_key in arg1.__dataclass_fields__
             }
