@@ -211,7 +211,7 @@ def _get_list_from_unique_names_generator(name_type, overwrite_cache=False):
     # star-wars.ts
     # index.ts    -> Does not work (Is not dictionary)
     # numbers.ts  -> Does not work (Cannot be parsed)
-    from appdirs import user_cache_dir
+    from platformdirs import user_cache_dir
     import paderbox as pb
 
     file = (
