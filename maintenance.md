@@ -24,6 +24,7 @@ To add the wheels for Windows to the release, trigger the wheels_windows pipelin
 bump2version --verbose --tag patch  # major, minor or patch
 python setup.py sdist  # bdist_wheel  # It is difficult to get bdist_wheel working with binary files
 git push origin --tags
+# Wait for the github action to build the windows wheels, ToDO: Fix wheels.
 twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 twine upload dist/*
 ```
