@@ -149,6 +149,8 @@ setup(
     ],
         annotate=True,
     ),
+    package_data={'paderbox': ['**/*.pyx']},  # https://stackoverflow.com/a/60751886
+
     include_dirs=[numpy.get_include()],
     entry_points={
         "console_scripts": [
