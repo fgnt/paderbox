@@ -25,6 +25,7 @@ def load_audio(
         frames=-1,
         start=0,
         stop=None,
+        channel=None,
         dtype=np.float64,
         fill_value=None,
         expected_sample_rate=None,
@@ -57,6 +58,18 @@ def load_audio(
     ----------
     path : str or int or file-like object
         The file to read from.  See :class:`SoundFile` for details.
+
+        The file name can be postfixed with an index, separated by a double
+        colon `::`, for example `.../file.wav::[8000:16000,0]`.
+        The first dimenion of the indexing expression determines the sample
+        index and the second one the channel index. The sample index
+        must always be a slice. The channel index is optional and can be
+        a slice or an integer.
+
+        Specifing this in the path is equivalent to setting the
+        `start`, `stop` and `channel` parameters. The `start`, `stop`,
+        `channel` and `frames` parameters have to be empty (not set) when
+        using the slice notation.
     frames : int, optional
         The number of frames to read. If `frames` is negative, the whole
         rest of the file is read.  Not allowed if `stop` is given.
@@ -121,6 +134,27 @@ def load_audio(
     >>> data = load_audio(path)
     >>> data.shape
     (49600,)
+    >>> data = load_audio(str(path) + '::[8000:16000]')
+    >>> data.shape
+    (8000,)
+
+    Multichannel file:
+    >>> path = get_file_path('observation.wav')
+    >>> data = load_audio(path)
+    >>> data.shape
+    (6, 38520)
+    >>> data = load_audio(str(path) + '::[:,0]')
+    >>> data.shape
+    (38520,)
+    >>> data = load_audio(str(path) + '::[:,:2]')
+    >>> data.shape
+    (2, 38520)
+    >>> data = load_audio(str(path) + '::[:,2:4]')
+    >>> data.shape
+    (2, 38520)
+    >>> data = load_audio(path, channel=[1, 3, 5])
+    >>> data.shape
+    (3, 38520)
 
     Say you load audio examples from a very long audio, you can provide a
     start position and a duration in samples or seconds.
@@ -152,6 +186,14 @@ def load_audio(
     # ToDo: Is this sill True?
     path = normalize_path(path, as_str=True)
 
+    # Set start and stop when encoded in the filename
+    if '::' in path:
+        assert unit == 'samples', unit
+        assert frames == -1, frames
+        path, start, stop, channel = _parse_audio_slice(
+            path, start, stop, channel
+        )
+
     if unit == 'samples':
         pass
     elif unit == 'seconds':
@@ -177,8 +219,7 @@ def load_audio(
             with audioread.audio_open(
                     path
             ) as f:
-                samplerate = f.samplerate
-                duration = f.duration
+                sample_rate = f.samplerate
                 data = []
                 scale = 1. / float(1 << (15))
                 for buf in f:
@@ -228,15 +269,81 @@ def load_audio(
                 f'audiofile has {sample_rate}'
             )
 
-    # When signal is multichannel, than soundfile return (samples, channels)
+    # When signal is multichannel, then soundfile returns (samples, channels)
     # At NT it is more common to have the shape (channels, samples)
     # => transpose
     signal = signal.T
+
+    # Slice along channel dimension if channel_slice is given
+    if channel is not None:
+        signal = signal[channel,]
+        if signal.size == 0:
+            raise ValueError('Returned signal would be empty')
 
     if return_sample_rate:
         return signal, sample_rate
     else:
         return signal
+
+
+# https://jex.im/regulex/#!flags=&re=%5C%5B(%5Cd%2B)%3F%3A(%5Cd%2B)%3F(%3F%3A%2C(%3F%3A(%5Cd%2B)%3F%3A(%5Cd%2B)%3F%7C(%5Cd%2B)%3F))%3F%5C%5D
+_PATTERN = r'\[(\d+)?:(\d+)?(?:,(?:(\d+)?:(\d+)?|(\d+)?))?\]'
+
+def _parse_audio_slice(
+        path,
+        start=0,
+        stop=None,
+        channel=None,
+):
+    """
+    >>> import re
+    >>> re.fullmatch(_PATTERN, '[:]').groups()
+    (None, None, None, None, None)
+    >>> re.fullmatch(_PATTERN, '[:3]').groups()
+    (None, '3', None, None, None)
+    >>> re.fullmatch(_PATTERN, '[3:]').groups()
+    ('3', None, None, None, None)
+    >>> re.fullmatch(_PATTERN, '[3:4]').groups()
+    ('3', '4', None, None, None)
+    >>> re.fullmatch(_PATTERN, '[:,1]').groups()
+    (None, None, None, None, '1')
+    >>> re.fullmatch(_PATTERN, '[:,1:]').groups()
+    (None, None, '1', None, None)
+    >>> re.fullmatch(_PATTERN, '[:,:]').groups()
+    (None, None, None, None, None)
+    >>> re.fullmatch(_PATTERN, '[:,1:2]').groups()
+    (None, None, '1', '2', None)
+    >>> re.fullmatch(_PATTERN, '[:,:2]').groups()
+    (None, None, None, '2', None)
+
+    >>> _parse_audio_slice('file.wav::[:16000,0]')
+    ('file.wav', 0, 16000, 0)
+    >>> _parse_audio_slice('file.wav::[:16000,:2]')
+    ('file.wav', 0, 16000, slice(None, 2, None))
+    """
+    import re
+
+    assert start == 0, start
+    assert stop is None, stop
+    assert channel is None, channel
+    _path, audio_slice = path.rsplit('::', maxsplit=1)
+    assert ' ' not in audio_slice, audio_slice
+
+    try:
+        start, stop, channel_start, channel_stop, channel = map(
+            lambda x: x if x is None else int(x),
+            re.fullmatch(_PATTERN, audio_slice).groups()
+        )
+    except Exception as e:
+        raise ValueError(path) from e
+
+    if channel is None:
+        channel = slice(channel_start, channel_stop)
+
+    if start is None:
+        start = 0
+
+    return _path, start, stop, channel
 
 
 def recursive_load_audio(

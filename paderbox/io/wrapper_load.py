@@ -48,6 +48,10 @@ class Loader:
                     f'{type(file)} is not supported without the argument "ext.\n"'
                     f'e.g. load(..., ext=".json")'
                 )
+            # load_audio uses ".../file.wav::[slice]" notation to load a part 
+            # of an audio file. We have to remove the slice form the extension 
+            # for a correct dispatch
+            ext = ext.split('::')[0]
         else:
             ext = self.ext
 
