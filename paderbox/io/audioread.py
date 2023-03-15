@@ -78,6 +78,9 @@ def load_audio(
     stop : int, optional
         The index after the last frame to be read.  A negative value
         counts from the end.  Not allowed if `frames` is given.
+    channel : int or slice or list of int or tuple of int
+        Channel(s) to select from a multichannel audio file. Can be anything
+        that can index a numpy array along a single dimension.
     dtype : {'float64', 'float32', 'int32', 'int16'}, optional
         Data type of the returned array, by default ``'float64'``.
         Floating point audio data is typically in the range from
@@ -89,39 +92,28 @@ def load_audio(
             scale the data to [-1.0, 1.0). If the file contains
             ``np.array([42.6], dtype='float32')``, you will read
             ``np.array([43], dtype='int32')`` for ``dtype='int32'``.
+    unit: 'samples' or 'seconds'
+        The unit of `start`, `stop` and `frames` values
+    expected_sample_rate: int, optional
+        The expected sample rate of the loaded audio file. This function raises
+        a ValueError when the sample rate of the file differs from
+        `expected_sample_rate`
+    fill_value : float, optional
+        If more frames are requested than available in the file, the
+        rest of the output is being filled with `fill_value`.  If
+        `fill_value` is not specified, a smaller array is returned.
+    return_sample_rate: bool
+        Whether to return the sample rate as a second element
 
     Returns
     -------
-    audiodata : numpy.ndarray or type(out)
+    audiodata : numpy.ndarray
         A two-dimensional (frames x channels) NumPy array is returned.
         If the sound file has only one channel, a one-dimensional array
-        is returned.  Use ``always_2d=True`` to return a two-dimensional
-        array anyway.
-
-        If `out` was specified, it is returned.  If `out` has more
-        frames than available in the file (or if `frames` is smaller
-        than the length of `out`) and no `fill_value` is given, then
-        only a part of `out` is overwritten and a view containing all
-        valid frames is returned.
-
-    Other Parameters
-    ----------------
-    always_2d : bool, optional
-        By default, reading a mono sound file will return a
-        one-dimensional array.  With ``always_2d=True``, audio data is
-        always returned as a two-dimensional array, even if the audio
-        file has only one channel.
-    fill_value : float, optional
-        If more frames are requested than available in the file, the
-        rest of the output is be filled with `fill_value`.  If
-        `fill_value` is not specified, a smaller array is returned.
-    out : numpy.ndarray or subclass, optional
-        If `out` is specified, the data is written into the given array
-        instead of creating a new array.  In this case, the arguments
-        `dtype` and `always_2d` are silently ignored!  If `frames` is
-        not given, it is obtained from the length of `out`.
-    samplerate, channels, format, subtype, endian, closefd
-        See :class:`SoundFile`.
+        is returned.
+    audiodata, sample_rate : (numpy.ndarray, int)
+        Additionally the sample reate is returned when `return_sample_rate`
+        is set to `True`.
 
     Examples
     --------
@@ -276,7 +268,8 @@ def load_audio(
 
     # Slice along channel dimension if channel_slice is given
     if channel is not None:
-        signal = signal[channel,]
+        assert signal.ndim == 2 or channel == 0, (signal.shape, channel)
+        signal = signal[channel, ]
         if signal.size == 0:
             raise ValueError('Returned signal would be empty')
 
