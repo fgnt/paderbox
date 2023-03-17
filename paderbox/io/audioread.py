@@ -233,7 +233,10 @@ def load_audio(
                     dtype = mapping[f.subtype]
 
                 frames = f._prepare_read(start=start, stop=stop, frames=frames)
-                data = f.read(frames=frames, dtype=dtype, fill_value=fill_value)
+                data = f.read(
+                    frames=frames, dtype=dtype, fill_value=fill_value,
+                    always_2d=channel is not None
+                )
             signal, sample_rate = data, f.samplerate
     except RuntimeError as e:
         if isinstance(path, (Path, str)):
@@ -268,7 +271,7 @@ def load_audio(
 
     # Slice along channel dimension if channel_slice is given
     if channel is not None:
-        assert signal.ndim == 2 or channel == 0, (signal.shape, channel)
+        assert signal.ndim == 2, (signal.shape, channel)
         signal = signal[channel, ]
         if signal.size == 0:
             raise ValueError('Returned signal would be empty')
@@ -281,6 +284,7 @@ def load_audio(
 
 # https://jex.im/regulex/#!flags=&re=%5C%5B(%5Cd%2B)%3F%3A(%5Cd%2B)%3F(%3F%3A%2C(%3F%3A(%5Cd%2B)%3F%3A(%5Cd%2B)%3F%7C(%5Cd%2B)%3F))%3F%5C%5D
 _PATTERN = r'\[(\d+)?:(\d+)?(?:,(?:(\d+)?:(\d+)?|(\d+)?))?\]'
+
 
 def _parse_audio_slice(
         path,
