@@ -179,7 +179,7 @@ def load_audio(
     path = normalize_path(path, as_str=True)
 
     # Set start and stop when encoded in the filename
-    if '::' in path:
+    if isinstance(path, str) and '::' in path:
         assert unit == 'samples', unit
         assert frames == -1, frames
         path, start, stop, channel = _parse_audio_slice(
