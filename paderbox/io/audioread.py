@@ -334,7 +334,7 @@ def _parse_audio_slice(
     except Exception as e:
         raise ValueError(path) from e
 
-    if channel is None:
+    if channel is None and not (channel_start is None and channel_stop is None):
         channel = slice(channel_start, channel_stop)
 
     if start is None:
