@@ -126,7 +126,7 @@ def load_audio(
     >>> data = load_audio(path)
     >>> data.shape
     (49600,)
-    >>> data = load_audio(str(path) + '::[8000:16000]')
+    >>> data = load_audio(Path(str(path) + '::[8000:16000]'))
     >>> data.shape
     (8000,)
 
