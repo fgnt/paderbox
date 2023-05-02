@@ -574,7 +574,7 @@ class SparseArray:
     def __copy__(self):
         return self.__class__(
             shape=self.shape, _segments=[
-                _SparseSegment(segment.onset, segment.array)
+                copy.copy(segment)
                 for segment in self._segments
             ], _pad_value=self._pad_value
         )
@@ -736,6 +736,7 @@ class SparseArray:
                     f'assigned array has shape {value.shape}.'
                 )
 
+            # start cannot be negative here, so we don't need _SparseSegment.from_array
             self._add_segment(_SparseSegment(start, value))
         else:
             raise NotImplementedError()
@@ -805,7 +806,8 @@ class SparseArray:
         # If not, use a shortcut
         if item[-1] == slice(None):
             # The sparse dimension is not indexed, so we can simply forward to
-            # numpy/torch
+            # numpy/torch. The onsets cannot be negative here, so using
+            # _SparseSegment() directly is fine
             arr = self.__class__(
                 shape=_shape_for_item(self.shape, item),
                 _segments=[_SparseSegment(s.onset, s.array[item]) for s in self._segments],
@@ -928,7 +930,7 @@ class SparseArray:
         if isinstance(other, SparseArray):
             _check_shape(self.shape, other.shape)
             for s in other._segments:
-                self._add_segment(_SparseSegment(s.onset, s.array))
+                self._add_segment(copy.copy(s))
         else:
             raise TypeError(type(other))
         return self
