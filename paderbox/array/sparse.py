@@ -168,21 +168,21 @@ def _check_shape(shape1, shape2):
         raise ValueError(f'Shape mismatch: {shape1} {shape2}')
 
 
-def _cut(array, onset, target_length):
-    offset = onset + array.shape[-1]
-    if onset < 0:
-        array = array[..., -onset:]
-        onset = 0
-    if offset > target_length:
-        array = array[..., :target_length - onset]
-    return onset, array
-
-
 # Use dataclass for recursive to_numpy
 @dataclass
 class _SparseSegment:
     onset: int
     array: array_types
+
+    @classmethod
+    def from_array(cls, array, onset, target_length):
+        offset = onset + array.shape[-1]
+        if onset < 0:
+            array = array[..., -onset:]
+            onset = 0
+        if offset > target_length:
+            array = array[..., :target_length - onset]
+        return cls(onset, array)
 
     @property
     def offset(self):
@@ -204,17 +204,6 @@ class _SparseSegment:
                 f'{self.__class__.__name__}'
             )
         return self.array
-
-    def get_clipped(self, length):
-        onset = self.onset
-        array = self.array
-        if onset < 0:
-            array = array[..., -onset:]
-            onset = 0
-        if array.shape[-1] + onset > length:
-            array = array[..., :length - onset]
-        return _SparseSegment(onset, array)
-
 
 
 @dataclass
@@ -413,11 +402,11 @@ class SparseArray:
         """
         if shape is None:
             shape = list(array.shape)
-            shape[0] += onset
-            if shape[0] < 0:
-                shape[0] = 0
+            shape[-1] += onset
+            if shape[-1] < 0:
+                shape[-1] = 0
         out = SparseArray(shape=shape)
-        out._add_segment(_SparseSegment(onset, array).get_clipped(out.shape[-1]))
+        out._add_segment(_SparseSegment.from_array(array, onset, out.shape[-1]))
         return out
 
     @staticmethod
@@ -439,7 +428,7 @@ class SparseArray:
         assert len(arrays) == len(onsets)
 
         for array, onset in zip(arrays, onsets):
-            out._add_segment(_SparseSegment(onset, array).get_clipped(out.shape[-1]))
+            out._add_segment(_SparseSegment.from_array(array, onset, out.shape[-1]))
 
         return out
 
@@ -870,13 +859,13 @@ class SparseArray:
         shifted_segments = []
         for s in active:
             # Slicing of the last dimension is done in _cut
-            onset, array = _cut(s.array[selector + (slice(None),)],
-                                s.onset - start, time_length)
-            shifted_segments.append(
-                _SparseSegment(onset, array)
-            )
+            shifted_segments.append(_SparseSegment.from_array(
+                s.array[selector + (slice(None),)],
+                s.onset - start,
+                time_length
+            ))
         arr = self.__class__(
-            shape=(_shape_for_item(self.shape[:-1], selector) + (time_length,)),
+            shape=_shape_for_item(self.shape[:-1], selector) + (time_length,),
             _segments=shifted_segments,
             _pad_value=self._pad_value,
         )
