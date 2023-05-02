@@ -205,6 +205,17 @@ class _SparseSegment:
             )
         return self.array
 
+    def get_clipped(self, length):
+        onset = self.onset
+        array = self.array
+        if onset < 0:
+            array = array[..., -onset:]
+            onset = 0
+        if array.shape[-1] + onset > length:
+            array = array[..., :length - onset]
+        return _SparseSegment(onset, array)
+
+
 
 @dataclass
 class SparseArray:
@@ -381,7 +392,7 @@ class SparseArray:
         return self._pad_value[0]
 
     @classmethod
-    def from_array_and_onset(cls, array, onset, shape):
+    def from_array_and_onset(cls, array, onset, shape=None):
         """
         Creates a `SparseArray` from a numpy array or torch tensor with a given
         `onset` and `shape`. The given `array` is cut so that it lies within
@@ -397,15 +408,50 @@ class SparseArray:
         array([1., 1., 0., 0., 0., 0., 0., 0., 0., 0.])
         >>> SparseArray.from_array_and_onset(np.ones(5), 7, 10)
         SparseArray(_SparseSegment(onset=7, array=array([1., 1., 1.])), shape=(10,))
+        >>> SparseArray.from_array_and_onset(np.ones(5), 7).as_contiguous()
+        array([0., 0., 0., 0., 0., 0., 0., 1., 1., 1., 1., 1.])
         """
+        if shape is None:
+            shape = list(array.shape)
+            shape[0] += onset
+            if shape[0] < 0:
+                shape[0] = 0
         out = SparseArray(shape=shape)
-        if onset < 0:
-            array = array[..., -onset:]
-            onset = 0
-        if array.shape[-1] + onset > out.shape[-1]:
-            array = array[..., :out.shape[-1] - onset]
-        out._add_segment(_SparseSegment(onset, array))
+        out._add_segment(_SparseSegment(onset, array).get_clipped(out.shape[-1]))
         return out
+
+    @staticmethod
+    def from_arrays_and_onsets(arrays, onsets, shape=None, pad_value=0.):
+        """
+        >>> SparseArray.from_arrays_and_onsets([np.ones(2), np.ones(1)], [0, 3]).as_contiguous()
+        array([1., 1., 0., 1.])
+        >>> SparseArray.from_arrays_and_onsets([np.ones(2), np.ones(1)], [0, 3], (10,)).as_contiguous()
+        array([1., 1., 0., 1., 0., 0., 0., 0., 0., 0.])
+        """
+        if shape is None:
+            for array, onset in zip(arrays, onsets):
+                if shape is None or array.shape[-1] + onset > shape[-1]:
+                    shape = list(array.shape)
+                    shape[-1] += onset
+
+        out = SparseArray(shape=shape, _pad_value=_pad_value_like(arrays[0], pad_value))
+
+        assert len(arrays) == len(onsets)
+
+        for array, onset in zip(arrays, onsets):
+            out._add_segment(_SparseSegment(onset, array).get_clipped(out.shape[-1]))
+
+        return out
+
+    def as_arrays_and_onsets(self):
+        """
+        >>> a = zeros(10)
+        >>> a[:5] = 1
+        >>> a[7:] = 2
+        >>> a.as_arrays_and_onsets()
+        ([array([1., 1., 1., 1., 1.], dtype=float32), array([2., 2., 2.], dtype=float32)], [0, 7])
+        """
+        return [s.array for s in self._segments], [s.onset for s in self._segments]
 
     def as_contiguous(self, dtype=None):
         """
@@ -981,7 +1027,7 @@ class SparseArray:
         # Other operators can be tricky to implement and may result in
         # unexpected behavior
         if ufunc not in [np.add, np.subtract, np.multiply, np.divide]:
-            raise NotImplemented
+            return NotImplemented
 
         # Only support combinations of np.ndarray and SparseArray
         if isinstance(inputs[0], SparseArray) and isinstance(inputs[1], SparseArray):
