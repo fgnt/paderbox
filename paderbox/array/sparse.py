@@ -432,16 +432,6 @@ class SparseArray:
 
         return out
 
-    def as_arrays_and_onsets(self):
-        """
-        >>> a = zeros(10)
-        >>> a[:5] = 1
-        >>> a[7:] = 2
-        >>> a.as_arrays_and_onsets()
-        ([array([1., 1., 1., 1., 1.], dtype=float32), array([2., 2., 2.], dtype=float32)], [0, 7])
-        """
-        return [s.array for s in self._segments], [s.onset for s in self._segments]
-
     def as_contiguous(self, dtype=None):
         """
         Converts the `SparseArray` to a numpy array or torch tensor, depending
