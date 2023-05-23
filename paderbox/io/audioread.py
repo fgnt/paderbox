@@ -386,11 +386,16 @@ def recursive_load_audio(
     if isinstance(path, (tuple, list, types.GeneratorType)):
         data = [recursive_load_audio(a, **kwargs) for a in path]
 
-        np_data = np.array(data)
-        if np_data.dtype != object:
-            return np_data
-        else:
+        try:
+            np_data = np.array(data)
+        except ValueError:
             return data
+        else:
+            # old numpy
+            if np_data.dtype != object:
+                return np_data
+            else:
+                return data
     elif isinstance(path, dict):
         return {k: recursive_load_audio(v, **kwargs) for k, v in path.items()}
     else:
