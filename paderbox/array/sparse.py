@@ -203,6 +203,42 @@ def zeros(shape, dtype=np.float32):
     return full(shape, dtype=dtype, pad_value=0)
 
 
+def from_array_interval(
+        array_interval: ArrayInterval,
+        dtype=bool,
+        *,
+        true_value=1,
+        false_value=0
+) -> 'SparseArray':
+    """
+    Constructs a `SparseArray` from an `ArrayInterval`.
+
+    >>> from paderbox.array import interval
+    >>> ai = interval.zeros(10)
+    >>> from_array_interval(ai)
+    SparseArray(shape=(10,))
+    >>> ai[:5] = 1; ai[7:] = 1
+    >>> from_array_interval(ai).as_contiguous()
+    array([ True,  True,  True,  True,  True, False, False,  True,  True,
+            True])
+    >>> ai = interval.ones(5)
+    >>> from_array_interval(ai).as_contiguous()
+    array([ True,  True,  True,  True,  True])
+    >>> ai[:2] = False
+    >>> from_array_interval(ai).as_contiguous()
+    array([False, False,  True,  True,  True])
+    """
+    if array_interval.inverse_mode:
+        array = full(array_interval.shape, pad_value=true_value, dtype=dtype)
+        interval_value = false_value
+    else:
+        array = zeros(array_interval.shape, dtype=dtype)
+        interval_value = true_value
+    for (start, stop) in array_interval.normalized_intervals:
+        array[..., start:stop] = interval_value
+    return array
+
+
 def _check_shape(shape1, shape2):
     if shape1 != shape2:
         raise ValueError(f'Shape mismatch: {shape1} {shape2}')
