@@ -737,6 +737,11 @@ class ArrayInterval:
         array([ True, False, False, False, False, False,  True])
         >>> ai[19:26]  # Use normal getitem, that returns np.
         array([ True, False, False, False, False, False,  True])
+
+        >>> ai = zeros()
+        >>> ai[10:20] = 1
+        >>> ai.slice[2:]
+        ArrayInterval("8:18", shape=None)
         """
         raise NotImplementedError('Use slice not _slice_doctest.')
 
@@ -756,26 +761,21 @@ class ArrayInterval:
             self.ai = ai
 
         def __getitem__(self, item):
-            start, stop = cy_parse_item(item, self.ai.shape)
+            sentinel = 9223372036854775807  # 2**63-1
+            shape, = [sentinel] if self.ai.shape is None else self.ai.shape
+
+            start, stop = cy_parse_item(item, [shape])
             intervals = cy_intersection((start, stop), self.ai.normalized_intervals)
 
-            shape, = [None] if self.ai.shape is None else self.ai.shape
-
-            if stop is None: stop = shape
-            if start is None: start = 0
-
-            if shape is None:
+            if shape == sentinel:
                 assert start >= 0, (item, start, stop)
                 assert stop >= 0, (item, start, stop)
-                if stop is None:
+                if stop == sentinel:
                     shape = None
                 else:
                     shape = stop - start
                     assert shape >= 0, (shape, item, start, stop)
             else:
-                # Convert negative index to positive index
-                start %= shape
-                stop %= shape
                 shape = stop - start
                 assert shape >= 0, (shape, item, start, stop)
 
