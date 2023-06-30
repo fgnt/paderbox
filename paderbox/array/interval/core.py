@@ -809,7 +809,9 @@ class ArrayInterval:
         return sum
 
     def mean(self, axis=None, out=None):
-        return self.sum(axis, out) / self.shape[0]
+        sum = self.sum(axis, out)
+        sum /= self.shape[0]
+        return sum
 
     def __or__(self, other):
         """
