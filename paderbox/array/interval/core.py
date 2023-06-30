@@ -1128,8 +1128,7 @@ def _combine(func, *array_intervals, out=None):
     >>> _combine(operator.__or__, ai1, ArrayInterval(ai1[:9]))
     Traceback (most recent call last):
     ...
-    IndexError: Shape issue: Index 10 is out of bounds for one ArrayInterval.
-    Shapes are: [None, (9,)]
+    IndexError: Index 9 is out of bounds for ArrayInterval with shape (9,)
 
     """
 
