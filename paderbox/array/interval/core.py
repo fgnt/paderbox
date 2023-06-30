@@ -680,6 +680,66 @@ class ArrayInterval:
 
         return arr
 
+    def _slice_doctest(self):
+        """
+
+        >>> ai = zeros(50)
+        >>> ai[10:20] = 1
+        >>> ai[25:30] = 1
+        >>> ai.slice[19:26]
+        ArrayInterval("0:1, 6:7", shape=(7,))
+
+        >>> ai.slice[19:26][:]  # Second getitem converts to np.
+        array([ True, False, False, False, False, False,  True])
+        >>> ai[19:26]  # Use normal getitem, that returns np.
+        array([ True, False, False, False, False, False,  True])
+        """
+        raise NotImplementedError('Use slice not _slice_doctest.')
+
+    @property
+    class slice:
+        """
+        Similar to __getitem__, but only allow slices as arguments and
+        returns an ArrayInterval instead of a numpy.array.
+
+        For examples see _slice_doctest.
+        General usage:
+
+            >> new = ai.slice[19:26]
+
+        """
+        def __init__(self, ai):
+            self.ai = ai
+
+        def __getitem__(self, item):
+            start, stop = cy_parse_item(item, self.ai.shape)
+            intervals = cy_intersection((start, stop), self.ai.normalized_intervals)
+
+            shape, = [None] if self.ai.shape is None else self.ai.shape
+
+            if stop is None: stop = shape
+            if start is None: start = 0
+
+            if shape is None:
+                assert start >= 0, (item, start, stop)
+                assert stop >= 0, (item, start, stop)
+                if stop is None:
+                    shape = None
+                else:
+                    shape = stop - start
+                    assert shape >= 0, (shape, item, start, stop)
+            else:
+                # Convert negative index to positive index
+                start %= shape
+                stop %= shape
+                shape = stop - start
+                assert shape >= 0, (shape, item, start, stop)
+
+            return ArrayInterval.from_pairs([
+                [s-start, e-start]
+                for s, e in intervals
+            ], shape, self.ai.inverse_mode)
+
     def sum(self, axis=None, out=None):
         """
         >>> a = ArrayInterval([True, True, False, False])
