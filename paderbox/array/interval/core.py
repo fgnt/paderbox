@@ -256,6 +256,8 @@ class ArrayInterval:
     @shape.setter
     def shape(self, shape):
         self._shape = _normalize_shape(shape)
+        if self._intervals and self._shape is not None:
+            assert self.normalized_intervals[-1][-1] <= self._shape[-1], (shape, self._shape, self.normalized_intervals)
 
     def __copy__(self):
         if self.inverse_mode:
