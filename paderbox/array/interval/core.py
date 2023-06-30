@@ -16,7 +16,7 @@ from paderbox.array.interval.util import (
 )
 
 
-def ArrayInterval_from_str(string, shape, inverse_mode=False):
+def ArrayInterval_from_str(string, shape, inverse_mode=False) -> 'ArrayInterval':
     """
     >>> ArrayInterval_from_str('1:4, 5:20, 21:25', shape=50)
     ArrayInterval("1:4, 5:20, 21:25", shape=(50,))
