@@ -1,8 +1,9 @@
 import bisect
 import copy
+import dataclasses
 from dataclasses import dataclass, field
 
-from typing import Any
+from typing import Any, Optional, Type
 
 import textwrap
 
@@ -32,7 +33,8 @@ def _normalize_shape(shape):
     allowed_types = (int, np.integer)
 
     if shape is None:
-        # As of now, we only support fixed shapes. This can be changed
+        # As of now, we only support fixed shapes and an unknown time
+        # dimension. This can be changed
         raise TypeError(f'None shape is not supported')
 
     if isinstance(shape, allowed_types):
@@ -41,7 +43,9 @@ def _normalize_shape(shape):
     if not isinstance(shape, (tuple, list)):
         raise TypeError(f'Invalid shape {shape} of type {type(shape)}')
 
-    if not all(isinstance(s, allowed_types) for s in shape):
+    if (not all(isinstance(s, allowed_types) for s in shape[:-1])
+        and not (shape[-1] is None or isinstance(shape[-1], allowed_types))
+    ):
         raise TypeError(
             f'Invalid shape {shape} with elements of type {type(shape[0])}'
         )
@@ -49,43 +53,59 @@ def _normalize_shape(shape):
     return tuple(shape)
 
 
+def _parse_item(item, shape):
+    if shape[-1] is None:
+        start = item.start
+        if start is None:
+            start = 0
+        assert start >= 0, item
+        assert item.stop is None or item.stop >= 0, item
+
+        return start, item.stop
+    else:
+        return cy_parse_item(item, shape)
+
+
 def _shape_for_item(shape, item):
     """Gets the shape that would result when indexing an array with shape
     `shape` with `item`."""
     if shape == ():
         return ()
-    return np.broadcast_to(np.ones(1), shape)[item].shape
+    if shape[-1] is None:
+        return np.broadcast_to(np.ones(1), shape[:-1])[item[:-1]].shape + (None,)
+    else:
+        return np.broadcast_to(np.ones(1), shape)[item].shape
 
 
-def _normalize_item(item, shape):
+def _normalize_item(item, ndim):
     """
     >>> def print_item(item):
     ...     print('[' + ', '.join([(f'{i.start if i.start is not None else ""}:{i.stop if i.stop is not None else ""}' if isinstance(i, slice) else str(i)) for i in item]) + ']')
     >>> print_item((0, slice(None), slice(1), slice(5, 10)))
     [0, :, :1, 5:10]
-    >>> print_item(_normalize_item((), (1, 2, 3)))
+    >>> print_item(_normalize_item((), 3))
     [:, :, :]
-    >>> print_item(_normalize_item((0,), (1, 2, 3)))
+    >>> print_item(_normalize_item((0,), 3))
     [0, :, :]
-    >>> print_item(_normalize_item(0, (1, 2, 3)))
+    >>> print_item(_normalize_item(0, 3))
     [0, :, :]
-    >>> print_item(_normalize_item(slice(None), (1, 2, 3)))
+    >>> print_item(_normalize_item(slice(None), 3))
     [:, :, :]
-    >>> print_item(_normalize_item(slice(10), (1, 2, 3)))
+    >>> print_item(_normalize_item(slice(10), 3))
     [:10, :, :]
-    >>> print_item(_normalize_item(..., (1, 2, 3)))
+    >>> print_item(_normalize_item(..., 3))
     [:, :, :]
-    >>> print_item(_normalize_item((0, ...), (1, 2, 3)))
+    >>> print_item(_normalize_item((0, ...), 3))
     [0, :, :]
-    >>> print_item(_normalize_item((..., 0), (1, 2, 3)))
+    >>> print_item(_normalize_item((..., 0), 3))
     [:, :, 0]
-    >>> print_item(_normalize_item((1, 2, 3, ...), (1, 2, 3)))
+    >>> print_item(_normalize_item((1, 2, 3, ...), 3))
     [1, 2, 3]
-    >>> print_item(_normalize_item((..., 1, 2, 3, ...), (1, 2, 3)))
+    >>> print_item(_normalize_item((..., 1, 2, 3, ...), 3))
     Traceback (most recent call last):
      ...
     IndexError: an index can only have a single ellipsis ('...')
-    >>> print_item(_normalize_item((0, 1, 2, 3, ...), (1, 2, 3)))
+    >>> print_item(_normalize_item((0, 1, 2, 3, ...), 3))
     Traceback (most recent call last):
       ...
     IndexError: too many indices for array: array is 3-dimensional, but 4 were indexed
@@ -95,17 +115,18 @@ def _normalize_item(item, shape):
 
     if not isinstance(item, tuple):
         item = (item,)
+    item = list(item)
     if ... in item:
-        item = list(item)
+        assert ndim is not None, ndim
         idx = item.index(...)
-        item[idx:idx + 1] = [slice(None)] * (len(shape) - len(item) + 1)
-    else:
-        item = list(item) + [slice(None)] * (len(shape) - len(item))
+        item[idx:idx + 1] = [slice(None)] * (ndim - len(item) + 1)
+    elif ndim is not None:
+        item = item + [slice(None)] * (ndim - len(item))
     if ... in item:
         raise IndexError('an index can only have a single ellipsis (\'...\')')
-    if len(item) > len(shape):
+    if ndim is not None and len(item) > ndim:
         raise IndexError(
-            f'too many indices for array: array is {len(shape)}-dimensional, '
+            f'too many indices for array: array is {ndim}-dimensional, '
             f'but {len(item)} were indexed'
         )
     return item
@@ -137,6 +158,16 @@ def _pad_value_like(array, pad_value):
 
 def full(shape, pad_value, dtype=np.float32):
     """
+    Creates an empty `SparseArray` with a pad value of `pad_value`.
+
+    Args:
+        shape: The shape of the array. All dimensions must be specified except
+            for the last dimension, which can be `None`. In that case, the
+            time dimension is dynamic and grows to fit any segments added. The
+            shape can be persisted by calling `SparseArray.persist_shape`.
+        pad_value: The value to pad with where no data is set
+        dtype: Datatype of the created array
+
     >>> full(10, 5)
     SparseArray(pad_value=5.0, shape=(10,))
     >>> full(10, 5).as_contiguous()
@@ -149,6 +180,15 @@ def full(shape, pad_value, dtype=np.float32):
 
 def zeros(shape, dtype=np.float32):
     """
+    Creates an empty `SparseArray` with a pad value of 0.
+
+    Args:
+        shape: The shape of the array. All dimensions must be specified except
+            for the last dimension, which can be `None`. In that case, the
+            time dimension is dynamic and grows to fit any segments added. The
+            shape can be persisted by calling `SparseArray.persist_shape`.
+        dtype: Datatype of the created array
+
     >>> zeros(10)
     SparseArray(shape=(10,))
     >>> zeros(10).as_contiguous()
@@ -163,26 +203,62 @@ def zeros(shape, dtype=np.float32):
     return full(shape, dtype=dtype, pad_value=0)
 
 
+def from_array_interval(
+        array_interval: ArrayInterval,
+        dtype=bool,
+        *,
+        true_value=1,
+        false_value=0
+) -> 'SparseArray':
+    """
+    Constructs a `SparseArray` from an `ArrayInterval`.
+
+    >>> from paderbox.array import interval
+    >>> ai = interval.zeros(10)
+    >>> from_array_interval(ai)
+    SparseArray(shape=(10,))
+    >>> ai[:5] = 1; ai[7:] = 1
+    >>> from_array_interval(ai).as_contiguous()
+    array([ True,  True,  True,  True,  True, False, False,  True,  True,
+            True])
+    >>> ai = interval.ones(5)
+    >>> from_array_interval(ai).as_contiguous()
+    array([ True,  True,  True,  True,  True])
+    >>> ai[:2] = False
+    >>> from_array_interval(ai).as_contiguous()
+    array([False, False,  True,  True,  True])
+    """
+    if array_interval.inverse_mode:
+        array = full(array_interval.shape, pad_value=true_value, dtype=dtype)
+        interval_value = false_value
+    else:
+        array = zeros(array_interval.shape, dtype=dtype)
+        interval_value = true_value
+    for (start, stop) in array_interval.normalized_intervals:
+        array[..., start:stop] = interval_value
+    return array
+
+
 def _check_shape(shape1, shape2):
     if shape1 != shape2:
         raise ValueError(f'Shape mismatch: {shape1} {shape2}')
 
 
-def _cut(array, onset, target_length):
-    offset = onset + array.shape[-1]
-    if onset < 0:
-        array = array[..., -onset:]
-        onset = 0
-    if offset > target_length:
-        array = array[..., :target_length - onset]
-    return onset, array
-
-
 # Use dataclass for recursive to_numpy
-@dataclass
+@dataclass(frozen=True)
 class _SparseSegment:
     onset: int
     array: array_types
+
+    @classmethod
+    def from_array(cls, array, onset, target_length=None):
+        offset = onset + array.shape[-1]
+        if onset < 0:
+            array = array[..., -onset:]
+            onset = 0
+        if target_length is not None and offset > target_length:
+            array = array[..., :target_length - onset]
+        return cls(onset, array)
 
     @property
     def offset(self):
@@ -191,6 +267,10 @@ class _SparseSegment:
     @property
     def segment_length(self):
         return self.array.shape[-1]
+
+    @property
+    def leading_shape(self):
+        return self.array.shape[:-1]
 
     def __array__(self):
         """
@@ -219,13 +299,13 @@ class SparseArray:
     SparseArray(_SparseSegment(onset=5, array=array([1., 1., 1., 1., 1.])), shape=(20,))
     >>> np.asarray(a)
     array([0., 0., 0., 0., 0., 1., 1., 1., 1., 1., 0., 0., 0., 0., 0., 0., 0.,
-    ...    0., 0., 0.])
+           0., 0., 0.])
     >>> a[15:20] = 2
     >>> a
     SparseArray(_SparseSegment(onset=5, array=array([1., 1., 1., 1., 1.])), _SparseSegment(onset=15, array=array([2., 2., 2., 2., 2.])), shape=(20,))
     >>> np.asarray(a)
     array([0., 0., 0., 0., 0., 1., 1., 1., 1., 1., 0., 0., 0., 0., 0., 2., 2.,
-    ...    2., 2., 2.])
+           2., 2., 2.])
 
     Overlapping intervals are not allowed
     >>> a[14:16] = 3
@@ -258,23 +338,23 @@ class SparseArray:
     SparseArray(_SparseSegment(onset=5, array=array([1., 1., 1., 1., 1.])), _SparseSegment(onset=10, array=array([8., 8., 8., 8., 8.])), _SparseSegment(onset=15, array=array([2., 2., 2., 2., 2.])), shape=(20,))
     >>> np.asarray(a + b)
     array([0., 0., 0., 0., 0., 1., 1., 1., 1., 1., 8., 8., 8., 8., 8., 2., 2.,
-    ...    2., 2., 2.])
+           2., 2., 2.])
 
     Arithmetic works with numpy arrays
     >>> np.ones(20, dtype=np.float64) * a
     array([0., 0., 0., 0., 0., 1., 1., 1., 1., 1., 0., 0., 0., 0., 0., 2., 2.,
-    ...    2., 2., 2.])
+           2., 2., 2.])
     >>> np.ones(20, dtype=np.float64) + a
     array([1., 1., 1., 1., 1., 2., 2., 2., 2., 2., 1., 1., 1., 1., 1., 3., 3.,
-    ...    3., 3., 3.])
+           3., 3., 3.])
     >>> a + np.ones(20, dtype=np.float64)
     array([1., 1., 1., 1., 1., 2., 2., 2., 2., 2., 1., 1., 1., 1., 1., 3., 3.,
-    ...    3., 3., 3.])
+           3., 3., 3.])
     >>> c = np.ones(20, dtype=np.float64)
     >>> c += a
     >>> c
     array([1., 1., 1., 1., 1., 2., 2., 2., 2., 2., 1., 1., 1., 1., 1., 3., 3.,
-    ...    3., 3., 3.])
+           3., 3., 3.])
 
     Test if pt.data.batch.example_to_device converts correctly. Commented out
     because these tests don't work without padertorch
@@ -380,8 +460,28 @@ class SparseArray:
             return None
         return self._pad_value[0]
 
+    @property
+    def _leading_shape(self):
+        return self.shape[:-1]
+
+    @property
+    def ndim(self):
+        return len(self.shape)
+
+    @property
+    def _time_length(self):
+        return self.shape[-1]
+
+    @property
+    def _estimated_time_length(self):
+        if self._time_length is None:
+            if len(self._segments) == 0:
+                raise RuntimeError(f'Can\'t determine shape of empty SparseArray')
+            return max(0, max(s.offset for s in self._segments))
+        return self._time_length
+
     @classmethod
-    def from_array_and_onset(cls, array, onset, shape):
+    def from_array_and_onset(cls, array, onset, shape=None, pad_value=0.):
         """
         Creates a `SparseArray` from a numpy array or torch tensor with a given
         `onset` and `shape`. The given `array` is cut so that it lies within
@@ -397,29 +497,77 @@ class SparseArray:
         array([1., 1., 0., 0., 0., 0., 0., 0., 0., 0.])
         >>> SparseArray.from_array_and_onset(np.ones(5), 7, 10)
         SparseArray(_SparseSegment(onset=7, array=array([1., 1., 1.])), shape=(10,))
+        >>> SparseArray.from_array_and_onset(np.ones(5), 7).as_contiguous()
+        array([0., 0., 0., 0., 0., 0., 0., 1., 1., 1., 1., 1.])
         """
-        out = SparseArray(shape=shape)
-        if onset < 0:
-            array = array[..., -onset:]
-            onset = 0
-        if array.shape[-1] + onset > out.shape[-1]:
-            array = array[..., :out.shape[-1] - onset]
-        out._add_segment(_SparseSegment(onset, array))
+        return cls.from_arrays_and_onsets([array], [onset], shape, pad_value)
+
+    @staticmethod
+    def from_arrays_and_onsets(arrays, onsets, shape=None, pad_value=0.):
+        """
+        >>> SparseArray.from_arrays_and_onsets([np.ones(2), np.ones(1)], [0, 3]).as_contiguous()
+        array([1., 1., 0., 1.])
+        >>> SparseArray.from_arrays_and_onsets([np.ones(2), np.ones(1)], [0, 3], (10,)).as_contiguous()
+        array([1., 1., 0., 1., 0., 0., 0., 0., 0., 0.])
+        """
+        if shape is None:
+            # Infer leading shape from arrays, but we can't infer the shape along
+            # time dimension
+            shape = arrays[0].shape[:-1] + (None,)
+
+        out = SparseArray(shape=shape, _pad_value=_pad_value_like(arrays[0], pad_value))
+
+        if len(arrays) != len(onsets):
+            raise ValueError(
+                f'Number of arrays and onsets must match! '
+                f'len(arrays)={len(arrays)} len(onsets)={len(onsets)}'
+            )
+
+        for array, onset in zip(arrays, onsets):
+            out._add_segment(_SparseSegment.from_array(array, onset, out.shape[-1]))
+
         return out
 
-    def as_contiguous(self, dtype=None):
+    def as_contiguous(self, dtype=None, infer_shape=True):
         """
         Converts the `SparseArray` to a numpy array or torch tensor, depending
         on the data in the `SparseArray`.
+
+        Args:
+            dtype: The data type of the returned array
+            infer_shape: If set to true and the time dimension of the
+                `SparseArray` is `None`, the shape is inferred from the
+                contained data
+
+        >>> zeros((None,)).as_contiguous()
+        array([], dtype=float32)
+        >>> zeros((2, None)).as_contiguous()
+        array([], shape=(2, 0), dtype=float32)
+        >>> a = zeros((None,))
+        >>> a[:3] = 1
+        >>> a.as_contiguous()
+        array([1., 1., 1.], dtype=float32)
         """
-        arr = self._new_full(dtype=dtype)
+        shape = self.shape
+        if shape[-1] is None:
+            if not infer_shape:
+                raise ValueError(
+                    f'Cannot construct numpy array from unknown shape. '
+                    f'Did you forget to call `persist_shape` or to set '
+                    f'`infer_shape=True`?'
+                )
+            if len(self._segments) == 0:
+                shape = shape[:-1] + (0,)
+            else:
+                shape = shape[:-1] + (self._segments[-1].offset,)
+        arr = self._new_full(dtype=dtype, shape=shape)
         for segment in self._segments:
             arr[..., segment.onset:segment.offset] = segment.array
         return arr
 
     @property
     def interval(self) -> ArrayInterval:
-        ai = pb.array.interval.zeros(self.shape[-1])
+        ai = pb.array.interval.zeros(self._time_length)
         s: _SparseSegment
         for s in self._segments:
             ai[s.onset:s.offset] = True
@@ -438,8 +586,6 @@ class SparseArray:
         lazy dtype init instead of `pb.array.sparse.zeros(shape, dtype)`
         to create this `SparseArray`?
         """
-        if shape is None:
-            shape = self.shape
         if fill_value is None:
             fill_value = self.pad_value
             if fill_value is None:
@@ -452,8 +598,15 @@ class SparseArray:
                     f'`pb.array.sparse.zeros(shape, dtype)`\n'
                     f'to create this `{self.__class__.__name__}`?'
                 )
+        if shape is None:
+            shape = self.shape
         if shape == ():
             return fill_value
+        elif shape is None or shape[-1] is None:
+            raise TypeError(
+                'Shape is None or contains None, can\'t build an '
+                'array from it.'
+            )
         if self.is_torch:
             return self.pad_value.new_full(
                 size=shape, fill_value=float(fill_value), dtype=dtype,
@@ -461,6 +614,15 @@ class SparseArray:
         else:
             return np.full_like(self.pad_value, fill_value=fill_value,
                                 shape=shape, dtype=dtype)
+
+    def persist_shape(self):
+        """
+        Persists the current shape of
+        """
+        if self._time_length is not None:
+            return self.shape
+        self.shape = self._leading_shape + (self._estimated_time_length,)
+        return self.shape
 
     def _add_segment(self, segment: _SparseSegment):
         if self._pad_value is not None:
@@ -479,11 +641,11 @@ class SparseArray:
                 )
 
             # The leading dimensions must be equal
-            if self.shape[:-1] != segment.array.shape[:-1]:
+            if self._leading_shape != segment.leading_shape:
                 raise ValueError(
-                    f'Shape mismatch: SparseArray has shape '
-                    f'{self.shape}, but assigned array has leading '
-                    f'shape {segment.array.shape}.'
+                    f'Shape mismatch: SparseArray has leading shape {self._leading_shape}, '
+                    f'but assigned array has leading '
+                    f'shape {segment.array.leading_shape}.'
                 )
 
             # If we have a torch tensor, also check the device. Having parts of the
@@ -496,7 +658,7 @@ class SparseArray:
                         f'device {segment.array.device}'
                     )
 
-        if segment.offset < 0 or segment.onset >= self.shape[-1]:
+        if segment.offset < 0 or self._time_length is not None and segment.onset >= self._time_length:
             # Ignore setting anything that is outside of the boundaries (numpy
             # behavior)
             return
@@ -532,24 +694,21 @@ class SparseArray:
 
         # Update the pad value from the array if the SparseArray doesn't have
         # a pad value yet
-        if not self._segments and self.pad_value is None:
-            self._pad_value = _pad_value_like(segment.array, 0)
+        if not self._segments:
+            if self.pad_value is None:
+                self._pad_value = _pad_value_like(segment.array, 0)
         self._segments.insert(position, segment)
 
     def __copy__(self):
-        return self.__class__(
-            shape=self.shape, _segments=[
-                _SparseSegment(segment.onset, segment.array)
-                for segment in self._segments
-            ], _pad_value=self._pad_value
-        )
+        # _segments has to be a new list to support __add__, ...
+        return dataclasses.replace(self, _segments=list(self._segments))
 
     def __array__(self, dtype=None):
         if self.is_torch:
             raise NotImplementedError(
                 '__array__ is not implemented for torch SparseArrays'
             )
-        return self.as_contiguous(dtype)
+        return self.as_contiguous(dtype, infer_shape=False)
 
     def __repr__(self):
         if self._segments:
@@ -620,6 +779,30 @@ class SparseArray:
           ...
         IndexError: SparseArray.__setitem__ only supports slices for indexing, not [0, slice(5, None, None)]
 
+        # Test shape=None
+        >>> a = zeros((None,))
+        >>> a[:, :2] = 1
+        Traceback (most recent call last):
+          ...
+        IndexError: too many indices for array: array is 1-dimensional, but 2 were indexed
+        >>> a[:2] = 1
+        >>> a[3:] = 2
+        Traceback (most recent call last):
+          ...
+        IndexError: Could not determine size of slice ([slice(3, None, None)])
+        >>> a
+        SparseArray(_SparseSegment(onset=0, array=array([1., 1.], dtype=float32)), shape=(None,))
+        >>> a = zeros((1, None))
+        >>> a[:, :2] = 1
+
+        >>> a.as_contiguous()
+        array([[1., 1.]], dtype=float32)
+
+        >>> a = zeros((2, None))
+        >>> a[:, :5] = np.ones((2, 5), dtype=np.float32)
+        >>> a
+        SparseArray(_SparseSegment(onset=0, array=array([[1., 1., 1., 1., 1.],
+               [1., 1., 1., 1., 1.]], dtype=float32)), shape=(2, None))
 
         # Test some exceptions
         >>> a = SparseArray(shape=10)
@@ -649,7 +832,7 @@ class SparseArray:
           ...
         IndexError: SparseArray.__setitem__ only supports slices for indexing, not [slice(None, None, None), 0]
         """
-        item = _normalize_item(item, self.shape)
+        item = _normalize_item(item, self.ndim)
 
         length = len(item)
         for idx, i in enumerate(item):
@@ -674,15 +857,22 @@ class SparseArray:
 
         # We only need to handle the last element in item, all others are
         # slice(None)
-        item = item[-1]
-        start, stop = cy_parse_item(item, self.shape)
+        start, stop = _parse_item(item[-1], self.shape)
+
+        if stop is None or stop - start < 0:
+            raise IndexError(f'Could not determine size of slice ({item})')
         length = stop - start
 
         if np.isscalar(value):
             # Infer the dtype from value if the SparseArray doesn't have a
             # dtype yet
+            if self._leading_shape is None and len(item) > 1:
+                raise ValueError(
+                    'Scalars can only be set if the shape is '
+                    'known or the array is one-dimensional'
+                )
             value = self._new_full(
-                shape=self.shape[:-1] + (length,), fill_value=value,
+                shape=self._leading_shape + (length,), fill_value=value,
                 dtype=self.dtype if self.dtype else _dtype_from_value(value)
             )
 
@@ -695,12 +885,13 @@ class SparseArray:
                 )
 
             # All other dimensions have to match the current shape
-            if value.shape[:-1] != self.shape[:-1]:
+            if value.shape[:-1] != self._leading_shape:
                 raise ValueError(
                     f'Shape mismatch: SparseArray has shape {self.shape}, but '
                     f'assigned array has shape {value.shape}.'
                 )
 
+            # start cannot be negative here, so we don't need _SparseSegment.from_array
             self._add_segment(_SparseSegment(start, value))
         else:
             raise NotImplementedError()
@@ -761,20 +952,50 @@ class SparseArray:
         Traceback (most recent call last):
           ...
         IndexError: too many indices for array: array is 2-dimensional, but 3 were indexed
-        """
-        item = tuple(_normalize_item(item, self.shape))
 
-        assert len(item) == len(self.shape), (item, self.shape)
+        # Unknown time length
+        >>> a = zeros((None,))
+        >>> a[10]
+        0.0
+        >>> a[:10], np.asarray(a[:10])
+        (SparseArray(shape=(10,)), array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0.], dtype=float32))
+        >>> a[:5] = 1
+        >>> np.asarray(a[2:7])
+        array([1., 1., 1., 0., 0.], dtype=float32)
+        >>> a[0]
+        1.0
+        >>> a[10]
+        0.0
+        >>> a.persist_shape()
+        (5,)
+        >>> a[10]
+        Traceback (most recent call last):
+          ...
+        IndexError: Index 10 is out of bounds for ArrayInterval with shape (5,)
+        >>> a = zeros((2, None))
+        >>> a[:, :5] = np.ones((2, 5), dtype=np.float32)
+        >>> a[0]
+        SparseArray(_SparseSegment(onset=0, array=array([1., 1., 1., 1., 1.], dtype=float32)), shape=(None,))
+        >>> a[:1]
+        SparseArray(_SparseSegment(onset=0, array=array([[1., 1., 1., 1., 1.]], dtype=float32)), shape=(1, None))
+        >>> a[0, :3]
+        SparseArray(_SparseSegment(onset=0, array=array([1., 1., 1.], dtype=float32)), shape=(3,))
+        >>> a[0, 3:]
+        SparseArray(_SparseSegment(onset=0, array=array([1., 1.], dtype=float32)), shape=(None,))
+        """
+        item = tuple(_normalize_item(item, self.ndim))
+
+        assert len(item) == self.ndim, (item, self.shape)
 
         # Check if the last dimension (the sparse dimension) is indexed.
         # If not, use a shortcut
         if item[-1] == slice(None):
             # The sparse dimension is not indexed, so we can simply forward to
-            # numpy/torch
-            arr = self.__class__(
+            # numpy/torch.
+            arr = dataclasses.replace(
+                self,
                 shape=_shape_for_item(self.shape, item),
-                _segments=[_SparseSegment(s.onset, s.array[item]) for s in self._segments],
-                _pad_value=self._pad_value,
+                _segments=[dataclasses.replace(s, array=s.array[item]) for s in self._segments],
             )
             return arr
 
@@ -788,8 +1009,8 @@ class SparseArray:
         if isinstance(item, (int, np.integer)):
             index = item
             if index < 0:
-                index = index + self.shape[-1]
-            if index < 0 or self.shape is not None and index > self.shape[-1]:
+                index = index + self._time_length
+            if index < 0 or self._time_length is not None and index > self._time_length:
                 raise IndexError(
                     f'Index {item} is out of bounds for ArrayInterval with '
                     f'shape {self.shape}'
@@ -806,33 +1027,36 @@ class SparseArray:
 
             # Return the fill value if not segment overlaps with the index, r
             return self._new_full(
-                shape=_shape_for_item(self.shape[:-1], selector)
+                shape=_shape_for_item(self._leading_shape, selector)
             )
 
         # Get clipped start/stop values from the function used in ArrayInterval
-        start, stop = cy_parse_item(item, self.shape)
+        start, stop = _parse_item(item, self.shape)
 
         # This is numpy behavior: return an empty array if stop <= start
-        if stop <= start:
+        if stop is not None and stop <= start:
             return np.zeros(0, dtype=self.dtype)
 
         # Find all segments that overlap with the requested slice
         active = [
-            s for s in self._segments if s.onset < stop and s.offset > start
+            s for s in self._segments if (stop is None or s.onset < stop) and s.offset > start
         ]
-        time_length = int(stop - start)
+        if stop is None:
+            time_length = None
+        else:
+            time_length = int(stop - start)
         shifted_segments = []
         for s in active:
             # Slicing of the last dimension is done in _cut
-            onset, array = _cut(s.array[selector + (slice(None),)],
-                                s.onset - start, time_length)
-            shifted_segments.append(
-                _SparseSegment(onset, array)
-            )
-        arr = self.__class__(
-            shape=(_shape_for_item(self.shape[:-1], selector) + (time_length,)),
+            shifted_segments.append(_SparseSegment.from_array(
+                s.array[selector + (slice(None),)],
+                s.onset - start,
+                time_length
+            ))
+        arr = dataclasses.replace(
+            self,
+            shape=_shape_for_item(self._leading_shape, selector) + (time_length,),
             _segments=shifted_segments,
-            _pad_value=self._pad_value,
         )
         return arr
 
@@ -893,7 +1117,7 @@ class SparseArray:
         if isinstance(other, SparseArray):
             _check_shape(self.shape, other.shape)
             for s in other._segments:
-                self._add_segment(_SparseSegment(s.onset, s.array))
+                self._add_segment(copy.copy(s))
         else:
             raise TypeError(type(other))
         return self
@@ -914,10 +1138,9 @@ class SparseArray:
         """
         if isinstance(other, (float, int, complex)):
             # Scalar value, multiply everything by it
-            arr = self.__class__(
-                shape=self.shape,
-                _segments=[
-                    _SparseSegment(s.onset, s.array * other)
+            arr = dataclasses.replace(
+                self, _segments=[
+                    dataclasses.replace(s, array=s.array * other)
                     for s in self._segments
                 ],
                 _pad_value=self._pad_value * other
@@ -981,7 +1204,7 @@ class SparseArray:
         # Other operators can be tricky to implement and may result in
         # unexpected behavior
         if ufunc not in [np.add, np.subtract, np.multiply, np.divide]:
-            raise NotImplemented
+            return NotImplemented
 
         # Only support combinations of np.ndarray and SparseArray
         if isinstance(inputs[0], SparseArray) and isinstance(inputs[1], SparseArray):

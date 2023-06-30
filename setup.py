@@ -43,7 +43,7 @@ test = [
     # 'pymatbridge',  # need pyzmq to be installed manually
     'tqdm',
     'fire',
-    'pycallgraph',  # Used in profiling module
+    # 'pycallgraph',  # Used in profiling module
     'line_profiler',
     'memory_profiler',
 ]

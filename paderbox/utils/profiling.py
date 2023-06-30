@@ -58,8 +58,8 @@ def cprun(func_or_str='tottime'):
 def gprun(func):
     """
     graph profiling, visualizes the decorated function with a call graph
-    :param func:
-    :return:
+
+    TODO: pycallgraph is deprecated
     """
     from pycallgraph import PyCallGraph
     from pycallgraph.output import GraphvizOutput
