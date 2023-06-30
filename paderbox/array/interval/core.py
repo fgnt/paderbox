@@ -4,6 +4,7 @@ In combination with jsonpickle this allows for a low resource possibility to
 save activity information for large time streams.
 """
 
+import operator
 from typing import Optional, Union, Iterable
 
 import numpy as np
@@ -812,7 +813,6 @@ class ArrayInterval:
         if not isinstance(other, ArrayInterval):
             return NotImplemented
         else:
-            import operator
             return _combine(operator.__xor__, self, other)
 
     def __eq__(self, other):
@@ -829,8 +829,23 @@ class ArrayInterval:
         if not isinstance(other, ArrayInterval):
             return NotImplemented
         else:
-            import operator
             return _combine(operator.__eq__, self, other)
+
+    def __lt__(self, other):
+        if not isinstance(other, ArrayInterval): return NotImplemented
+        else: return _combine(operator.__lt__, self, other)
+
+    def __le__(self, other):
+        if not isinstance(other, ArrayInterval): return NotImplemented
+        else: return _combine(operator.__le__, self, other)
+
+    def __gt__(self, other):
+        if not isinstance(other, ArrayInterval): return NotImplemented
+        else: return _combine(operator.__gt__, self, other)
+
+    def __ge__(self, other):
+        if not isinstance(other, ArrayInterval): return NotImplemented
+        else: return _combine(operator.__ge__, self, other)
 
 
 def _yield_sections(a_intervals, b_intervals):
@@ -953,6 +968,16 @@ def _combine(func, *array_intervals, out=None):
     array([ True,  True,  True, False, False,  True,  True,  True, False,
            False,  True])
 
+    >>> _combine(operator.__or__, ai1, ArrayInterval(ai1[:11]))
+    ArrayInterval("3:5, 8:10", shape=(11,))
+    >>> _combine(operator.__or__, ai1, ArrayInterval(ai1[:10]))
+    ArrayInterval("3:5, 8:10", shape=(10,))
+    >>> _combine(operator.__or__, ai1, ArrayInterval(ai1[:9]))
+    Traceback (most recent call last):
+    ...
+    IndexError: Shape issue: Index 10 is out of bounds for one ArrayInterval.
+    Shapes are: [None, (9,)]
+
     """
 
     edges = {0, }
@@ -967,10 +992,10 @@ def _combine(func, *array_intervals, out=None):
     last = func(*values)
 
     if out is None:
-        shapes = [ai.shape for ai in array_intervals]
-        assert len(set(shapes) - {None}) in [0, 1], shapes
+        shapes = [ai.shape for ai in array_intervals if ai.shape is not None]
+        assert len(set(shapes)) in [0, 1], shapes
         # assert len(set(shapes)) == 1, shapes
-        shape = shapes[0]
+        shape = shapes[0] if shapes else None
 
         if shape is None:
             if last:
