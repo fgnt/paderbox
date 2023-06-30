@@ -935,6 +935,10 @@ class ArrayInterval:
         else:
             return _combine(operator.__eq__, self, other)
 
+    def __ne__(self, other):
+        if not isinstance(other, ArrayInterval): return NotImplemented
+        else: return _combine(operator.__ne__, self, other)
+
     def __lt__(self, other):
         if not isinstance(other, ArrayInterval): return NotImplemented
         else: return _combine(operator.__lt__, self, other)
