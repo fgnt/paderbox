@@ -703,6 +703,9 @@ class ArrayInterval:
             sum = self.shape[0] - sum
         return sum
 
+    def mean(self, axis=None, out=None):
+        return self.sum(axis, out) / self.shape[0]
+
     def __or__(self, other):
         """
         >>> a1 = ArrayInterval([True, True, False, False])
