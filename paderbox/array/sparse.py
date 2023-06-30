@@ -376,7 +376,7 @@ class SparseArray:
     # (torch.float32, device(type='cpu'), True)
     """
     # Public constructor interface
-    shape: Optional[tuple]
+    shape: tuple
 
     # Private constructor arguments: Don't use _segments or _pad_value directly.
     # This is required for pt.data.batch.example_to_device to work
@@ -955,11 +955,23 @@ class SparseArray:
 
         # Unknown time length
         >>> a = zeros((None,))
+        >>> a[10]
+        0.0
         >>> a[:10], np.asarray(a[:10])
         (SparseArray(shape=(10,)), array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0.], dtype=float32))
         >>> a[:5] = 1
         >>> np.asarray(a[2:7])
         array([1., 1., 1., 0., 0.], dtype=float32)
+        >>> a[0]
+        1.0
+        >>> a[10]
+        0.0
+        >>> a.persist_shape()
+        (5,)
+        >>> a[10]
+        Traceback (most recent call last):
+          ...
+        IndexError: Index 10 is out of bounds for ArrayInterval with shape (5,)
         >>> a = zeros((2, None))
         >>> a[:, :5] = np.ones((2, 5), dtype=np.float32)
         >>> a[0]
@@ -998,7 +1010,7 @@ class SparseArray:
             index = item
             if index < 0:
                 index = index + self._time_length
-            if index < 0 or index > self._time_length:
+            if index < 0 or self._time_length is not None and index > self._time_length:
                 raise IndexError(
                     f'Index {item} is out of bounds for ArrayInterval with '
                     f'shape {self.shape}'
@@ -1014,7 +1026,6 @@ class SparseArray:
                     return s.array[selector + (index - s.onset,)]
 
             # Return the fill value if not segment overlaps with the index, r
-            # TODO: what happens if shape is None?
             return self._new_full(
                 shape=_shape_for_item(self._leading_shape, selector)
             )
@@ -1042,7 +1053,6 @@ class SparseArray:
                 s.onset - start,
                 time_length
             ))
-        # TODO: what happens if shape is None?
         arr = dataclasses.replace(
             self,
             shape=_shape_for_item(self._leading_shape, selector) + (time_length,),
