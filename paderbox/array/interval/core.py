@@ -724,6 +724,49 @@ class ArrayInterval:
 
         return arr
 
+    def pad(self, pad_width, mode='constant', **kwargs):
+        """
+
+        >>> ai = zeros()
+        >>> ai[10:20] = 1
+        >>> ai.pad(3)
+        ArrayInterval("13:23", shape=None)
+        >>> ai.pad([3, 4])
+        ArrayInterval("13:23", shape=None)
+        >>> ai = zeros(50)
+        >>> ai[10:20] = 1
+        >>> ai.pad(3)
+        ArrayInterval("13:23", shape=(56,))
+        >>> ai.pad([3, 4])
+        ArrayInterval("13:23", shape=(57,))
+
+        >>> np.pad(np.zeros(50), 3).shape
+        (56,)
+        >>> np.pad(np.zeros(50), (3, 4)).shape
+        (57,)
+
+        """
+        if self.inverse_mode:
+            raise NotImplementedError(self.inverse_mode)
+        if mode != 'constant' or kwargs:
+            kwargs = ','.join(
+                [f'mode={mode!r} '] + [f'{k}={v!r}' for k, v in
+                                       kwargs.items()])
+            raise NotImplementedError(kwargs)
+        if isinstance(pad_width, int):
+            pad_width = [pad_width, pad_width]
+        else:
+            assert len(pad_width) == 2, pad_width
+
+        shape = self.shape
+        shape = shape if shape is None else [*shape[:-1],
+                                             shape[-1] + pad_width[0] + pad_width[1]]
+
+        return ArrayInterval.from_pairs([
+            [s + pad_width[0], e + pad_width[0]]
+            for s, e in self.normalized_intervals
+        ], shape, self.inverse_mode)
+
     def _slice_doctest(self):
         """
 
