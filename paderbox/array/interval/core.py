@@ -43,6 +43,24 @@ def ArrayInterval_from_str(string, shape, inverse_mode=False) -> 'ArrayInterval'
     return ai
 
 
+def ArrayInterval_from_pairs(pairs: 'list[list[int]]', shape=None, inverse_mode=False):
+    """
+    >>> ArrayInterval_from_pairs([[1, 4], [5, 20], [21, 25]], shape=50)
+    ArrayInterval("1:4, 5:20, 21:25", shape=(50,))
+    >>> ArrayInterval_from_pairs([[1, 4]], shape=50)
+    ArrayInterval("1:4", shape=(50,))
+    >>> ArrayInterval_from_pairs([[1, 4]], shape=50)
+    ArrayInterval("1:4", shape=(50,))
+    >>> ArrayInterval_from_pairs([[0, 142464640]], shape=242464640)
+    ArrayInterval("0:142464640", shape=(242464640,))
+
+    """
+    ai = zeros(shape)
+    ai.add_intervals([slice(start, end) for start, end in pairs])
+    ai.inverse_mode = inverse_mode
+    return ai
+
+
 def intervals_to_str(intervals):
     return ', '.join(f'{start}:{end}' for start, end in intervals)
 
@@ -449,6 +467,32 @@ class ArrayInterval:
         """
         assert len(obj) == 2, f'Expects object of length 2 with items (intervals, shape), got: {obj}'
         return ArrayInterval_from_str(obj[0], shape=obj[1])
+
+    @staticmethod
+    def from_pairs(pairs: 'list[list[int]]', shape=None, inverse_mode=False):
+        """
+        Construct an ArrayInterval from pairs of start, stop values.
+
+        e.g.:
+
+            ai = ArrayInterval.from_pairs([(1, 2), (10, 15)])
+
+        is the same as:
+
+            ai = zeros()
+            ai[1:2] = 1
+            ai[10:15] = 1
+
+        Args:
+            pairs:
+            shape:
+            inverse_mode:
+
+        Returns:
+
+        """
+
+        return ArrayInterval_from_pairs(pairs, shape, inverse_mode)
 
     def __repr__(self):
         if self.inverse_mode:
