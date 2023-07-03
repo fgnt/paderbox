@@ -12,7 +12,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python-version: [3.8]  # Test only one Python Version for Windows
+        python-version: [3.10]  # Test only one Python Version for Windows
 
     steps:
     - uses: actions/checkout@v2
