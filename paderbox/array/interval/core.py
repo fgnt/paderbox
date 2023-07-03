@@ -4,6 +4,7 @@ In combination with jsonpickle this allows for a low resource possibility to
 save activity information for large time streams.
 """
 
+import operator
 from typing import Optional, Union, Iterable
 
 import numpy as np
@@ -16,7 +17,7 @@ from paderbox.array.interval.util import (
 )
 
 
-def ArrayInterval_from_str(string, shape, inverse_mode=False):
+def ArrayInterval_from_str(string, shape, inverse_mode=False) -> 'ArrayInterval':
     """
     >>> ArrayInterval_from_str('1:4, 5:20, 21:25', shape=50)
     ArrayInterval("1:4, 5:20, 21:25", shape=(50,))
@@ -38,6 +39,24 @@ def ArrayInterval_from_str(string, shape, inverse_mode=False):
             ai.add_intervals_from_str(string)
         except Exception as e:
             raise Exception(string) from e
+    ai.inverse_mode = inverse_mode
+    return ai
+
+
+def ArrayInterval_from_pairs(pairs: 'list[list[int]]', shape=None, inverse_mode=False):
+    """
+    >>> ArrayInterval_from_pairs([[1, 4], [5, 20], [21, 25]], shape=50)
+    ArrayInterval("1:4, 5:20, 21:25", shape=(50,))
+    >>> ArrayInterval_from_pairs([[1, 4]], shape=50)
+    ArrayInterval("1:4", shape=(50,))
+    >>> ArrayInterval_from_pairs([[1, 4]], shape=50)
+    ArrayInterval("1:4", shape=(50,))
+    >>> ArrayInterval_from_pairs([[0, 142464640]], shape=242464640)
+    ArrayInterval("0:142464640", shape=(242464640,))
+
+    """
+    ai = zeros(shape)
+    ai.add_intervals([slice(start, end) for start, end in pairs])
     ai.inverse_mode = inverse_mode
     return ai
 
@@ -256,6 +275,8 @@ class ArrayInterval:
     @shape.setter
     def shape(self, shape):
         self._shape = _normalize_shape(shape)
+        if self._intervals and self._shape is not None:
+            assert self.normalized_intervals[-1][-1] <= self._shape[-1], (shape, self._shape, self.normalized_intervals)
 
     def __copy__(self):
         if self.inverse_mode:
@@ -306,6 +327,7 @@ class ArrayInterval:
         >>> pprint(json.loads(jsonpickle.dumps(ai)))
         {'py/reduce': [{'py/function': 'paderbox.array.interval.core.ArrayInterval_from_str'},
           {'py/tuple': ['1:4, 5:20, 21:25', 50, False]}]}
+
         >>> ai = ArrayInterval.from_str('1:4, 5:20, 21:25', shape=50)
         >>> ai.inverse_mode = True
         >>> ai
@@ -446,6 +468,32 @@ class ArrayInterval:
         """
         assert len(obj) == 2, f'Expects object of length 2 with items (intervals, shape), got: {obj}'
         return ArrayInterval_from_str(obj[0], shape=obj[1])
+
+    @staticmethod
+    def from_pairs(pairs: 'list[list[int]]', shape=None, inverse_mode=False):
+        """
+        Construct an ArrayInterval from pairs of start, stop values.
+
+        e.g.:
+
+            ai = ArrayInterval.from_pairs([(1, 2), (10, 15)])
+
+        is the same as:
+
+            ai = zeros()
+            ai[1:2] = 1
+            ai[10:15] = 1
+
+        Args:
+            pairs:
+            shape:
+            inverse_mode:
+
+        Returns:
+
+        """
+
+        return ArrayInterval_from_pairs(pairs, shape, inverse_mode)
 
     def __repr__(self):
         if self.inverse_mode:
@@ -677,6 +725,124 @@ class ArrayInterval:
 
         return arr
 
+    def pad(self, pad_width, mode='constant', **kwargs):
+        """
+        Numpy like padding (see np.pad).
+
+        Args:
+            pad_width:
+                Number of values padded to the edges.
+                Either a pair (before, after) or a scalar that is is used for
+                before and after.
+            mode:
+                Only 'constant' is implemented.
+            **kwargs:
+                Not yet supported, but kept for better error message.
+
+        Returns:
+            Padded ArrayInterval
+
+
+        >>> ai = zeros()
+        >>> ai[10:20] = 1
+        >>> ai.pad(3)
+        ArrayInterval("13:23", shape=None)
+        >>> ai.pad([3, 4])
+        ArrayInterval("13:23", shape=None)
+        >>> ai = zeros(50)
+        >>> ai[10:20] = 1
+        >>> ai.pad(3)
+        ArrayInterval("13:23", shape=(56,))
+        >>> ai.pad([3, 4])
+        ArrayInterval("13:23", shape=(57,))
+
+        >>> np.pad(np.zeros(50), 3).shape
+        (56,)
+        >>> np.pad(np.zeros(50), (3, 4)).shape
+        (57,)
+
+        """
+        if self.inverse_mode:
+            raise NotImplementedError(self.inverse_mode)
+        if mode != 'constant' or kwargs:
+            kwargs = ','.join(
+                [f'mode={mode!r} '] + [f'{k}={v!r}' for k, v in
+                                       kwargs.items()])
+            raise NotImplementedError(kwargs)
+        if isinstance(pad_width, int):
+            pad_width = [pad_width, pad_width]
+        else:
+            assert len(pad_width) == 2, pad_width
+
+        shape = self.shape
+        shape = shape if shape is None else [*shape[:-1],
+                                             shape[-1] + pad_width[0] + pad_width[1]]
+
+        return ArrayInterval.from_pairs([
+            [s + pad_width[0], e + pad_width[0]]
+            for s, e in self.normalized_intervals
+        ], shape, self.inverse_mode)
+
+    def _slice_doctest(self):
+        """
+
+        >>> ai = zeros(50)
+        >>> ai[10:20] = 1
+        >>> ai[25:30] = 1
+        >>> ai.slice[19:26]
+        ArrayInterval("0:1, 6:7", shape=(7,))
+
+        >>> ai.slice[19:26][:]  # Second getitem converts to np.
+        array([ True, False, False, False, False, False,  True])
+        >>> ai[19:26]  # Use normal getitem, that returns np.
+        array([ True, False, False, False, False, False,  True])
+
+        >>> ai = zeros()
+        >>> ai[10:20] = 1
+        >>> ai.slice[2:]
+        ArrayInterval("8:18", shape=None)
+        """
+        raise NotImplementedError('Use slice not _slice_doctest.')
+
+    @property
+    class slice:
+        """
+        Similar to __getitem__, but only allow slices as arguments and
+        returns an ArrayInterval instead of a numpy.array.
+
+        For examples see _slice_doctest.
+        General usage:
+
+            >> new = ai.slice[19:26]
+
+        """
+        def __init__(self, ai):
+            self.ai = ai
+
+        def __getitem__(self, item):
+            sentinel = 9223372036854775807  # 2**63-1
+            shape, = [sentinel] if self.ai.shape is None else self.ai.shape
+
+            start, stop = cy_parse_item(item, [shape])
+            intervals = cy_intersection((start, stop), self.ai.normalized_intervals)
+
+            if shape == sentinel:
+                assert start >= 0, (item, start, stop)
+                assert stop >= 0, (item, start, stop)
+                if stop == sentinel:
+                    shape = None
+                else:
+                    shape = stop - start
+                    assert shape >= 0, (shape, item, start, stop)
+            else:
+                shape = stop - start
+                assert shape >= 0, (shape, item, start, stop)
+
+            return ArrayInterval.from_pairs([
+                [s-start, e-start]
+                for s, e in intervals
+            ], shape, self.ai.inverse_mode)
+
     def sum(self, axis=None, out=None):
         """
         >>> a = ArrayInterval([True, True, False, False])
@@ -699,6 +865,11 @@ class ArrayInterval:
             sum = b - a
         if self.inverse_mode:
             sum = self.shape[0] - sum
+        return sum
+
+    def mean(self, axis=None, out=None):
+        sum = self.sum(axis, out)
+        sum /= self.shape[0]
         return sum
 
     def __or__(self, other):
@@ -807,7 +978,6 @@ class ArrayInterval:
         if not isinstance(other, ArrayInterval):
             return NotImplemented
         else:
-            import operator
             return _combine(operator.__xor__, self, other)
 
     def __eq__(self, other):
@@ -824,8 +994,27 @@ class ArrayInterval:
         if not isinstance(other, ArrayInterval):
             return NotImplemented
         else:
-            import operator
             return _combine(operator.__eq__, self, other)
+
+    def __ne__(self, other):
+        if not isinstance(other, ArrayInterval): return NotImplemented
+        else: return _combine(operator.__ne__, self, other)
+
+    def __lt__(self, other):
+        if not isinstance(other, ArrayInterval): return NotImplemented
+        else: return _combine(operator.__lt__, self, other)
+
+    def __le__(self, other):
+        if not isinstance(other, ArrayInterval): return NotImplemented
+        else: return _combine(operator.__le__, self, other)
+
+    def __gt__(self, other):
+        if not isinstance(other, ArrayInterval): return NotImplemented
+        else: return _combine(operator.__gt__, self, other)
+
+    def __ge__(self, other):
+        if not isinstance(other, ArrayInterval): return NotImplemented
+        else: return _combine(operator.__ge__, self, other)
 
 
 def _yield_sections(a_intervals, b_intervals):
@@ -948,6 +1137,15 @@ def _combine(func, *array_intervals, out=None):
     array([ True,  True,  True, False, False,  True,  True,  True, False,
            False,  True])
 
+    >>> _combine(operator.__or__, ai1, ArrayInterval(ai1[:11]))
+    ArrayInterval("3:5, 8:10", shape=(11,))
+    >>> _combine(operator.__or__, ai1, ArrayInterval(ai1[:10]))
+    ArrayInterval("3:5, 8:10", shape=(10,))
+    >>> _combine(operator.__or__, ai1, ArrayInterval(ai1[:9]))
+    Traceback (most recent call last):
+    ...
+    IndexError: Index 9 is out of bounds for ArrayInterval with shape (9,)
+
     """
 
     edges = {0, }
@@ -962,10 +1160,10 @@ def _combine(func, *array_intervals, out=None):
     last = func(*values)
 
     if out is None:
-        shapes = [ai.shape for ai in array_intervals]
-        assert len(set(shapes) - {None}) in [0, 1], shapes
+        shapes = [ai.shape for ai in array_intervals if ai.shape is not None]
+        assert len(set(shapes)) in [0, 1], shapes
         # assert len(set(shapes)) == 1, shapes
-        shape = shapes[0]
+        shape = shapes[0] if shapes else None
 
         if shape is None:
             if last:

@@ -14,10 +14,10 @@ def cy_non_intersection(interval: tuple, intervals: tuple) -> tuple:
     Similar to `cy_intersection(inverted_interval, intervals)`.
     """
     cdef:
-        int start
-        int end
-        int i_start
-        int i_end
+        long long start
+        long long end
+        long long i_start
+        long long i_end
         list new_interval
     start, end = interval
     new_interval = []
@@ -43,10 +43,10 @@ def cy_intersection(interval, intervals):
     "Cuts" out intervals from `intervals` that lie within `interval`.
     """
     cdef:
-        int start
-        int end
-        int i_start
-        int i_end
+        long long start
+        long long end
+        long long i_start
+        long long i_end
         list new_interval
 
     start, end = interval
@@ -64,10 +64,10 @@ def cy_intersection(interval, intervals):
 def cy_parse_item(item, shape):
 
     cdef:
-        int start
-        int end
-        int v
-        int size
+        long long start
+        long long end
+        long long v
+        long long size
 
     if shape is not None:
         size = shape[-1]
@@ -136,8 +136,8 @@ def cy_str_to_intervals(string):
         str interval_string
         str start_str
         str end_str
-        int start
-        int end
+        long long start
+        long long end
         list intervals
 
     intervals_string = string
@@ -172,9 +172,9 @@ def cy_invert_intervals(normalized_intervals, size):
     """
     cdef:
         list inverted_intervals
-        int edge
-        int i_start
-        int i_end
+        long long edge
+        long long i_start
+        long long i_end
 
     if len(normalized_intervals) == 0:
         # Shortcut for emtpy intervals
