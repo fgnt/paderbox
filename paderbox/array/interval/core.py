@@ -327,6 +327,7 @@ class ArrayInterval:
         >>> pprint(json.loads(jsonpickle.dumps(ai)))
         {'py/reduce': [{'py/function': 'paderbox.array.interval.core.ArrayInterval_from_str'},
           {'py/tuple': ['1:4, 5:20, 21:25', 50, False]}]}
+
         >>> ai = ArrayInterval.from_str('1:4, 5:20, 21:25', shape=50)
         >>> ai.inverse_mode = True
         >>> ai
@@ -726,6 +727,21 @@ class ArrayInterval:
 
     def pad(self, pad_width, mode='constant', **kwargs):
         """
+        Numpy like padding (see np.pad).
+
+        Args:
+            pad_width:
+                Number of values padded to the edges.
+                Either a pair (before, after) or a scalar that is is used for
+                before and after.
+            mode:
+                Only 'constant' is implemented.
+            **kwargs:
+                Not yet supported, but kept for better error message.
+
+        Returns:
+            Padded ArrayInterval
+
 
         >>> ai = zeros()
         >>> ai[10:20] = 1
