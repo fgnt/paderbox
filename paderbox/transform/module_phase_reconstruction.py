@@ -51,10 +51,13 @@ def griffin_lim(x, stft: STFT, iterations=100, verbose=False):
 
         if verbose:
             reconstruction_magnitude = np.abs(reconstruction_stft)
-            diff = (np.sqrt(np.mean((reconstruction_magnitude - x) ** 2)))
+            diff = (
+                np.linalg.norm(x - reconstruction_magnitude, ord='fro')
+                / (np.linalg.norm(x, ord='fro') + 1e-5)
+            )  # Spectral Convergence
             print(
-                'Reconstruction iteration: {}/{} RMSE: {} '.format(
-                    n, iterations, diff
+                'Reconstruction iteration: {}/{} SC: {} dB'.format(
+                    n, iterations, 10 * np.log10(diff)
                 )
             )
     return audio
