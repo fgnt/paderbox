@@ -197,3 +197,72 @@ def pretty(
         printer.pretty(obj)
     printer.flush()
     return stream.getvalue()
+
+
+if __name__ == '__main__':
+    import tempfile
+    import contextlib
+    import shutil
+    import subprocess
+    import shlex
+    from pathlib import Path
+
+    import paderbox as pb
+
+
+    def cli_pprint(file, max_seq_length=[10, 5, 2], max_width=None):
+        """Load a file and pretty print it. With max_seq_length you can
+        control the length of the printed sequences.
+
+        Args:
+            file: e.g. a json file
+            max_seq_length: An integer or a list of integers.
+                The last entry is used for all larger depths.
+            max_width:
+        """
+        data = pb.io.load(file)
+
+        if max_width is None:
+            max_width = shutil.get_terminal_size((79, 20)).columns
+
+        pprint(data, max_seq_length=max_seq_length, max_width=max_width)
+
+    def cli_diff(file1, file2, max_seq_length=[10, 5, 2], max_width=None):
+        """Load two files, prettify them and forward to icdiff.
+        icdiff shows a colored side by side diff in the terminal.
+
+        Args:
+            file1: e.g. a json file
+            file2: e.g. a json file
+            max_seq_length: An integer or a list of integers.
+                The last entry is used for all larger depths.
+            max_width:
+        """
+        if max_width is None:
+            max_width = shutil.get_terminal_size((79, 20)).columns // 2
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_dir = Path(tmp_dir)
+            json1 = Path(file1)
+            json2 = Path(file2)
+            # Add prefix (0_, 1_) to ensure different file names.
+            f1 = tmp_dir / ('0_' + json1.name)
+            f2 = tmp_dir / ('1_' + json2.name)
+
+            with open(f1, 'w') as fd:
+                with contextlib.redirect_stdout(fd):
+                    cli_pprint(json1, max_seq_length=max_seq_length, max_width=max_width)
+            with open(f2, 'w') as fd:
+                with contextlib.redirect_stdout(fd):
+                    cli_pprint(json2, max_seq_length=max_seq_length, max_width=max_width)
+
+            subprocess.run(
+                f'icdiff {shlex.quote(str(f1))} {shlex.quote(str(f2))}',
+                shell=True)
+
+    import fire
+    fire.Fire({
+        'pprint': cli_pprint,
+        'pp': cli_pprint,
+        'diff': cli_diff,
+    })
