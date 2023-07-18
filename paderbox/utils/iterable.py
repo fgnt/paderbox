@@ -7,6 +7,7 @@ from typing import Callable, Any, Hashable, Optional, Union, Iterable
 
 __all__ = [
     'groupby',
+    'zip',
 ]
 
 
