@@ -55,9 +55,7 @@ class _MyRepresentationPrinter(IPython.lib.pretty.RepresentationPrinter):
 
     @property
     def max_seq_length(self):
-        if isinstance(self._max_seq_length, int):
-            return self._max_seq_length
-        elif isinstance(self._max_seq_length, (tuple, list)):
+        if isinstance(self._max_seq_length, (tuple, list)):
             if self.depth >= len(self._max_seq_length):
                 return self._max_seq_length[-1]
             else:
