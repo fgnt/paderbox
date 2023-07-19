@@ -53,6 +53,48 @@ class _MyRepresentationPrinter(IPython.lib.pretty.RepresentationPrinter):
         self.type_pprinters[type({}.items())] = \
             IPython.lib.pretty._seq_pprinter_factory('dict_items(', ')')
 
+    @property
+    def max_seq_length(self):
+        if isinstance(self._max_seq_length, (tuple, list)):
+            if self.depth >= len(self._max_seq_length):
+                return self._max_seq_length[-1]
+            else:
+                return self._max_seq_length[self.depth]
+        return self._max_seq_length
+
+    @max_seq_length.setter
+    def max_seq_length(self, value):
+        self._max_seq_length = value
+
+    depth = -1
+
+    def _enumerate(self, seq):
+        """
+        >>> nested = {l: [tuple(range(3))]*4 for l in 'abcd'}
+        >>> pprint(nested)
+        {'a': [(0, 1, 2), (0, 1, 2), (0, 1, 2), (0, 1, 2)],
+         'b': [(0, 1, 2), (0, 1, 2), (0, 1, 2), (0, 1, 2)],
+         'c': [(0, 1, 2), (0, 1, 2), (0, 1, 2), (0, 1, 2)],
+         'd': [(0, 1, 2), (0, 1, 2), (0, 1, 2), (0, 1, 2)]}
+        >>> pprint(nested, max_seq_length=[3, 2])
+        {'a': [(0, 1, ...), (0, 1, ...), ...],
+         'b': [(0, 1, ...), (0, 1, ...), ...],
+         'c': [(0, 1, ...), (0, 1, ...), ...],
+         ...}
+        >>> pprint(nested, max_seq_length=[3, 2, 1])
+        {'a': [(0, ...), (0, ...), ...],
+         'b': [(0, ...), (0, ...), ...],
+         'c': [(0, ...), (0, ...), ...],
+         ...}
+        >>> pprint(nested, max_seq_length=2)
+        {'a': [(0, 1, ...), (0, 1, ...), ...],
+         'b': [(0, 1, ...), (0, 1, ...), ...],
+         ...}
+        """
+        self.depth += 1
+        yield from super()._enumerate(seq)
+        self.depth -= 1
+
 
 def pprint(
         obj,
@@ -69,6 +111,8 @@ def pprint(
     Differences:
      - Shortens the __repr__ of large np.ndarray and torch.Tensor
      - Support multiple objects (Causes bad readable error in original)
+     - Support list/tuple for max_seq_length, where
+       max(depth, len(max_seq_length)-1) is used as index.
 
 
     >>> pprint([np.array([1.]), np.array([1.]*100)])
@@ -151,3 +195,72 @@ def pretty(
         printer.pretty(obj)
     printer.flush()
     return stream.getvalue()
+
+
+if __name__ == '__main__':
+    import tempfile
+    import contextlib
+    import shutil
+    import subprocess
+    import shlex
+    from pathlib import Path
+
+    import paderbox as pb
+
+
+    def cli_pprint(file, max_seq_length=[10, 5, 2], max_width=None):
+        """Load a file and pretty print it. With max_seq_length you can
+        control the length of the printed sequences.
+
+        Args:
+            file: e.g. a json file
+            max_seq_length: An integer or a list of integers.
+                The last entry is used for all larger depths.
+            max_width:
+        """
+        data = pb.io.load(file)
+
+        if max_width is None:
+            max_width = shutil.get_terminal_size((79, 20)).columns
+
+        pprint(data, max_seq_length=max_seq_length, max_width=max_width)
+
+    def cli_diff(file1, file2, max_seq_length=[10, 5, 2], max_width=None):
+        """Load two files, prettify them and forward to icdiff.
+        icdiff shows a colored side by side diff in the terminal.
+
+        Args:
+            file1: e.g. a json file
+            file2: e.g. a json file
+            max_seq_length: An integer or a list of integers.
+                The last entry is used for all larger depths.
+            max_width:
+        """
+        if max_width is None:
+            max_width = shutil.get_terminal_size((79, 20)).columns // 2
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_dir = Path(tmp_dir)
+            json1 = Path(file1)
+            json2 = Path(file2)
+            # Add prefix (0_, 1_) to ensure different file names.
+            f1 = tmp_dir / ('0_' + json1.name)
+            f2 = tmp_dir / ('1_' + json2.name)
+
+            with open(f1, 'w') as fd:
+                with contextlib.redirect_stdout(fd):
+                    cli_pprint(json1, max_seq_length=max_seq_length, max_width=max_width)
+            with open(f2, 'w') as fd:
+                with contextlib.redirect_stdout(fd):
+                    cli_pprint(json2, max_seq_length=max_seq_length, max_width=max_width)
+
+            subprocess.run(
+                f'icdiff {shlex.quote(str(f1))} {shlex.quote(str(f2))}',
+                shell=True)
+
+    import fire
+    fire.Fire({
+        'pprint': cli_pprint,
+        'pp': cli_pprint,
+        'diff': cli_diff,
+    })
