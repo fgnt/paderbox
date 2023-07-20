@@ -25,7 +25,10 @@ def cos_distance(a, b):
     :param b: vector b (1xN or Nx1 numpy array)
     :return: distance (scalar)
     """
-    return 0.5 * (1 - sum(a * b) / np.sqrt(sum(a ** 2) * sum(b ** 2)))
+    assert a.shape == b.shape, 'Both vectors must have the same dimension'
+    assert a.squeeze().ndim == 1 and b.squeeze().ndim == 1, \
+        f"Input must be vectors: {a.shape} {b.shape}"
+    return 0.5 * (1 - np.sum(a * b) / np.sqrt(np.sum(a ** 2) * np.sum(b ** 2)))
 
 
 def normalize_vector_to_unit_length(data):
