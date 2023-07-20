@@ -19,16 +19,15 @@ def cos_similarity(A, B):
 
 def cos_distance(a, b):
     """
-    cosine distance between vector a and b: 1/2*(1-a*b/|a|*|b|)
+    cosine distance between array A and B
+    Args:
+        A: array with shape (...,d)
+        B: array with shape (...,d)
 
-    :param a: vector a (1xN or Nx1 numpy array)
-    :param b: vector b (1xN or Nx1 numpy array)
-    :return: distance (scalar)
+    Returns:
+        cosine distance with shape (...)
     """
-    assert a.shape == b.shape, 'Both vectors must have the same dimension'
-    assert a.squeeze().ndim == 1 and b.squeeze().ndim == 1, \
-        f"Input must be vectors: {a.shape} {b.shape}"
-    return 0.5 * (1 - np.sum(a * b) / np.sqrt(np.sum(a ** 2) * np.sum(b ** 2)))
+    return 0.5 * (1 - cos_similarity(A, B))
 
 
 def normalize_vector_to_unit_length(data):
