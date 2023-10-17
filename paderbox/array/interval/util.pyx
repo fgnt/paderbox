@@ -60,6 +60,24 @@ def cy_intersection(interval, intervals):
 
     return tuple(new_interval)
 
+def cy_intersection_double(interval, intervals):
+    cdef:
+        double start
+        double end
+        double i_start
+        double i_end
+        list new_interval
+
+    start, end = interval
+    new_interval = []
+
+    for i_start, i_end in intervals:
+        i_start = max(start, i_start)
+        i_end = min(end, i_end)
+        if i_start < i_end:
+            new_interval.append((i_start, i_end))
+
+    return tuple(new_interval)
 
 def cy_parse_item(item, shape):
 
