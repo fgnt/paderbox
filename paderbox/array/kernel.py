@@ -28,7 +28,7 @@ def _plot(a):
     print(repr(''.join(values[a])))
 
 
-def np_kernel(
+def np_kernel1d(
         x,
         kernel_size,  # an odd number
         *,
@@ -45,23 +45,27 @@ def np_kernel(
         kernel: a function that should be applied to the kernel window.
             Has to accept an axis argument, like np.mean, np.amax, np.median.
         padding_mode:
+            The mode for np.pad, see np.pad for the options.
         pad_position:
+            'pre': First pad and then apply the kernel.
+            'post': First apply the kernel then pad.
+            None: Don't pad and return an array with a smaller last axis.
 
     Returns:
 
     >>> a = np.array([0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0,])
-    >>> _plot(a); _plot(np_kernel(a, 3, kernel=np.amax))
+    >>> _plot(a); _plot(np_kernel1d(a, 3, kernel=np.amax))
     '    ████    '
     '   ██████   '
-    >>> _plot(a); _plot(np_kernel(a, 3, kernel=np.amin))
+    >>> _plot(a); _plot(np_kernel1d(a, 3, kernel=np.amin))
     '    ████    '
     '     ██     '
-    >>> _plot(a); _plot(np_kernel(a, 3, kernel=np.mean))
+    >>> _plot(a); _plot(np_kernel1d(a, 3, kernel=np.mean))
     '    ████    '
     '   ▃▅██▅▃   '
 
     """
-    assert kernel_size % 2 == 1, (kernel_size, 'must be odd.')
+    assert kernel_size % 2 == 1, (kernel_size, 'kernel size has to be odd.')
     assert pad_position in ['pre', 'post', None], pad_position
 
     if pad_position == 'pre':
@@ -121,7 +125,7 @@ def ai_dilate(ai, kernel_size):
 
 
     """
-    assert kernel_size % 2 == 1, (kernel_size, 'must be odd.')
+    assert kernel_size % 2 == 1, (kernel_size, 'kernel size has to be odd.')
     return _ai_dilate_erode(ai, kernel_size//2)
 
 
@@ -138,11 +142,11 @@ def ai_erode(ai, kernel_size):
     '     ██     '
     '            '
     """
-    assert kernel_size % 2 == 1, (kernel_size, 'must be odd.')
+    assert kernel_size % 2 == 1, (kernel_size, 'kernel size has to be odd.')
     return _ai_dilate_erode(ai, -(kernel_size//2))
 
 
-def max_kernel(x, kernel_size):
+def max_kernel1d(x, kernel_size):
     """
     Apply a max kernel to x.
     In case of a boolean arrays, this operation is known as dilation.
@@ -153,56 +157,56 @@ def max_kernel(x, kernel_size):
     '   ██████   '
     """
     if isinstance(x, np.ndarray):
-        return np_kernel(x, kernel_size, kernel=np.amax)
+        return np_kernel1d(x, kernel_size, kernel=np.amax)
     elif hasattr(x, 'normalized_intervals'):
         return ai_dilate(x, kernel_size)
     else:
         raise TypeError(x)
 
 
-def min_kernel(x, kernel_size):
+def min_kernel1d(x, kernel_size):
     """
     Apply a max kernel to x.
     In case of a boolean arrays, this operation is known as dilation.
 
     >>> a = np.array([0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0,])
-    >>> _plot(a); _plot(min_kernel(a, 3))
+    >>> _plot(a); _plot(min_kernel1d(a, 3))
     '    ████    '
     '     ██     '
     """
     if isinstance(x, np.ndarray):
-        return np_kernel(x, kernel_size, kernel=np.amin)
+        return np_kernel1d(x, kernel_size, kernel=np.amin)
     elif hasattr(x, 'normalized_intervals'):
         return ai_erode(x, kernel_size)
     else:
         raise TypeError(x)
 
 
-def mean_kernel(x, kernel_size):
+def mean_kernel1d(x, kernel_size):
     """
     Apply a mean kernel to x.
 
     >>> a = np.array([0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0,])
-    >>> _plot(a); _plot(mean_kernel(a, 3))
+    >>> _plot(a); _plot(mean_kernel1d(a, 3))
     '    ████    '
     '   ▃▅██▅▃   '
     """
     if isinstance(x, np.ndarray):
-        return np_kernel(x, kernel_size, kernel=np.mean)
+        return np_kernel1d(x, kernel_size, kernel=np.mean)
     else:
         raise TypeError(x)
 
 
-def median_kernel(x, kernel_size):
+def median_kernel1d(x, kernel_size):
     """
     Apply a median kernel to x.
 
     >>> a = np.array([0, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 0,])
-    >>> _plot(a); _plot(median_kernel(a, 3))
+    >>> _plot(a); _plot(median_kernel1d(a, 3))
     ' █  ██ ██  █ '
     '    █████    '
     """
     if isinstance(x, np.ndarray):
-        return np_kernel(x, kernel_size, kernel=np.median)
+        return np_kernel1d(x, kernel_size, kernel=np.median)
     else:
         raise TypeError(x)
