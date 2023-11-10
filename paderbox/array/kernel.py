@@ -152,7 +152,7 @@ def max_kernel1d(x, kernel_size):
     In case of a boolean arrays, this operation is known as dilation.
 
     >>> a = np.array([0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0,])
-    >>> _plot(a); _plot(max_kernel(a, 3))
+    >>> _plot(a); _plot(max_kernel1d(a, 3))
     '    ████    '
     '   ██████   '
     """
