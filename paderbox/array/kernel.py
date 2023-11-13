@@ -25,13 +25,20 @@ def _plot(a):
     if m == 0:
         m = 1
     a = np.round(a * ((len(values)-1) / m)).astype(int)
-    print(repr(''.join(values[a])))
+    if a.ndim == 1:
+        print(repr(''.join(values[a])))
+    elif a.ndim == 2:
+        for e in a:
+            print(repr(''.join(values[e])))
+    else:
+        raise Exception(a.shape)
 
 
 def np_kernel1d(
         x,
         kernel_size,  # an odd number
         *,
+        axis=-1,
         kernel: callable,  # e.g. np.mean, np.amax, np.amin
         padding_mode: 'typing.Literal["edge"]' = 'edge',
         pad_position: 'typing.Literal["pre", "post", None]' = 'pre',
@@ -42,6 +49,7 @@ def np_kernel1d(
     Args:
         x: np.array
         kernel_size:
+        axis:
         kernel: a function that should be applied to the kernel window.
             Has to accept an axis argument, like np.mean, np.amax, np.median.
         padding_mode:
@@ -64,21 +72,48 @@ def np_kernel1d(
     '    ████    '
     '   ▃▅██▅▃   '
 
+    >>> a = np.array([0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1,]).reshape(3, 4)
+    >>> _plot(a)
+    '    '
+    ' ██ '
+    '   █'
+    >>> _plot(np_kernel1d(a, 3, kernel=np.mean))
+    '    '
+    '▄██▄'
+    '  ▄█'
+    >>> _plot(np_kernel1d(a, 3, kernel=np.mean, axis=1))
+    '    '
+    '▄██▄'
+    '  ▄█'
+    >>> _plot(np_kernel1d(a.T, 3, kernel=np.mean, axis=0).T)
+    '    '
+    '▄██▄'
+    '  ▄█'
+    >>> _plot(np_kernel1d(a.T, 3, kernel=np.mean, axis=-2).T)
+    '    '
+    '▄██▄'
+    '  ▄█'
+
     """
     assert kernel_size % 2 == 1, (kernel_size, 'kernel size has to be odd.')
     assert pad_position in ['pre', 'post', None], pad_position
 
+    if 0 <= axis < x.ndim:
+        # segment_axis adds an axis, a negative axis allows to use the same
+        # axis for segment_axis and kernel
+        axis = axis - x.ndim
+
     if pad_position == 'pre':
         shift = kernel_size // 2
-        padding = [(0, 0)] * (x.ndim - 1) + [(shift, shift)]
-        x = np.pad(x, padding, padding_mode)
+        x = pb.array.pad_axis(x, (shift, shift), axis=axis, mode=padding_mode)
 
-    y = kernel(pb.array.segment_axis(x, kernel_size, 1, end='pad'), axis=-1)
+    y = kernel(
+        pb.array.segment_axis(x, kernel_size, 1, axis=axis, end='pad'),
+        axis=axis)
 
     if pad_position == 'post':
         shift = kernel_size // 2
-        padding = [(0, 0)] * (y.ndim - 1) + [(shift, shift)]
-        y = np.pad(y, padding, padding_mode)
+        y = pb.array.pad_axis(y, (shift, shift), axis=axis, mode=padding_mode)
     return y
 
 
