@@ -48,35 +48,32 @@ def create_subplot(f):
     return wrapper
 
 
-def allow_int_color(f):
+def check_color(f):
     """
-    Allow to use an integer to specify the color, where the integer is used
-    to index the "axes.prop_cycle" to get the color.
+    Improve the exception message for color, if color is an int.
 
-    >>> fn = allow_int_color(lambda **kwargs: kwargs)
+    >>> fn = check_color(lambda **kwargs: kwargs)
     >>> fn(color=1)
-    {'color': '#ff7f0e'}
+    Traceback (most recent call last):
+    ...
+    ValueError: The value of color is an integer.
+    To get the N'th color, you can use f'C{N}', e.g. 'C1'.
 
-    >>> from paderbox.visualization.context_manager import axes_context
-    >>> with axes_context(): fn(color=1)  # Works with prop_cycle that changes linestyle
-    {'color': (0.9333333333333333, 0.5215686274509804, 0.2901960784313726), 'linestyle': '-'}
-    >>> with axes_context(): fn()
-    {}
-    >>> with axes_context(): fn(color=1, linestyle='--')  # User input isn't overwritten.
-    {'color': (0.9333333333333333, 0.5215686274509804, 0.2901960784313726), 'linestyle': '--'}
+    >>> plt.plot(np.arange(10), color=1)
+    Traceback (most recent call last):
+    ...
+    ValueError: 1 is not a valid value for color
+
     """
     @wraps(f)
     def wrapper(*args, **kwargs):
         if 'color' in kwargs:
             color = kwargs['color']
             if isinstance(color, int):
-                prop, = itertools.islice(
-                    plt.rcParams['axes.prop_cycle'],
-                    color, color + 1
+                raise ValueError(
+                    'The value of color is an integer.\n'
+                    "To get the N'th color, you can use f'C{N}', e.g. 'C1'."
                 )
-                for k, v in prop.items():
-                    kwargs.setdefault(k, v)
-                kwargs['color'] = prop['color']
         return f(*args, **kwargs)
     return wrapper
 
@@ -177,7 +174,7 @@ def _xy_plot(
 
 
 @allow_dict_input_and_colorize
-@allow_int_color
+@check_color
 @create_subplot
 def stem(  # pylint: disable=unused-argument
         *signal,
@@ -195,7 +192,7 @@ def stem(  # pylint: disable=unused-argument
 
 
 @allow_dict_input_and_colorize
-@allow_int_color
+@check_color
 @create_subplot
 def line(*signal, ax: plt.Axes = None, xlim=None, ylim=None, label=None,
          color=None, logx=False, logy=False, xlabel=None, ylabel=None,
@@ -271,7 +268,7 @@ def line(*signal, ax: plt.Axes = None, xlim=None, ylim=None, label=None,
 
 
 @allow_dict_input_and_colorize
-@allow_int_color
+@check_color
 @create_subplot
 def scatter(*signal, ax=None, ylim=None, label=None, color=None, zorder=None,
             marker=None, xlim=None, xlabel=None, ylabel=None,
@@ -360,7 +357,7 @@ def scatter(*signal, ax=None, ylim=None, label=None, color=None, zorder=None,
 
 
 @allow_dict_input_and_colorize
-@allow_int_color
+@check_color
 @create_subplot
 def time_series(*signal, ax=None, ylim=None, label=None, color=None):
     """
