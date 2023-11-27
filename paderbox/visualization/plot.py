@@ -355,10 +355,11 @@ def time_series(*signal, ax=None, ylim=None, label=None, color=None):
 
 
 def _time_frequency_plot(
-        signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
+        signal, ax: plt.Axes = None, limits=None, log=True, colorbar=True, batch=0,
         sample_rate=None, stft_size=None, stft_shift=None,
         x_label=None, y_label=None, z_label=None, z_scale=None, cmap=None,
         cbar_ticks=None, cbar_tick_labels=None, xticks=None, xtickslabels=None,
+        xlim=None, ylim=None,
         origin='lower'
 ):
     """
@@ -502,6 +503,12 @@ def _time_frequency_plot(
 
     ax.set_aspect('auto')
     ax.grid(False)
+
+    if xlim is not None:
+        ax.set_xlim(xlim)
+    if ylim is not None:
+        ax.set_ylim(ylim)
+
     return ax
 
 
@@ -510,7 +517,8 @@ def spectrogram(  # pylint: disable=unused-argument
         signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
         sample_rate=None, stft_size=None, stft_shift=None,
         x_label=None, y_label=None, z_label=None, z_scale=None, cmap=None,
-        cbar_ticks=None, cbar_tick_labels=None
+        cbar_ticks=None, cbar_tick_labels=None,
+        xlim=None, ylim=None,
 ):
     """
     Plots a spectrogram from a spectrogram (power) as input.
@@ -561,6 +569,7 @@ def stft(  # pylint: disable=unused-argument
         signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
         sample_rate=None, stft_size=None, stft_shift=None,
         x_label=None, y_label=None, z_label=None, z_scale=None,
+        xlim=None, ylim=None,
 ):
     """
     Plots a spectrogram from an stft signal as input. This is a wrapper of the
@@ -593,6 +602,7 @@ def mask(  # pylint: disable=unused-argument
         signal, ax=None, limits=(0, 1), log=False,
         colorbar=True, batch=0, sample_rate=None, stft_size=None,
         stft_shift=None, x_label=None, y_label=None, z_label='Mask',
+        xlim=None, ylim=None,
         z_scale=None, cmap=None,
 ):
     """
