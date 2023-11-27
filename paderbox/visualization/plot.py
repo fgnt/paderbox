@@ -360,7 +360,8 @@ def _time_frequency_plot(
         x_label=None, y_label=None, z_label=None, z_scale=None, cmap=None,
         cbar_ticks=None, cbar_tick_labels=None, xticks=None, xtickslabels=None,
         xlim=None, ylim=None,
-        origin='lower'
+        origin='lower', log_eps=1e-6,
+        **kwargs,
 ):
     """
 
@@ -380,7 +381,7 @@ def _time_frequency_plot(
         ('linear', 'log', 'symlog' or instance of matplotlib.colors.Normalize)
     :return:
     """
-
+    signal = np.asarray(signal)
     signal = _get_batch(signal, batch)
 
     if log and np.any(signal < 0):
@@ -388,7 +389,8 @@ def _time_frequency_plot(
              'leads to a wrong visualization and especially colorbar!')
 
     if log:
-        signal = 10 * np.log10(np.maximum(signal, np.max(signal) / 1e6)).T
+        assert log_eps <= 1e-2, log_eps
+        signal = 10 * np.log10(np.maximum(signal, np.max(signal) * log_eps)).T
     else:
         signal = signal.T
 
@@ -435,6 +437,7 @@ def _time_frequency_plot(
         cmap=cmap,
         origin=origin,
         norm=norm,
+        **kwargs,
     )
 
     if x_label is None:
@@ -519,6 +522,7 @@ def spectrogram(  # pylint: disable=unused-argument
         x_label=None, y_label=None, z_label=None, z_scale=None, cmap=None,
         cbar_ticks=None, cbar_tick_labels=None,
         xlim=None, ylim=None,
+        visible_dB=60, **kwargs,
 ):
     """
     Plots a spectrogram from a spectrogram (power) as input.
@@ -542,7 +546,11 @@ def spectrogram(  # pylint: disable=unused-argument
         time
     :return: axes
     """
-    return _time_frequency_plot(**locals())
+    log_eps = 10 ** (-visible_dB / 10)
+    del visible_dB
+    l = locals()
+    l.pop('kwargs', None)
+    return _time_frequency_plot(**l, **kwargs)
 
 
 @create_subplot
@@ -570,6 +578,8 @@ def stft(  # pylint: disable=unused-argument
         sample_rate=None, stft_size=None, stft_shift=None,
         x_label=None, y_label=None, z_label=None, z_scale=None,
         xlim=None, ylim=None,
+        visible_dB=60,
+        **kwargs,
 ):
     """
     Plots a spectrogram from an stft signal as input. This is a wrapper of the
@@ -593,7 +603,9 @@ def stft(  # pylint: disable=unused-argument
     :return: axes
     """
     signal = paderbox.transform.stft_to_spectrogram(signal)
-    return spectrogram(**locals())
+    l = locals()
+    l.pop('kwargs', None)
+    return spectrogram(**l, **kwargs)
 
 
 @allow_dict_for_title
