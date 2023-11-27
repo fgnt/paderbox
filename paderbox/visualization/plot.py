@@ -48,6 +48,48 @@ def create_subplot(f):
     return wrapper
 
 
+def check_color(f):
+    """
+    Improve the exception message for color, if color is an int.
+
+    >>> fn = check_color(lambda **kwargs: kwargs)
+    >>> fn(color=1)
+    Traceback (most recent call last):
+    ...
+    ValueError: The value of color is an integer.
+    To get the N'th color, you can use f'C{N}', e.g. 'C1'.
+
+    >>> plt.plot(np.arange(10), color=1)
+    Traceback (most recent call last):
+    ...
+    ValueError: 1 is not a valid value for color
+
+    """
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if 'color' in kwargs:
+            color = kwargs['color']
+            if isinstance(color, int):
+                raise ValueError(
+                    'The value of color is an integer.\n'
+                    "To get the N'th color, you can use f'C{N}', e.g. 'C1'."
+                )
+        return f(*args, **kwargs)
+    return wrapper
+
+
+class color:
+    def __class_getitem__(cls, item):
+        if isinstance(item, int):
+            prop, = itertools.islice(plt.rcParams['axes.prop_cycle'],
+                                     item, item + 1)
+            return prop['color']
+        elif isinstance(item, str):
+            return item
+        else:
+            raise TypeError(type(item), item)
+
+
 def allow_dict_input_and_colorize(f):
     """ Allow dict input and use keys as labels
     """
@@ -132,6 +174,7 @@ def _xy_plot(
 
 
 @allow_dict_input_and_colorize
+@check_color
 @create_subplot
 def stem(  # pylint: disable=unused-argument
         *signal,
@@ -149,6 +192,7 @@ def stem(  # pylint: disable=unused-argument
 
 
 @allow_dict_input_and_colorize
+@check_color
 @create_subplot
 def line(*signal, ax: plt.Axes = None, xlim=None, ylim=None, label=None,
          color=None, logx=False, logy=False, xlabel=None, ylabel=None,
@@ -224,6 +268,7 @@ def line(*signal, ax: plt.Axes = None, xlim=None, ylim=None, label=None,
 
 
 @allow_dict_input_and_colorize
+@check_color
 @create_subplot
 def scatter(*signal, ax=None, ylim=None, label=None, color=None, zorder=None,
             marker=None, xlim=None, xlabel=None, ylabel=None,
@@ -298,7 +343,7 @@ def scatter(*signal, ax=None, ylim=None, label=None, color=None, zorder=None,
     if logx:
         ax.set_xscale('log')
     if logy:
-        ax.set_xscale('log')
+        ax.set_yscale('log')
 
     if xlabel is not None:
         ax.set_xlabel(xlabel)
@@ -312,6 +357,7 @@ def scatter(*signal, ax=None, ylim=None, label=None, color=None, zorder=None,
 
 
 @allow_dict_input_and_colorize
+@check_color
 @create_subplot
 def time_series(*signal, ax=None, ylim=None, label=None, color=None):
     """
@@ -355,11 +401,13 @@ def time_series(*signal, ax=None, ylim=None, label=None, color=None):
 
 
 def _time_frequency_plot(
-        signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
+        signal, ax: plt.Axes = None, limits=None, log=True, colorbar=True, batch=0,
         sample_rate=None, stft_size=None, stft_shift=None,
         x_label=None, y_label=None, z_label=None, z_scale=None, cmap=None,
         cbar_ticks=None, cbar_tick_labels=None, xticks=None, xtickslabels=None,
-        origin='lower'
+        xlim=None, ylim=None,
+        origin='lower', log_eps=1e-6,
+        **kwargs,
 ):
     """
 
@@ -379,7 +427,7 @@ def _time_frequency_plot(
         ('linear', 'log', 'symlog' or instance of matplotlib.colors.Normalize)
     :return:
     """
-
+    signal = np.asarray(signal)
     signal = _get_batch(signal, batch)
 
     if log and np.any(signal < 0):
@@ -387,7 +435,8 @@ def _time_frequency_plot(
              'leads to a wrong visualization and especially colorbar!')
 
     if log:
-        signal = 10 * np.log10(np.maximum(signal, np.max(signal) / 1e6)).T
+        assert log_eps <= 1e-2, log_eps
+        signal = 10 * np.log10(np.maximum(signal, np.max(signal) * log_eps)).T
     else:
         signal = signal.T
 
@@ -434,6 +483,7 @@ def _time_frequency_plot(
         cmap=cmap,
         origin=origin,
         norm=norm,
+        **kwargs,
     )
 
     if x_label is None:
@@ -502,6 +552,12 @@ def _time_frequency_plot(
 
     ax.set_aspect('auto')
     ax.grid(False)
+
+    if xlim is not None:
+        ax.set_xlim(xlim)
+    if ylim is not None:
+        ax.set_ylim(ylim)
+
     return ax
 
 
@@ -510,7 +566,9 @@ def spectrogram(  # pylint: disable=unused-argument
         signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
         sample_rate=None, stft_size=None, stft_shift=None,
         x_label=None, y_label=None, z_label=None, z_scale=None, cmap=None,
-        cbar_ticks=None, cbar_tick_labels=None
+        cbar_ticks=None, cbar_tick_labels=None,
+        xlim=None, ylim=None,
+        visible_dB=60, **kwargs,
 ):
     """
     Plots a spectrogram from a spectrogram (power) as input.
@@ -534,7 +592,11 @@ def spectrogram(  # pylint: disable=unused-argument
         time
     :return: axes
     """
-    return _time_frequency_plot(**locals())
+    log_eps = 10 ** (-visible_dB / 10)
+    del visible_dB
+    l = locals()
+    l.pop('kwargs', None)
+    return _time_frequency_plot(**l, **kwargs)
 
 
 @create_subplot
@@ -561,6 +623,9 @@ def stft(  # pylint: disable=unused-argument
         signal, ax=None, limits=None, log=True, colorbar=True, batch=0,
         sample_rate=None, stft_size=None, stft_shift=None,
         x_label=None, y_label=None, z_label=None, z_scale=None,
+        xlim=None, ylim=None,
+        visible_dB=60,
+        **kwargs,
 ):
     """
     Plots a spectrogram from an stft signal as input. This is a wrapper of the
@@ -584,7 +649,9 @@ def stft(  # pylint: disable=unused-argument
     :return: axes
     """
     signal = paderbox.transform.stft_to_spectrogram(signal)
-    return spectrogram(**locals())
+    l = locals()
+    l.pop('kwargs', None)
+    return spectrogram(**l, **kwargs)
 
 
 @allow_dict_for_title
@@ -593,6 +660,7 @@ def mask(  # pylint: disable=unused-argument
         signal, ax=None, limits=(0, 1), log=False,
         colorbar=True, batch=0, sample_rate=None, stft_size=None,
         stft_shift=None, x_label=None, y_label=None, z_label='Mask',
+        xlim=None, ylim=None,
         z_scale=None, cmap=None,
 ):
     """
