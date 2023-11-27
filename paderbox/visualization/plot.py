@@ -298,7 +298,7 @@ def scatter(*signal, ax=None, ylim=None, label=None, color=None, zorder=None,
     if logx:
         ax.set_xscale('log')
     if logy:
-        ax.set_xscale('log')
+        ax.set_yscale('log')
 
     if xlabel is not None:
         ax.set_xlabel(xlabel)
