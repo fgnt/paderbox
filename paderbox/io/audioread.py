@@ -260,8 +260,8 @@ def load_audio(
     if expected_sample_rate is not None:
         if expected_sample_rate != sample_rate:
             raise ValueError(
-                f'Requested sampling rate is {expected_sample_rate} but the '
-                f'audiofile has {sample_rate}'
+                f'Requested sampling rate is {expected_sample_rate!r} but the '
+                f'audiofile has {sample_rate!r}'
             )
 
     # When signal is multichannel, then soundfile returns (samples, channels)
