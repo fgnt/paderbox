@@ -12,6 +12,7 @@ __all__ = [
     'truncated_normal',
     'log_truncated_normal',
     'truncated_exponential',
+    'choice',
     'hermitian',
     'pos_def_hermitian',
     'Uniform',
@@ -20,6 +21,7 @@ __all__ = [
     'TruncatedNormal',
     'LogTruncatedNormal',
     'TruncatedExponential',
+    'Choice'
 ]
 
 
@@ -175,6 +177,16 @@ class TruncatedExponential(_Sampler):
 
     def _sample(self, shape):
         return truncexpon(self.truncation / self.scale, self.loc, self.scale).rvs(shape)
+
+
+@dataclasses.dataclass
+class Choice(_Sampler):
+    events: int = 1
+    replace: bool = True
+    p: list = None
+
+    def _sample(self, shape):
+        return np.random.choice(self.events, size=shape, replace=self.replace, p=self.p)
 
 
 def uniform(*shape, low=0., high=1., dtype=np.float64):
@@ -423,6 +435,39 @@ def truncated_exponential(*shape, loc=0., scale=1., truncation=3., dtype=np.floa
 
     """
     return TruncatedExponential(loc=loc, scale=scale, truncation=truncation, dtype=dtype)(*shape)
+
+
+def choice(*shape, events=2, replace=True, p=None, dtype=np.float64):
+    """
+
+    Args:
+        *shape:
+        events:
+        replace:
+        dtype:
+
+    Returns:
+
+    >>> x = choice()
+    >>> x.ndim
+    0
+    >>> x.dtype
+    dtype('float64')
+    >>> x = choice(2, 3)
+    >>> x.shape, x.dtype
+    ((2, 3), dtype('float64'))
+    >>> x = choice(2, 3, dtype=np.complex128)
+    >>> x.shape, x.dtype
+    ((2, 3), dtype('complex128'))
+    >>> np.random.seed(2)
+    >>> x = choice(2, 3, events=[2, 4], p=[.1,.9])
+    >>> x.shape, x.dtype
+    ((2, 3), dtype('float64'))
+    >>> x
+    array([[4., 2., 4.],
+           [4., 4., 4.]])
+    """
+    return Choice(events=events, replace=replace, p=p, dtype=dtype)(*shape)
 
 
 def hermitian(*shape, dtype=np.complex128):
