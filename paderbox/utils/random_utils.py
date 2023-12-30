@@ -453,15 +453,15 @@ def choice(*shape, events, replace=True, p=None, dtype=np.float64):
 
     Returns:
 
-    >>> x = choice()
+    >>> x = choice(events=2)
     >>> x.ndim
     0
     >>> x.dtype
     dtype('float64')
-    >>> x = choice(2, 3)
+    >>> x = choice(2, 3, events=2)
     >>> x.shape, x.dtype
     ((2, 3), dtype('float64'))
-    >>> x = choice(2, 3, dtype=np.complex128)
+    >>> x = choice(2, 3, events=2, dtype=np.complex128)
     >>> x.shape, x.dtype
     ((2, 3), dtype('complex128'))
     >>> np.random.seed(2)
