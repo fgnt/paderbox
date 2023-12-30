@@ -181,9 +181,14 @@ class TruncatedExponential(_Sampler):
 
 @dataclasses.dataclass
 class Choice(_Sampler):
-    events: int = 1
+    events: int = None
     replace: bool = True
     p: list = None
+
+    def __post_init__(self):
+        super().__post_init__()
+        if self.events is None:
+            raise TypeError('Missing required argument events')
 
     def _sample(self, shape):
         return np.random.choice(self.events, size=shape, replace=self.replace, p=self.p)
@@ -437,7 +442,7 @@ def truncated_exponential(*shape, loc=0., scale=1., truncation=3., dtype=np.floa
     return TruncatedExponential(loc=loc, scale=scale, truncation=truncation, dtype=dtype)(*shape)
 
 
-def choice(*shape, events=2, replace=True, p=None, dtype=np.float64):
+def choice(*shape, events, replace=True, p=None, dtype=np.float64):
     """
 
     Args:

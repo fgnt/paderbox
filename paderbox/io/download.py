@@ -1,8 +1,8 @@
 
 import os
-import sys
 import tarfile
 import zipfile
+import warnings
 from pathlib import Path
 from urllib.request import urlretrieve
 from concurrent.futures import ProcessPoolExecutor
@@ -58,8 +58,7 @@ def extract_file(local_file, target_dir=None, exist_ok=False):
         target_dir = local_file.parent
     else:
         target_dir = Path(target_dir)
-    if not target_dir.exists():
-        target_dir.mkdir(parents=True, exist_ok=True)
+    target_dir.mkdir(parents=True, exist_ok=True)
     if local_file.name.endswith('.zip'):
         with zipfile.ZipFile(local_file, "r") as z:
             # Start extraction
@@ -97,6 +96,8 @@ def extract_file(local_file, target_dir=None, exist_ok=False):
                     raise FileExistsError(target_file)
                 tar.members = []
         os.remove(local_file)
+    else:
+        warnings.warn("Unsupported file format: Cannot extract file.")
 
 
 def download_file_list(file_list, target_dir, extract=True, exist_ok=False, num_workers=1):
@@ -126,7 +127,7 @@ def download_file_list(file_list, target_dir, extract=True, exist_ok=False, num_
             for _ in ex.map(
                 download_file,
                 file_list,
-                [target_dir / Path(f).name.split('?')[0] for f in file_list],
+                [target_dir / Path(f).name.split('?')[0] for f in file_list], # extract file names from urls discarding query strings
                 len(file_list) * [exist_ok],
                 extract,
             ):
