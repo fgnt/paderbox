@@ -347,8 +347,8 @@ def sample_index_to_stft_frame_index(sample, window_length, shift, fading='full'
 
     >>> [sample_index_to_stft_frame_index(i, 8, 1, fading=None) for i in range(12)]
     [0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8]
-    >>> sample_index_to_stft_frame_index(np.arange(12, dtype=int), 8, 1, fading=None)
-    array([0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8])
+    >>> sample_index_to_stft_frame_index(np.arange(12), 8, 1, fading=None).tolist()
+    [0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8]
     >>> [sample_index_to_stft_frame_index(i, 8, 2, fading=None) for i in range(10)]
     [0, 0, 0, 0, 0, 1, 1, 2, 2, 3]
     >>> [sample_index_to_stft_frame_index(i, 7, 2, fading=None) for i in range(10)]
