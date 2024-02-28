@@ -44,10 +44,10 @@ def py_query(
 
     To access column names that aren't valid python identifiers (e.g. the name
     contains a whitespace), you have to use the kwargs dictionary:
-    >>> df = pd.DataFrame([{'a b': 1, 'b': 2}, {'a b': 3, 'b': 4}])
-    >>> py_query(df, 'kwargs["a b"] == 1')
-       a b  b
-    0    1  2
+    >>> df = pd.DataFrame([{'a b': 1, 'b\\nc': 2}, {'a b': 3, 'b\\nc': 4}])
+    >>> py_query(df, 'kwargs["a b"] == 1 and kwargs["b\\\\nc"] == 2')
+       a b  b\\nc
+    0    1     2
 
     When you need a package function, you have to specify it in the globals
     dict. e.g.:
@@ -103,8 +103,10 @@ def py_query(
 
     keywords = ['index'] + list(data)
 
-    def is_valid_variable_name(name):
+    def is_valid_variable_name(name: str):
         import ast
+        if len(name.splitlines()) != 1:
+            return False
         # https://stackoverflow.com/a/36331242/5766934
         try:
             ast.parse('{} = None'.format(name))
