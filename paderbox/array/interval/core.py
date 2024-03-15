@@ -195,7 +195,7 @@ class ArrayInterval:
     from_str = staticmethod(ArrayInterval_from_str)
     inverse_mode = False
 
-    def __init__(self, array, inverse_mode: bool = False):
+    def __init__(self, array, *, inverse_mode: bool = False):
         """
         The `ArrayInterval` is in many cases equivalent to a 1-dimensional
         boolean numpy array that stores activity information in an efficient
