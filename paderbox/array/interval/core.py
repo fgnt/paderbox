@@ -195,7 +195,7 @@ class ArrayInterval:
     from_str = staticmethod(ArrayInterval_from_str)
     inverse_mode = False
 
-    def __init__(self, array, *ignore, inverse_mode: bool = False):
+    def __init__(self, array, *, inverse_mode: bool = False):
         """
         The `ArrayInterval` is in many cases equivalent to a 1-dimensional
         boolean numpy array that stores activity information in an efficient
@@ -227,8 +227,6 @@ class ArrayInterval:
             >>> assert all(a == ArrayInterval(a)[:])
 
         """
-        if ignore:
-            raise TypeError
         if isinstance(array, ArrayInterval):
             self._shape = array.shape
             self.inverse_mode = array.inverse_mode
