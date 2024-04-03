@@ -24,7 +24,7 @@ import numpy
 
 
 def stft_single_channel(time_signal, size=1024, shift=256,
-                        window=signal.blackman,
+                        window=signal.windows.blackman,
                         fading=True, window_length=None):
     """
     Calculates the short time Fourier transformation of a single channel time
@@ -213,7 +213,7 @@ class TestSTFTMethods(unittest.TestCase):
         tc.assert_equal(X.shape, (3, 257))
 
     def test_compare_both_biorthogonal_window_variants(self):
-        window = signal.blackman(1024)
+        window = signal.windows.blackman(1024)
         shift = 256
 
         for_result = _biorthogonal_window_loopy(window, shift)
@@ -236,7 +236,7 @@ class TestSTFTMethods(unittest.TestCase):
                 res += roll_zeropad(analysis_window, shift * i)
             return res
 
-        window = signal.blackman(1024)
+        window = signal.windows.blackman(1024)
         shift = 256
 
         synthesis_window = _biorthogonal_window_brute_force(window, shift)
@@ -256,7 +256,7 @@ class TestSTFTMethods(unittest.TestCase):
                 res += roll_zeropad(analysis_window, shift * i)
             return res
 
-        window = signal.blackman(400)
+        window = signal.windows.blackman(400)
         shift = 160
 
         synthesis_window = _biorthogonal_window_brute_force(window, shift)
@@ -268,7 +268,7 @@ class TestSTFTMethods(unittest.TestCase):
         from paderbox.utils.timer import TimerDict
         timer = TimerDict()
 
-        window = signal.blackman(1024)
+        window = signal.windows.blackman(1024)
         shift = 256
 
         with timer['loopy']:
