@@ -11,7 +11,7 @@ def mfcc(time_signal, sample_rate=16000,
          number_of_filters=26, stft_size=512,
          lowest_frequency=0, highest_frequency=None,
          preemphasis_factor=0.97, ceplifter=22,
-         window=scipy.signal.hamming):
+         window=scipy.signal.windows.hamming):
     """
     Compute MFCC features from an audio signal.
 
