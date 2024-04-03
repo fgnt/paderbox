@@ -171,8 +171,8 @@ def modmfcc(
         number_of_filters=40, stft_size=512,
         lowest_frequency=0, highest_frequency=None,
         preemphasis_factor=0.97, ceplifter=22,
-        stft_window=scipy.signal.hamming,
-        mod_length=16, mod_shift=8, mod_window=scipy.signal.hamming,
+        stft_window=scipy.signal.windows.hamming,
+        mod_length=16, mod_shift=8, mod_window=scipy.signal.windows.hamming,
         avg_length=1, avg_shift=1
 ):
     """
