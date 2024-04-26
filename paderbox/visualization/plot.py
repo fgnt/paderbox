@@ -1078,7 +1078,7 @@ def activity(
         max(i[1] for i in d_.normalized_intervals)
         for d_ in activity_intervals
     ))
-    num_active = np.zeros((length,), dtype=np.int)
+    num_active = np.zeros((length,), dtype=int)
     for a in activity_intervals:
         num_active += a[:length]
 
