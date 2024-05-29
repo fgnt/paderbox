@@ -113,6 +113,16 @@ class _MyRepresentationPrinter(IPython.lib.pretty.RepresentationPrinter):
         )
         >>> pprint(PointClsWithALongName(1, 2), max_width=len('PointClsWithALongName') + 10)
         PointClsWithALongName(x=1, y=2)
+
+        >>> @dataclasses.dataclass
+        ... class PrettyPoint:
+        ...     x: int
+        ...     y: int
+        ...     def _repr_pretty_(self, p, cycle):
+        ...         p.text(f'CustomRepr(x={self.x}, y={self.y})')
+        >>> pprint(PrettyPoint(1, 2))
+        CustomRepr(x=1, y=2)
+
         """
         if cycle:
             p.text(f'{self.__class__.__name__}(...)')
@@ -133,7 +143,7 @@ class _MyRepresentationPrinter(IPython.lib.pretty.RepresentationPrinter):
             p.text(')')
 
     def _in_deferred_types(self, cls):
-        if dataclasses.is_dataclass(cls):
+        if '_repr_pretty_' not in cls.__dict__ and dataclasses.is_dataclass(cls):
             return self._dataclass_repr_pretty_
         else:
             return super()._in_deferred_types(cls)
