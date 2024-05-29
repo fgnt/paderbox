@@ -1,3 +1,4 @@
+import dataclasses
 import sys
 import io
 import IPython.lib.pretty
