@@ -730,12 +730,14 @@ class SparseArray:
         >>> a[:5] = 1
         >>> a[7:] = 2
         >>> pb.utils.pretty.pprint(a)
-        SparseArray(_SparseSegment(onset=0, array=array([1., 1., 1., 1., 1.], dtype=float32)),
+        SparseArray(_SparseSegment(onset=0,
+                                   array=array([1., 1., 1., 1., 1.], dtype=float32)),
                     _SparseSegment(onset=7, array=array([2., 2., 2.], dtype=float32)),
                     shape=(10,))
         >>> a._pad_value = _get_pad_value(a.dtype, -1)
         >>> pb.utils.pretty.pprint(a)
-        SparseArray(_SparseSegment(onset=0, array=array([1., 1., 1., 1., 1.], dtype=float32)),
+        SparseArray(_SparseSegment(onset=0,
+                                   array=array([1., 1., 1., 1., 1.], dtype=float32)),
                     _SparseSegment(onset=7, array=array([2., 2., 2.], dtype=float32)),
                     shape=(10,), pad_value=-1.0)
         """
