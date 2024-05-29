@@ -95,6 +95,48 @@ class _MyRepresentationPrinter(IPython.lib.pretty.RepresentationPrinter):
         yield from super()._enumerate(seq)
         self.depth -= 1
 
+    @staticmethod
+    def _dataclass_repr_pretty_(self, p, cycle):
+        """
+        >>> @dataclasses.dataclass
+        ... class PointClsWithALongName:
+        ...     x: int
+        ...     y: int
+        >>> pprint(PointClsWithALongName(1, 2), max_width=len('PointClsWithALongName') + 8)
+        PointClsWithALongName(
+            x=1,
+            y=2
+        )
+        >>> pprint(PointClsWithALongName(1, 2), max_width=len('PointClsWithALongName') + 9)
+        PointClsWithALongName(x=1, y=2
+        )
+        >>> pprint(PointClsWithALongName(1, 2), max_width=len('PointClsWithALongName') + 10)
+        PointClsWithALongName(x=1, y=2)
+        """
+        if cycle:
+            p.text(f'{self.__class__.__name__}(...)')
+        else:
+            txt = f'{self.__class__.__name__}('
+            with p.group(4, txt, ''):
+                keys = self.__dataclass_fields__.keys()
+                for i, k in enumerate(keys):
+                    if i:
+                        p.breakable(sep=' ')
+                    else:
+                        p.breakable(sep='')
+                    p.text(f'{k}=')
+                    p.pretty(getattr(self, k))
+                    if i != len(keys) - 1:
+                        p.text(',')
+            p.breakable('')
+            p.text(')')
+
+    def _in_deferred_types(self, cls):
+        if dataclasses.is_dataclass(cls):
+            return self._dataclass_repr_pretty_
+        else:
+            return super()._in_deferred_types(cls)
+
 
 def pprint(
         obj,
