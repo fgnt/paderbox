@@ -4,6 +4,53 @@ import io
 import IPython.lib.pretty
 import numpy as np
 
+if sys.version_info >= (3, 8):
+    from IPython.lib.pretty import CallExpression
+else:
+    # CallExpression was added in ipython 8, which dropped support for python 3.7
+    # The following is a copy of the CallExpression class from IPython 8.
+    class CallExpression:
+        """ Object which emits a line-wrapped call expression in the form `__name(*args, **kwargs)` """
+
+        def __init__(__self, __name, *args, **kwargs):
+            # dunders are to avoid clashes with kwargs, as python's name manging
+            # will kick in.
+            self = __self
+            self.name = __name
+            self.args = args
+            self.kwargs = kwargs
+
+        @classmethod
+        def factory(cls, name):
+            def inner(*args, **kwargs):
+                return cls(name, *args, **kwargs)
+
+            return inner
+
+        def _repr_pretty_(self, p, cycle):
+            # dunders are to avoid clashes with kwargs, as python's name manging
+            # will kick in.
+
+            started = False
+
+            def new_item():
+                nonlocal started
+                if started:
+                    p.text(",")
+                    p.breakable()
+                started = True
+
+            prefix = self.name + "("
+            with p.group(len(prefix), prefix, ")"):
+                for arg in self.args:
+                    new_item()
+                    p.pretty(arg)
+                for arg_name, arg in self.kwargs.items():
+                    new_item()
+                    arg_prefix = arg_name + "="
+                    with p.group(len(arg_prefix), arg_prefix):
+                        p.pretty(arg)
+
 
 class _MyRepresentationPrinter(IPython.lib.pretty.RepresentationPrinter):
     def __init__(
@@ -122,7 +169,7 @@ class _MyRepresentationPrinter(IPython.lib.pretty.RepresentationPrinter):
         CustomRepr(x=1, y=2)
 
         """
-        p.pretty(IPython.lib.pretty.CallExpression.factory(
+        p.pretty(CallExpression.factory(
             self.__class__.__name__
         )(
             **{k: getattr(self, k) for k in self.__dataclass_fields__.keys()}
