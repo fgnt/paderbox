@@ -103,14 +103,12 @@ class _MyRepresentationPrinter(IPython.lib.pretty.RepresentationPrinter):
         ... class PointClsWithALongName:
         ...     x: int
         ...     y: int
-        >>> pprint(PointClsWithALongName(1, 2), max_width=len('PointClsWithALongName') + 8)
-        PointClsWithALongName(
-            x=1,
-            y=2
-        )
+        >>> pprint(PointClsWithALongName(1, 2), max_width=len('PointClsWithALongName') - 5)
+        PointClsWithALongName(x=1,
+                              y=2)
         >>> pprint(PointClsWithALongName(1, 2), max_width=len('PointClsWithALongName') + 9)
-        PointClsWithALongName(x=1, y=2
-        )
+        PointClsWithALongName(x=1,
+                              y=2)
         >>> pprint(PointClsWithALongName(1, 2), max_width=len('PointClsWithALongName') + 10)
         PointClsWithALongName(x=1, y=2)
 
@@ -124,23 +122,11 @@ class _MyRepresentationPrinter(IPython.lib.pretty.RepresentationPrinter):
         CustomRepr(x=1, y=2)
 
         """
-        if cycle:
-            p.text(f'{self.__class__.__name__}(...)')
-        else:
-            txt = f'{self.__class__.__name__}('
-            with p.group(4, txt, ''):
-                keys = self.__dataclass_fields__.keys()
-                for i, k in enumerate(keys):
-                    if i:
-                        p.breakable(sep=' ')
-                    else:
-                        p.breakable(sep='')
-                    p.text(f'{k}=')
-                    p.pretty(getattr(self, k))
-                    if i != len(keys) - 1:
-                        p.text(',')
-            p.breakable('')
-            p.text(')')
+        p.pretty(IPython.lib.pretty.CallExpression.factory(
+            self.__class__.__name__
+        )(
+            **{k: getattr(self, k) for k in self.__dataclass_fields__.keys()}
+        ))
 
     def _in_deferred_types(self, cls):
         if '_repr_pretty_' not in cls.__dict__ and dataclasses.is_dataclass(cls):
@@ -197,6 +183,8 @@ def pprint(
     dict_values([1000000, 2000000])
     >>> print(d.items())
     dict_items([('aaaaaaaaaa', 1000000), ('bbbbbbbbbb', 2000000)])
+
+
 
     """
 
@@ -261,7 +249,7 @@ if __name__ == '__main__':
     import paderbox as pb
 
 
-    def cli_pprint(file, max_seq_length=[10, 5, 2], max_width=None):
+    def cli_pprint(file, max_seq_length=[10, 5, 2], max_width=None, unsafe=False):
         """Load a file and pretty print it. With max_seq_length you can
         control the length of the printed sequences.
 
@@ -271,7 +259,7 @@ if __name__ == '__main__':
                 The last entry is used for all larger depths.
             max_width:
         """
-        data = pb.io.load(file)
+        data = pb.io.load(file, unsafe=unsafe)
 
         if max_width is None:
             max_width = shutil.get_terminal_size((79, 20)).columns
