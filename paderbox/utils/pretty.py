@@ -1,7 +1,55 @@
+import dataclasses
 import sys
 import io
 import IPython.lib.pretty
 import numpy as np
+
+if sys.version_info >= (3, 8):
+    from IPython.lib.pretty import CallExpression
+else:
+    # CallExpression was added in ipython 8, which dropped support for python 3.7
+    # The following is a copy of the CallExpression class from IPython 8.
+    class CallExpression:
+        """ Object which emits a line-wrapped call expression in the form `__name(*args, **kwargs)` """
+
+        def __init__(__self, __name, *args, **kwargs):
+            # dunders are to avoid clashes with kwargs, as python's name manging
+            # will kick in.
+            self = __self
+            self.name = __name
+            self.args = args
+            self.kwargs = kwargs
+
+        @classmethod
+        def factory(cls, name):
+            def inner(*args, **kwargs):
+                return cls(name, *args, **kwargs)
+
+            return inner
+
+        def _repr_pretty_(self, p, cycle):
+            # dunders are to avoid clashes with kwargs, as python's name manging
+            # will kick in.
+
+            started = False
+
+            def new_item():
+                nonlocal started
+                if started:
+                    p.text(",")
+                    p.breakable()
+                started = True
+
+            prefix = self.name + "("
+            with p.group(len(prefix), prefix, ")"):
+                for arg in self.args:
+                    new_item()
+                    p.pretty(arg)
+                for arg_name, arg in self.kwargs.items():
+                    new_item()
+                    arg_prefix = arg_name + "="
+                    with p.group(len(arg_prefix), arg_prefix):
+                        p.pretty(arg)
 
 
 class _MyRepresentationPrinter(IPython.lib.pretty.RepresentationPrinter):
@@ -95,6 +143,44 @@ class _MyRepresentationPrinter(IPython.lib.pretty.RepresentationPrinter):
         yield from super()._enumerate(seq)
         self.depth -= 1
 
+    @staticmethod
+    def _dataclass_repr_pretty_(self, p, cycle):
+        """
+        >>> @dataclasses.dataclass
+        ... class PointClsWithALongName:
+        ...     x: int
+        ...     y: int
+        >>> pprint(PointClsWithALongName(1, 2), max_width=len('PointClsWithALongName') - 5)
+        PointClsWithALongName(x=1,
+                              y=2)
+        >>> pprint(PointClsWithALongName(1, 2), max_width=len('PointClsWithALongName') + 9)
+        PointClsWithALongName(x=1,
+                              y=2)
+        >>> pprint(PointClsWithALongName(1, 2), max_width=len('PointClsWithALongName') + 10)
+        PointClsWithALongName(x=1, y=2)
+
+        >>> @dataclasses.dataclass
+        ... class PrettyPoint:
+        ...     x: int
+        ...     y: int
+        ...     def _repr_pretty_(self, p, cycle):
+        ...         p.text(f'CustomRepr(x={self.x}, y={self.y})')
+        >>> pprint(PrettyPoint(1, 2))
+        CustomRepr(x=1, y=2)
+
+        """
+        p.pretty(CallExpression.factory(
+            self.__class__.__name__
+        )(
+            **{k: getattr(self, k) for k in self.__dataclass_fields__.keys()}
+        ))
+
+    def _in_deferred_types(self, cls):
+        if '_repr_pretty_' not in cls.__dict__ and dataclasses.is_dataclass(cls):
+            return self._dataclass_repr_pretty_
+        else:
+            return super()._in_deferred_types(cls)
+
 
 def pprint(
         obj,
@@ -144,6 +230,8 @@ def pprint(
     dict_values([1000000, 2000000])
     >>> print(d.items())
     dict_items([('aaaaaaaaaa', 1000000), ('bbbbbbbbbb', 2000000)])
+
+
 
     """
 
@@ -208,7 +296,7 @@ if __name__ == '__main__':
     import paderbox as pb
 
 
-    def cli_pprint(file, max_seq_length=[10, 5, 2], max_width=None):
+    def cli_pprint(file, max_seq_length=[10, 5, 2], max_width=None, unsafe=False):
         """Load a file and pretty print it. With max_seq_length you can
         control the length of the printed sequences.
 
@@ -218,7 +306,7 @@ if __name__ == '__main__':
                 The last entry is used for all larger depths.
             max_width:
         """
-        data = pb.io.load(file)
+        data = pb.io.load(file, unsafe=unsafe)
 
         if max_width is None:
             max_width = shutil.get_terminal_size((79, 20)).columns

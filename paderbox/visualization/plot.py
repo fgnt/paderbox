@@ -52,6 +52,9 @@ def check_color(f):
     """
     Improve the exception message for color, if color is an int.
 
+    Note: Since https://github.com/matplotlib/matplotlib/pull/27905 is merged,
+    this function is not needed anymore.
+
     >>> fn = check_color(lambda **kwargs: kwargs)
     >>> fn(color=1)
     Traceback (most recent call last):
@@ -59,10 +62,10 @@ def check_color(f):
     ValueError: The value of color is an integer.
     To get the N'th color, you can use f'C{N}', e.g. 'C1'.
 
-    >>> plt.plot(np.arange(10), color=1)
+    >>> plt.plot(np.arange(10), color=1)  # doctest: +ELLIPSIS
     Traceback (most recent call last):
     ...
-    ValueError: 1 is not a valid value for color
+    ValueError: 1 is not a valid value for color...
 
     """
     @wraps(f)
