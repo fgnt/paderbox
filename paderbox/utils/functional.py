@@ -1,6 +1,7 @@
 import functools
 import inspect
 from typing import Callable
+import wrapt
 
 
 def partial_decorator(
@@ -155,15 +156,30 @@ def partial_decorator(
         ...     print(a, args, kwargs)
         >>> buzz(keyword1=42, keyword2=123)(1, 2, 3, 4, 5)
         1 (2, 3, 4, 5) {'keyword1': 42, 'keyword2': 123}
-    """
-    if fn is None:
-        return functools.partial(
-            partial_decorator,
-            chain=chain,
-            requires_partial_call=requires_partial_call
-        )
 
-    signature = inspect.signature(fn)
+        Instance methods and class methods
+        >>> class A:
+        ...     @partial_decorator
+        ...     @staticmethod
+        ...     def s(a, b):
+        ...         print(a, b)
+        ...
+        ...     @partial_decorator
+        ...     @classmethod
+        ...     def c(cls, a, b):
+        ...         print(a, b)
+        ...
+        ...     @partial_decorator
+        ...     def a(self, a, b):
+        ...         print(a, b)
+        >>> A().a(b=4)(1)
+        1 4
+        >>> A.c(b=4)(1)
+        1 4
+        >>> A.s(b=4)(1)
+        1 4
+    """
+    signature = None
 
     @functools.wraps(fn)
     def partial_wrapper(
@@ -220,4 +236,18 @@ def partial_decorator(
                 )
             return fn(*args, **kwargs)
 
-    return partial_wrapper
+    # It is hard to get all types of functions/methods correct. The `wrapt`
+    # package has wrappers that handle all cases correctly, so use that here
+    @wrapt.decorator
+    def partial_decorator_(wrapped_, instance, args, kwargs):
+        nonlocal signature, fn
+        fn = wrapped_
+        if signature is None:
+            # Only get the signature once
+            signature = inspect.signature(fn)
+        return partial_wrapper(*args, **kwargs)
+
+    if fn is None:
+        return partial_decorator_
+    else:
+        return partial_decorator_(fn)
