@@ -120,9 +120,9 @@ def update_hdf5(
     >>> update_hdf5('peter', file, '/name', allow_overwrite=True)
     >>> pprint(load_hdf5(file))
     {'name': 'peter'}
-    >>> update_hdf5({'name': 1}, file, '/', allow_overwrite=True)
+    >>> update_hdf5({'name': 'Alice'}, file, '/', allow_overwrite=True)
     >>> pprint(load_hdf5(file))
-    {'name': 1}
+    {'name': 'Alice'}
     """
     if not isinstance(obj, dict):
         path_split = path.rsplit('/', 1)
@@ -179,8 +179,9 @@ def load_hdf5(filename, path='/'):
     ... }
     >>> dump_hdf5(ex, file, True)
     >>> ex_load = load_hdf5(file)
-    >>> from pprint import pprint
-    >>> ex_load['fav_tensors']['kronecker2d'][0, 0]
+    >>> # from pprint import pprint
+    >>> from paderbox.utils.pretty import pprint
+    >>> print(ex_load['fav_tensors']['kronecker2d'][0, 0])
     1.0
     >>> pprint(ex_load)
     {'age': 24,
@@ -477,12 +478,13 @@ class _ReportInterface(object):
     @classmethod
     def __recursively_load_dict_contents_from_group__(cls, h5file, path):
         """
+        >>> from paderbox.utils.pretty import pprint
         >>> from paderbox.io.cache_dir import get_cache_dir
         >>> file = get_cache_dir() / 'tmp.hdf5'
         >>> ex = {'key': [1, 2, 3]}
         >>> dump_hdf5(ex, file, True)
         >>> ex_load = load_hdf5(file)
-        >>> ex_load
+        >>> pprint(ex_load)
         {'key': [1, 2, 3]}
         """
         import h5py
