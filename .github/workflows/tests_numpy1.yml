@@ -30,8 +30,9 @@ jobs:
 
     - name: Install python dependencies
       run: |
+        trap 'echo -e "$ $BASH_COMMAND"' DEBUG
         python -m pip install --upgrade pip
-        pip install 'numpy<=2' scipy Cython
+        pip install 'numpy<2' scipy Cython
         pip install flake8 pytest pytest-cov codecov
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         pip install setuptools==57.5.0  # downgrade setuptools so pycallgraph can be installed (necessary for python >= 3.9)
