@@ -253,8 +253,8 @@ class NameGenerator:
     >>> ng = NameGenerator()
     >>> ng()
     'nice_tomato_fox'
-    >>> ng.possibilities()  # With 22 million a collision is unlikely
-    22188920
+    >>> f'{ng.possibilities():_}'  # With 22 million a collision is unlikely
+    '22_188_920'
     >>> ng = NameGenerator(['adjectives', 'animals'])
     >>> ng()
     'regional_prawn'
@@ -321,8 +321,8 @@ if __name__ == '__main__':
 
         Args:
             basedir:
-            id_naming: e.g. 'index', 'time', 'adjective_color_animal'
-            mkdir:
+            id_naming: e.g. 'index', 'time', 'adjective_color_animal' (default 'index')
+            mkdir: (default True)
             prefix:
             suffix:
             consider_mpi:
