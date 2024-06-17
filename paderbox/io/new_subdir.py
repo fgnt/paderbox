@@ -121,13 +121,13 @@ def get_new_subdir(
     prefix_ = f'{prefix}_' if prefix else ''
     _suffix = f'_{suffix}' if suffix else ''
 
-    for i in range(200):
+    for i in range(1000):
         if id_naming == 'index':
             if prefix is None and suffix is None:
                 dir_nrs = [
-                    int(d)
-                    for d in os.listdir(str(basedir))
-                    if (basedir / d).is_dir() and d.isdigit()
+                    int(d.name)
+                    for d in os.scandir(str(basedir))
+                    if d.is_dir() and d.name.isdigit()
                 ]
                 _id = max(dir_nrs + [0]) + 1
             else:
@@ -138,11 +138,11 @@ def get_new_subdir(
                     )
 
                 dir_nrs = [
-                    int(remove_pre_suf(d))
-                    for d in os.listdir(str(basedir))
-                    if (basedir / d).is_dir()
-                    if fnmatch.fnmatch(d, f'{prefix_}*{_suffix}')
-                    if remove_pre_suf(d).isdigit()
+                    int(remove_pre_suf(d.name))
+                    for d in os.scandir(str(basedir))
+                    if d.is_dir()
+                    if fnmatch.fnmatch(d.name, f'{prefix_}*{_suffix}')
+                    if remove_pre_suf(d.name).isdigit()
                 ]
                 dir_nrs += [0]
                 _id = max(dir_nrs) + 1
@@ -177,7 +177,7 @@ def get_new_subdir(
             return simu_dir
         except FileExistsError:
             # Catch race conditions
-            if i > 100:
+            if i > 200:
                 # After some tries,
                 # expect that something other went wrong
                 raise
