@@ -4,11 +4,13 @@ import pytest
 import paderbox.testing as tc
 import numpy as np
 from paderbox.io import dump_hdf5, load_hdf5
-
+import packaging.version
 
 class TestHdf5:
     @pytest.mark.parametrize("name,data,expect", [
-        ('int', {'key': 1}, np.int32(1) if os.name == 'nt' else np.int64(1)), #  numpy default integer type on Windows is always int32.
+        ('int', {'key': 1}, (
+                np.int32(1) if os.name == 'nt' and packaging.version.parse(np.__version__) < packaging.version.parse('2') else np.int64(1)
+        )), #  numpy default integer type on Windows is int32 for numpy 1 and int64 for numpy 2 (unix and mac always int64).
         ('float', {'key': 1.1}, np.float64(1.1)),
         ('complex', {'key': 1.1j}, np.complex128(1.1j)),
         ('str', {'key': 'bla'}, 'bla'),
