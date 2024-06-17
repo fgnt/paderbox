@@ -284,6 +284,7 @@ def pretty(
         max_seq_length=IPython.lib.pretty.MAX_SEQ_LENGTH,
         max_array_length=50,
         np_suppress_small=True,
+        nep51=False,
 ):
     """
     Copy of IPython.lib.pretty.pretty.
@@ -299,6 +300,7 @@ def pretty(
         max_seq_length=max_seq_length,
         max_array_length=max_array_length,
         np_suppress_small=np_suppress_small,
+        nep51=nep51,
     )
     if len(objs):
         printer.pretty((obj, *objs))
