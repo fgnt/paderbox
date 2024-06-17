@@ -194,7 +194,7 @@ def load_hdf5(filename, path='/'):
      'fav_tensors': {'kronecker2d': array([[1., 0., 0.],
            [0., 1., 0.],
            [0., 0., 1.]]),
-                     'levi_civita3d': array([[[ 0,  0,  0],
+      'levi_civita3d': array([[[ 0,  0,  0],
             [ 0,  0,  1],
             [ 0, -1,  0]],
     <BLANKLINE>
