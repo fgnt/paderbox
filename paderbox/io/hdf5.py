@@ -4,7 +4,7 @@ import warnings
 
 import numpy as np
 
-from distutils.version import LooseVersion
+from packaging.version import parse as _parse
 
 
 __all__ = ['dump_hdf5', 'update_hdf5', 'load_hdf5']
@@ -404,7 +404,7 @@ class _ReportInterface(object):
                 h5file[cur_path] = item
                 # This query is necessary since h5py changed string
                 # handling after version 3.0.0 to dumping strings as bytes
-                if LooseVersion(h5py.__version__) >= '3.0.0':
+                if _parse(h5py.__version__) >= _parse('3.0.0'):
                     test_item = item.encode('utf-8')
                 else:
                     test_item = item
@@ -510,7 +510,7 @@ class _ReportInterface(object):
 
                     # This query is necessary since h5py changed string
                     # handling after version 3.0.0 to dumping strings as bytes
-                    if LooseVersion(h5py.__version__) >= '3.0.0':
+                    if _parse(h5py.__version__) >= _parse('3.0.0'):
                         ans[key] = ans[key].decode()
                 if isinstance(ans[key], str) and ans[key] == 'None':
                     ans[key] = None
