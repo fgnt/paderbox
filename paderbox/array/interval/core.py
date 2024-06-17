@@ -846,10 +846,10 @@ class ArrayInterval:
     def sum(self, axis=None, out=None):
         """
         >>> a = ArrayInterval([True, True, False, False])
-        >>> np.sum(a)
+        >>> print(np.sum(a))
         2
         >>> a = ArrayInterval([True, False, False, True])
-        >>> np.sum(a)
+        >>> print(np.sum(a))
         2
         >>> np.sum(zeros(10))
         0
