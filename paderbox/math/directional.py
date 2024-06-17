@@ -6,9 +6,9 @@ def wrap(angle):
 
     Beware! Every possible method treats the corner case -pi differently.
 
-    >>> wrap(-np.pi)
+    >>> print(wrap(-np.pi))
     -3.141592653589793
-    >>> wrap(np.pi)
+    >>> print(wrap(np.pi))
     3.141592653589793
 
     :param angle: Angle as numpy array in radian
@@ -22,9 +22,9 @@ def wrap_with_modulo(angle):
 
     Beware! Every possible method treats the corner case -pi differently.
 
-    >>> wrap_with_modulo(-np.pi)
+    >>> print(wrap_with_modulo(-np.pi))
     -3.141592653589793
-    >>> wrap_with_modulo(np.pi)
+    >>> print(wrap_with_modulo(np.pi))
     -3.141592653589793
 
     :param angle: Angle as numpy array in radian
@@ -38,9 +38,9 @@ def wrap_with_angle_exp(angle):
 
     Beware! Every possible method treats the corner case -pi differently.
 
-    >>> wrap_with_angle_exp(-np.pi)
+    >>> print(wrap_with_angle_exp(-np.pi))
     -3.141592653589793
-    >>> wrap_with_angle_exp(np.pi)
+    >>> print(wrap_with_angle_exp(np.pi))
     3.141592653589793
 
     :param angle: Angle as numpy array in radian
@@ -54,9 +54,9 @@ def wrap_with_arctan2(angle):
 
     Beware! Every possible method treats the corner case -pi differently.
 
-    >>> wrap_with_arctan2(-np.pi)
+    >>> print(wrap_with_arctan2(-np.pi))
     -3.141592653589793
-    >>> wrap_with_arctan2(np.pi)
+    >>> print(wrap_with_arctan2(np.pi))
     3.141592653589793
 
     :param angle: Angle as numpy array in radian
@@ -70,9 +70,9 @@ def wrap_with_arctan_tan(angle):
 
     Beware! Every possible method treats the corner case -pi differently.
 
-    >>> wrap_with_arctan_tan(-np.pi)
+    >>> print(wrap_with_arctan_tan(-np.pi))
     -3.141592653589793
-    >>> wrap_with_arctan_tan(np.pi)
+    >>> print(wrap_with_arctan_tan(np.pi))
     3.141592653589793
 
     :param angle: Angle as numpy array in radian
@@ -84,9 +84,9 @@ def wrap_with_arctan_tan(angle):
 def minus(angle1, angle2):
     """ Calculate angular difference.
 
-    >>> minus(0, np.pi)
+    >>> print(minus(0, np.pi))
     -3.141592653589793
-    >>> minus(0, -np.pi)
+    >>> print(minus(0, -np.pi))
     3.141592653589793
 
     :param angle1: Minuend
@@ -99,9 +99,9 @@ def minus(angle1, angle2):
 def minus_with_wrap(angle1, angle2):
     """ Calculate angular difference.
 
-    >>> minus_with_wrap(0, np.pi)
+    >>> print(minus_with_wrap(0, np.pi))
     -3.141592653589793
-    >>> minus_with_wrap(0, -np.pi)
+    >>> print(minus_with_wrap(0, -np.pi))
     3.141592653589793
 
     :param angle1: Minuend
@@ -114,9 +114,9 @@ def minus_with_wrap(angle1, angle2):
 def minus_with_angle_exp(angle1, angle2):
     """ Calculate angular difference.
 
-    >>> minus_with_angle_exp(0, np.pi)
+    >>> print(minus_with_angle_exp(0, np.pi))
     -3.141592653589793
-    >>> minus_with_angle_exp(0, -np.pi)
+    >>> print(minus_with_angle_exp(0, -np.pi))
     3.141592653589793
 
     :param angle1: Minuend
@@ -149,13 +149,13 @@ def rad_to_deg(a):
 def direction_vector_to_angle(vector):
     """ Takes a 2D direction vector and creates a single direction angle.
 
-    >>> direction_vector_to_angle(np.asarray([[0], [0]]))
+    >>> print(direction_vector_to_angle(np.asarray([[0], [0]])))
     0.0
 
-    >>> direction_vector_to_angle(np.asarray([[1], [1]]))
+    >>> print(direction_vector_to_angle(np.asarray([[1], [1]])))
     0.7853981633974483
 
-    >>> direction_vector_to_angle(np.asarray([[0], [1]]))
+    >>> print(direction_vector_to_angle(np.asarray([[0], [1]])))
     1.5707963267948966
     """
     assert vector.shape == (2, 1)
