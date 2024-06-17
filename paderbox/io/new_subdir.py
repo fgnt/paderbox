@@ -112,7 +112,7 @@ def get_new_subdir(
             # ToDo: Make this working.
             #       Will fail when calling os.listdir
         else:
-            basedir.mkdir(parents=True)
+            basedir.mkdir(parents=True, exist_ok=True)
 
     if Path('/net') in basedir.parents:
         # If nt filesystem, assert not in /net/home
