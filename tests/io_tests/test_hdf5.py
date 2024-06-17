@@ -6,8 +6,8 @@ import numpy as np
 from paderbox.io import dump_hdf5, load_hdf5
 import packaging.version
 
-#  numpy default integer type on Windows is int32 for numpy 1
-#  In numpy 2 they changed it to int64 to match unix and mac.
+#  numpy default integer type on Windows is int32 for numpy v1.x
+#  In numpy v2.x it was changed to int64 to match unix and mac.
 _default_np_int = (
     np.int32
     if os.name == 'nt'
