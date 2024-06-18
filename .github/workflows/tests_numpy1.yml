@@ -1,4 +1,4 @@
-name: 'Tests for Numpy <= 2'
+name: 'Tests for Numpy < 2'
 
 on:
   push:
