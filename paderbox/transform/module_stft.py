@@ -66,7 +66,7 @@ def stft(
         window_length = size
 
     # Pad with zeros to have enough samples for the window function to fade.
-    assert fading in [None, True, False, 'full', 'half'], fading
+    assert fading in [None, True, False, 'full', 'half'], (fading, type(fading))
     if fading not in [False, None]:
         pad_width = np.zeros((time_signal.ndim, 2), dtype=int)
         if fading == 'half':
@@ -539,7 +539,7 @@ def _biorthogonal_window_brute_force(analysis_window, shift,
     >>> print(synthesis_window)
     [-1.12717575e-17  2.76153346e-01  8.12215724e-01  2.76153346e-01]
     >>> mult = analysis_window * synthesis_window
-    >>> sum(mult)
+    >>> print(sum(mult))
     1.0000000000000002
     """
     size = len(analysis_window)

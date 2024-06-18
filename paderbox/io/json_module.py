@@ -39,21 +39,24 @@ class SummaryEncoder(Encoder):
     >>> example = dict(a=np.random.uniform(size=(3, 4)))
     >>> print(json.dumps(example, cls=SummaryEncoder, indent=2))
     {
-      "a": "ndarray: shape (3, 4), dtype float64"
+      "a": "array(shape=(3, 4), dtype=float64)"
     }
 
     alternative:
-    >>> np.set_string_function(lambda a: f'array(shape={a.shape}, dtype={a.dtype})')
-    >>> example
+    >>> from paderbox.utils.pretty import pprint
+    >>> # np.set_string_function(lambda a: f'array(shape={a.shape}, dtype={a.dtype})')  # removed in numpy 2.0 without replacement, see https://github.com/napari/napari/issues/6752
+    >>> pprint(example, max_array_length=0)
     {'a': array(shape=(3, 4), dtype=float64)}
-    >>> np.set_string_function(None)  # needed for pytest. np.set_string_function is not properly reseted.
     """
 
     def default(self, obj):
         if isinstance(obj, np.ndarray):
-            return 'ndarray: shape {}, dtype {}'.format(obj.shape, obj.dtype)
+            return f'array(shape={obj.shape}, dtype={obj.dtype})'
         else:
-            return super().default(obj)
+            try:
+                return super().default(obj)
+            except TypeError:
+                return str(obj)
 
 
 def dumps_json(

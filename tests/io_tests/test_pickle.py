@@ -22,7 +22,7 @@ class TestPickle:
         ('tuple', {'key': (1, 2, 3)}, (1, 2, 3)),
         ('set', {'key': {1, 2, 3}}, {1, 2, 3}),
         ('array', {'key': np.array([1, 2, 3])}, np.array([1, 2, 3])),
-        ('np nan', {'key': np.NaN}, np.NaN),
+        ('np nan', {'key': np.nan}, np.nan),
         ('np inf', {'key': np.inf}, np.inf),
         ('np array nan inf', {'key': np.asarray([0, 1, np.nan, np.inf])},
          np.asarray([0, 1, np.nan, np.inf])),

@@ -1,6 +1,7 @@
 import fnmatch
 
 from IPython.display import display
+import numpy as np
 import pandas as pd
 
 
@@ -168,8 +169,8 @@ def _unique_elements(pd_series):
     dtype: object
     >>> _unique_elements(s)
     [1, (1,), [1], {1}, {5: {6: 7}}]
-    >>> _unique_elements([1, 2, 3, 1, 3])
-    [1, 2, 3]
+    >>> np.array(_unique_elements([1, 2, 3, 1, 3]))
+    array([1, 2, 3])
     """
 
     try:
@@ -285,6 +286,8 @@ def squeeze_df(
     1  {1: 1}
 
     """
+    from paderbox.utils.pretty import pretty
+
     if query:
         df_tmp = py_query(df, query=query, use_pd_query=use_pd_query).copy()
     else:
@@ -302,10 +305,10 @@ def squeeze_df(
         if len(unique) == 1:
             drop.append(k)
             if verbose:
-                print(k, unique)
+                print(k, pretty(unique))
         elif len(unique) <= max_set_len:
             if verbose:
-                print(k, unique)
+                print(k, pretty(unique))
 
     if drop_glob:
         if isinstance(drop_glob, str):
@@ -388,15 +391,16 @@ def summary_df(df, query=None, max_unique_values=3):
     b [2, 4, ...]
 
     """
+    from paderbox.utils.pretty import pretty
     if query:
         df = py_query(df, query=query)
 
     for k, v in list(df.items()):
         unique = _unique_elements(v)
         if len(unique) <= max_unique_values:
-            print(k, unique)
+            print(k, pretty(unique))
         else:
             class Dots:
                 def __repr__(self):
                     return '...'
-            print(k, unique[:max_unique_values] + [Dots()])
+            print(k, pretty(unique[:max_unique_values] + [Dots()]))

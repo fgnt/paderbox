@@ -4,7 +4,7 @@ import warnings
 
 import numpy as np
 
-from distutils.version import LooseVersion
+from packaging.version import parse as _parse
 
 
 __all__ = ['dump_hdf5', 'update_hdf5', 'load_hdf5']
@@ -120,9 +120,9 @@ def update_hdf5(
     >>> update_hdf5('peter', file, '/name', allow_overwrite=True)
     >>> pprint(load_hdf5(file))
     {'name': 'peter'}
-    >>> update_hdf5({'name': 1}, file, '/', allow_overwrite=True)
+    >>> update_hdf5({'name': 'Alice'}, file, '/', allow_overwrite=True)
     >>> pprint(load_hdf5(file))
-    {'name': 1}
+    {'name': 'Alice'}
     """
     if not isinstance(obj, dict):
         path_split = path.rsplit('/', 1)
@@ -179,8 +179,9 @@ def load_hdf5(filename, path='/'):
     ... }
     >>> dump_hdf5(ex, file, True)
     >>> ex_load = load_hdf5(file)
-    >>> from pprint import pprint
-    >>> ex_load['fav_tensors']['kronecker2d'][0, 0]
+    >>> # from pprint import pprint
+    >>> from paderbox.utils.pretty import pprint
+    >>> print(ex_load['fav_tensors']['kronecker2d'][0, 0])
     1.0
     >>> pprint(ex_load)
     {'age': 24,
@@ -193,7 +194,7 @@ def load_hdf5(filename, path='/'):
      'fav_tensors': {'kronecker2d': array([[1., 0., 0.],
            [0., 1., 0.],
            [0., 0., 1.]]),
-                     'levi_civita3d': array([[[ 0,  0,  0],
+      'levi_civita3d': array([[[ 0,  0,  0],
             [ 0,  0,  1],
             [ 0, -1,  0]],
     <BLANKLINE>
@@ -403,7 +404,7 @@ class _ReportInterface(object):
                 h5file[cur_path] = item
                 # This query is necessary since h5py changed string
                 # handling after version 3.0.0 to dumping strings as bytes
-                if LooseVersion(h5py.__version__) >= '3.0.0':
+                if _parse(h5py.__version__) >= _parse('3.0.0'):
                     test_item = item.encode('utf-8')
                 else:
                     test_item = item
@@ -477,12 +478,13 @@ class _ReportInterface(object):
     @classmethod
     def __recursively_load_dict_contents_from_group__(cls, h5file, path):
         """
+        >>> from paderbox.utils.pretty import pprint
         >>> from paderbox.io.cache_dir import get_cache_dir
         >>> file = get_cache_dir() / 'tmp.hdf5'
         >>> ex = {'key': [1, 2, 3]}
         >>> dump_hdf5(ex, file, True)
         >>> ex_load = load_hdf5(file)
-        >>> ex_load
+        >>> pprint(ex_load)
         {'key': [1, 2, 3]}
         """
         import h5py
@@ -508,7 +510,7 @@ class _ReportInterface(object):
 
                     # This query is necessary since h5py changed string
                     # handling after version 3.0.0 to dumping strings as bytes
-                    if LooseVersion(h5py.__version__) >= '3.0.0':
+                    if _parse(h5py.__version__) >= _parse('3.0.0'):
                         ans[key] = ans[key].decode()
                 if isinstance(ans[key], str) and ans[key] == 'None':
                     ans[key] = None

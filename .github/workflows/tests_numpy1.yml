@@ -1,4 +1,4 @@
-name: Tests
+name: 'Tests for Numpy < 2'
 
 on:
   push:
@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.10']
 
     steps:
     - uses: actions/checkout@v2
@@ -30,8 +30,9 @@ jobs:
 
     - name: Install python dependencies
       run: |
+        trap 'echo -e "$ $BASH_COMMAND"' DEBUG
         python -m pip install --upgrade pip
-        pip install numpy scipy Cython
+        pip install 'numpy<2' scipy Cython
         pip install flake8 pytest pytest-cov codecov
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         pip install setuptools==57.5.0  # downgrade setuptools so pycallgraph can be installed (necessary for python >= 3.9)

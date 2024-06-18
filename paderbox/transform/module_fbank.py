@@ -409,8 +409,8 @@ def hz_warping(
         4000, warp_factor=.9, boundary_frequency_ratio=.75,\
         highest_frequency=highest_frequency,\
     )
-    >>> f_warped, f_warped.shape
-    (3600.0, ())
+    >>> print(f_warped, f_warped.shape)
+    3600.0 ()
     >>> f_warped = hz_warping(\
         8000, warp_factor=.9, boundary_frequency_ratio=np.array([.75, 1.]),\
         highest_frequency=highest_frequency,\

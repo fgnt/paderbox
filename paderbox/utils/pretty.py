@@ -58,6 +58,7 @@ class _MyRepresentationPrinter(IPython.lib.pretty.RepresentationPrinter):
             *args,
             max_array_length,
             np_suppress_small,
+            nep51,
             **kwargs,
     ):
         super().__init__(*args, **kwargs)
@@ -92,7 +93,20 @@ class _MyRepresentationPrinter(IPython.lib.pretty.RepresentationPrinter):
                     f')'
                 )
 
+        if nep51:
+            # https://numpy.org/neps/nep-0051-scalar-representation.html
+            def _ipy_pprint_ndnumber(obj, p, cycle):
+                # This is numpy 2.X style
+                p.text(f'np.{obj.__class__.__name__}({obj})')
+        else:
+            def _ipy_pprint_ndnumber(obj, p, cycle):
+                # This is numpy 1.X style
+                p.text(str(obj))
+
         self.type_pprinters[np.ndarray] = _ipy_pprint_ndarray
+        # self.type_pprinters[np.number] = _ipy_pprint_ndnumber  # doesn't work, __repr__ has priority over __mro__
+        for dtype in [np.int64, np.float64, np.complex128]:
+            self.type_pprinters[dtype] = _ipy_pprint_ndnumber
         self.deferred_pprinters[('torch', 'Tensor')] = _ipy_pprint_tensor
         self.type_pprinters[type({}.keys())] = \
             IPython.lib.pretty._seq_pprinter_factory('dict_keys(', ')')
@@ -191,6 +205,7 @@ def pprint(
         max_seq_length=IPython.lib.pretty.MAX_SEQ_LENGTH,
         max_array_length=50,
         np_suppress_small=True,
+        nep51=False,
 ):
     """
     Copy of IPython.lib.pretty.pprint.
@@ -199,6 +214,9 @@ def pprint(
      - Support multiple objects (Causes bad readable error in original)
      - Support list/tuple for max_seq_length, where
        max(depth, len(max_seq_length)-1) is used as index.
+     - By default disable NEP 51 that was introduced in numpy 2.
+       Pre NEP 51: Numpy scalars are printed like Python scalars
+       Since NEP 51: Numpy scalars are printed as e.g. np.int64(1)
 
 
     >>> pprint([np.array([1.]), np.array([1.]*100)])
@@ -232,6 +250,10 @@ def pprint(
     dict_items([('aaaaaaaaaa', 1000000), ('bbbbbbbbbb', 2000000)])
 
 
+    >>> pprint(np.sum([1]))
+    1
+    >>> pprint(np.sum([1]), nep51=True)
+    np.int64(1)
 
     """
 
@@ -240,6 +262,7 @@ def pprint(
         max_seq_length=max_seq_length,
         max_array_length=max_array_length,
         np_suppress_small=np_suppress_small,
+        nep51=nep51,
     )
 
     if len(objs):
@@ -261,6 +284,7 @@ def pretty(
         max_seq_length=IPython.lib.pretty.MAX_SEQ_LENGTH,
         max_array_length=50,
         np_suppress_small=True,
+        nep51=False,
 ):
     """
     Copy of IPython.lib.pretty.pretty.
@@ -276,6 +300,7 @@ def pretty(
         max_seq_length=max_seq_length,
         max_array_length=max_array_length,
         np_suppress_small=np_suppress_small,
+        nep51=nep51,
     )
     if len(objs):
         printer.pretty((obj, *objs))

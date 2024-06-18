@@ -101,7 +101,7 @@ def stable_solve(A, B, rcond=-1):
     assert A.shape[-1] == B.shape[-2], (A.shape, B.shape)
     try:
         return np.linalg.solve(A, B)
-    except np.linalg.linalg.LinAlgError:
+    except np.linalg.LinAlgError:
         shape_A, shape_B = A.shape, B.shape
         assert shape_A[:-2] == shape_A[:-2]
         working_shape_A = [functools.reduce(operator.mul, [1, *shape_A[:-2]]),
@@ -116,6 +116,6 @@ def stable_solve(A, B, rcond=-1):
             # lstsq is much slower, use it only when necessary
             try:
                 C[i] = np.linalg.solve(A[i], B[i])
-            except np.linalg.linalg.LinAlgError:
+            except np.linalg.LinAlgError:
                 C[i], *_ = np.linalg.lstsq(A[i], B[i], rcond=rcond)
         return C.reshape(*shape_B)

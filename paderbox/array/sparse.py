@@ -320,8 +320,8 @@ class SparseArray:
     dtype is inferred from segments:
     >>> a.dtype
     dtype('float64')
-    >>> a.pad_value, type(a.pad_value)
-    (0.0, <class 'numpy.float64'>)
+    >>> print(a.pad_value, type(a.pad_value))
+    0.0 <class 'numpy.float64'>
 
     Can't add segments with differing dtypes
     >>> a[:3] = np.ones(3, dtype=np.float32)
@@ -446,11 +446,11 @@ class SparseArray:
         >>> a = SparseArray(10)
         >>> a.pad_value   # is None
         >>> a[:5] = np.arange(5)
-        >>> a.pad_value
+        >>> print(a.pad_value)
         0
-        >>> zeros(10).pad_value
+        >>> print(zeros(10).pad_value)
         0.0
-        >>> full(10, 42).pad_value
+        >>> print(full(10, 42).pad_value)
         42.0
         """
         # _pad_value must be an array, otherwise pt.data.batch.example_to_device
@@ -905,8 +905,8 @@ class SparseArray:
         >>> a[15:] = np.arange(5, dtype=np.float64) + 1
 
         # Integer getitem
-        >>> a[0], a[9], a[10], a[14], a[15], a[18], a[-1]
-        (1.0, 1.0, 0.0, 0.0, 1.0, 4.0, 5.0)
+        >>> print(a[0], a[9], a[10], a[14], a[15], a[18], a[-1])
+        1.0 1.0 0.0 0.0 1.0 4.0 5.0
         >>> a[21]
         Traceback (most recent call last):
           ...
@@ -957,16 +957,16 @@ class SparseArray:
 
         # Unknown time length
         >>> a = zeros((None,))
-        >>> a[10]
+        >>> print(a[10])
         0.0
         >>> a[:10], np.asarray(a[:10])
         (SparseArray(shape=(10,)), array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0.], dtype=float32))
         >>> a[:5] = 1
         >>> np.asarray(a[2:7])
         array([1., 1., 1., 0., 0.], dtype=float32)
-        >>> a[0]
+        >>> print(a[0])
         1.0
-        >>> a[10]
+        >>> print(a[10])
         0.0
         >>> a.persist_shape()
         (5,)
