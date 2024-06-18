@@ -215,7 +215,7 @@ def pprint(
      - Support list/tuple for max_seq_length, where
        max(depth, len(max_seq_length)-1) is used as index.
      - By default disable NEP 51 that was introduced in numpy 2.
-       Pre NEP 51: Numpy scalars are printed liky Python scalars
+       Pre NEP 51: Numpy scalars are printed like Python scalars
        Since NEP 51: Numpy scalars are printed as e.g. np.int64(1)
 
 
