@@ -48,6 +48,6 @@ python setup.py sdist  # bdist_wheel  # It is difficult to get bdist_wheel worki
 git push origin --tags
 # Wait for the github action to build the windows wheels, ToDO: Fix wheels.
 twine upload --repository testpypi dist/*  # 
-twine upload dist/*
 git push
+twine upload dist/*
 ```
