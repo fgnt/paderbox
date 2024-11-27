@@ -97,7 +97,7 @@ def resample_sox(signal: np.ndarray, *, in_rate, out_rate, normalize=True):
         # input signal is much too large.
         # We normalize each channel independently to avoid rounding errors leading
         # to the channel doc test above to fail randomly.
-        normalizer = 0.95 / np.max(np.abs(signal), keepdims=True, axis=-1)
+        normalizer = 0.95 / np.maximum(np.max(np.abs(signal), keepdims=True, axis=-1), 1e-12)
         signal = normalizer * signal
 
     sox_type = {
