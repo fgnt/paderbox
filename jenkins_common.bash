@@ -24,8 +24,6 @@ TOOLBOX="$(dirname $(readlink -f ${BASH_SOURCE[0]}))"
 # Refresh files...
 ls $PYTHON_PATH/lib/python3.9/lib-dynload/../../ > /dev/null
 
-pip list
-
 # Some debug information
 env
 
