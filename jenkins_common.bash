@@ -10,7 +10,7 @@ trap 'echo -e "${green}$ $BASH_COMMAND ${NC}"' DEBUG
 # Force Exit 0
 trap 'exit 0' EXIT SIGINT SIGTERM
 
-PYTHON_PATH=/net/software/python/2022_02/anaconda
+PYTHON_PATH=/net/software/python/2024_06/anaconda
 
 source $PYTHON_PATH/bin/activate
 
@@ -26,6 +26,9 @@ ls $PYTHON_PATH/lib/python3.9/lib-dynload/../../ > /dev/null
 
 # Some debug information
 env
+
+# list of all installed Python packages and their versions
+pip list
 
 # adds a KALDI_ROOT
 source "${TOOLBOX}/bash/kaldi.bash"
