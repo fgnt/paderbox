@@ -162,7 +162,7 @@ class Loader:
 
         weights_only = kwargs.pop('weights_only', not self.unsafe)
         
-        if version.parse(torch.__version__) < version.parse('2.4'):
+        if version.parse(torch.__version__) < version.parse('2.6'):
             assert not weights_only, self._unsafe_msg(f'{self.unsafe} (weights_only={weights_only})', file, '.pth')
             return torch.load(str(file), **kwargs)
         elif not weights_only:
@@ -178,6 +178,7 @@ class Loader:
                 # loaded with torch.load(weights_only=True). Starting from 2.6
                 # weights_only=True becomes a default and requires allowlisting of objects
                 # being loaded.
+                # CB: torch.serialization.safe_globals was introduced in 2.5 or 2.6.
                 # See: https://github.com/pytorch/pytorch/pull/137602
                 # See: https://pytorch.org/docs/stable/notes/serialization.html#torch.serialization.add_safe_globals
                 # See: https://github.com/huggingface/accelerate/pull/3036
