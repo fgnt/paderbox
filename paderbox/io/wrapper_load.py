@@ -154,6 +154,7 @@ class Loader:
 
             
         >>> if  version.parse(torch.__version__) < version.parse('2.6'):
+        ...     import pytest
         ...     pytest.skip("Proper weights_only is only supported in torch >= 2.6")
 
         >>> with tempfile.NamedTemporaryFile(suffix='.pth') as tmp:
