@@ -132,6 +132,7 @@ class Loader:
 
     def pth(self, file, map_location='cpu', **kwargs):
         """
+        >>> from packaging import version
         >>> import tempfile
         >>> import torch
         >>> import numpy as np
