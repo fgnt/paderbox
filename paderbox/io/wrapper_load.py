@@ -150,6 +150,10 @@ class Loader:
         ...         print("Failed as it should. The message and type changes between torch versions.")
         Failed as it should. The message and type changes between torch versions.
 
+            
+        >>> if  version.parse(torch.__version__) < version.parse('2.6'):
+        ...     pytest.skip("Proper weights_only is only supported in torch >= 2.6")
+
         >>> with tempfile.NamedTemporaryFile(suffix='.pth') as tmp:
         ...     torch.save({'a': np.array([1])}, tmp.name)
         ...     loader(tmp.name)
