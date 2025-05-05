@@ -141,8 +141,8 @@ def to_rttm_str(data, sample_rate=16000):
     >>> ar2 = np.zeros(shape=50000, dtype=bool)
     >>> ar2[0:32000] = 1
     >>> data = {'S02': {'1': ar1, '2': ar2}}
-    >>> data
-    {'S02': {'1': ArrayInterval("0:16000, 32000:48000", shape=None), '2': array([ True,  True,  True, ..., False, False, False])}}
+    >>> data  # numpy 2.2 adds a shape argument to the repr  # doctest: +ELLIPSIS
+    {'S02': {'1': ArrayInterval("0:16000, 32000:48000", shape=None), '2': array([ True,  True,  True, ..., False, False, False]...)}}
     >>> print(to_rttm_str(data))
     SPEAKER S02 1 0 1 <NA> <NA> 1 <NA>
     SPEAKER S02 1 2 1 <NA> <NA> 1 <NA>
