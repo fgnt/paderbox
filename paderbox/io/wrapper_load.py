@@ -138,16 +138,18 @@ class Loader:
         >>> import torch
         >>> import numpy as np
         >>> loader = Loader(False, None, unsafe=True)
-        >>> with tempfile.NamedTemporaryFile(suffix='.pth') as tmp:
-        ...     torch.save({'a': os.system}, tmp.name)
-        ...     loader(tmp.name)
+        >>> with tempfile.TemporaryDirectory() as tmpdir:
+        ...     file = Path(tmpdir) / 'test.pth'
+        ...     torch.save({'a': os.system}, file)
+        ...     loader(file)
         {'a': <built-in function system>}
 
         >>> loader = Loader(False, None, unsafe=False)
-        >>> with tempfile.NamedTemporaryFile(suffix='.pth') as tmp:
+        >>> with tempfile.TemporaryDirectory() as tmpdir:
+        ...     file = Path(tmpdir) / 'test.pth'
         ...     try:
-        ...         torch.save({'a': os.system}, tmp.name)
-        ...         loader(tmp.name)
+        ...         torch.save({'a': os.system}, file)
+        ...         loader(file)
         ...     except Exception as e:
         ...         print("Failed as it should. The message and type changes between torch versions.")
         Failed as it should. The message and type changes between torch versions.
@@ -157,9 +159,10 @@ class Loader:
         ...     import pytest
         ...     pytest.skip("Proper weights_only is only supported in torch >= 2.6")
 
-        >>> with tempfile.NamedTemporaryFile(suffix='.pth') as tmp:
-        ...     torch.save({'a': np.array([1])}, tmp.name)
-        ...     loader(tmp.name)
+        >>> with tempfile.TemporaryDirectory() as tmpdir:
+        ...     file = Path(tmpdir) / 'test.pth'
+        ...     torch.save({'a': np.array([1])}, file)
+        ...     loader(file)
         {'a': array([1])}
         """
         kwargs['map_location'] = map_location
