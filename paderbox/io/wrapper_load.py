@@ -1,9 +1,11 @@
+import os
 import io
 import gzip
 import json
 import pickle
 import functools
 from pathlib import Path
+import contextlib
 
 from paderbox.io.path_utils import normalize_path
 
@@ -66,7 +68,7 @@ class Loader:
             # ToDo: Is hdf5 safe or unsafe?
             from paderbox.io.hdf5 import load_hdf5
             return load_hdf5(file)
-        elif ext in ['.yaml']:
+        elif ext in ['.yaml', '.yml']:
             with file.open('r') as fp:
                 import yaml
                 if self.unsafe:
@@ -118,9 +120,7 @@ class Loader:
             date, sampling_rate = read_nist_wsj(file)
             return date
         elif ext in ['.pth']:
-            assert self.unsafe, self._unsafe_msg(self.unsafe, file, ext)
-            import torch
-            return torch.load(str(file), map_location='cpu')
+            return self.pth(file, map_location='cpu', weights_only=not self.unsafe)
         elif ext in ['.mat']:
             # ToDo: Is hdf5 safe or unsafe?  (loadmat uses hdf5)
             import scipy.io as sio
@@ -130,6 +130,89 @@ class Loader:
                 return str(file)
             else:
                 raise ValueError(file, ext)
+
+    def pth(self, file, map_location='cpu', **kwargs):
+        """
+        >>> from packaging import version
+        >>> import tempfile
+        >>> import torch
+        >>> import numpy as np
+        >>> loader = Loader(False, None, unsafe=True)
+        >>> with tempfile.TemporaryDirectory() as tmpdir:
+        ...     file = Path(tmpdir) / 'test.pth'
+        ...     torch.save({'a': os.system}, file)
+        ...     loader(file)
+        {'a': <built-in function system>}
+
+        >>> loader = Loader(False, None, unsafe=False)
+        >>> with tempfile.TemporaryDirectory() as tmpdir:
+        ...     file = Path(tmpdir) / 'test.pth'
+        ...     try:
+        ...         torch.save({'a': os.system}, file)
+        ...         loader(file)
+        ...     except Exception as e:
+        ...         print("Failed as it should. The message and type changes between torch versions.")
+        Failed as it should. The message and type changes between torch versions.
+
+            
+        >>> if  version.parse(torch.__version__) < version.parse('2.6'):
+        ...     import pytest
+        ...     pytest.skip("Proper weights_only is only supported in torch >= 2.6")
+
+        >>> with tempfile.TemporaryDirectory() as tmpdir:
+        ...     file = Path(tmpdir) / 'test.pth'
+        ...     torch.save({'a': np.array([1])}, file)
+        ...     loader(file)
+        {'a': array([1])}
+        """
+        kwargs['map_location'] = map_location
+
+        from packaging import version  # distutils is deprecated
+        import torch
+
+        weights_only = kwargs.pop('weights_only', not self.unsafe)
+        
+        if version.parse(torch.__version__) < version.parse('2.6'):
+            assert not weights_only, self._unsafe_msg(f'{self.unsafe} (weights_only={weights_only})', file, '.pth')
+            return torch.load(str(file), **kwargs)
+        elif not weights_only:
+            return torch.load(str(file), weights_only=False, **kwargs)
+        else:
+            import numpy as np
+
+            # Original code for _safe_globals:
+            #  - https://github.com/huggingface/transformers/pull/34632
+            #  - https://github.com/fgnt/padertorch/pull/163
+            def _safe_globals():
+                # Starting from version 2.4 PyTorch introduces a check for the objects
+                # loaded with torch.load(weights_only=True). Starting from 2.6
+                # weights_only=True becomes a default and requires allowlisting of objects
+                # being loaded.
+                # CB: torch.serialization.safe_globals was introduced in 2.5 or 2.6.
+                # See: https://github.com/pytorch/pytorch/pull/137602
+                # See: https://pytorch.org/docs/stable/notes/serialization.html#torch.serialization.add_safe_globals
+                # See: https://github.com/huggingface/accelerate/pull/3036
+
+                np_core = (
+                    np._core if version.parse(np.__version__)
+                    >= version.parse("2.0.0") else np.core
+                )
+                allowlist = [
+                    np_core.multiarray._reconstruct,  # added in transformers/pull/34632
+                    np_core.multiarray.scalar,  # added in padertorch/pull/163
+                    np.ndarray,  # added in transformers/pull/34632
+                    np.dtype,  # added in transformers/pull/34632
+                    # numpy >1.25 defines numpy.dtypes.UInt32DType, but type works for all versions of numpy
+                    type(np.dtype(np.int64)),  # added in initial paderbox commit
+                    type(np.dtype(np.uint32)),  # added in transformers/pull/34632
+                    type(np.dtype(np.float64)),  # added in padertorch/pull/163
+                    type(np.dtype(np.float32)),  # added in initial paderbox commit
+                ]
+                
+                return torch.serialization.safe_globals(allowlist)
+            
+            with _safe_globals():
+                return torch.load(str(file), weights_only=True, **kwargs)
 
     def _unsafe_msg(self, unsafe, file, ext):
         return (
