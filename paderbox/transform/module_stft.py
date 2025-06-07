@@ -234,6 +234,8 @@ def _samples_to_stft_frames(
     2
     >>> _samples_to_stft_frames(21, 16, 4)
     3
+    >>> _samples_to_stft_frames(0, 16, 4)
+    0
 
     >>> stft(np.zeros(19), 16, 4, fading=None).shape
     (2, 9)
@@ -275,11 +277,12 @@ def _samples_to_stft_frames(
         pad_width = (size - shift)
         samples = samples + (1 + (fading != 'half')) * pad_width
 
-    # I changed this from np.ceil to math.ceil, to yield an integer result.
     if pad:
         frames = (samples - size + shift + shift - 1) // shift
     else:
         frames = (samples - size + shift) // shift
+
+    frames = (frames > 0) * frames
 
     return frames
 
@@ -344,6 +347,8 @@ def sample_index_to_stft_frame_index(sample, window_length, shift, fading='full'
 
     >>> [sample_index_to_stft_frame_index(i, 8, 1, fading=None) for i in range(12)]
     [0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8]
+    >>> sample_index_to_stft_frame_index(np.arange(12), 8, 1, fading=None).tolist()
+    [0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8]
     >>> [sample_index_to_stft_frame_index(i, 8, 2, fading=None) for i in range(10)]
     [0, 0, 0, 0, 0, 1, 1, 2, 2, 3]
     >>> [sample_index_to_stft_frame_index(i, 7, 2, fading=None) for i in range(10)]
@@ -404,6 +409,8 @@ def stft_frame_index_to_sample_index(
 
     >>> stft_frame_index_to_sample_index(1, 400, 160, mode='first', fading=None)
     160
+    >>> stft_frame_index_to_sample_index(np.ones(1), 400, 160, mode='first', fading=None)
+    array([160.])
     >>> stft_frame_index_to_sample_index(1, 400, 160, mode='center', fading=None)
     360
     >>> stft_frame_index_to_sample_index(1, 400, 160, mode='last', fading=None)
