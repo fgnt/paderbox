@@ -133,6 +133,8 @@ def _ai_dilate_erode(ai, khalf):
 
     """
     pairs = np.array(ai.normalized_intervals)
+    if pairs.size == 0:
+        pairs = pairs.reshape(0, 2)
     assert pairs.shape[-1] == 2, pairs.shape
     if ai.inverse_mode:
         khalf = -khalf
@@ -157,6 +159,8 @@ def ai_dilate(ai, kernel_size):
     '   ██████   '
     '  ████████  '
     '████████████'
+    >>> ai_dilate(pb.array.interval.zeros(10), 3)
+    ArrayInterval("", shape=(10,))
 
 
     """
